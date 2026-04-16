@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>망고아이 관리 대시보드</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif; background: #f3f4f6; color: #111827; padding: 24px; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  h1 { font-size: 24px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  select, button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+  button.primary { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 500; }
+  .card-value { font-size: 32px; font-weight: 700; color: #111827; }
+  .card-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .chart-wrapper { position: relative; height: 280px; }
+  .table-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f3f4f6; }
+  th { background: #f9fafb; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+  .badge.warn { background: #fef3c7; color: #92400e; }
+  .badge.ok { background: #d1fae5; color: #065f46; }
+  .empty { text-align: center; color: #9ca3af; padding: 24px; }
+  @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📊 망고아이 화상수업 대시보드</h1>
+  <div class="controls">
+    <select id="period">
+      <option value="1">최근 1일</option>
+      <option value="7" selected>최근 7일</option>
+      <option value="30">최근 30일</option>
+      <option value="90">최근 90일</option>
+    </select>
+    <button class="primary" id="refresh">🔄 새로고침</button>
+  </div>
+</div>
+
+<div class="grid" id="kpi"></div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-title">📅 일자별 출석 (고유 사용자 수)</div>
+    <div class="chart-wrapper"><canvas id="chart-attendance"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">🎁 보상 발급 현황</div>
+    <div class="chart-wrapper"><canvas id="chart-rewards"></canvas></div>
+  </div>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title">🗣️ 발화시간 TOP 10</div>
+  <table>
+    <thead><tr><th>사용자</th><th>활성 발화시간</th><th>총 세션시간</th><th>활성 비율</th></tr></thead>
+    <tbody id="top-speakers"></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title">🚨 비상 이벤트</div>
+  <table>
+    <thead><tr><th>이벤트 유형</th><th>발생 횟수</th></tr></thead>
+    <tbody id="emergency-table"></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title">🗑️ 보관기간 자동 파기 <button id="retention-run" style="float:right;padding:4px 10px;font-size:12px;">지금 실행</button></div>
+  <div id="retention-status" style="font-size:13px;color:#6b7280;">로딩 중...</div>
+</div>
+
+<div class="table-card">
+  <div class="chart-title">🎥 녹화 목록</div>
+  <table>
+    <thead><tr><th>방</th><th>교사</th><th>시작</th><th>시간</th><th>크기</th><th>참가자</th><th>상태</th></tr></thead>
+    <tbody id="recordings-table"></tbody>
+  </table>
+</div>
+
+<script>
+let chartAtt = null, chartRwd = null;
+
+function fmtMs(ms) {
+  if (!ms) return '0초';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return s + '초';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + '분 ' + (s%60) + '초';
+  return Math.floor(m/60) + '시간 ' + (m%60) + '분';
+}
+
+async function load() {
+  const days = document.getElementById('period').value;
+  const r = await fetch('/api/dashboard?days=' + days);
+  const data = await r.json();
+
+  // KPI 카드
+  const totalSessions = data.connection?.total_sessions || 0;
+  const totalDisconnects = data.connection?.total_disconnects || 0;
+  const avgActivePct = (data.connection?.avg_active_pct || 0).toFixed(1);
+  const totalEmergency = (data.emergency || []).reduce((s,e) => s+e.c, 0);
+  const totalRewards = (data.rewards || []).reduce((s,e) => s+e.c, 0);
+  const disconnectRate = totalSessions > 0 ? ((totalDisconnects/totalSessions)*100).toFixed(1) : '0';
+
+  document.getElementById('kpi').innerHTML = `
+    <div class="card"><div class="card-label">총 출석 세션</div><div class="card-value">${data.attendance.total}</div><div class="card-sub">최근 ${days}일 누적</div></div>
+    <div class="card"><div class="card-label">평균 발화 비율</div><div class="card-value">${avgActivePct}%</div><div class="card-sub">활성 발화 / 총 세션시간</div></div>
+    <div class="card"><div class="card-label">재연결 발생률</div><div class="card-value">${disconnectRate}%</div><div class="card-sub">${totalDisconnects}회 / ${totalSessions}세션</div></div>
+    <div class="card"><div class="card-label">비상버튼 사용</div><div class="card-value">${totalEmergency}</div><div class="card-sub">카카오/긴급 알림 합산</div></div>
+    <div class="card"><div class="card-label">보상 발급</div><div class="card-value">${totalRewards}</div><div class="card-sub">스티커+쿠폰 합산</div></div>
+  `;
+
+  // 출석 차트
+  const byDay = (data.attendance.by_day || []).slice().reverse();
+  if (chartAtt) chartAtt.destroy();
+  chartAtt = new Chart(document.getElementById('chart-attendance'), {
+    type: 'bar',
+    data: {
+      labels: byDay.map(d => d.date),
+      datasets: [
+        { label: '고유 사용자', data: byDay.map(d => d.unique_users), backgroundColor: '#f59e0b' },
+        { label: '총 세션', data: byDay.map(d => d.sessions), backgroundColor: '#fde68a' }
+      ]
+    },
+    options: { maintainAspectRatio: false, responsive: true }
+  });
+
+  // 보상 차트
+  if (chartRwd) chartRwd.destroy();
+  chartRwd = new Chart(document.getElementById('chart-rewards'), {
+    type: 'doughnut',
+    data: {
+      labels: (data.rewards || []).map(r => r.type),
+      datasets: [{ data: (data.rewards || []).map(r => r.c), backgroundColor: ['#f59e0b','#10b981','#3b82f6','#ef4444'] }]
+    },
+    options: { maintainAspectRatio: false, responsive: true }
+  });
+
+  // TOP 발화자
+  const speakers = data.top_speakers || [];
+  document.getElementById('top-speakers').innerHTML = speakers.length === 0
+    ? '<tr><td colspan="4" class="empty">데이터 없음</td></tr>'
+    : speakers.map(s => {
+        const pct = s.session_ms > 0 ? ((s.active_ms/s.session_ms)*100).toFixed(1) : '0';
+        return `<tr><td>${s.username || s.user_id}</td><td>${fmtMs(s.active_ms)}</td><td>${fmtMs(s.session_ms)}</td><td><span class="badge ${pct>=30?'ok':'warn'}">${pct}%</span></td></tr>`;
+      }).join('');
+
+  // 비상 이벤트
+  const emerg = data.emergency || [];
+  document.getElementById('emergency-table').innerHTML = emerg.length === 0
+    ? '<tr><td colspan="2" class="empty">데이터 없음</td></tr>'
+    : emerg.map(e => `<tr><td>${e.event_type}</td><td>${e.c}</td></tr>`).join('');
+}
+
+async function loadRecordings() {
+  const r = await fetch('/api/recordings');
+  const list = await r.json();
+  const tb = document.getElementById('recordings-table');
+  if (!list || list.length === 0) {
+    tb.innerHTML = '<tr><td colspan="7" class="empty">녹화 기록 없음</td></tr>';
+    return;
+  }
+  tb.innerHTML = list.map(r => {
+    const d = new Date(r.started_at);
+    const dur = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+    const dm = String(Math.floor(dur/60)).padStart(2,'0') + ':' + String(dur%60).padStart(2,'0');
+    const sz = r.size_bytes ? (r.size_bytes/(1024*1024)).toFixed(1) + 'MB' : '-';
+    let names = [];
+    try { names = JSON.parse(r.participant_names || '[]'); } catch(_){}
+    let consent = [];
+    try { consent = JSON.parse(r.consented_user_ids || '[]'); } catch(_){}
+    const statusBadge = r.status === 'completed' ? '<span class="badge ok">완료</span>'
+                      : r.status === 'recording' ? '<span class="badge warn">녹화중</span>'
+                      : r.status === 'deleted' ? '<span class="badge" style="background:#fee;color:#dc2626;">삭제됨</span>'
+                      : r.status;
+    return `<tr>
+      <td>${r.room_id}</td>
+      <td>${r.teacher_name || r.teacher_id}</td>
+      <td>${d.toLocaleString('ko-KR')}</td>
+      <td>${dm}</td>
+      <td>${sz}</td>
+      <td>${names.length}명 (동의 ${consent.length})</td>
+      <td>${statusBadge}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadRetention() {
+  try {
+    const r = await fetch('/api/retention/status');
+    const txt = await r.text();
+    const el = document.getElementById('retention-status');
+    if (!txt || txt === 'null') { el.textContent = '아직 실행 기록 없음 (매일 KST 03:00 자동 실행)'; return; }
+    const d = JSON.parse(txt);
+    const when = new Date(d.executed_at).toLocaleString('ko-KR');
+    el.innerHTML = `<div>마지막 실행: <b>${when}</b></div>
+      <div style="margin-top:6px;">녹화 ${d.recordings}건 / 출결 ${d.attendance}건 / 보상 ${d.rewards}건 / 카카오ID ${d.kakao_ids}건 / 비상 ${d.emergency_events}건 / 동의마스킹 ${d.consents_masked}건</div>
+      ${d.errors && d.errors.length ? '<div style="color:#dc2626;margin-top:6px;">⚠️ ' + d.errors.join(', ') + '</div>' : ''}`;
+  } catch(e) { document.getElementById('retention-status').textContent = '조회 실패: ' + e.message; }
+}
+document.getElementById('retention-run').onclick = async () => {
+  if (!confirm('지금 보관기간 만료 데이터를 파기하시겠습니까?')) return;
+  const btn = document.getElementById('retention-run');
+  btn.disabled = true; btn.textContent = '실행 중...';
+  try {
+    const r = await fetch('/api/retention/run', { method: 'POST' });
+    await r.json();
+    await loadRetention();
+  } finally { btn.disabled = false; btn.textContent = '지금 실행'; }
+};
+
+document.getElementById('refresh').onclick = () => { load(); loadRecordings(); loadRetention(); };
+document.getElementById('period').onchange = load;
+load();
+loadRecordings();
+loadRetention();
+</script>
+
+</body>
+</html>

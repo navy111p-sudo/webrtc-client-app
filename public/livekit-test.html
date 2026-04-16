@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>🥭 LiveKit 하이브리드 PoC</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: -apple-system, "맑은 고딕", sans-serif; max-width: 1100px; margin: 24px auto; padding: 16px; background: #fafafa; }
+  h1 { color: #f59e0b; margin-bottom: 8px; }
+  .sub { color: #6b7280; margin-bottom: 20px; font-size: 14px; }
+  .panel { background: #fff; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,.05); margin-bottom: 16px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  input, select { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; }
+  button { padding: 9px 16px; background: #f59e0b; color: #fff; border: 0; border-radius: 4px; cursor: pointer; font-weight: 600; }
+  button:disabled { background: #d1d5db; }
+  button.leave { background: #ef4444; }
+  .videos { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; }
+  .videos .tile { position: relative; background: #000; border-radius: 8px; overflow: hidden; aspect-ratio: 4/3; }
+  .videos video { width: 100%; height: 100%; object-fit: cover; }
+  .videos .name { position: absolute; bottom: 6px; left: 6px; background: rgba(0,0,0,.5); color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 12px; }
+  .log { background: #111827; color: #d1fae5; padding: 10px; font-family: monospace; font-size: 12px; max-height: 180px; overflow: auto; border-radius: 4px; }
+  .status { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #d1d5db; margin-right: 6px; vertical-align: middle; }
+  .status.on { background: #10b981; }
+  label { font-size: 13px; color: #374151; }
+</style>
+</head>
+<body>
+
+<h1>🥭 망고아이 LiveKit 하이브리드 PoC</h1>
+<div class="sub">카페24 PHP 대신 Cloudflare Workers가 JWT를 발급합니다. 키 설정이 끝나면 바로 테스트할 수 있어요.</div>
+
+<div class="panel">
+  <div class="row">
+    <input id="room" placeholder="방 이름" value="test-room" style="flex:1">
+    <input id="user" placeholder="사용자 ID" value="" style="flex:1">
+    <select id="role"><option value="student">학생</option><option value="teacher">교사</option></select>
+    <label><input type="checkbox" id="recCons" checked> 녹화 동의</label>
+  </div>
+  <div class="row">
+    <button id="join">📞 입장</button>
+    <button id="leave" class="leave" disabled>🚪 퇴장</button>
+    <span id="state"><span class="status" id="dot"></span><span id="stateText">연결 전</span></span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="videos" id="videos"></div>
+</div>
+
+<div class="panel">
+  <h3 style="margin:0 0 8px;">로그</h3>
+  <div class="log" id="log"></div>
+</div>
+
+<script type="module">
+import {
+  Room, RoomEvent, Track, createLocalVideoTrack, createLocalAudioTrack
+} from 'https://cdn.skypack.dev/livekit-client@2.5.6';
+
+const log = (...a) => {
+  const el = document.getElementById('log');
+  const t = new Date().toLocaleTimeString('ko-KR');
+  el.textContent += `[${t}] ${a.join(' ')}\n`;
+  el.scrollTop = el.scrollHeight;
+  console.log(...a);
+};
+const setState = (on, text) => {
+  document.getElementById('dot').classList.toggle('on', on);
+  document.getElementById('stateText').textContent = text;
+};
+
+document.getElementById('user').value = 'u' + Math.floor(Math.random() * 10000);
+
+let room = null;
+let refreshTimer = null;
+
+function addTile(id, name) {
+  const grid = document.getElementById('videos');
+  let tile = document.getElementById('tile-' + id);
+  if (!tile) {
+    tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.id = 'tile-' + id;
+    tile.innerHTML = `<video autoplay playsinline ${id === 'local' ? 'muted' : ''}></video><div class="name">${name}</div>`;
+    grid.appendChild(tile);
+  }
+  return tile.querySelector('video');
+}
+function removeTile(id) {
+  const t = document.getElementById('tile-' + id);
+  if (t) t.remove();
+}
+
+async function getToken(roomId, userId, role, rec) {
+  const res = await fetch('/api/livekit/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      room_id: roomId, user_id: userId, user_name: userId,
+      role, recording_consent: rec,
+    }),
+  });
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${await res.text()}`);
+  return await res.json();
+}
+
+async function refreshToken(prev) {
+  const res = await fetch('/api/livekit/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: prev }),
+  });
+  if (!res.ok) throw new Error('refresh failed');
+  return await res.json();
+}
+
+function scheduleRefresh(expiresAtSec, currentToken) {
+  const ms = expiresAtSec * 1000 - Date.now() - 60_000;
+  if (ms <= 0) return;
+  clearTimeout(refreshTimer);
+  refreshTimer = setTimeout(async () => {
+    try {
+      const { token: newToken, expires_at } = await refreshToken(currentToken);
+      log('🔄 토큰 재발급 성공, 다음 만료:', new Date(expires_at * 1000).toLocaleTimeString('ko-KR'));
+      scheduleRefresh(expires_at, newToken);
+    } catch (e) {
+      log('❌ 재발급 실패:', e.message);
+    }
+  }, ms);
+}
+
+document.getElementById('join').onclick = async () => {
+  const roomId = document.getElementById('room').value.trim();
+  const userId = document.getElementById('user').value.trim();
+  const role = document.getElementById('role').value;
+  const rec = document.getElementById('recCons').checked;
+  if (!roomId || !userId) return alert('방/사용자 입력 필요');
+
+  try {
+    setState(false, '토큰 요청 중...');
+    const { token, url, expires_at, recording_consent } = await getToken(roomId, userId, role, rec);
+    log('✅ 토큰 수령, URL:', url, '동의:', recording_consent);
+
+    room = new Room({ adaptiveStream: true, dynacast: true });
+
+    room.on(RoomEvent.ParticipantConnected, p => { log('➕ 참가자 입장:', p.identity); });
+    room.on(RoomEvent.ParticipantDisconnected, p => { log('➖ 참가자 퇴장:', p.identity); removeTile(p.sid); });
+    room.on(RoomEvent.TrackSubscribed, (track, pub, p) => {
+      log('🎬 트랙 수신:', p.identity, track.kind);
+      const v = addTile(p.sid, p.identity);
+      if (track.kind === Track.Kind.Video) track.attach(v);
+      else if (track.kind === Track.Kind.Audio) track.attach();
+    });
+    room.on(RoomEvent.Disconnected, r => { log('🔌 연결 종료:', r); setState(false, '연결 종료'); });
+    room.on(RoomEvent.ActiveSpeakersChanged, s => {
+      if (s.length) log('🗣️  active:', s.map(x => x.identity).join(','));
+    });
+
+    setState(false, 'LiveKit 연결 중...');
+    await room.connect(url, token);
+    setState(true, `연결됨 (${room.name})`);
+    log('✅ 연결 완료, 내 ID:', room.localParticipant.identity);
+
+    // 미디어 publish
+    const a = await createLocalAudioTrack({ echoCancellation: true, noiseSuppression: true });
+    const v = await createLocalVideoTrack({ resolution: { width: 640, height: 480 } });
+    await room.localParticipant.publishTrack(a);
+    await room.localParticipant.publishTrack(v);
+    const localVid = addTile('local', userId + ' (나)');
+    v.attach(localVid);
+    log('📡 마이크/카메라 publish 완료');
+
+    scheduleRefresh(expires_at, token);
+
+    document.getElementById('join').disabled = true;
+    document.getElementById('leave').disabled = false;
+  } catch (e) {
+    log('❌ 실패:', e.message);
+    setState(false, '오류');
+  }
+};
+
+document.getElementById('leave').onclick = async () => {
+  clearTimeout(refreshTimer);
+  if (room) await room.disconnect();
+  document.getElementById('videos').innerHTML = '';
+  document.getElementById('join').disabled = false;
+  document.getElementById('leave').disabled = true;
+  setState(false, '퇴장 완료');
+};
+
+// 설정 상태 체크
+fetch('/api/livekit/config').then(r => r.json()).then(d => {
+  if (d.url) log('ℹ️ LiveKit URL:', d.url);
+  else log('⚠️ LiveKit 미설정:', d.hint || d.error);
+}).catch(e => log('⚠️ config 조회 실패', e.message));
+</script>
+
+</body>
+</html>
