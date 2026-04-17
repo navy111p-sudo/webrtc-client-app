@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mangoi 화상솔루션</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
 
     <!-- ============================================================
          [CSS] 전체 스타일 정의
@@ -844,8 +847,30 @@
      페이지 이동 없이 해당 로비 화면으로 전환됩니다.
 ================================================================ -->
 <div id="view-home" class="view active">
-    <h1 class="home-title">Mangoi 화상솔루션</h1>
-    <p class="home-subtitle">실시간 영상통화 & 시그널링 서비스</p>
+    <!-- 망고아이 로고 -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem;">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="72" height="72">
+        <ellipse cx="100" cy="110" rx="65" ry="55" fill="#F5A623" stroke="#E8951A" stroke-width="2"/>
+        <ellipse cx="85" cy="100" rx="40" ry="35" fill="#FBC95C" opacity="0.5"/>
+        <ellipse cx="78" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="80" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="82" cy="92" rx="2" ry="3" fill="white"/>
+        <ellipse cx="118" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="120" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="122" cy="92" rx="2" ry="3" fill="white"/>
+        <path d="M80 115 Q100 135 120 115" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+        <path d="M55 80 Q55 45 100 42 Q145 45 145 80" fill="none" stroke="#333" stroke-width="4"/>
+        <rect x="47" y="75" width="16" height="22" rx="6" fill="#333"/><rect x="137" y="75" width="16" height="22" rx="6" fill="#333"/>
+        <path d="M53 90 Q40 90 38 110 Q36 125 45 128" fill="none" stroke="#333" stroke-width="3"/>
+        <circle cx="45" cy="130" r="6" fill="#555"/>
+        <ellipse cx="35" cy="140" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1"/>
+        <ellipse cx="165" cy="125" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1" transform="rotate(-30 165 125)"/>
+        <ellipse cx="100" cy="58" rx="5" ry="8" fill="#4CAF50" transform="rotate(-15 100 58)"/>
+        <ellipse cx="108" cy="55" rx="4" ry="6" fill="#66BB6A" transform="rotate(20 108 55)"/>
+      </svg>
+      <div style="text-align:left;font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;">
+        <div style="font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:2px;line-height:1;">mango<span style="color:#F5A623;">i</span></div>
+        <div style="font-size:0.85rem;font-weight:400;color:#94a3b8;margin-top:4px;">즐거운 화상영어 망고아이</div>
+      </div>
+    </div>
+    <h1 class="home-title" style="font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;">Mangoi 화상솔루션</h1>
+    <p class="home-subtitle" style="font-family:'Noto Sans KR',sans-serif;">실시간 영상통화 & 시그널링 서비스</p>
     <div class="home-cards">
         <!-- 버튼 클릭 시 showView('view-signaling-lobby')를 호출하여 화면을 전환 -->
         <button class="home-card" onclick="showView('view-signaling-lobby')">
@@ -1191,13 +1216,25 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
     // ── 재연결 설정 ──
     let ws = null;
     let reconnectAttempts = 0;       // 현재 재연결 시도 횟수
-    const MAX_RECONNECT = 5;         // 최대 재연결 시도 횟수
+    const MAX_RECONNECT = 10;        // 최대 재연결 시도 횟수 (5→10)
     let reconnectTimer = null;       // 재연결 타이머 ID
     let intentionalClose = false;    // 사용자가 의도적으로 닫았는지 여부
+    let pingInterval = null;         // keepalive ping 타이머
+
+    function startPing() {
+        stopPing();
+        pingInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 25000); // 25초마다 ping (Cloudflare 유휴 타임아웃 방지)
+    }
+    function stopPing() {
+        if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+    }
 
     function connect() {
         // wss:// (암호화된 WebSocket) 프로토콜 사용
-        // location.host는 현재 페이지의 호스트(도메인:포트)를 가져옴
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const url = `${protocol}//${location.host}${path}`;
 
@@ -1205,7 +1242,17 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
         // ── 연결 성공 시 ──
         ws.onopen = () => {
+            console.log('[WebSocket] 연결 성공! reconnectAttempts:', reconnectAttempts);
+            const isReconnect = reconnectAttempts > 0;
             reconnectAttempts = 0;  // 재연결 카운터 초기화
+            startPing(); // keepalive 시작
+
+            // ★ 재연결 시 기존 PeerConnection 모두 정리 (새로 생성되도록)
+            if (isReconnect && typeof vcCleanupAllPeers === 'function') {
+                console.log('[WebSocket] 재연결 감지 → 기존 PeerConnection 모두 정리');
+                vcCleanupAllPeers();
+            }
+
             if (onOpen) onOpen(ws);
         };
 
@@ -1213,6 +1260,7 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                if (data.type === 'pong') return; // keepalive pong 무시
                 if (onMessage) onMessage(data, ws);
             } catch (e) {
                 console.error('[WebSocket] 메시지 파싱 오류:', e);
@@ -1221,14 +1269,13 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
         // ── 연결 종료 시 ──
         ws.onclose = (event) => {
+            console.log('[WebSocket] 연결 종료: code=' + event.code + ' reason=' + event.reason);
+            stopPing();
             if (onClose) onClose(event);
 
             // 의도적 종료가 아니면 자동 재연결 시도
             if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
                 reconnectAttempts++;
-                // 지수 백오프(Exponential Backoff):
-                // 재연결할수록 대기 시간을 늘려서 서버 부하를 줄임
-                // 1초 → 2초 → 4초 → 8초 → 16초
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 16000);
                 console.log(`[WebSocket] ${delay/1000}초 후 재연결 시도... (${reconnectAttempts}/${MAX_RECONNECT})`);
                 reconnectTimer = setTimeout(connect, delay);
@@ -1245,19 +1292,19 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
     // 외부에서 사용할 수 있는 인터페이스 반환
     return {
-        // WebSocket 인스턴스에 접근 (항상 최신 ws를 반환)
         get ws() { return ws; },
 
-        // 메시지 전송 헬퍼: 연결 상태 확인 후 전송
         send(data) {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(data));
+            } else {
+                console.warn('[WebSocket] 전송 실패: 연결 끊김 상태');
             }
         },
 
-        // 의도적 종료 (재연결하지 않음)
         close() {
             intentionalClose = true;
+            stopPing();
             clearTimeout(reconnectTimer);
             if (ws) ws.close();
         }
@@ -1628,15 +1675,28 @@ function sigLog(level, message) {
 
 let vcConn = null;              // WebSocket 연결
 let vcLocalStream = null;       // 내 미디어 스트림
-let vcPeerConnections = {};     // { oderId: RTCPeerConnection } 맵
+let vcPeerConnections = {};     // { userId: RTCPeerConnection } 맵
 let vcRoomId = '';
 let vcUsername = '';
 let vcUserId = '';              // 서버가 부여한 내 ID
+
+/** WebSocket 재연결 시 기존 PeerConnection 모두 정리 (전역 함수 — createWebSocket에서 호출) */
+function vcCleanupAllPeers() {
+    console.log('[vc] vcCleanupAllPeers: 기존 PC', Object.keys(vcPeerConnections).length, '개 정리');
+    Object.keys(vcPeerConnections).forEach(id => {
+        try { vcPeerConnections[id].close(); } catch(_) {}
+        const el = document.getElementById(`vc-video-${id}`);
+        if (el) el.remove();
+    });
+    vcPeerConnections = {};
+}
 let vcMicOn = true;
 let vcCamOn = true;
+let vcIsObserver = false;       // 관찰자 모드 (수신 전용)
 
 /** 다자간 통화 방 입장 */
 async function vcJoinRoom() {
+    vcIsObserver = false; // 일반 입장 모드 확인
     vcUsername = document.getElementById('vc-name-input').value.trim();
     if (!vcUsername) { alert('이름을 입력하세요.'); return; }
     vcRoomId = document.getElementById('vc-room-input').value.trim() || 'room-' + Math.random().toString(36).substr(2, 6);
@@ -1676,6 +1736,46 @@ async function vcJoinRoom() {
         (ws) => {
             setStatusDot('vc-status-dot', 'connected');
             ws.send(JSON.stringify({ type: 'join-room', data: { username: vcUsername } }));
+        },
+        () => setStatusDot('vc-status-dot', 'disconnected')
+    );
+    setStatusDot('vc-status-dot', 'connecting');
+}
+
+/** 관찰자 모드로 입장 (관리자 전용 — 미디어 없이 수신만) */
+async function vcJoinAsObserver(roomId) {
+    vcIsObserver = true;
+    vcUsername = '관찰자';
+    vcRoomId = roomId;
+
+    showView('view-videocall-call');
+    document.body.classList.add('vc-in-call');
+    document.getElementById('vc-room-name').textContent = roomId + ' (관찰 중)';
+
+    // ICE 서버 설정
+    await fetchIceServers();
+
+    // 관찰자는 로컬 미디어 없음 — 빈 스트림
+    vcLocalStream = new MediaStream();
+    const localBox = document.getElementById('vc-local-box');
+    if (localBox) localBox.style.display = 'none'; // 로컬 비디오 숨김
+
+    // 하단 툴바 숨김 (관찰자는 마이크/카메라/채팅 등 불필요)
+    const toolbar = document.getElementById('vc-bottom-toolbar');
+    if (toolbar) toolbar.style.display = 'none';
+
+    // 관찰자 표시 배너
+    const roomHeader = document.getElementById('vc-room-name');
+    if (roomHeader) {
+        roomHeader.innerHTML = `🔍 <span style="color:#f59e0b">${roomId}</span> 수업 관찰 중`;
+    }
+
+    vcConn = createWebSocket(
+        `/ws/video-call?roomId=${encodeURIComponent(vcRoomId)}`,
+        vcHandleMessage,
+        (ws) => {
+            setStatusDot('vc-status-dot', 'connected');
+            ws.send(JSON.stringify({ type: 'join-observe', data: { username: '관찰자' } }));
         },
         () => setStatusDot('vc-status-dot', 'disconnected')
     );
@@ -1780,6 +1880,22 @@ function vcHandleMessage(msg) {
         case 'video-stop-share':
             vpClearRemote();
             break;
+
+        // 관찰자 전용 메시지: 새 참가자가 입장 → 관찰자가 offer 전송
+        case 'observer-user-joined':
+            if (vcIsObserver && msg.data.userId) {
+                console.log('[vc-observer] 새 참가자 감지, offer 전송:', msg.data.userId);
+                vcCreatePeerAndOffer(msg.data.userId, msg.data.username);
+            }
+            break;
+
+        // 관찰자 전용 메시지: 참가자 퇴장
+        case 'observer-user-left':
+            if (vcIsObserver && msg.data.userId) {
+                console.log('[vc-observer] 참가자 퇴장:', msg.data.userId);
+                vcRemovePeer(msg.data.userId);
+            }
+            break;
     }
 }
 
@@ -1815,7 +1931,12 @@ function vcCreatePeer(userId, username) {
     const pc = new RTCPeerConnection(ICE_SERVERS);
     vcPeerConnections[userId] = pc;
 
-    if (vcLocalStream) {
+    if (vcIsObserver) {
+        // 관찰자: 미디어 전송 안 함, recvonly transceiver 추가
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
+        console.log('[vc-webrtc] 관찰자 모드: recvonly transceiver 추가');
+    } else if (vcLocalStream) {
         const tracks = vcLocalStream.getTracks();
         console.log('[vc-webrtc] addTrack:', tracks.length, '개 (video:', vcLocalStream.getVideoTracks().length, ', audio:', vcLocalStream.getAudioTracks().length, ')');
         tracks.forEach(t => pc.addTrack(t, vcLocalStream));
@@ -2151,6 +2272,16 @@ function vcLeaveRoom() {
     vcConn = null;
     document.getElementById('vc-chat-messages').innerHTML = '';
     document.body.classList.remove('vc-in-call');
+
+    // 관찰자 모드 해제 시 UI 복원
+    if (vcIsObserver) {
+        vcIsObserver = false;
+        const localBox = document.getElementById('vc-local-box');
+        if (localBox) localBox.style.display = '';
+        const toolbar = document.getElementById('vc-bottom-toolbar');
+        if (toolbar) toolbar.style.display = '';
+    }
+
     showView('view-home');
 }
 
@@ -2950,6 +3081,14 @@ function escHtml(text) {
 ================================================================ */
 window.addEventListener('DOMContentLoaded', () => {
     wbInit();  // 칠판 이벤트 리스너 등록
+
+    // URL 파라미터로 관찰자 모드 입장 (?observe=roomId)
+    const urlParams = new URLSearchParams(window.location.search);
+    const observeRoom = urlParams.get('observe');
+    if (observeRoom) {
+        // 약간 지연 후 관찰자 모드 입장 (UI 초기화 완료 대기)
+        setTimeout(() => vcJoinAsObserver(observeRoom), 500);
+    }
 });
 </script>
 

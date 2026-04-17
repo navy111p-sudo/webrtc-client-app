@@ -4,10 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>망고아이 관리 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif; background: #f3f4f6; color: #111827; padding: 24px; }
+  body { font-family: 'Noto Sans KR', -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif; background: #f3f4f6; color: #111827; padding: 24px; letter-spacing: -0.5px; line-height: 1; }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
   h1 { font-size: 24px; font-weight: 700; }
   .controls { display: flex; gap: 8px; align-items: center; }
@@ -36,7 +39,28 @@
 <body>
 
 <div class="header">
-  <h1>📊 망고아이 화상수업 대시보드</h1>
+  <div style="display:flex;align-items:center;gap:14px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="50" height="50">
+      <ellipse cx="100" cy="110" rx="65" ry="55" fill="#F5A623" stroke="#E8951A" stroke-width="2"/>
+      <ellipse cx="85" cy="100" rx="40" ry="35" fill="#FBC95C" opacity="0.5"/>
+      <ellipse cx="78" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="80" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="82" cy="92" rx="2" ry="3" fill="white"/>
+      <ellipse cx="118" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="120" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="122" cy="92" rx="2" ry="3" fill="white"/>
+      <path d="M80 115 Q100 135 120 115" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
+      <path d="M55 80 Q55 45 100 42 Q145 45 145 80" fill="none" stroke="#333" stroke-width="4"/>
+      <rect x="47" y="75" width="16" height="22" rx="6" fill="#333"/><rect x="137" y="75" width="16" height="22" rx="6" fill="#333"/>
+      <path d="M53 90 Q40 90 38 110 Q36 125 45 128" fill="none" stroke="#333" stroke-width="3"/>
+      <circle cx="45" cy="130" r="6" fill="#555"/>
+      <ellipse cx="35" cy="140" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1"/>
+      <ellipse cx="165" cy="125" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1" transform="rotate(-30 165 125)"/>
+      <ellipse cx="100" cy="58" rx="5" ry="8" fill="#4CAF50" transform="rotate(-15 100 58)"/>
+      <ellipse cx="108" cy="55" rx="4" ry="6" fill="#66BB6A" transform="rotate(20 108 55)"/>
+    </svg>
+    <div>
+      <div style="font-size:20px;font-weight:900;color:#111827;letter-spacing:1px;line-height:1;">mango<span style="color:#F5A623;">i</span></div>
+      <div style="font-size:11px;font-weight:400;color:#6b7280;margin-top:3px;">즐거운 화상영어 망고아이</div>
+    </div>
+    <span style="font-size:22px;font-weight:700;color:#111827;margin-left:8px;">화상수업 대시보드</span>
+  </div>
   <div class="controls">
     <select id="period">
       <option value="1">최근 1일</option>
@@ -82,12 +106,44 @@
   <div id="retention-status" style="font-size:13px;color:#6b7280;">로딩 중...</div>
 </div>
 
-<div class="table-card">
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title">🔴 실시간 수업 현황 <button id="rooms-refresh" style="float:right;padding:4px 10px;font-size:12px;">새로고침</button></div>
+  <table>
+    <thead><tr><th>방 ID</th><th>참가자 수</th><th>참가자</th><th>PDF</th><th>영상</th><th>관찰</th></tr></thead>
+    <tbody id="active-rooms-table"><tr><td colspan="6" class="empty">로딩 중...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:12px;padding:12px 16px;">
+  <button id="test-r2-btn" onclick="testR2()" style="background:#3b82f6;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;margin-right:8px;">🔧 R2 저장소 테스트</button>
+  <span id="test-r2-result" style="font-size:13px;color:#94a3b8;"></span>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title">🎥 녹화 목록</div>
   <table>
-    <thead><tr><th>방</th><th>교사</th><th>시작</th><th>시간</th><th>크기</th><th>참가자</th><th>상태</th></tr></thead>
+    <thead><tr><th>방</th><th>교사</th><th>시작</th><th>시간</th><th>크기</th><th>참가자</th><th>상태</th><th>재생</th></tr></thead>
     <tbody id="recordings-table"></tbody>
   </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title">📁 R2 녹화 파일</div>
+  <table>
+    <thead><tr><th>파일명</th><th>크기</th><th>업로드</th><th>재생</th></tr></thead>
+    <tbody id="r2-recordings-table"><tr><td colspan="4" class="empty">로딩 중...</td></tr></tbody>
+  </table>
+</div>
+
+<!-- 녹화 재생 모달 -->
+<div id="playback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:900px;width:95%;max-height:90vh;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:18px;font-weight:600;color:#f1f5f9;" id="playback-title">녹화 재생</span>
+      <button onclick="closePlayback()" style="background:#ef4444;color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;">✕ 닫기</button>
+    </div>
+    <video id="playback-video" controls autoplay style="width:100%;border-radius:12px;background:#000;max-height:70vh;"></video>
+  </div>
 </div>
 
 <script>
@@ -166,13 +222,34 @@ async function load() {
 }
 
 async function loadRecordings() {
-  const r = await fetch('/api/recordings');
-  const list = await r.json();
+  // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 매칭
+  const [recRes, blobRes] = await Promise.all([
+    fetch('/api/recordings').then(r => r.json()).catch(() => []),
+    fetch('/api/recordings/blob/list').then(r => r.json()).catch(() => ({ items: [] }))
+  ]);
+  const list = recRes || [];
+  const blobs = (blobRes.items || []).sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
   const tb = document.getElementById('recordings-table');
-  if (!list || list.length === 0) {
-    tb.innerHTML = '<tr><td colspan="7" class="empty">녹화 기록 없음</td></tr>';
+  if (!list.length && !blobs.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="empty">녹화 기록 없음</td></tr>';
     return;
   }
+
+  // blob을 room_id별로 그룹핑 (키 형식: roomId/date/timestamp-filename)
+  function findBlobForRecording(rec) {
+    if (rec.file_url) return rec.file_url;
+    // timestamp 기반으로 가장 가까운 blob 매칭 (±60초)
+    for (const b of blobs) {
+      const keyParts = b.key.split('/');
+      if (keyParts[0] === rec.room_id) {
+        const blobTime = new Date(b.uploaded).getTime();
+        const recEnd = rec.ended_at || (rec.started_at + (rec.duration_ms || 0));
+        if (Math.abs(blobTime - recEnd) < 120000) return b.key;
+      }
+    }
+    return null;
+  }
+
   tb.innerHTML = list.map(r => {
     const d = new Date(r.started_at);
     const dur = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
@@ -186,6 +263,19 @@ async function loadRecordings() {
                       : r.status === 'recording' ? '<span class="badge warn">녹화중</span>'
                       : r.status === 'deleted' ? '<span class="badge" style="background:#fee;color:#dc2626;">삭제됨</span>'
                       : r.status;
+    let playBtn = '-';
+    if (r.status === 'completed' && r.size_bytes > 0) {
+      // 1순위: DB의 file_url (R2 키)
+      let blobKey = r.file_url;
+      // 2순위: R2 blob 목록에서 매칭
+      if (!blobKey) blobKey = findBlobForRecording(r);
+      if (blobKey) {
+        const playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
+        playBtn = `<button onclick="playRecording('${playUrl}', '방 ${r.room_id} - ${(r.teacher_name || "").replace(/'/g,"")}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button>`;
+      } else {
+        playBtn = '<span style="color:#94a3b8;font-size:11px;">업로드 대기</span>';
+      }
+    }
     return `<tr>
       <td>${r.room_id}</td>
       <td>${r.teacher_name || r.teacher_id}</td>
@@ -194,6 +284,7 @@ async function loadRecordings() {
       <td>${sz}</td>
       <td>${names.length}명 (동의 ${consent.length})</td>
       <td>${statusBadge}</td>
+      <td>${playBtn}</td>
     </tr>`;
   }).join('');
 }
@@ -222,11 +313,116 @@ document.getElementById('retention-run').onclick = async () => {
   } finally { btn.disabled = false; btn.textContent = '지금 실행'; }
 };
 
-document.getElementById('refresh').onclick = () => { load(); loadRecordings(); loadRetention(); };
+// ── 활성 방 목록 로딩 ──
+async function loadActiveRooms() {
+  try {
+    const r = await fetch('/api/active-rooms');
+    const rooms = await r.json();
+    const tb = document.getElementById('active-rooms-table');
+    if (!rooms || rooms.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">현재 진행 중인 수업 없음</td></tr>';
+      return;
+    }
+    tb.innerHTML = rooms.map(room => {
+      const userNames = (room.users || []).map(u => u.username).join(', ') || '-';
+      return `<tr>
+        <td>${room.roomId}</td>
+        <td>${room.userCount}명${room.observerCount > 0 ? ' <span style="color:#f59e0b;font-size:11px;">(관찰 ${room.observerCount})</span>' : ''}</td>
+        <td>${userNames}</td>
+        <td>${room.hasPdf ? '<span class="badge ok">공유중</span>' : '-'}</td>
+        <td>${room.hasVideo ? '<span class="badge ok">공유중</span>' : '-'}</td>
+        <td><button onclick="observeRoom('${room.roomId}')" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;">🔍 관찰</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('active-rooms-table').innerHTML = '<tr><td colspan="6" class="empty">로딩 실패: ' + e.message + '</td></tr>';
+  }
+}
+
+function observeRoom(roomId) {
+  // 메인 화상통화 페이지를 관찰자 모드로 열기
+  const url = window.location.origin + '/?observe=' + encodeURIComponent(roomId);
+  window.open(url, '_blank', 'width=1200,height=800');
+}
+
+// ── 녹화 재생 ──
+function playRecording(url, title) {
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  const titleEl = document.getElementById('playback-title');
+  titleEl.textContent = title || '녹화 재생';
+  video.src = url;
+  modal.style.display = 'flex';
+}
+function closePlayback() {
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  video.pause();
+  video.src = '';
+  modal.style.display = 'none';
+}
+
+// ── R2 녹화 파일 목록 ──
+async function loadR2Recordings() {
+  try {
+    const r = await fetch('/api/recordings/blob/list');
+    const data = await r.json();
+    const items = data.items || [];
+    const tb = document.getElementById('r2-recordings-table');
+    if (items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="4" class="empty">녹화 파일 없음</td></tr>';
+      return;
+    }
+    tb.innerHTML = items.map(item => {
+      const sz = item.size ? (item.size/(1024*1024)).toFixed(1) + 'MB' : '-';
+      const uploaded = item.uploaded ? new Date(item.uploaded).toLocaleString('ko-KR') : '-';
+      const name = item.originalName || item.key.split('/').pop();
+      return `<tr>
+        <td title="${item.key}">${name}</td>
+        <td>${sz}</td>
+        <td>${uploaded}</td>
+        <td><button onclick="playRecording('${item.url}', '${name}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('r2-recordings-table').innerHTML = '<tr><td colspan="4" class="empty">로딩 실패</td></tr>';
+  }
+}
+
+async function testR2() {
+  const el = document.getElementById('test-r2-result');
+  el.textContent = '테스트 중...';
+  el.style.color = '#94a3b8';
+  try {
+    const r = await fetch('/api/recordings/test-r2');
+    const d = await r.json();
+    if (d.ok) {
+      const recCount = (d.recordingFiles || []).length;
+      el.style.color = '#22c55e';
+      el.textContent = '✅ R2 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
+      if (recCount > 0) {
+        el.textContent += ' — ' + d.recordingFiles.map(f => f.key + ' (' + (f.size/1024).toFixed(0) + 'KB)').join(', ');
+      }
+    } else {
+      el.style.color = '#dc2626';
+      el.textContent = '❌ R2 에러: ' + (d.error || JSON.stringify(d));
+    }
+  } catch(e) {
+    el.style.color = '#dc2626';
+    el.textContent = '❌ 요청 실패: ' + e.message;
+  }
+}
+
+document.getElementById('rooms-refresh').onclick = loadActiveRooms;
+document.getElementById('refresh').onclick = () => { load(); loadRecordings(); loadRetention(); loadActiveRooms(); };
 document.getElementById('period').onchange = load;
 load();
 loadRecordings();
 loadRetention();
+loadActiveRooms();
+loadR2Recordings();
+// 활성 방 목록 15초마다 자동 갱신
+setInterval(loadActiveRooms, 15000);
 </script>
 
 </body>

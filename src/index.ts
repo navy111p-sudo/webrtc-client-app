@@ -9,6 +9,7 @@ import { HealthResponse, TurnConfigResponse, PdfUploadResponse } from './types';
 import { handleMangoApi } from './api-mango';
 import { purgeExpired } from './retention';
 import { handleLivekit, ensureLivekitSchema } from './livekit-bridge';
+import { handleRecordingUpload as handleR2MultipartUpload } from './recordings-r2';
 
 interface Env {
   SIGNALING_ROOM: DurableObjectNamespace;
@@ -43,7 +44,7 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type'
+          'Access-Control-Allow-Headers': 'Content-Type, X-Room-Id, X-Filename, X-Recording-Id, X-Duration-Ms, X-Size-Bytes'
         }
       });
     }
@@ -87,10 +88,53 @@ export default {
       });
     }
 
+    // 활성 방 목록 (관리자용)
+    if (path === '/api/active-rooms' && request.method === 'GET') {
+      return await handleActiveRooms(env);
+    }
+
+    // 특정 방 상태 조회 (관리자용)
+    if (path.startsWith('/api/room-status/') && request.method === 'GET') {
+      const roomId = path.replace('/api/room-status/', '');
+      return await handleRoomStatus(roomId, env);
+    }
+
     // LiveKit 하이브리드 브릿지 (v4)
     if (path.startsWith('/api/livekit')) {
       const res = await handleLivekit(request, url, env as any);
       if (res) return res;
+    }
+
+    // R2 녹화 저장소 연결 테스트
+    if (path === '/api/recordings/test-r2' && request.method === 'GET') {
+      try {
+        if (!env.RECORDINGS) return new Response(JSON.stringify({ ok: false, error: 'RECORDINGS bucket not bound' }), { headers: { 'Content-Type': 'application/json' } });
+        const testKey = '_test/' + Date.now() + '.txt';
+        await env.RECORDINGS.put(testKey, 'test-' + Date.now(), { httpMetadata: { contentType: 'text/plain' } });
+        const obj = await env.RECORDINGS.get(testKey);
+        const text = obj ? await obj.text() : null;
+        await env.RECORDINGS.delete(testKey);
+        // 녹화 파일 목록도 확인
+        const recList = await env.RECORDINGS.list({ prefix: 'recordings/', limit: 10 });
+        return new Response(JSON.stringify({
+          ok: true, bucket: 'connected', testWrite: !!text, testContent: text,
+          recordingFiles: recList.objects.map(o => ({ key: o.key, size: o.size, uploaded: o.uploaded }))
+        }), { headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' } });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ ok: false, error: e?.message }), { headers: { 'Content-Type': 'application/json' } });
+      }
+    }
+
+    // ── 자동녹화 R2 multipart upload + stream (auto-recording-patch) ──
+    // 기존 /api/recordings/blob 보다 먼저 매칭해야 함
+    if (path.startsWith('/api/recordings/upload') || path.startsWith('/api/recordings/stream')) {
+      const res = await handleR2MultipartUpload(request, url, env as any);
+      if (res) return res;
+    }
+
+    // ── 녹화 완료: blob 업로드 + DB 업데이트를 한 번에 처리 ──
+    if (path === '/api/recordings/complete' && request.method === 'POST') {
+      return await handleRecordingComplete(request, env);
     }
 
     // R2 녹화 블롭 저장소 (MediaRecorder → POST /api/recordings/blob/upload)
@@ -422,10 +466,77 @@ async function handleVideoCallWebSocket(request: Request, url: URL, env: Env): P
     const durableObject = env.VIDEO_CALL_ROOM.get(durableObjectId);
 
     const response = await durableObject.fetch(request);
+
+    // 활성 방 목록에 등록 (fire-and-forget — WebSocket 연결을 차단하지 않음)
+    env.SESSION_STATE.put(`active-room:${roomId}`, JSON.stringify({
+      roomId,
+      lastActivity: Date.now()
+    }), { expirationTtl: 600 }).catch(() => {});
+
     return response;
   } catch (err) {
     console.error('VideoCall WebSocket error:', err);
     return new Response('WebSocket connection failed', { status: 500 });
+  }
+}
+
+async function handleActiveRooms(env: Env): Promise<Response> {
+  try {
+    // KV에서 active-room: 프리픽스로 활성 방 목록 조회
+    const list = await env.SESSION_STATE.list({ prefix: 'active-room:' });
+    const rooms: any[] = [];
+
+    for (const key of list.keys) {
+      const roomId = key.name.replace('active-room:', '');
+      try {
+        // 각 Durable Object에 상태 질의
+        const durableObjectId = env.VIDEO_CALL_ROOM.idFromName(roomId);
+        const durableObject = env.VIDEO_CALL_ROOM.get(durableObjectId);
+        const statusUrl = new URL(`https://internal/status?roomId=${roomId}`);
+        const statusResp = await durableObject.fetch(statusUrl.toString());
+        const status = await statusResp.json() as any;
+
+        // 유저가 0명이면 KV에서 제거
+        if (status.userCount === 0) {
+          await env.SESSION_STATE.delete(key.name);
+          continue;
+        }
+        rooms.push(status);
+      } catch (e) {
+        // DO가 이미 사라진 경우 KV 정리
+        await env.SESSION_STATE.delete(key.name);
+      }
+    }
+
+    return new Response(JSON.stringify(rooms), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  } catch (err: any) {
+    console.error('[active-rooms] error:', err);
+    return new Response(JSON.stringify({ error: err?.message || 'Failed' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    });
+  }
+}
+
+async function handleRoomStatus(roomId: string, env: Env): Promise<Response> {
+  try {
+    const durableObjectId = env.VIDEO_CALL_ROOM.idFromName(roomId);
+    const durableObject = env.VIDEO_CALL_ROOM.get(durableObjectId);
+    const statusUrl = new URL(`https://internal/status?roomId=${roomId}`);
+    const statusResp = await durableObject.fetch(statusUrl.toString());
+    const data = await statusResp.text();
+    return new Response(data, {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+    });
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err?.message || 'Not found' }), {
+      status: 404,
+      headers: { 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -440,6 +551,123 @@ function recordingJson(obj: any, status = 200): Response {
       'Access-Control-Allow-Origin': '*'
     }
   });
+}
+
+/**
+ * handleRecordingComplete — blob 업로드 + DB 업데이트를 한 번에 처리
+ * 메타데이터는 URL 쿼리 파라미터로 전달 (커스텀 헤더 없음)
+ *
+ * URL: /api/recordings/complete?recording_id=X&room_id=Y&duration_ms=Z
+ * Body: 녹화 blob 바이너리
+ */
+async function handleRecordingComplete(request: Request, env: Env): Promise<Response> {
+  const url2 = new URL(request.url);
+  const recordingId = url2.searchParams.get('recording_id') || request.headers.get('x-recording-id') || '';
+  const roomId = (url2.searchParams.get('room_id') || request.headers.get('x-room-id') || 'default').replace(/[^a-zA-Z0-9_-]/g, '_');
+  const durationMs = parseInt(url2.searchParams.get('duration_ms') || request.headers.get('x-duration-ms') || '0', 10);
+  const ts = Date.now();
+  const recIdNum = parseInt(recordingId, 10);
+
+  // 디버그: 모든 단계의 결과를 DB에 기록
+  const debugLog: string[] = [];
+  debugLog.push('START:' + ts);
+  debugLog.push('recId:' + recordingId + ',room:' + roomId + ',dur:' + durationMs);
+  debugLog.push('hasR2:' + !!env.RECORDINGS + ',hasDB:' + !!env.DB);
+
+  try {
+    if (!env.RECORDINGS) {
+      debugLog.push('ERR:NO_R2_BUCKET');
+      await _saveDebug(env, recIdNum, debugLog, 0);
+      return recordingJson({ ok: false, error: 'R2 bucket RECORDINGS not configured' }, 500);
+    }
+
+    const contentType = request.headers.get('content-type') || 'video/webm';
+    debugLog.push('ct:' + contentType);
+
+    // 1) blob 읽기
+    let body: ArrayBuffer;
+    try {
+      body = await request.arrayBuffer();
+      debugLog.push('bodyOK:' + body.byteLength);
+    } catch (bodyErr: any) {
+      debugLog.push('ERR:BODY:' + String(bodyErr?.message || bodyErr));
+      await _saveDebug(env, recIdNum, debugLog, 0);
+      return recordingJson({ ok: false, error: 'Body read failed: ' + bodyErr?.message }, 500);
+    }
+
+    const sizeBytes = body.byteLength;
+    if (sizeBytes === 0) {
+      debugLog.push('ERR:EMPTY_BODY');
+      await _saveDebug(env, recIdNum, debugLog, 0);
+      return recordingJson({ ok: false, error: 'Empty body' }, 400);
+    }
+
+    // 2) R2에 저장
+    const date = new Date().toISOString().slice(0, 10);
+    const key = `recordings/${roomId}/${date}/${ts}.webm`;
+    debugLog.push('key:' + key);
+
+    let r2ok = false;
+    try {
+      await env.RECORDINGS.put(key, body, {
+        httpMetadata: { contentType: contentType.split(';')[0].trim() },
+        customMetadata: { roomId, recordingId, size: String(sizeBytes) }
+      });
+      r2ok = true;
+      debugLog.push('R2:OK');
+    } catch (r2Err: any) {
+      debugLog.push('ERR:R2:' + String(r2Err?.message || r2Err));
+    }
+
+    const fileUrl = r2ok ? key : ('DEBUG:' + debugLog.join('|'));
+    const playUrl = r2ok ? `/api/recordings/blob/${encodeURIComponent(key)}` : '';
+
+    // 3) DB 업데이트 - 항상 실행 (에러 내용도 file_url에 기록)
+    if (!isNaN(recIdNum) && recIdNum > 0 && env.DB) {
+      try {
+        await env.DB.prepare(
+          `UPDATE recordings SET ended_at = ?, duration_ms = ?, size_bytes = ?, status = 'completed',
+           file_url = ?, storage = ?
+           WHERE id = ?`
+        ).bind(ts, durationMs, sizeBytes, fileUrl, r2ok ? 'r2' : 'debug', recIdNum).run();
+        debugLog.push('DB:OK');
+      } catch (dbErr: any) {
+        debugLog.push('ERR:DB:' + String(dbErr?.message || dbErr));
+      }
+    } else {
+      debugLog.push('SKIP_DB:recId=' + recordingId);
+    }
+
+    return recordingJson({
+      ok: r2ok,
+      key: r2ok ? key : null,
+      url: playUrl,
+      recording_id: recordingId,
+      size: sizeBytes,
+      duration_ms: durationMs,
+      debug: debugLog.join('|')
+    });
+  } catch (err: any) {
+    // 최상위 에러도 DB에 기록
+    const errMsg = 'FATAL:' + String(err?.message || err);
+    if (!isNaN(recIdNum) && recIdNum > 0 && env.DB) {
+      try {
+        await env.DB.prepare(
+          `UPDATE recordings SET file_url = ?, storage = 'debug' WHERE id = ?`
+        ).bind(errMsg, recIdNum).run();
+      } catch (_) {}
+    }
+    return recordingJson({ ok: false, error: String(err?.message || err) }, 500);
+  }
+}
+
+async function _saveDebug(env: Env, recId: number, log: string[], size: number) {
+  if (isNaN(recId) || recId <= 0 || !env.DB) return;
+  try {
+    await env.DB.prepare(
+      `UPDATE recordings SET file_url = ?, storage = 'debug', size_bytes = ? WHERE id = ?`
+    ).bind('DEBUG:' + log.join('|'), size, recId).run();
+  } catch (_) {}
 }
 
 async function handleRecordingUpload(request: Request, env: Env): Promise<Response> {

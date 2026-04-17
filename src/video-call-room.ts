@@ -11,6 +11,7 @@ const MAX_USERS = 10;
 interface RoomUser {
   userId: string;
   username: string;
+  isObserver?: boolean;  // 관찰자 모드 (선생님/학생에게 보이지 않음)
 }
 
 interface VideoChatRoomState {
@@ -27,6 +28,7 @@ export class VideoCallRoom {
   private users: Map<string, RoomUser> = new Map();
   private pdfState: PdfShareData | null = null;
   private videoState: { url: string; type: string } | null = null;
+  private observers: Set<string> = new Set();  // 관찰자 userId 목록
 
   constructor(state: DurableObjectState) {
     this.state = state;
@@ -34,10 +36,28 @@ export class VideoCallRoom {
   }
 
   async fetch(request: Request): Promise<Response> {
-    // Durable Object ID는 hex 문자열이므로 URL로 파싱할 수 없습니다.
     const url = new URL(request.url);
     const roomIdParam = url.searchParams.get('roomId');
     if (roomIdParam) this.roomId = roomIdParam;
+
+    // HTTP GET: 방 상태 조회 (관리자용)
+    if (request.method === 'GET' && url.pathname === '/status') {
+      const normalUsers = Array.from(this.users.values())
+        .filter(u => !u.isObserver)
+        .map(u => ({ userId: u.userId, username: u.username }));
+      const observerCount = this.observers.size;
+      return new Response(JSON.stringify({
+        roomId: this.roomId,
+        userCount: normalUsers.length,
+        observerCount,
+        users: normalUsers,
+        hasPdf: !!this.pdfState,
+        hasVideo: !!this.videoState
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
 
     if (request.headers.get('Upgrade') === 'websocket') {
       return this.handleWebSocket(request);
@@ -72,8 +92,15 @@ export class VideoCallRoom {
       if (!conn) return;
 
       switch (msg.type) {
+        case 'ping':
+          // keepalive: 클라이언트 ping에 pong 응답
+          this.send(userId, { type: 'pong' });
+          return;
         case 'join-room':
           this.handleJoinRoom(userId, msg.data as any);
+          break;
+        case 'join-observe':
+          this.handleJoinObserve(userId, msg.data as any);
           break;
         case 'leave-room':
           this.handleLeaveRoom(userId);
@@ -134,7 +161,7 @@ export class VideoCallRoom {
     const user: RoomUser = { userId, username };
     this.users.set(userId, user);
 
-    // Send room-joined to new user (include own userId + userCount + pdfState)
+    // Send room-joined to new user
     this.send(userId, {
       type: 'room-joined',
       data: {
@@ -145,9 +172,9 @@ export class VideoCallRoom {
       }
     });
 
-    // Send existing users to new user (wrapped as { users: [...] })
+    // Send existing users to new user
     const existingUsers = Array.from(this.users.values())
-      .filter(u => u.userId !== userId)
+      .filter(u => u.userId !== userId && !u.isObserver)
       .map(u => ({ userId: u.userId, username: u.username }));
 
     this.send(userId, {
@@ -155,11 +182,21 @@ export class VideoCallRoom {
       data: { users: existingUsers, pdfState: this.pdfState }
     });
 
-    // Notify others of new user (include userCount)
+    // Notify others of new user
     this.broadcast(userId, {
       type: 'user-joined',
       data: { userId, username, userCount: this.users.size }
     });
+
+    // 관찰자들에게도 새 참가자 알림
+    for (const obsId of this.observers) {
+      if (obsId !== userId) {
+        this.send(obsId, {
+          type: 'observer-user-joined',
+          data: { userId, username }
+        });
+      }
+    }
 
     // Sync current PDF state if sharing
     if (this.pdfState) {
@@ -177,7 +214,7 @@ export class VideoCallRoom {
       });
     }
 
-    // System message
+    // System message (관찰자에게도 채팅은 보여줌 — 모니터링 목적)
     this.broadcastAll({
       type: 'chat-message',
       data: {
@@ -191,20 +228,67 @@ export class VideoCallRoom {
     console.log(`[VideoChat] User ${username} (${userId}) joined room ${this.roomId}`);
   }
 
+  /** 관찰자 모드 입장: 다른 참가자에게 알리지 않고 조용히 입장 */
+  private handleJoinObserve(userId: string, data: any): void {
+    const username = data.username || '관찰자';
+    this.observers.add(userId);
+
+    const user: RoomUser = { userId, username, isObserver: true };
+    this.users.set(userId, user);
+
+    // 관찰자에게 방 정보 전달 (관찰자 모드 표시)
+    this.send(userId, {
+      type: 'room-joined',
+      data: {
+        roomId: this.roomId,
+        userId,
+        userCount: this.getNormalUserCount(),
+        isObserver: true
+      }
+    });
+
+    // 관찰자에게 기존 일반 참가자 목록 전달 (관찰자가 이들의 영상을 받기 위해)
+    const normalUsers = Array.from(this.users.values())
+      .filter(u => u.userId !== userId && !u.isObserver)
+      .map(u => ({ userId: u.userId, username: u.username }));
+
+    this.send(userId, {
+      type: 'existing-users',
+      data: { users: normalUsers, pdfState: this.pdfState }
+    });
+
+    // PDF/비디오 상태 동기화
+    if (this.pdfState) {
+      this.send(userId, { type: 'pdf-sync', data: this.pdfState });
+    }
+    if (this.videoState) {
+      this.send(userId, { type: 'video-sync', data: this.videoState });
+    }
+
+    console.log(`[VideoChat] Observer ${username} (${userId}) entered room ${this.roomId} silently`);
+  }
+
   private handleLeaveRoom(userId: string): void {
     const user = this.users.get(userId);
     if (!user) return;
 
+    const wasObserver = this.observers.has(userId);
+    this.observers.delete(userId);
     this.users.delete(userId);
     this.connections.delete(userId);
 
-    // Notify others (include userCount + username)
+    // 관찰자가 나가면 아무 알림 없이 조용히 제거
+    if (wasObserver) {
+      console.log(`[VideoChat] Observer ${user.username} (${userId}) left room ${this.roomId} silently`);
+      return;
+    }
+
+    // 모든 참가자에게 user-left 알림
     this.broadcastAll({
       type: 'user-left',
       data: { userId, username: user.username, userCount: this.users.size }
     });
 
-    // System message
     if (user.username) {
       this.broadcastAll({
         type: 'chat-message',
@@ -311,7 +395,6 @@ export class VideoCallRoom {
   }
 
   private handleOffer(userId: string, data: any): void {
-    // Client sends { targetUserId, sdp }; some older code may send { to, offer }
     const target = data.targetUserId || data.to;
     const sdp = data.sdp || data.offer;
     if (!target || !sdp) return;
@@ -340,6 +423,25 @@ export class VideoCallRoom {
       type: 'ice-candidate',
       data: { fromUserId: userId, candidate }
     });
+  }
+
+  /** 관찰자를 제외한 일반 참가자 수 */
+  private getNormalUserCount(): number {
+    let count = 0;
+    for (const u of this.users.values()) {
+      if (!u.isObserver) count++;
+    }
+    return count;
+  }
+
+  /** 관찰자를 제외한 일반 참가자에게만 브로드캐스트 */
+  private broadcastToNormal(excludeId: string, msg: WebSocketMessage): void {
+    const jsonMsg = JSON.stringify(msg);
+    for (const [id, conn] of this.connections) {
+      if (id !== excludeId && !this.observers.has(id) && conn.ws.readyState === WebSocket.OPEN) {
+        conn.ws.send(jsonMsg);
+      }
+    }
   }
 
   private onClose(userId: string): void {

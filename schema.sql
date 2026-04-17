@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS reward_limits (
 CREATE TABLE IF NOT EXISTS recordings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   room_id TEXT NOT NULL, teacher_id TEXT, teacher_name TEXT,
-  filename TEXT, participant_ids TEXT, participant_names TEXT,
+  filename TEXT, file_url TEXT, participant_ids TEXT, participant_names TEXT,
   consented_user_ids TEXT,
   started_at INTEGER, ended_at INTEGER, duration_ms INTEGER,
   size_bytes INTEGER, expires_at INTEGER, storage TEXT,
@@ -77,3 +77,5 @@ CREATE TABLE IF NOT EXISTS recordings (
 );
 CREATE INDEX IF NOT EXISTS idx_recordings_room ON recordings(room_id);
 CREATE INDEX IF NOT EXISTS idx_recordings_teacher ON recordings(teacher_id);
+CREATE INDEX IF NOT EXISTS idx_recordings_teacher_started ON recordings(teacher_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_recordings_status_storage ON recordings(status, storage);

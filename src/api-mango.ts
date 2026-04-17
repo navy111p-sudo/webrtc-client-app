@@ -256,15 +256,17 @@ export async function handleMangoApi(
       const b = await request.json() as any;
       const now = Date.now();
       await env.DB.prepare(
-        `UPDATE recordings SET ended_at = ?, duration_ms = ?, size_bytes = ?, status = 'completed' WHERE id = ?`
-      ).bind(now, b.duration_ms || 0, b.size_bytes || 0, b.recording_id).run();
+        `UPDATE recordings SET ended_at = ?, duration_ms = ?, size_bytes = ?, status = 'completed',
+         file_url = COALESCE(?, file_url), storage = COALESCE(?, storage)
+         WHERE id = ?`
+      ).bind(now, b.duration_ms || 0, b.size_bytes || 0, b.file_url || null, b.storage || null, b.recording_id).run();
       return json({ ok: true, ended_at: now });
     }
 
     if (path === '/api/recordings' && method === 'GET') {
       const teacherId = url.searchParams.get('teacher_id');
       const roomId = url.searchParams.get('room_id');
-      let q = `SELECT id, room_id, teacher_id, teacher_name, filename, size_bytes, duration_ms,
+      let q = `SELECT id, room_id, teacher_id, teacher_name, filename, file_url, size_bytes, duration_ms,
                participant_names, consented_user_ids, started_at, ended_at, status, storage, expires_at
                FROM recordings WHERE 1=1`;
       const binds: any[] = [];
