@@ -47,18 +47,20 @@ async function joinRoom() {
     if (window.currentPdfPage) renderPdfPage(window.currentPdfPage);
   });
 
-  // 방 입장 즉시 자동 녹화 시작
-  try {
-    if (typeof startRecording === 'function' && localStream && localStream.getTracks().length > 0) {
-      const ok = startRecording();
-      if (ok) console.log('[auto-record] 녹화 자동 시작');
-      else console.warn('[auto-record] 시작 실패');
-    }
-  } catch (e) { console.warn('[auto-record] 예외:', e); }
+  // 방 입장 즉시 자동 녹화 시작 (R2 스트리밍 업로드)
+  // 미디어 스트림 준비 후 약간의 딜레이를 두고 시작 (트랙 안정화)
+  setTimeout(() => {
+    try {
+      if (typeof startRecording === 'function' && localStream && localStream.getTracks().length > 0) {
+        const ok = startRecording();
+        if (ok) console.log('[auto-record] 녹화 자동 시작 (R2 스트리밍)');
+        else console.warn('[auto-record] 시작 실패');
+      }
+    } catch (e) { console.warn('[auto-record] 예외:', e); }
+  }, 2000);
 
-  window.addEventListener('beforeunload', () => {
-    try { if (typeof isRecording === 'function' && isRecording()) stopRecording(); } catch (_) {}
-  });
+  // beforeunload는 recorder.js 내부에서 sendBeacon으로 처리
+  // (별도 등록 불필요 — recorder.js가 자체 관리)
 }
 
 function generateRoomId() {
