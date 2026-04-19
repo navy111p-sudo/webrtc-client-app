@@ -41,7 +41,54 @@
             justify-content: center;
             min-height: 100vh;
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
         }
+        /* 반짝이는 별 */
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: #fff;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: var(--min-o); transform: scale(1); }
+            50%      { opacity: var(--max-o); transform: scale(1.6); }
+        }
+        .shooting-star {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+        }
+        .shooting-star::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 100%;
+            transform: translateY(-50%);
+            width: 80px; height: 1.5px;
+            background: linear-gradient(to right, rgba(255,255,255,0.7), transparent);
+        }
+        @keyframes shoot {
+            0%   { opacity: 1; transform: translate(0, 0) rotate(-35deg); }
+            70%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(-350px, 210px) rotate(-35deg); }
+        }
+                /* 행성 */
+        .planet { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+        .planet-saturn { width: 22px; height: 22px; background: radial-gradient(circle at 40% 35%, #f5d889, #d4a843 60%, #a07830); top: 10%; left: 6%; box-shadow: 0 0 10px rgba(245,216,137,0.35); animation: twinkle 6s ease-in-out infinite; --min-o: 0.6; --max-o: 0.9; --dur: 6s; }
+        .planet-saturn::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotateX(65deg); width: 42px; height: 42px; border: 3px solid rgba(220,190,130,0.6); border-radius: 50%; pointer-events: none; box-shadow: 0 0 4px rgba(220,190,130,0.3); }
+        .planet-saturn::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) rotateX(65deg); width: 52px; height: 52px; border: 2px solid rgba(200,170,110,0.35); border-radius: 50%; pointer-events: none; }
+        .planet-jupiter { width: 18px; height: 18px; background: radial-gradient(circle at 38% 32%, #e8c99b, #c4956a 50%, #a06840); top: 20%; right: 10%; box-shadow: 0 0 8px rgba(200,160,100,0.3); overflow: hidden; animation: twinkle 8s ease-in-out infinite; --min-o: 0.5; --max-o: 0.85; --dur: 8s; }
+        .planet-jupiter::after { content: ''; position: absolute; top: 45%; left: 0; width: 100%; height: 2px; background: rgba(180,120,70,0.35); border-radius: 50%; }
+        .planet-mars { width: 11px; height: 11px; background: radial-gradient(circle at 35% 30%, #e8a088, #c0523a 70%, #8b2e1a); bottom: 15%; left: 12%; box-shadow: 0 0 6px rgba(200,80,50,0.35); animation: twinkle 7s ease-in-out infinite; --min-o: 0.5; --max-o: 0.8; --dur: 7s; }
+        .planet-neptune { width: 40px; height: 40px; background: radial-gradient(circle at 38% 35%, #7ec8e3, #3a7bd5 60%, #1a3a8a); bottom: 25%; right: 8%; box-shadow: 0 0 7px rgba(60,120,200,0.35); animation: twinkle 9s ease-in-out infinite; --min-o: 0.4; --max-o: 0.75; --dur: 9s; }
         .home-title {
             font-size: 2.8rem;
             font-weight: 800;
@@ -55,18 +102,45 @@
         /* 메인 화면의 카드 버튼들 */
         .home-cards { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 480px; }
         .home-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.15);
-            border-radius: 16px;
-            padding: 1.8rem;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.22) 0%, rgba(15, 23, 42, 0.15) 100%);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 2rem;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             color: inherit;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.25),
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 16px 48px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 0 20px rgba(56, 189, 248, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        .home-card::before { display: none; }
+        .home-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
+            pointer-events: none;
         }
         .home-card:hover {
-            border-color: #38bdf8;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.35);
+            transform: translateY(-6px) scale(1.01);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.3),
+                0 12px 40px rgba(0, 0, 0, 0.2),
+                0 20px 60px rgba(0, 0, 0, 0.12),
+                0 0 30px rgba(56, 189, 248, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 0 30px rgba(56, 189, 248, 0.06);
         }
         .home-card h2 { font-size: 1.3rem; margin-bottom: 0.4rem; }
         .home-card p  { color: #94a3b8; font-size: 0.9rem; }
@@ -843,46 +917,51 @@
      [화면 1] 메인 대시보드 (홈)
      ─────────────────────────────────────────────────────────────────
      앱을 처음 열면 이 화면이 보입니다.
-     '1:1 화상통화 시작' 또는 '다자간 화상통화' 버튼을 누르면
+     '1:1 화상통화 (화면만)' 또는 '다자간 화상통화' 버튼을 누르면
      페이지 이동 없이 해당 로비 화면으로 전환됩니다.
 ================================================================ -->
 <div id="view-home" class="view active">
-    <!-- 망고아이 로고 -->
-    <div style="display:flex;align-items:center;gap:14px;margin-bottom:1rem;">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="72" height="72">
-        <ellipse cx="100" cy="110" rx="65" ry="55" fill="#F5A623" stroke="#E8951A" stroke-width="2"/>
-        <ellipse cx="85" cy="100" rx="40" ry="35" fill="#FBC95C" opacity="0.5"/>
-        <ellipse cx="78" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="80" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="82" cy="92" rx="2" ry="3" fill="white"/>
-        <ellipse cx="118" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="120" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="122" cy="92" rx="2" ry="3" fill="white"/>
-        <path d="M80 115 Q100 135 120 115" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
-        <path d="M55 80 Q55 45 100 42 Q145 45 145 80" fill="none" stroke="#333" stroke-width="4"/>
-        <rect x="47" y="75" width="16" height="22" rx="6" fill="#333"/><rect x="137" y="75" width="16" height="22" rx="6" fill="#333"/>
-        <path d="M53 90 Q40 90 38 110 Q36 125 45 128" fill="none" stroke="#333" stroke-width="3"/>
-        <circle cx="45" cy="130" r="6" fill="#555"/>
-        <ellipse cx="35" cy="140" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1"/>
-        <ellipse cx="165" cy="125" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1" transform="rotate(-30 165 125)"/>
-        <ellipse cx="100" cy="58" rx="5" ry="8" fill="#4CAF50" transform="rotate(-15 100 58)"/>
-        <ellipse cx="108" cy="55" rx="4" ry="6" fill="#66BB6A" transform="rotate(20 108 55)"/>
-      </svg>
-      <div style="text-align:left;font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;">
-        <div style="font-size:2.2rem;font-weight:900;color:#fff;letter-spacing:2px;line-height:1;">mango<span style="color:#F5A623;">i</span></div>
-        <div style="font-size:0.85rem;font-weight:400;color:#94a3b8;margin-top:4px;">즐거운 화상영어 망고아이</div>
-      </div>
+    <div id="starfield"></div>
+    <script>
+    (function(){
+      var sf=document.getElementById('starfield');
+      for(var i=0;i<60;i++){
+        var s=document.createElement('div');
+        s.className='star';
+        var size=Math.random()*2.5+1;
+        s.style.cssText='width:'+size+'px;height:'+size+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--dur:'+(Math.random()*3+2)+'s;--min-o:'+(Math.random()*0.2+0.1)+';--max-o:'+(Math.random()*0.5+0.5)+';animation-delay:'+Math.random()*5+'s;';
+        sf.appendChild(s);
+      }
+      // 행성 추가
+      ['planet-saturn','planet-jupiter','planet-mars','planet-neptune'].forEach(function(cls){
+        var p=document.createElement('div');
+        p.className='planet '+cls;
+        sf.appendChild(p);
+      });
+      function spawnShootingStar(){
+        var ss=document.createElement('div');
+        ss.className='shooting-star';
+        ss.style.top=Math.random()*40+'%';
+        ss.style.right='-80px';
+        ss.style.animation='shoot '+(Math.random()*0.8+0.8)+'s linear forwards';
+        sf.appendChild(ss);
+        ss.addEventListener('animationend',function(){ss.remove()});
+      }
+      setInterval(spawnShootingStar, 3500);
+      setTimeout(spawnShootingStar, 1000);
+    })();
+    </script>
+    <!-- 로고+제목 그룹 -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem;position:relative;z-index:1;">
+      <img src="images/logo_mangoi.png" alt="망고아이 로고" style="height:72px;margin-bottom:0.5rem;">
+      <h1 class="home-title" style="font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;margin:0;">Mangoi 화상솔루션</h1>
     </div>
-    <h1 class="home-title" style="font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;">Mangoi 화상솔루션</h1>
-    <p class="home-subtitle" style="font-family:'Noto Sans KR',sans-serif;">실시간 영상통화 & 시그널링 서비스</p>
-    <div class="home-cards">
+    <div class="home-cards" style="position:relative;z-index:1;">
         <!-- 버튼 클릭 시 showView('view-signaling-lobby')를 호출하여 화면을 전환 -->
-        <button class="home-card" onclick="showView('view-signaling-lobby')">
-            <span class="badge badge-blue">1:1 통화</span>
-            <h2>1:1 화상통화 시작</h2>
-            <p>방 이름을 입력하고 상대방과 1:1 영상통화를 시작합니다.</p>
-        </button>
-        <button class="home-card" onclick="showView('view-videocall-lobby')">
-            <span class="badge badge-purple">다자간 통화</span>
-            <h2>화상통화 + (칠판·채팅·PDF)</h2>
-            <p>최대 10명이 참여하는 화상통화, 칠판, 채팅, PDF 공유</p>
-        </button>
+        <button class="home-card home-card-large" onclick="showView('view-videocall-lobby')">
+            <span class="badge badge-purple" style="font-size:0.9rem;padding:0.3rem 1rem;">다자간 통화</span>
+            <h2 style="font-size:1.8rem;">화상통화 + (칠판·채팅·동영상)</h2>
+            </button>
     </div>
 </div>
 

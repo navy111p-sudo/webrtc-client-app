@@ -38,31 +38,15 @@
 </head>
 <body>
 
-<div class="header">
-  <div style="display:flex;align-items:center;gap:14px;">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="50" height="50">
-      <ellipse cx="100" cy="110" rx="65" ry="55" fill="#F5A623" stroke="#E8951A" stroke-width="2"/>
-      <ellipse cx="85" cy="100" rx="40" ry="35" fill="#FBC95C" opacity="0.5"/>
-      <ellipse cx="78" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="80" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="82" cy="92" rx="2" ry="3" fill="white"/>
-      <ellipse cx="118" cy="95" rx="10" ry="12" fill="white"/><ellipse cx="120" cy="95" rx="6" ry="8" fill="#222"/><ellipse cx="122" cy="92" rx="2" ry="3" fill="white"/>
-      <path d="M80 115 Q100 135 120 115" fill="none" stroke="#222" stroke-width="3" stroke-linecap="round"/>
-      <path d="M55 80 Q55 45 100 42 Q145 45 145 80" fill="none" stroke="#333" stroke-width="4"/>
-      <rect x="47" y="75" width="16" height="22" rx="6" fill="#333"/><rect x="137" y="75" width="16" height="22" rx="6" fill="#333"/>
-      <path d="M53 90 Q40 90 38 110 Q36 125 45 128" fill="none" stroke="#333" stroke-width="3"/>
-      <circle cx="45" cy="130" r="6" fill="#555"/>
-      <ellipse cx="35" cy="140" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1"/>
-      <ellipse cx="165" cy="125" rx="12" ry="8" fill="#F5A623" stroke="#E8951A" stroke-width="1" transform="rotate(-30 165 125)"/>
-      <ellipse cx="100" cy="58" rx="5" ry="8" fill="#4CAF50" transform="rotate(-15 100 58)"/>
-      <ellipse cx="108" cy="55" rx="4" ry="6" fill="#66BB6A" transform="rotate(20 108 55)"/>
-    </svg>
-    <div>
-      <div style="font-size:20px;font-weight:900;color:#111827;letter-spacing:1px;line-height:1;">mango<span style="color:#F5A623;">i</span></div>
-      <div style="font-size:11px;font-weight:400;color:#6b7280;margin-top:3px;">즐거운 화상영어 망고아이</div>
-    </div>
-    <span style="font-size:22px;font-weight:700;color:#111827;margin-left:8px;">화상수업 대시보드</span>
+<!-- 상단 로고 헤더 (어두운 배경) -->
+<div style="background:#2d3436;border-radius:14px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <img src="images/logo_mangoi.png" alt="망고아이 로고" style="height:52px;">
+    <div style="width:1px;height:36px;background:#636e72;margin:0 12px;"></div>
+    <span style="font-size:20px;font-weight:700;color:#dfe6e9;">화상수업 대시보드</span>
   </div>
-  <div class="controls">
-    <select id="period">
+  <div class="controls" style="display:flex;gap:8px;align-items:center;">
+    <select id="period" style="background:#636e72;color:#fff;border-color:#636e72;">
       <option value="1">최근 1일</option>
       <option value="7" selected>최근 7일</option>
       <option value="30">최근 30일</option>
@@ -160,8 +144,16 @@ function fmtMs(ms) {
 
 async function load() {
   const days = document.getElementById('period').value;
-  const r = await fetch('/api/dashboard?days=' + days);
-  const data = await r.json();
+  let data;
+  try {
+    const r = await fetch('/api/dashboard?days=' + days);
+    data = await r.json();
+  } catch (e) {
+    console.warn('[admin] dashboard API 에러:', e);
+    document.getElementById('kpi').innerHTML = '<div class="card"><div class="card-label">대시보드</div><div class="card-value" style="font-size:16px;color:#dc2626;">⚠️ 데이터 로드 실패</div></div>';
+    return;
+  }
+  if (!data) return;
 
   // KPI 카드
   const totalSessions = data.connection?.total_sessions || 0;
@@ -223,10 +215,16 @@ async function load() {
 
 async function loadRecordings() {
   // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 매칭
-  const [recRes, blobRes] = await Promise.all([
-    fetch('/api/recordings').then(r => r.json()).catch(() => []),
-    fetch('/api/recordings/blob/list').then(r => r.json()).catch(() => ({ items: [] }))
-  ]);
+  let recRes, blobRes;
+  try {
+    [recRes, blobRes] = await Promise.all([
+      fetch('/api/recordings').then(r => r.json()).catch(() => []),
+      fetch('/api/recordings/blob/list').then(r => r.json()).catch(() => ({ items: [] }))
+    ]);
+  } catch (e) {
+    console.warn('[admin] recordings API 에러:', e);
+    return;
+  }
   const list = recRes || [];
   const blobs = (blobRes.items || []).sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
   const tb = document.getElementById('recordings-table');
@@ -414,13 +412,24 @@ async function testR2() {
 }
 
 document.getElementById('rooms-refresh').onclick = loadActiveRooms;
-document.getElementById('refresh').onclick = () => { load(); loadRecordings(); loadRetention(); loadActiveRooms(); };
+document.getElementById('refresh').onclick = async function() {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = '⏳ 로딩...';
+  try {
+    await Promise.allSettled([
+      load(),
+      loadRecordings(),
+      loadRetention(),
+      loadActiveRooms()
+    ]);
+  } catch(e) { console.warn('새로고침 에러:', e); }
+  btn.disabled = false;
+  btn.textContent = '🔄 새로고침';
+};
 document.getElementById('period').onchange = load;
-load();
-loadRecordings();
-loadRetention();
-loadActiveRooms();
-loadR2Recordings();
+// 초기 로드 (각각 독립적으로)
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadR2Recordings()]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>
