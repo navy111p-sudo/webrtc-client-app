@@ -2212,6 +2212,22 @@ async function vcJoinRoom() {
         () => setStatusDot('vc-status-dot', 'disconnected')
     );
     setStatusDot('vc-status-dot', 'connecting');
+
+    // ── 자동 녹화 시작 (미디어 안정화 후 3초 지연, R2 스트리밍 업로드) ──
+    // MangoV3 폴링과 중복 호출되지 않도록 isRecording 체크 포함.
+    setTimeout(async () => {
+        try {
+            if (!window.MangoV3 || typeof window.MangoV3.startRecording !== 'function') {
+                console.warn('[vcJoinRoom] MangoV3.startRecording 미로드 — mango-rec.js 확인 필요');
+                return;
+            }
+            // 이미 mango-rec.js 폴링이 녹화를 시작했을 수 있음 — 중복 방지
+            await window.MangoV3.startRecording({ auto: true });
+            console.log('[vcJoinRoom] 자동 녹화 요청 완료 (auto=true)');
+        } catch (e) {
+            console.warn('[vcJoinRoom] 자동 녹화 시작 실패:', e);
+        }
+    }, 3000);
 }
 
 /** 관찰자 모드로 입장 (관리자 전용 — 미디어 없이 수신만) */
@@ -2744,7 +2760,18 @@ function vcUpdateGridCount() {
 }
 
 /** 다자간 통화 방 나가기 */
-function vcLeaveRoom() {
+async function vcLeaveRoom() {
+    // ── 자동 녹화 중이면 먼저 중지하고 R2 업로드 완료까지 대기 ──
+    try {
+        if (window.MangoV3 && typeof window.MangoV3.stopRecording === 'function') {
+            console.log('[vcLeaveRoom] 녹화 중지 시도 (업로드 완료까지 대기)...');
+            const result = await window.MangoV3.stopRecording();
+            console.log('[vcLeaveRoom] 녹화 중지 결과:', result);
+        }
+    } catch (e) {
+        console.warn('[vcLeaveRoom] 녹화 중지/업로드 예외:', e);
+    }
+
     Object.keys(vcPeerConnections).forEach(id => {
         vcPeerConnections[id].close();
         const el = document.getElementById(`vc-video-${id}`);
