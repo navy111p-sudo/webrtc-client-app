@@ -174,12 +174,34 @@ function fmtMs(ms) {
 async function load() {
   const days = document.getElementById('period').value;
   let data;
+  let httpStatus = null;
+  let rawBody = '';
   try {
     const r = await fetch('/api/dashboard?days=' + days);
-    data = await r.json();
+    httpStatus = r.status;
+    rawBody = await r.text();      // 먼저 text로 받아서 비JSON 응답도 진단 가능
+    try {
+      data = JSON.parse(rawBody);
+    } catch (jsonErr) {
+      throw new Error('응답이 JSON이 아님 (HTML 에러 페이지 가능성)');
+    }
+    if (!r.ok || (data && data.ok === false)) {
+      throw new Error('서버 에러: ' + (data && data.error ? data.error : rawBody.slice(0, 200)));
+    }
   } catch (e) {
-    console.warn('[admin] dashboard API 에러:', e);
-    document.getElementById('kpi').innerHTML = '<div class="card"><div class="card-label">'+(adminLang==='en'?'Dashboard':'대시보드')+'</div><div class="card-value" style="font-size:16px;color:#dc2626;">'+(adminLang==='en'?'⚠️ Load Failed':'⚠️ 데이터 로드 실패')+'</div></div>';
+    console.warn('[admin] dashboard API 에러:', e, '| HTTP', httpStatus, '| body:', rawBody.slice(0, 500));
+    const L = adminLang === 'en';
+    const statusLabel = httpStatus ? ('HTTP ' + httpStatus) : (L ? 'Network error' : '네트워크 에러');
+    const msg = String(e && e.message || e).replace(/</g, '&lt;');
+    document.getElementById('kpi').innerHTML =
+      '<div class="card" style="grid-column:1/-1;border-left:4px solid #dc2626;">' +
+        '<div class="card-label" style="color:#dc2626;font-weight:700;">⚠️ ' + (L?'Dashboard Load Failed':'데이터 로드 실패') + ' · ' + statusLabel + '</div>' +
+        '<div style="margin-top:10px;font-size:13px;color:#374151;white-space:pre-wrap;word-break:break-all;font-family:ui-monospace,monospace;">' + msg + '</div>' +
+        '<div style="margin-top:10px;font-size:11px;color:#6b7280;line-height:1.5;">' +
+          (L?'Check F12 Console for full details. Most likely cause: D1 migration not applied yet — run <code>npx wrangler d1 execute mango-db --remote --file=migration-attendance-fields.sql</code>'
+             :'F12 콘솔에서 자세한 내용을 확인하세요.<br>가장 흔한 원인: D1 마이그레이션 미적용 → <code style="background:#f3f4f6;padding:2px 4px;border-radius:3px;">npx wrangler d1 execute mango-db --remote --file=migration-attendance-fields.sql</code> 실행 필요.') +
+        '</div>' +
+      '</div>';
     return;
   }
   if (!data) return;
