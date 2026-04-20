@@ -44,6 +44,16 @@
             position: relative;
             overflow: hidden;
         }
+        /* 별/행성 컨테이너 — 배경 전체에 고정, 클릭 절대 가로채지 않음 */
+        #starfield {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
         /* 반짝이는 별 */
         .star {
             position: absolute;
@@ -1170,15 +1180,14 @@
         </button>
     </div>
 
-    <!-- 관리자 대시보드 진입 링크 (target=_top + onclick 이중 안전장치) -->
-    <div style="position:relative;z-index:5;margin-top:1.5rem;display:flex;justify-content:center;pointer-events:auto;">
-        <a href="/admin.html" target="_top" rel="noopener"
-           onclick="event.preventDefault();event.stopPropagation();window.location.assign('/admin.html');return false;"
-           style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.4rem;background:rgba(245,158,11,0.15);backdrop-filter:blur(6px);border:1px solid rgba(245,158,11,0.5);border-radius:10px;color:#fbbf24;font-size:0.95rem;font-weight:600;text-decoration:none;transition:all 0.3s;cursor:pointer;"
+    <!-- 관리자 대시보드 진입 링크 (단순 anchor — onclick 핸들러 제거, 브라우저 기본 네비게이션 사용) -->
+    <div style="position:relative;z-index:100;margin-top:1.5rem;display:flex;justify-content:center;pointer-events:auto;">
+        <a href="/admin.html"
+           style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.4rem;background:rgba(245,158,11,0.15);backdrop-filter:blur(6px);border:1px solid rgba(245,158,11,0.5);border-radius:10px;color:#fbbf24;font-size:0.95rem;font-weight:600;text-decoration:none;transition:all 0.3s;cursor:pointer;pointer-events:auto;position:relative;z-index:101;"
            onmouseover="this.style.background='rgba(245,158,11,0.3)';this.style.borderColor='rgba(245,158,11,0.9)';"
            onmouseout="this.style.background='rgba(245,158,11,0.15)';this.style.borderColor='rgba(245,158,11,0.5)';">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-            <span data-ko="📊 관리자 대시보드" data-en="📊 Admin Dashboard">📊 관리자 대시보드</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="pointer-events:none;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            <span data-ko="📊 관리자 대시보드" data-en="📊 Admin Dashboard" style="pointer-events:none;">📊 관리자 대시보드</span>
         </a>
     </div>
 </div>
