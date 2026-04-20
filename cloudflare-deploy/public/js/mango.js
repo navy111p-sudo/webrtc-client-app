@@ -20,9 +20,14 @@
     }
   }
 
+  const _uid = ensureUserId();
+
   window.MangoV3 = {
     version: '3.0-shim',
-    userId: ensureUserId(),
+    userId: _uid,
+
+    // mango-rec.js가 함수 형태로도 호출함
+    getUserId() { return _uid; },
 
     // 공용 API 호출 헬퍼
     // - body가 있으면 POST + JSON
