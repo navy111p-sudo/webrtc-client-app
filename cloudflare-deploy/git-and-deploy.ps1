@@ -138,6 +138,7 @@ try {
 
         # 1-d) 수정된 파일만 정확하게 스테이징 (절대경로 기반)
         $rel_targets = @(
+            'cloudflare-deploy\public\index.html',
             'cloudflare-deploy\public\video-call\index.html',
             'cloudflare-deploy\public\video-call\css\style.css',
             'cloudflare-deploy\public\video-call\js\app.js',
