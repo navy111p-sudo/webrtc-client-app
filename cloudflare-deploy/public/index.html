@@ -1170,9 +1170,13 @@
         </button>
     </div>
 
-    <!-- 관리자 대시보드 진입 링크 -->
-    <div style="position:relative;z-index:1;margin-top:1.5rem;display:flex;justify-content:center;">
-        <a href="/admin.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.6rem 1.2rem;background:rgba(30,41,59,0.5);backdrop-filter:blur(6px);border:1px solid rgba(148,163,184,0.25);border-radius:10px;color:#cbd5e1;font-size:0.9rem;text-decoration:none;transition:all 0.3s;" onmouseover="this.style.borderColor='rgba(245,158,11,0.6)';this.style.color='#fbbf24';" onmouseout="this.style.borderColor='rgba(148,163,184,0.25)';this.style.color='#cbd5e1';">
+    <!-- 관리자 대시보드 진입 링크 (target=_top + onclick 이중 안전장치) -->
+    <div style="position:relative;z-index:5;margin-top:1.5rem;display:flex;justify-content:center;pointer-events:auto;">
+        <a href="/admin.html" target="_top" rel="noopener"
+           onclick="event.preventDefault();event.stopPropagation();window.location.assign('/admin.html');return false;"
+           style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.4rem;background:rgba(245,158,11,0.15);backdrop-filter:blur(6px);border:1px solid rgba(245,158,11,0.5);border-radius:10px;color:#fbbf24;font-size:0.95rem;font-weight:600;text-decoration:none;transition:all 0.3s;cursor:pointer;"
+           onmouseover="this.style.background='rgba(245,158,11,0.3)';this.style.borderColor='rgba(245,158,11,0.9)';"
+           onmouseout="this.style.background='rgba(245,158,11,0.15)';this.style.borderColor='rgba(245,158,11,0.5)';">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             <span data-ko="📊 관리자 대시보드" data-en="📊 Admin Dashboard">📊 관리자 대시보드</span>
         </a>

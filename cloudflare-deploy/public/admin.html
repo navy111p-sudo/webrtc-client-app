@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>망고아이 관리 대시보드</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif; background: #f3f4f6; color: #111827; padding: 24px; letter-spacing: -0.5px; line-height: 1; }
+  .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+  h1 { font-size: 24px; font-weight: 700; }
+  .controls { display: flex; gap: 8px; align-items: center; }
+  select, button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
+  button.primary { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: 600; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 500; }
+  .card-value { font-size: 32px; font-weight: 700; color: #111827; }
+  .card-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+  .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+  .chart-wrapper { position: relative; height: 280px; }
+  .table-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f3f4f6; }
+  th { background: #f9fafb; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+  .badge.warn { background: #fef3c7; color: #92400e; }
+  .badge.ok { background: #d1fae5; color: #065f46; }
+  .empty { text-align: center; color: #9ca3af; padding: 24px; }
+  @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<!-- 상단 로고 헤더 (어두운 배경) -->
+<div style="background:#2d3436;border-radius:14px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
+  <div style="display:flex;align-items:center;gap:16px;">
+    <img src="images/logo_mangoi.png" alt="망고아이 로고" style="height:52px;">
+    <div style="width:1px;height:36px;background:#636e72;margin:0 12px;"></div>
+    <span style="font-size:20px;font-weight:700;color:#dfe6e9;" data-ko="화상수업 대시보드" data-en="Class Dashboard">화상수업 대시보드</span>
+  </div>
+  <div class="controls" style="display:flex;gap:8px;align-items:center;">
+    <select id="period" style="background:#636e72;color:#fff;border-color:#636e72;">
+      <option value="1" data-ko="최근 1일" data-en="Last 1 day">최근 1일</option>
+      <option value="7" selected data-ko="최근 7일" data-en="Last 7 days">최근 7일</option>
+      <option value="30" data-ko="최근 30일" data-en="Last 30 days">최근 30일</option>
+      <option value="90" data-ko="최근 90일" data-en="Last 90 days">최근 90일</option>
+    </select>
+    <button class="primary" id="refresh" data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
+    <button onclick="toggleAdminLang()" style="background:rgba(99,110,114,0.4);border:1px solid #636e72;border-radius:8px;padding:6px 10px;color:#dfe6e9;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span id="admin-lang-label">EN</span>
+    </button>
+  </div>
+</div>
+
+<div class="grid" id="kpi"></div>
+
+<div class="charts">
+  <div class="chart-card">
+    <div class="chart-title" data-ko="📅 일자별 출석 (고유 사용자 수)" data-en="📅 Daily Attendance (Unique Users)">📅 일자별 출석 (고유 사용자 수)</div>
+    <div class="chart-wrapper"><canvas id="chart-attendance"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title" data-ko="🎁 보상 발급 현황" data-en="🎁 Rewards Issued">🎁 보상 발급 현황</div>
+    <div class="chart-wrapper"><canvas id="chart-rewards"></canvas></div>
+  </div>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="🗣️ 발화시간 TOP 10" data-en="🗣️ Speaking Time TOP 10">🗣️ 발화시간 TOP 10</div>
+  <table>
+    <thead><tr><th data-ko="사용자" data-en="User">사용자</th><th data-ko="활성 발화시간" data-en="Active Speaking">활성 발화시간</th><th data-ko="총 세션시간" data-en="Total Session">총 세션시간</th><th data-ko="활성 비율" data-en="Active %">활성 비율</th></tr></thead>
+    <tbody id="top-speakers"></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="🚨 비상 이벤트" data-en="🚨 Emergency Events">🚨 비상 이벤트</div>
+  <table>
+    <thead><tr><th data-ko="이벤트 유형" data-en="Event Type">이벤트 유형</th><th data-ko="발생 횟수" data-en="Count">발생 횟수</th></tr></thead>
+    <tbody id="emergency-table"></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="🗑️ 보관기간 자동 파기" data-en="🗑️ Auto Retention Cleanup">🗑️ 보관기간 자동 파기 <button id="retention-run" style="float:right;padding:4px 10px;font-size:12px;" data-ko="지금 실행" data-en="Run Now">지금 실행</button></div>
+  <div id="retention-status" style="font-size:13px;color:#6b7280;" data-ko-loading="로딩 중..." data-en-loading="Loading...">로딩 중...</div>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="🔴 실시간 수업 현황" data-en="🔴 Live Classes">🔴 실시간 수업 현황 <button id="rooms-refresh" style="float:right;padding:4px 10px;font-size:12px;" data-ko="새로고침" data-en="Refresh">새로고침</button></div>
+  <table>
+    <thead><tr><th data-ko="방 ID" data-en="Room ID">방 ID</th><th data-ko="참가자 수" data-en="Users">참가자 수</th><th data-ko="참가자" data-en="Participants">참가자</th><th>PDF</th><th data-ko="영상" data-en="Video">영상</th><th data-ko="관찰" data-en="Observe">관찰</th></tr></thead>
+    <tbody id="active-rooms-table"><tr><td colspan="6" class="empty" data-ko="로딩 중..." data-en="Loading...">로딩 중...</td></tr></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:12px;padding:12px 16px;">
+  <button id="test-r2-btn" onclick="testR2()" style="background:#3b82f6;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;margin-right:8px;" data-ko="🔧 R2 저장소 테스트" data-en="🔧 R2 Storage Test">🔧 R2 저장소 테스트</button>
+  <span id="test-r2-result" style="font-size:13px;color:#94a3b8;"></span>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="🎥 녹화 목록" data-en="🎥 Recordings">🎥 녹화 목록</div>
+  <table>
+    <thead><tr><th data-ko="방" data-en="Room">방</th><th data-ko="교사" data-en="Teacher">교사</th><th data-ko="시작" data-en="Start">시작</th><th data-ko="시간" data-en="Duration">시간</th><th data-ko="크기" data-en="Size">크기</th><th data-ko="참가자" data-en="Users">참가자</th><th data-ko="상태" data-en="Status">상태</th><th data-ko="재생" data-en="Play">재생</th></tr></thead>
+    <tbody id="recordings-table"></tbody>
+  </table>
+</div>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" data-ko="📁 R2 녹화 파일" data-en="📁 R2 Recording Files">📁 R2 녹화 파일</div>
+  <table>
+    <thead><tr><th data-ko="파일명" data-en="Filename">파일명</th><th data-ko="크기" data-en="Size">크기</th><th data-ko="업로드" data-en="Uploaded">업로드</th><th data-ko="재생" data-en="Play">재생</th></tr></thead>
+    <tbody id="r2-recordings-table"><tr><td colspan="4" class="empty">로딩 중...</td></tr></tbody>
+  </table>
+</div>
+
+<!-- 녹화 재생 모달 -->
+<div id="playback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
+  <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:900px;width:95%;max-height:90vh;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <span style="font-size:18px;font-weight:600;color:#f1f5f9;" id="playback-title" data-ko="녹화 재생" data-en="Playback">녹화 재생</span>
+      <button onclick="closePlayback()" style="background:#ef4444;color:#fff;padding:6px 14px;border-radius:8px;font-size:13px;" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
+    </div>
+    <video id="playback-video" controls autoplay style="width:100%;border-radius:12px;background:#000;max-height:70vh;"></video>
+  </div>
+</div>
+
+<script>
+let chartAtt = null, chartRwd = null;
+var adminLang = 'ko';
+
+function toggleAdminLang() {
+  adminLang = (adminLang === 'ko') ? 'en' : 'ko';
+  var newLabel = (adminLang === 'ko') ? 'EN' : 'KO';
+  var lbl = document.getElementById('admin-lang-label');
+  if (lbl) lbl.textContent = newLabel;
+  // Universal data-ko/data-en
+  document.querySelectorAll('[data-ko]').forEach(function(el){
+    var txt = el.getAttribute('data-' + adminLang);
+    if (txt !== null) el.textContent = txt;
+  });
+  // Re-render dynamic content
+  load();
+  loadRecordings();
+  loadRetention();
+  loadActiveRooms();
+  loadR2Recordings();
+}
+
+function fmtMs(ms) {
+  if (!ms) return adminLang === 'ko' ? '0초' : '0s';
+  const s = Math.round(ms / 1000);
+  if (adminLang === 'en') {
+    if (s < 60) return s + 's';
+    const m = Math.floor(s / 60);
+    if (m < 60) return m + 'm ' + (s%60) + 's';
+    return Math.floor(m/60) + 'h ' + (m%60) + 'm';
+  }
+  if (s < 60) return s + '초';
+  const m = Math.floor(s / 60);
+  if (m < 60) return m + '분 ' + (s%60) + '초';
+  return Math.floor(m/60) + '시간 ' + (m%60) + '분';
+}
+
+async function load() {
+  const days = document.getElementById('period').value;
+  let data;
+  try {
+    const r = await fetch('/api/dashboard?days=' + days);
+    data = await r.json();
+  } catch (e) {
+    console.warn('[admin] dashboard API 에러:', e);
+    document.getElementById('kpi').innerHTML = '<div class="card"><div class="card-label">'+(adminLang==='en'?'Dashboard':'대시보드')+'</div><div class="card-value" style="font-size:16px;color:#dc2626;">'+(adminLang==='en'?'⚠️ Load Failed':'⚠️ 데이터 로드 실패')+'</div></div>';
+    return;
+  }
+  if (!data) return;
+
+  // KPI 카드
+  const totalSessions = data.connection?.total_sessions || 0;
+  const totalDisconnects = data.connection?.total_disconnects || 0;
+  const avgActivePct = (data.connection?.avg_active_pct || 0).toFixed(1);
+  const totalEmergency = (data.emergency || []).reduce((s,e) => s+e.c, 0);
+  const totalRewards = (data.rewards || []).reduce((s,e) => s+e.c, 0);
+  const disconnectRate = totalSessions > 0 ? ((totalDisconnects/totalSessions)*100).toFixed(1) : '0';
+
+  const L = adminLang === 'en';
+  document.getElementById('kpi').innerHTML = `
+    <div class="card"><div class="card-label">${L?'Total Sessions':'총 출석 세션'}</div><div class="card-value">${data.attendance.total}</div><div class="card-sub">${L?'Last '+days+' days':'최근 '+days+'일 누적'}</div></div>
+    <div class="card"><div class="card-label">${L?'Avg Speaking Ratio':'평균 발화 비율'}</div><div class="card-value">${avgActivePct}%</div><div class="card-sub">${L?'Active / Total session':'활성 발화 / 총 세션시간'}</div></div>
+    <div class="card"><div class="card-label">${L?'Reconnect Rate':'재연결 발생률'}</div><div class="card-value">${disconnectRate}%</div><div class="card-sub">${L?totalDisconnects+' / '+totalSessions+' sessions':totalDisconnects+'회 / '+totalSessions+'세션'}</div></div>
+    <div class="card"><div class="card-label">${L?'Emergency':'비상버튼 사용'}</div><div class="card-value">${totalEmergency}</div><div class="card-sub">${L?'Kakao + Emergency alerts':'카카오/긴급 알림 합산'}</div></div>
+    <div class="card"><div class="card-label">${L?'Rewards':'보상 발급'}</div><div class="card-value">${totalRewards}</div><div class="card-sub">${L?'Stickers + Coupons':'스티커+쿠폰 합산'}</div></div>
+  `;
+
+  // 출석 차트
+  const byDay = (data.attendance.by_day || []).slice().reverse();
+  if (chartAtt) chartAtt.destroy();
+  chartAtt = new Chart(document.getElementById('chart-attendance'), {
+    type: 'bar',
+    data: {
+      labels: byDay.map(d => d.date),
+      datasets: [
+        { label: L?'Unique Users':'고유 사용자', data: byDay.map(d => d.unique_users), backgroundColor: '#f59e0b' },
+        { label: L?'Total Sessions':'총 세션', data: byDay.map(d => d.sessions), backgroundColor: '#fde68a' }
+      ]
+    },
+    options: { maintainAspectRatio: false, responsive: true }
+  });
+
+  // 보상 차트
+  if (chartRwd) chartRwd.destroy();
+  chartRwd = new Chart(document.getElementById('chart-rewards'), {
+    type: 'doughnut',
+    data: {
+      labels: (data.rewards || []).map(r => r.type),
+      datasets: [{ data: (data.rewards || []).map(r => r.c), backgroundColor: ['#f59e0b','#10b981','#3b82f6','#ef4444'] }]
+    },
+    options: { maintainAspectRatio: false, responsive: true }
+  });
+
+  // TOP 발화자
+  const speakers = data.top_speakers || [];
+  document.getElementById('top-speakers').innerHTML = speakers.length === 0
+    ? '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'No data':'데이터 없음')+'</td></tr>'
+    : speakers.map(s => {
+        const pct = s.session_ms > 0 ? ((s.active_ms/s.session_ms)*100).toFixed(1) : '0';
+        return `<tr><td>${s.username || s.user_id}</td><td>${fmtMs(s.active_ms)}</td><td>${fmtMs(s.session_ms)}</td><td><span class="badge ${pct>=30?'ok':'warn'}">${pct}%</span></td></tr>`;
+      }).join('');
+
+  // 비상 이벤트
+  const emerg = data.emergency || [];
+  document.getElementById('emergency-table').innerHTML = emerg.length === 0
+    ? '<tr><td colspan="2" class="empty">'+(adminLang==='en'?'No data':'데이터 없음')+'</td></tr>'
+    : emerg.map(e => `<tr><td>${e.event_type}</td><td>${e.c}</td></tr>`).join('');
+}
+
+async function loadRecordings() {
+  // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 매칭
+  let recRes, blobRes;
+  try {
+    [recRes, blobRes] = await Promise.all([
+      fetch('/api/recordings').then(r => r.json()).catch(() => []),
+      fetch('/api/recordings/blob/list').then(r => r.json()).catch(() => ({ items: [] }))
+    ]);
+  } catch (e) {
+    console.warn('[admin] recordings API 에러:', e);
+    return;
+  }
+  const list = recRes || [];
+  const blobs = (blobRes.items || []).sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
+  const tb = document.getElementById('recordings-table');
+  if (!list.length && !blobs.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="empty">'+(adminLang==='en'?'No recordings':'녹화 기록 없음')+'</td></tr>';
+    return;
+  }
+
+  // blob을 room_id별로 그룹핑 (키 형식: roomId/date/timestamp-filename)
+  function findBlobForRecording(rec) {
+    if (rec.file_url) return rec.file_url;
+    // timestamp 기반으로 가장 가까운 blob 매칭 (±60초)
+    for (const b of blobs) {
+      const keyParts = b.key.split('/');
+      if (keyParts[0] === rec.room_id) {
+        const blobTime = new Date(b.uploaded).getTime();
+        const recEnd = rec.ended_at || (rec.started_at + (rec.duration_ms || 0));
+        if (Math.abs(blobTime - recEnd) < 120000) return b.key;
+      }
+    }
+    return null;
+  }
+
+  tb.innerHTML = list.map(r => {
+    const d = new Date(r.started_at);
+    const dur = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+    const dm = String(Math.floor(dur/60)).padStart(2,'0') + ':' + String(dur%60).padStart(2,'0');
+    const sz = r.size_bytes ? (r.size_bytes/(1024*1024)).toFixed(1) + 'MB' : '-';
+    let names = [];
+    try { names = JSON.parse(r.participant_names || '[]'); } catch(_){}
+    let consent = [];
+    try { consent = JSON.parse(r.consented_user_ids || '[]'); } catch(_){}
+    const statusBadge = r.status === 'completed' ? '<span class="badge ok">'+(adminLang==='en'?'Done':'완료')+'</span>'
+                      : r.status === 'recording' ? '<span class="badge warn">'+(adminLang==='en'?'Recording':'녹화중')+'</span>'
+                      : r.status === 'deleted' ? '<span class="badge" style="background:#fee;color:#dc2626;">'+(adminLang==='en'?'Deleted':'삭제됨')+'</span>'
+                      : r.status;
+    let playBtn = '-';
+    if (r.status === 'completed' && r.size_bytes > 0) {
+      // 1순위: DB의 file_url (R2 키)
+      let blobKey = r.file_url;
+      // 2순위: R2 blob 목록에서 매칭
+      if (!blobKey) blobKey = findBlobForRecording(r);
+      if (blobKey) {
+        const playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
+        playBtn = `<button onclick="playRecording('${playUrl}', '방 ${r.room_id} - ${(r.teacher_name || "").replace(/'/g,"")}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button>`;
+      } else {
+        playBtn = '<span style="color:#94a3b8;font-size:11px;">'+(adminLang==='en'?'Pending upload':'업로드 대기')+'</span>';
+      }
+    }
+    return `<tr>
+      <td>${r.room_id}</td>
+      <td>${r.teacher_name || r.teacher_id}</td>
+      <td>${d.toLocaleString('ko-KR')}</td>
+      <td>${dm}</td>
+      <td>${sz}</td>
+      <td>${names.length}${adminLang==='en'?' (consent '+consent.length+')':'명 (동의 '+consent.length+')'}</td>
+      <td>${statusBadge}</td>
+      <td>${playBtn}</td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadRetention() {
+  try {
+    const r = await fetch('/api/retention/status');
+    const txt = await r.text();
+    const el = document.getElementById('retention-status');
+    if (!txt || txt === 'null') { el.textContent = adminLang==='en' ? 'No runs yet (auto-runs daily at KST 03:00)' : '아직 실행 기록 없음 (매일 KST 03:00 자동 실행)'; return; }
+    const d = JSON.parse(txt);
+    const when = new Date(d.executed_at).toLocaleString(adminLang==='en'?'en-US':'ko-KR');
+    if (adminLang==='en') {
+      el.innerHTML = `<div>Last run: <b>${when}</b></div>
+        <div style="margin-top:6px;">Recordings ${d.recordings} / Attendance ${d.attendance} / Rewards ${d.rewards} / KakaoID ${d.kakao_ids} / Emergency ${d.emergency_events} / Consent-masked ${d.consents_masked}</div>
+        ${d.errors && d.errors.length ? '<div style="color:#dc2626;margin-top:6px;">⚠️ ' + d.errors.join(', ') + '</div>' : ''}`;
+    } else {
+      el.innerHTML = `<div>마지막 실행: <b>${when}</b></div>
+        <div style="margin-top:6px;">녹화 ${d.recordings}건 / 출결 ${d.attendance}건 / 보상 ${d.rewards}건 / 카카오ID ${d.kakao_ids}건 / 비상 ${d.emergency_events}건 / 동의마스킹 ${d.consents_masked}건</div>
+        ${d.errors && d.errors.length ? '<div style="color:#dc2626;margin-top:6px;">⚠️ ' + d.errors.join(', ') + '</div>' : ''}`;
+    }
+  } catch(e) { document.getElementById('retention-status').textContent = (adminLang==='en'?'Query failed: ':'조회 실패: ') + e.message; }
+}
+document.getElementById('retention-run').onclick = async () => {
+  if (!confirm(adminLang==='en'?'Delete expired data now?':'지금 보관기간 만료 데이터를 파기하시겠습니까?')) return;
+  const btn = document.getElementById('retention-run');
+  btn.disabled = true; btn.textContent = adminLang==='en'?'Running...':'실행 중...';
+  try {
+    const r = await fetch('/api/retention/run', { method: 'POST' });
+    await r.json();
+    await loadRetention();
+  } finally { btn.disabled = false; btn.textContent = adminLang==='en'?'Run Now':'지금 실행'; }
+};
+
+// ── 활성 방 목록 로딩 ──
+async function loadActiveRooms() {
+  try {
+    const r = await fetch('/api/active-rooms');
+    const rooms = await r.json();
+    const tb = document.getElementById('active-rooms-table');
+    if (!rooms || rooms.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">'+(adminLang==='en'?'No active classes':'현재 진행 중인 수업 없음')+'</td></tr>';
+      return;
+    }
+    tb.innerHTML = rooms.map(room => {
+      const userNames = (room.users || []).map(u => u.username).join(', ') || '-';
+      const _L = adminLang==='en';
+      return `<tr>
+        <td>${room.roomId}</td>
+        <td>${room.userCount}${_L?'':' 명'}${room.observerCount > 0 ? ' <span style="color:#f59e0b;font-size:11px;">('+ (_L?'obs ':'관찰 ') + room.observerCount+')</span>' : ''}</td>
+        <td>${userNames}</td>
+        <td>${room.hasPdf ? '<span class="badge ok">'+(_L?'Sharing':'공유중')+'</span>' : '-'}</td>
+        <td>${room.hasVideo ? '<span class="badge ok">'+(_L?'Sharing':'공유중')+'</span>' : '-'}</td>
+        <td><button onclick="observeRoom('${room.roomId}')" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;">🔍 ${_L?'Observe':'관찰'}</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('active-rooms-table').innerHTML = '<tr><td colspan="6" class="empty">'+(adminLang==='en'?'Load failed: ':'로딩 실패: ') + e.message + '</td></tr>';
+  }
+}
+
+function observeRoom(roomId) {
+  // 메인 화상통화 페이지를 관찰자 모드로 열기
+  const url = window.location.origin + '/?observe=' + encodeURIComponent(roomId);
+  window.open(url, '_blank', 'width=1200,height=800');
+}
+
+// ── 녹화 재생 ──
+function playRecording(url, title) {
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  const titleEl = document.getElementById('playback-title');
+  titleEl.textContent = title || '녹화 재생';
+  video.src = url;
+  modal.style.display = 'flex';
+}
+function closePlayback() {
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  video.pause();
+  video.src = '';
+  modal.style.display = 'none';
+}
+
+// ── R2 녹화 파일 목록 ──
+async function loadR2Recordings() {
+  try {
+    const r = await fetch('/api/recordings/blob/list');
+    const data = await r.json();
+    const items = data.items || [];
+    const tb = document.getElementById('r2-recordings-table');
+    if (items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'No recording files':'녹화 파일 없음')+'</td></tr>';
+      return;
+    }
+    tb.innerHTML = items.map(item => {
+      const sz = item.size ? (item.size/(1024*1024)).toFixed(1) + 'MB' : '-';
+      const uploaded = item.uploaded ? new Date(item.uploaded).toLocaleString('ko-KR') : '-';
+      const name = item.originalName || item.key.split('/').pop();
+      return `<tr>
+        <td title="${item.key}">${name}</td>
+        <td>${sz}</td>
+        <td>${uploaded}</td>
+        <td><button onclick="playRecording('${item.url}', '${name}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button></td>
+      </tr>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('r2-recordings-table').innerHTML = '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'Load failed':'로딩 실패')+'</td></tr>';
+  }
+}
+
+async function testR2() {
+  const el = document.getElementById('test-r2-result');
+  el.textContent = adminLang==='en'?'Testing...':'테스트 중...';
+  el.style.color = '#94a3b8';
+  try {
+    const r = await fetch('/api/recordings/test-r2');
+    const d = await r.json();
+    if (d.ok) {
+      const recCount = (d.recordingFiles || []).length;
+      el.style.color = '#22c55e';
+      el.textContent = adminLang==='en'
+        ? '✅ R2 OK! Read/Write OK. Files: ' + recCount
+        : '✅ R2 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
+      if (recCount > 0) {
+        el.textContent += ' — ' + d.recordingFiles.map(f => f.key + ' (' + (f.size/1024).toFixed(0) + 'KB)').join(', ');
+      }
+    } else {
+      el.style.color = '#dc2626';
+      el.textContent = '❌ R2 ' + (adminLang==='en'?'Error: ':'에러: ') + (d.error || JSON.stringify(d));
+    }
+  } catch(e) {
+    el.style.color = '#dc2626';
+    el.textContent = '❌ ' + (adminLang==='en'?'Request failed: ':'요청 실패: ') + e.message;
+  }
+}
+
+document.getElementById('rooms-refresh').onclick = loadActiveRooms;
+document.getElementById('refresh').onclick = async function() {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = adminLang==='en'?'⏳ Loading...':'⏳ 로딩...';
+  try {
+    await Promise.allSettled([
+      load(),
+      loadRecordings(),
+      loadRetention(),
+      loadActiveRooms()
+    ]);
+  } catch(e) { console.warn('refresh error:', e); }
+  btn.disabled = false;
+  btn.textContent = adminLang==='en'?'🔄 Refresh':'🔄 새로고침';
+};
+document.getElementById('period').onchange = load;
+// 초기 로드 (각각 독립적으로)
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadR2Recordings()]);
+// 활성 방 목록 15초마다 자동 갱신
+setInterval(loadActiveRooms, 15000);
+</script>
+
+</body>
+</html>
