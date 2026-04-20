@@ -44,6 +44,7 @@ binding = "ASSETS"
 #   Worker 가 먼저 받으면 src/index.ts 에서 API/WS 라우팅 후, 나머지는 env.ASSETS.fetch 로 위임.
 run_worker_first = true
 not_found_handling = "none"
+html_handling = "none" 
 
 # ===== Production 환경 (Wrangler 4: 바인딩 상속 안 됨 → 전부 재명시) =====
 [env.production]
@@ -83,3 +84,4 @@ directory = "./public"
 binding = "ASSETS"
 run_worker_first = true
 not_found_handling = "none"
+html_handling = "none" 
