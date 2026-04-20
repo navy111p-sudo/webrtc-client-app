@@ -141,6 +141,8 @@ try {
             'cloudflare-deploy\public\index.html',
             'cloudflare-deploy\public\admin.html',
             'cloudflare-deploy\public\js\mango-rec.js',
+            'cloudflare-deploy\schema.sql',
+            'cloudflare-deploy\migration-attendance-fields.sql',
             'cloudflare-deploy\public\video-call\index.html',
             'cloudflare-deploy\public\video-call\css\style.css',
             'cloudflare-deploy\public\video-call\js\app.js',
