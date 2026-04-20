@@ -143,6 +143,7 @@ try {
             'cloudflare-deploy\public\js\mango-rec.js',
             'cloudflare-deploy\schema.sql',
             'cloudflare-deploy\migration-attendance-fields.sql',
+            'cloudflare-deploy\wrangler.toml',
             'cloudflare-deploy\public\video-call\index.html',
             'cloudflare-deploy\public\video-call\css\style.css',
             'cloudflare-deploy\public\video-call\js\app.js',
