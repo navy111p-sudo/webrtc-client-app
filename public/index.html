@@ -1825,6 +1825,7 @@ async function vcJoinRoom() {
     showView('view-videocall-call');
     document.body.classList.add('vc-in-call');
     document.getElementById('vc-room-name').textContent = vcRoomId;
+    requestWakeLock(); // 화면 꺼짐 방지 활성화
     // 칠판 캔버스가 보이는 시점에 실제 크기로 리사이즈 (display:none → flex 직후)
     setTimeout(() => { if (typeof wbResize === 'function') wbResize(); }, 100);
 
@@ -2390,6 +2391,8 @@ function vcLeaveRoom() {
         vcLocalStream.getTracks().forEach(t => t.stop());
         vcLocalStream = null;
     }
+    // Wake Lock 해제
+    if (wakeLock) { wakeLock.release(); wakeLock = null; console.log('[wakeLock] 해제됨'); }
     vcConn = null;
     document.getElementById('vc-chat-messages').innerHTML = '';
     document.body.classList.remove('vc-in-call');

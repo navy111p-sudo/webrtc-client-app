@@ -1,0 +1,6 @@
+C:\MAMP\htdocs\mangoi-web-develop\images\logo_mangoi.png
+C:\MAMP\htdocs\mangoi-web-develop\lms\images\logo_mangoi.png
+C:\MAMP\htdocs\mangoi-web-develop\mypage\images\logo_mangoi.png
+C:\MAMP\htdocs\mangoi.com-main\images\logo_mangoi.png
+C:\MAMP\htdocs\mangoi.com-main\lms\images\logo_mangoi.png
+C:\MAMP\htdocs\mangoi.com-main\mypage\images\logo_mangoi.png
