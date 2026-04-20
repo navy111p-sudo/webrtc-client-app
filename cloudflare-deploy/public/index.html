@@ -1104,8 +1104,12 @@
         s.style.cssText=`width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${Math.random()*1.5+0.8}s;--min-o:${Math.random()*0.15+0.05};--max-o:${Math.random()*0.5+0.5};animation-delay:${Math.random()*3}s;`;
         sf.appendChild(s);
       }
-      // 행성 제거 — 레퍼런스 이미지와 동일하게 별만 유지
-      // (행성 CSS는 남겨두지만 DOM을 만들지 않아 렌더링되지 않음)
+      // 행성 4개 복원 — 토성(고리), 목성(띠), 화성, 해왕성
+      ['planet-saturn','planet-jupiter','planet-mars','planet-neptune'].forEach(function(cls){
+        var p = document.createElement('div');
+        p.className = 'planet ' + cls;
+        sf.appendChild(p);
+      });
       // 별똥별 주기적 생성 (더 자주, 여러개)
       function spawnShootingStar(){
         const ss=document.createElement('div');
@@ -2221,21 +2225,10 @@ async function vcJoinRoom() {
     );
     setStatusDot('vc-status-dot', 'connecting');
 
-    // ── 자동 녹화 시작 (미디어 안정화 후 3초 지연, R2 스트리밍 업로드) ──
-    // MangoV3 폴링과 중복 호출되지 않도록 isRecording 체크 포함.
-    setTimeout(async () => {
-        try {
-            if (!window.MangoV3 || typeof window.MangoV3.startRecording !== 'function') {
-                console.warn('[vcJoinRoom] MangoV3.startRecording 미로드 — mango-rec.js 확인 필요');
-                return;
-            }
-            // 이미 mango-rec.js 폴링이 녹화를 시작했을 수 있음 — 중복 방지
-            await window.MangoV3.startRecording({ auto: true });
-            console.log('[vcJoinRoom] 자동 녹화 요청 완료 (auto=true)');
-        } catch (e) {
-            console.warn('[vcJoinRoom] 자동 녹화 시작 실패:', e);
-        }
-    }, 3000);
+    // ── 자동 녹화 ──
+    // mango-rec.js 내부 폴링(2초 간격)이 vc-in-call 클래스를 감지해
+    // 3초 지연 후 startRecording({auto:true})을 자동 호출함.
+    // 여기서 중복 호출하면 R2 multipart 세션이 두 번 열리므로 트리거하지 않음.
 }
 
 /** 관찰자 모드로 입장 (관리자 전용 — 미디어 없이 수신만) */
