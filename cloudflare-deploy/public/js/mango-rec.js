@@ -1,3 +1,5 @@
+
+
 /**
  * mango-rec.js v2 — 화상 수업 녹화 (교사 클라이언트 사이드)
  *  - canvas로 모든 영상 타일을 합성 + WebAudio로 모든 오디오 믹스
@@ -10,8 +12,9 @@
 (function () {
   if (!window.MangoV3) return console.warn('mango.js 먼저 로드되어야 합니다');
   const M = window.MangoV3;
-
+ 
   let isRecording = false;
+  let _recStartInFlight = false; // 녹화 초기화(DB insert + R2 create) 진행 중 가드
   let mediaRecorder = null;
   let recordedChunks = [];
   let recordingId = null;
@@ -23,7 +26,7 @@
   let audioDest = null;
   let recBadge = null;
   let isAutoMode = false;  // 자동 녹화 모드 여부
-
+ 
   // R2 multipart 상태
   let r2Key = null;
   let r2UploadId = null;
@@ -35,7 +38,7 @@
   let chunkBuffer = [];
   let chunkBufferSize = 0;
   const MIN_PART_SIZE = 5 * 1024 * 1024; // 5MB
-
+ 
   function getRoomMembers() {
     const myId = (typeof vcUserId !== 'undefined' ? vcUserId : 'me');
     const myName = (typeof vcUsername !== 'undefined' ? vcUsername : '교사');
@@ -48,14 +51,14 @@
     });
     return { ids, names };
   }
-
+ 
   // 원격 참가자용 숨겨진 비디오 요소 캐시 (WebRTC 스트림 직접 렌더링용)
   const _peerVideoCache = {};
-
+ 
   function collectVideos() {
     const els = [];
     const capturedPeerIds = new Set();
-
+ 
     // ─── 방법 1: DOM에서 모든 video 요소 수집 ───
     // 1-a) 내 비디오
     const local = document.getElementById('vc-local-video');
@@ -63,7 +66,7 @@
       const localLabel = document.getElementById('vc-local-label');
       els.push({ el: local, label: localLabel ? localLabel.textContent : '나' });
     }
-
+ 
     // 1-b) 화면에 보이는 모든 원격 참가자 video-box
     const grid = document.getElementById('vc-video-grid');
     if (grid) {
@@ -79,7 +82,7 @@
         if (peerId) capturedPeerIds.add(peerId);
       });
     }
-
+ 
     // 분리(detached)된 플로팅 비디오
     document.querySelectorAll('.video-box.detached').forEach(box => {
       if (box.id === 'vc-local-box') return;
@@ -92,7 +95,7 @@
         capturedPeerIds.add(peerId);
       }
     });
-
+ 
     // ─── 방법 2: WebRTC 연결에서 직접 스트림 가져오기 ───
     // DOM에서 못 찾은 참가자가 있으면 PeerConnection에서 직접 비디오 트랙을 꺼내서
     // 숨겨진 <video>에 연결해서 캡처
@@ -100,10 +103,10 @@
     if (peers) {
       Object.keys(peers).forEach(peerId => {
         if (capturedPeerIds.has(peerId)) return; // 이미 DOM에서 캡처됨
-
+ 
         const pc = peers[peerId];
         if (!pc || pc.connectionState === 'closed') return;
-
+ 
         // PeerConnection에서 비디오 트랙 추출
         const videoTracks = [];
         try {
@@ -113,9 +116,9 @@
             }
           });
         } catch (e) {}
-
+ 
         if (videoTracks.length === 0) return;
-
+ 
         // 숨겨진 video 요소 생성/재사용
         if (!_peerVideoCache[peerId]) {
           const hiddenVideo = document.createElement('video');
@@ -132,7 +135,7 @@
           cachedVideo.srcObject = stream;
           cachedVideo.play().catch(() => {});
         }
-
+ 
         // 이름 찾기: DOM에서 라벨 요소 검색
         let peerName = '참가자';
         const labelEl = document.getElementById('vc-label-' + peerId);
@@ -144,21 +147,21 @@
             if (l) peerName = l.textContent;
           }
         }
-
+ 
         els.push({ el: cachedVideo, label: peerName });
         capturedPeerIds.add(peerId);
       });
     }
-
+ 
     // 디버그: 참가자 수 로그 (10초에 한 번)
     if (!collectVideos._lastLog || Date.now() - collectVideos._lastLog > 10000) {
       console.log('[mango-rec] 캡처 참가자:', els.length, '명', els.map(e => e.label).join(', '));
       collectVideos._lastLog = Date.now();
     }
-
+ 
     return els;
   }
-
+ 
   function collectAudioTracks() {
     const tracks = [];
     // 1) 내 마이크
@@ -189,19 +192,19 @@
     });
     return tracks;
   }
-
+ 
   function startCanvasCompose() {
     composeCanvas = document.createElement('canvas');
     composeCanvas.width = 1920;
     composeCanvas.height = 1080;
     composeCtx = composeCanvas.getContext('2d');
-
+ 
     // 레이아웃 상수: 좌측(비디오) 30%, 우측(콘텐츠) 70%
     const VID_W = Math.floor(composeCanvas.width * 0.3);   // 576px
     const CONTENT_X = VID_W;
     const CONTENT_W = composeCanvas.width - VID_W;          // 1344px
     const H = composeCanvas.height;                          // 1080px
-
+ 
     function getActiveTab() {
       // 현재 활성 탭 판별
       const panels = ['whiteboard', 'pdf', 'video'];
@@ -211,7 +214,7 @@
       }
       return 'whiteboard';
     }
-
+ 
     function drawVideos(ctx, x, y, w, h) {
       const videos = collectVideos();
       ctx.fillStyle = '#1e293b';
@@ -258,7 +261,7 @@
         }
       });
     }
-
+ 
     function drawWhiteboard(ctx, x, y, w, h) {
       const wbCanvas = document.getElementById('wb-canvas');
       if (wbCanvas && wbCanvas.width > 0 && wbCanvas.height > 0) {
@@ -279,7 +282,7 @@
         ctx.fillText('🖊 칠판', x + 20, y + 40);
       }
     }
-
+ 
     function drawPdf(ctx, x, y, w, h) {
       const pdfCanvas = document.getElementById('pdf-canvas');
       const annoCanvas = document.getElementById('pdf-anno');
@@ -323,7 +326,7 @@
         ctx.fillText('📄 PDF 없음', x + 20, y + 40);
       }
     }
-
+ 
     function drawVideo(ctx, x, y, w, h) {
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(x, y, w, h);
@@ -359,20 +362,20 @@
       ctx.font = '20px sans-serif';
       ctx.fillText('📹 동영상 없음', x + 20, y + 40);
     }
-
+ 
     function draw() {
       const ctx = composeCtx;
       // 배경
       ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, composeCanvas.width, H);
-
+ 
       // 좌측: 참가자 비디오
       drawVideos(ctx, 0, 0, VID_W, H);
-
+ 
       // 구분선
       ctx.fillStyle = '#334155';
       ctx.fillRect(VID_W, 0, 2, H);
-
+ 
       // 우측: 활성 탭 콘텐츠
       const tab = getActiveTab();
       // 탭 이름 표시
@@ -383,7 +386,7 @@
       ctx.fillStyle = '#38bdf8';
       ctx.font = 'bold 15px -apple-system,"맑은 고딕",sans-serif';
       ctx.fillText(tabLabels[tab] || tab, CONTENT_X + 14, 22);
-
+ 
       // 탭 내용
       const contentY = TAB_BAR_H;
       const contentH = H - TAB_BAR_H;
@@ -392,7 +395,7 @@
         case 'pdf':        drawPdf(ctx, CONTENT_X + 2, contentY, CONTENT_W - 2, contentH); break;
         case 'video':      drawVideo(ctx, CONTENT_X + 2, contentY, CONTENT_W - 2, contentH); break;
       }
-
+ 
       // 플로팅 미니 동영상이 칠판/PDF 위에 떠 있는 경우에도 캡처
       if (tab !== 'video') {
         const floating = document.getElementById('vp-floating');
@@ -414,7 +417,7 @@
           }
         }
       }
-
+ 
       // REC 타임코드 + 참가자 수
       const elapsed = Math.floor((Date.now() - startedAt) / 1000);
       const mm = String(Math.floor(elapsed / 60)).padStart(2, '0');
@@ -425,13 +428,13 @@
       ctx.fillStyle = '#fff';
       ctx.font = 'bold 14px sans-serif';
       ctx.fillText('● REC ' + mm + ':' + ss + '  👤' + vidCount + '명', composeCanvas.width - 190, 31);
-
+ 
       composeRafId = requestAnimationFrame(draw);
     }
     draw();
     return composeCanvas.captureStream(15);
   }
-
+ 
   function startAudioMix() {
     const AC = window.AudioContext || window.webkitAudioContext;
     audioCtx = new AC();
@@ -444,7 +447,7 @@
     });
     return audioDest.stream;
   }
-
+ 
   function showRecBadge() {
     if (recBadge) return;
     recBadge = document.createElement('div');
@@ -456,7 +459,7 @@
       recBadge.classList.toggle('mango-rec-expanded');
     });
     document.body.appendChild(recBadge);
-
+ 
     if (!document.getElementById('mango-rec-style')) {
       const s = document.createElement('style');
       s.id = 'mango-rec-style';
@@ -490,9 +493,9 @@
   function hideRecBadge() {
     if (recBadge) { recBadge.remove(); recBadge = null; }
   }
-
+ 
   // ── R2 multipart 업로드 함수들 ──
-
+ 
   function bufferChunk(blob) {
     if (!r2InitDone) return;
     chunkBuffer.push(blob);
@@ -501,7 +504,7 @@
       flushBuffer();
     }
   }
-
+ 
   function flushBuffer() {
     if (chunkBuffer.length === 0) return;
     const combined = new Blob(chunkBuffer, { type: 'video/webm' });
@@ -509,13 +512,13 @@
     chunkBufferSize = 0;
     enqueuePart(combined);
   }
-
+ 
   function enqueuePart(blob) {
     if (!r2InitDone || !r2Key || !r2UploadId) return;
     r2PartNumber += 1;
     const pn = r2PartNumber;
     r2TotalBytes += blob.size;
-
+ 
     r2UploadQueue = r2UploadQueue.then(async () => {
       const url = '/api/recordings/upload/part?key=' + encodeURIComponent(r2Key) +
                   '&upload_id=' + encodeURIComponent(r2UploadId) +
@@ -534,7 +537,7 @@
       }
     });
   }
-
+ 
   async function completeR2Upload(duration) {
     // 남은 버퍼 flush
     if (chunkBuffer.length > 0) {
@@ -543,10 +546,10 @@
       chunkBufferSize = 0;
       enqueuePart(lastBlob);
     }
-
+ 
     // 큐 대기
     try { await r2UploadQueue; } catch (e) { console.warn('[mango-rec] R2 큐 에러:', e); }
-
+ 
     if (r2Parts.length > 0 && r2Key && r2UploadId) {
       r2Parts.sort((a, b) => a.partNumber - b.partNumber);
       try {
@@ -571,7 +574,7 @@
     }
     return false;
   }
-
+ 
   function resetR2State() {
     r2Key = null;
     r2UploadId = null;
@@ -583,7 +586,7 @@
     chunkBuffer = [];
     chunkBufferSize = 0;
   }
-
+ 
   function onBeforeUnload() {
     if (!r2Key || !r2UploadId || !recordingId) return;
     if (r2Parts.length > 0) {
@@ -614,19 +617,27 @@
       } catch (_) {}
     }
   }
-
+ 
   // ── 녹화 시작/종료 ──
-
+ 
   // auto: true면 자동 녹화 (팝업/alert 없이 진행)
   async function startRecording(opts) {
     const auto = opts && opts.auto;
-    if (isRecording) return;
+    // 재진입 방지: isRecording은 MediaRecorder.start() 이후에야 true가 되므로,
+    // 그 사이(DB INSERT/R2 create 대기 중)에 두 번째 호출이 들어오면 중복 DB 행이 생김.
+    // _recStartInFlight 를 시작 시점에 즉시 세팅해 race를 차단한다.
+    if (isRecording || _recStartInFlight) {
+      console.log('[mango-rec] 녹화 시작 요청 무시 (이미 진행 중)', { isRecording, inFlight: _recStartInFlight });
+      return;
+    }
+    _recStartInFlight = true;
+    try {
     const { ids, names } = getRoomMembers();
     if (ids.length < 1) {
       if (!auto) alert('참가자가 없습니다.');
       return;
     }
-
+ 
     // DB 메타 생성
     const startRes = await M.api('/api/recordings/start', {
       room_id: (typeof vcRoomId !== 'undefined' ? vcRoomId : ''),
@@ -635,7 +646,7 @@
       participant_ids: ids,
       participant_names: ids.map(id => names[id])
     });
-
+ 
     if (!startRes?.ok) {
       if (!auto) alert('녹화 시작 실패');
       console.warn('[mango-rec] 녹화 시작 실패:', startRes);
@@ -655,12 +666,12 @@
         }
       }
     }
-
+ 
     recordingId = startRes.recording_id;
     startedAt = Date.now();
     recordedChunks = [];
     isAutoMode = !!auto;
-
+ 
     // R2 multipart 업로드 시작
     resetR2State();
     try {
@@ -672,7 +683,7 @@
           room_id: (typeof vcRoomId !== 'undefined' ? vcRoomId : '')
         })
       }).then(r => r.json());
-
+ 
       if (createRes.ok) {
         r2Key = createRes.key;
         r2UploadId = createRes.upload_id;
@@ -684,7 +695,7 @@
     } catch (err) {
       console.warn('[mango-rec] R2 multipart 생성 에러 (로컬만 녹화):', err);
     }
-
+ 
     // 참가자에게 녹화 알림
     try {
       const conn = (typeof vcConn !== 'undefined' ? vcConn : null);
@@ -695,18 +706,18 @@
         }));
       }
     } catch (_) {}
-
+ 
     const videoStream = startCanvasCompose();
     const audioStream = startAudioMix();
     const combined = new MediaStream([
       ...videoStream.getVideoTracks(),
       ...audioStream.getAudioTracks()
     ]);
-
+ 
     let mime = 'video/webm;codecs=vp8,opus';
     if (!MediaRecorder.isTypeSupported(mime)) mime = 'video/webm';
     mediaRecorder = new MediaRecorder(combined, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
-
+ 
     mediaRecorder.ondataavailable = (e) => {
       if (e.data && e.data.size > 0) {
         recordedChunks.push(e.data);
@@ -714,11 +725,11 @@
         bufferChunk(e.data);
       }
     };
-
+ 
     mediaRecorder.onstop = async () => {
       const blob = new Blob(recordedChunks, { type: 'video/webm' });
       const duration = Date.now() - startedAt;
-
+ 
       // R2 업로드 완료
       let r2Success = false;
       if (r2InitDone) {
@@ -728,7 +739,7 @@
           console.error('[mango-rec] R2 업로드 완료 에러:', e);
         }
       }
-
+ 
       // 자동 모드에서는 로컬 다운로드 안 함 (R2에만 저장)
       // 수동 모드에서는 로컬 다운로드도 함께 수행
       if (!isAutoMode) {
@@ -741,7 +752,7 @@
         a.remove();
         URL.revokeObjectURL(downloadUrl);
       }
-
+ 
       // DB 메타데이터 종료 기록
       try {
         await M.api('/api/recordings/stop', {
@@ -750,17 +761,17 @@
           size_bytes: blob.size
         });
       } catch (e) { console.warn('[mango-rec] DB stop 에러:', e); }
-
+ 
       console.log('[mango-rec] 녹화 완료:', { duration, size: blob.size, r2Success, auto: isAutoMode });
       if (!isAutoMode) {
         const r2Msg = r2Success ? '\n☁️ 클라우드 저장 완료' : '\n⚠️ 클라우드 저장 실패 (로컬 파일은 다운로드됨)';
         alert('녹화 완료\n용량: ' + (blob.size / (1024 * 1024)).toFixed(1) + 'MB\n시간: ' + Math.round(duration / 1000) + '초' + r2Msg);
       }
-
+ 
       // 상태 초기화
       resetR2State();
       window.removeEventListener('beforeunload', onBeforeUnload);
-
+ 
       // stopRecording() 호출자의 await를 resolve
       if (typeof _stopResolver === 'function') {
         const r = _stopResolver;
@@ -768,17 +779,21 @@
         try { r({ success: true, r2Success, duration, size: blob.size }); } catch (_) {}
       }
     };
-
+ 
     mediaRecorder.start(5000); // 5초 간격 (R2 업로드와 동기화)
     isRecording = true;
     showRecBadge();
     updateRecButton();
     window.addEventListener('beforeunload', onBeforeUnload);
+    } finally {
+      // 성공/실패와 무관하게 in-flight 플래그 해제 — 다음 시도가 가능해야 함
+      _recStartInFlight = false;
+    }
   }
-
+ 
   // stopRecording()이 R2 업로드 완료까지 기다리도록 Promise 기반으로 구현
   let _stopResolver = null;
-
+ 
   function stopRecording() {
     if (!isRecording) return Promise.resolve({ success: false, reason: 'not-recording' });
     isRecording = false;
@@ -799,7 +814,7 @@
         }));
       }
     } catch (_) {}
-
+ 
     // MediaRecorder.stop()을 호출하고 onstop 이벤트 → R2 complete 완료까지 await
     return new Promise((resolve) => {
       _stopResolver = resolve;
@@ -824,7 +839,7 @@
       }
     });
   }
-
+ 
   function updateRecButton() {
     const btn = document.getElementById('mango-rec-btn');
     if (!btn) return;
@@ -833,7 +848,7 @@
     btn.style.background = isRecording ? '#dc2626' : '';
     btn.style.color = isRecording ? '#fff' : '';
   }
-
+ 
   function injectRecButton() {
     const toolbar = document.querySelector('#view-videocall-call .toolbar-center');
     if (!toolbar || toolbar.querySelector('#mango-rec-btn')) return;
@@ -845,47 +860,50 @@
     btn.onclick = () => { isRecording ? stopRecording() : startRecording(); };
     toolbar.appendChild(btn);
   }
-
+ 
   const origInjectToolbar = M._injectExtra || (() => {});
   M._injectRec = injectRecButton;
-
+ 
   // ── 자동 녹화 ──
   // 수업 화면이 활성화되면 자동으로 녹화 시작, 나가면 자동 종료
   let autoRecStarted = false;   // 이번 세션에서 자동녹화가 시작됐는지
   let autoRecPending = false;   // 녹화 시작 대기 중(딜레이)
-
+ 
   setInterval(() => {
     const view = document.getElementById('view-videocall-call');
     const inCall = document.body.classList.contains('vc-in-call');
-
+ 
     if (view && view.style.display !== 'none') {
       injectRecButton();
-
+ 
       // 수업 뷰에 있고, 아직 녹화 안 했으면 자동 시작
       if (inCall && !isRecording && !autoRecStarted && !autoRecPending) {
         autoRecPending = true;
         // 미디어 스트림 안정화를 위해 3초 대기 후 시작
         setTimeout(async () => {
           autoRecPending = false;
-          if (!isRecording && document.body.classList.contains('vc-in-call')) {
+          // 중복 트리거 방지: autoRecStarted 도 함께 체크하고, startRecording 호출 '이전에'
+          // 즉시 true 로 세팅해서 2초 간격 폴링이 한 번 더 트리거되지 않도록 막는다.
+          if (!isRecording && !autoRecStarted && document.body.classList.contains('vc-in-call')) {
+            autoRecStarted = true;
             console.log('[mango-rec] 자동 녹화 시작');
             try {
               await startRecording({ auto: true });
-              autoRecStarted = true;
             } catch (e) {
               console.warn('[mango-rec] 자동 녹화 시작 실패:', e);
+              autoRecStarted = false; // 실패 시엔 다음 폴링 때 재시도 가능하게 되돌림
             }
           }
         }, 3000);
       }
     }
-
+ 
     // 수업에서 나갔으면 자동녹화 플래그 리셋
     if (!inCall && autoRecStarted) {
       autoRecStarted = false;
     }
   }, 2000);
-
+ 
   // vcLeaveRoom 후킹 — 나가기 버튼 클릭 시 자동으로 녹화 종료
   function hookVcLeave() {
     if (typeof window.vcLeaveRoom !== 'function') return false;
@@ -907,19 +925,19 @@
     window._vcLeaveHooked = true;
     return true;
   }
-
+ 
   // vcLeaveRoom이 아직 정의 안 됐을 수 있으므로 주기적으로 후킹 시도
   const hookInterval = setInterval(() => {
     if (hookVcLeave()) clearInterval(hookInterval);
   }, 1000);
-
+ 
   // beforeunload — 탭/브라우저 닫을 때도 녹화 종료 처리
   window.addEventListener('beforeunload', () => {
     if (isRecording) {
       onBeforeUnload();
     }
   });
-
+ 
   M.startRecording = startRecording;
   M.stopRecording = stopRecording;
 })();
