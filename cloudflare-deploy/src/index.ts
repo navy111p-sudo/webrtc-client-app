@@ -75,7 +75,7 @@ export default {
 
     // SPA 라우팅: API/WS가 아닌 모든 경로에서 index.html 반환
     // (예: /signaling, /video-call 등 → SPA가 클라이언트에서 처리)
-    const indexRequest = new Request(new URL('/', request.url).toString(), request);
+    const indexRequest = new Request(new URL('/index.html', request.url).toString(), request);
     return env.ASSETS.fetch(indexRequest);
   }
 };
