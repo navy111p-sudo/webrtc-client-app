@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Mangoi 화상솔루션</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
 
     <!-- ============================================================
          [CSS] 전체 스타일 정의
@@ -38,6 +41,114 @@
             justify-content: center;
             min-height: 100vh;
             padding: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        /* 반짝이는 별 */
+        .star {
+            position: absolute;
+            border-radius: 50%;
+            background: #fff;
+            animation: twinkle var(--dur) ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: var(--min-o); transform: scale(1); }
+            50%      { opacity: var(--max-o); transform: scale(1.6); }
+        }
+        /* 별똥별 */
+        .shooting-star {
+            position: absolute;
+            width: 3px; height: 3px;
+            background: #fff;
+            border-radius: 50%;
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0;
+            box-shadow: 0 0 6px 2px rgba(255,255,255,0.6);
+        }
+        .shooting-star::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 100%;
+            transform: translateY(-50%);
+            width: 80px; height: 1.5px;
+            background: linear-gradient(to right, rgba(255,255,255,0.7), transparent);
+        }
+        @keyframes shoot {
+            0%   { opacity: 1; transform: translate(0, 0) rotate(-35deg); }
+            70%  { opacity: 1; }
+            100% { opacity: 0; transform: translate(-350px, 210px) rotate(-35deg); }
+        }
+        /* 행성 */
+        .planet {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .planet-saturn {
+            width: 22px; height: 22px;
+            background: radial-gradient(circle at 40% 35%, #f5d889, #d4a843 60%, #a07830);
+            top: 10%; left: 6%;
+            box-shadow: 0 0 10px rgba(245,216,137,0.35);
+            animation: twinkle 6s ease-in-out infinite;
+            --min-o: 0.6; --max-o: 0.9; --dur: 6s;
+        }
+        .planet-saturn::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotateX(65deg);
+            width: 42px; height: 42px;
+            border: 3px solid rgba(220,190,130,0.6);
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 4px rgba(220,190,130,0.3);
+        }
+        .planet-saturn::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) rotateX(65deg);
+            width: 52px; height: 52px;
+            border: 2px solid rgba(200,170,110,0.35);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .planet-jupiter {
+            width: 18px; height: 18px;
+            background: radial-gradient(circle at 38% 32%, #e8c99b, #c4956a 50%, #a06840);
+            top: 20%; right: 10%;
+            box-shadow: 0 0 8px rgba(200,160,100,0.3);
+            overflow: hidden;
+            animation: twinkle 8s ease-in-out infinite;
+            --min-o: 0.5; --max-o: 0.85; --dur: 8s;
+        }
+        .planet-jupiter::after {
+            content: '';
+            position: absolute;
+            top: 45%; left: 0;
+            width: 100%; height: 2px;
+            background: rgba(180,120,70,0.35);
+            border-radius: 50%;
+        }
+        .planet-mars {
+            width: 11px; height: 11px;
+            background: radial-gradient(circle at 35% 30%, #e8a088, #c0523a 70%, #8b2e1a);
+            bottom: 15%; left: 12%;
+            box-shadow: 0 0 6px rgba(200,80,50,0.35);
+            animation: twinkle 7s ease-in-out infinite;
+            --min-o: 0.5; --max-o: 0.8; --dur: 7s;
+        }
+        .planet-neptune {
+            width: 13px; height: 13px;
+            background: radial-gradient(circle at 38% 35%, #7ec8e3, #3a7bd5 60%, #1a3a8a);
+            bottom: 25%; right: 8%;
+            box-shadow: 0 0 7px rgba(60,120,200,0.35);
+            animation: twinkle 9s ease-in-out infinite;
+            --min-o: 0.4; --max-o: 0.75; --dur: 9s;
         }
         .home-title {
             font-size: 2.8rem;
@@ -47,23 +158,51 @@
             -webkit-text-fill-color: transparent;
             margin-bottom: 0.5rem;
         }
+        /* 헤더 로고 CSS 클래스는 제거되었습니다 (로고 이미지 사용 안 함) */
         .home-subtitle { color: #94a3b8; margin-bottom: 2.5rem; font-size: 1.1rem; }
 
         /* 메인 화면의 카드 버튼들 */
         .home-cards { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 480px; }
         .home-card {
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(148, 163, 184, 0.15);
-            border-radius: 16px;
-            padding: 1.8rem;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.22) 0%, rgba(15, 23, 42, 0.15) 100%);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            border: 1px solid rgba(148, 163, 184, 0.12);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 20px;
+            padding: 2rem;
             text-align: center;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             color: inherit;
+            box-shadow:
+                0 4px 16px rgba(0, 0, 0, 0.25),
+                0 8px 32px rgba(0, 0, 0, 0.15),
+                0 16px 48px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 0 20px rgba(56, 189, 248, 0.03);
+            position: relative;
+            overflow: hidden;
+        }
+        .home-card::before { display: none; }
+        .home-card::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: radial-gradient(ellipse at 30% 20%, rgba(56, 189, 248, 0.04) 0%, transparent 60%);
+            pointer-events: none;
         }
         .home-card:hover {
-            border-color: #38bdf8;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(56, 189, 248, 0.12);
+            border-color: rgba(56, 189, 248, 0.35);
+            transform: translateY(-6px) scale(1.01);
+            box-shadow:
+                0 6px 20px rgba(0, 0, 0, 0.3),
+                0 12px 40px rgba(0, 0, 0, 0.2),
+                0 20px 60px rgba(0, 0, 0, 0.12),
+                0 0 30px rgba(56, 189, 248, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08),
+                inset 0 0 30px rgba(56, 189, 248, 0.06);
         }
         .home-card h2 { font-size: 1.3rem; margin-bottom: 0.4rem; }
         .home-card p  { color: #94a3b8; font-size: 0.9rem; }
@@ -711,6 +850,7 @@
         }
         .vp-empty { color:#64748b; font-size:0.95rem; padding:20px; text-align:center; }
         .vp-stage iframe, .vp-stage video { width:100%; height:100%; border:0; background:#000; }
+        @keyframes vp-spin { to { transform: rotate(360deg); } }
 
         /* 플로팅 미니 플레이어 (칠판·PDF 위에 떠서 보임) */
         .vp-floating {
@@ -789,6 +929,110 @@
             .pdf-pan-top, .pdf-pan-right { display:none; } /* 모바일에서는 스와이프 사용 */
         }
 
+        /* ──────────────────────────────────────────────────────────
+           ★ 모바일 세로(Portrait): 영상 위 / 콘텐츠 아래 2단 레이아웃
+              학생들 얼굴이 한 줄이 아니라 참가자 수 기준 grid로 배치
+        ────────────────────────────────────────────────────────── */
+        @media (max-width: 900px) and (orientation: portrait) {
+            .vc-main-row {
+                flex-direction: column !important;
+                height: 100%;
+            }
+            .video-pane {
+                width: 100% !important;
+                height: 42vh;
+                min-height: 160px;
+                border-right: none !important;
+                border-bottom: 1px solid rgba(148,163,184,0.2);
+                flex-shrink: 0;
+            }
+            .vc-main-row.video-full .video-pane { height: 100% !important; }
+            .vc-main-row.video-full .content-pane { display: none; }
+            .content-pane { flex: 1; min-height: 0; }
+
+            /* 참가자 수 기반 그리드 (세로 모드: 행 우선) */
+            #vc-video-grid {
+                grid-template-columns: 1fr !important;
+                grid-auto-rows: 1fr;
+                overflow: hidden;
+                align-content: stretch;
+            }
+            #vc-video-grid .video-box {
+                aspect-ratio: auto !important;
+                width: 100%;
+                height: 100%;
+            }
+            #vc-video-grid[data-count="1"] { grid-template-rows: 1fr; }
+            #vc-video-grid[data-count="2"] { grid-template-rows: repeat(2, 1fr); }
+            #vc-video-grid[data-count="3"] { grid-template-rows: repeat(3, 1fr); }
+            #vc-video-grid[data-count="4"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: repeat(2, 1fr);
+            }
+            #vc-video-grid[data-count="5"],
+            #vc-video-grid[data-count="6"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: repeat(3, 1fr);
+            }
+            #vc-video-grid[data-count="7"],
+            #vc-video-grid[data-count="8"],
+            #vc-video-grid[data-count="9"] {
+                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+
+        /* ──────────────────────────────────────────────────────────
+           ★ 모바일 가로(Landscape): 좌우 분할 + 참가자 수 기반 열 우선
+        ────────────────────────────────────────────────────────── */
+        @media (max-width: 1024px) and (orientation: landscape),
+               (max-height: 600px) and (orientation: landscape) {
+            .vc-main-row { flex-direction: row !important; height: 100%; }
+            .video-pane {
+                height: 100% !important;
+                border-right: 1px solid rgba(148,163,184,0.2);
+                border-bottom: none !important;
+            }
+            .vc-main-row.video-quarter       .video-pane { width: 30% !important; }
+            .vc-main-row.video-half          .video-pane { width: 45% !important; }
+            .vc-main-row.video-threequarter  .video-pane { width: 60% !important; }
+            .vc-main-row.video-full          .video-pane { width: 100% !important; }
+            .vc-main-row.video-full          .content-pane { display: none; }
+
+            /* 참가자 수 기반 그리드 (가로 모드: 열 우선) */
+            #vc-video-grid {
+                grid-template-columns: 1fr !important;
+                grid-auto-rows: 1fr;
+                overflow: hidden;
+                align-content: stretch;
+                gap: 4px;
+                padding: 4px;
+            }
+            #vc-video-grid .video-box {
+                aspect-ratio: auto !important;
+                width: 100%;
+                height: 100%;
+            }
+            #vc-video-grid[data-count="1"] { grid-template-columns: 1fr !important; }
+            #vc-video-grid[data-count="2"] { grid-template-columns: 1fr !important; grid-template-rows: repeat(2, 1fr); }
+            #vc-video-grid[data-count="3"] { grid-template-columns: 1fr !important; grid-template-rows: repeat(3, 1fr); }
+            #vc-video-grid[data-count="4"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: repeat(2, 1fr);
+            }
+            #vc-video-grid[data-count="5"],
+            #vc-video-grid[data-count="6"] {
+                grid-template-columns: repeat(2, 1fr) !important;
+                grid-template-rows: repeat(3, 1fr);
+            }
+            #vc-video-grid[data-count="7"],
+            #vc-video-grid[data-count="8"],
+            #vc-video-grid[data-count="9"] {
+                grid-template-columns: repeat(3, 1fr) !important;
+                grid-template-rows: repeat(3, 1fr);
+            }
+        }
+
         /* ── 세로(portrait) 모바일: 가로 모드 전환 안내 오버레이 ── */
         .rotate-hint {
             display: none;
@@ -843,19 +1087,82 @@
      페이지 이동 없이 해당 로비 화면으로 전환됩니다.
 ================================================================ -->
 <div id="view-home" class="view active">
-    <h1 class="home-title">Mangoi 화상솔루션</h1>
-    <p class="home-subtitle">실시간 영상통화 & 시그널링 서비스</p>
-    <div class="home-cards">
-        <!-- 버튼 클릭 시 showView('view-signaling-lobby')를 호출하여 화면을 전환 -->
-        <button class="home-card" onclick="showView('view-signaling-lobby')">
-            <span class="badge badge-blue">1:1 통화</span>
-            <h2>1:1 화상통화 시작</h2>
-            <p>방 이름을 입력하고 상대방과 1:1 영상통화를 시작합니다.</p>
-        </button>
-        <button class="home-card" onclick="showView('view-videocall-lobby')">
-            <span class="badge badge-purple">다자간 통화</span>
-            <h2>화상통화 + (칠판·채팅·PDF)</h2>
-            <p>최대 10명이 참여하는 화상통화, 칠판, 채팅, PDF 공유</p>
+    <!-- 언어 전환 버튼 -->
+    <button id="lang-toggle" onclick="toggleLang()" style="position:absolute;top:1.2rem;right:1.2rem;z-index:10;background:rgba(30,41,59,0.5);backdrop-filter:blur(6px);border:1px solid rgba(148,163,184,0.2);border-radius:12px;padding:0.45rem 0.7rem;color:#cbd5e1;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;transition:all 0.3s;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span id="lang-label">EN</span>
+    </button>
+    <div id="starfield"></div>
+    <script>
+    (function(){
+      const sf = document.getElementById('starfield');
+      // 반짝이는 별 90개 생성 (더 빠르게)
+      for(let i=0;i<90;i++){
+        const s=document.createElement('div');
+        s.className='star';
+        const size=Math.random()*3+1;
+        s.style.cssText=`width:${size}px;height:${size}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--dur:${Math.random()*1.5+0.8}s;--min-o:${Math.random()*0.15+0.05};--max-o:${Math.random()*0.5+0.5};animation-delay:${Math.random()*3}s;`;
+        sf.appendChild(s);
+      }
+      // 행성 제거 — 레퍼런스 이미지와 동일하게 별만 유지
+      // (행성 CSS는 남겨두지만 DOM을 만들지 않아 렌더링되지 않음)
+      // 별똥별 주기적 생성 (더 자주, 여러개)
+      function spawnShootingStar(){
+        const ss=document.createElement('div');
+        ss.className='shooting-star';
+        ss.style.top=Math.random()*50+'%';
+        ss.style.right='-80px';
+        ss.style.animation=`shoot ${Math.random()*0.6+0.6}s linear forwards`;
+        sf.appendChild(ss);
+        ss.addEventListener('animationend',()=>ss.remove());
+      }
+      setInterval(function(){ spawnShootingStar(); setTimeout(spawnShootingStar, 300+Math.random()*400); }, 1800);
+      setTimeout(spawnShootingStar, 500);
+      setTimeout(spawnShootingStar, 900);
+    })();
+    </script>
+    <script>
+    var currentLang = 'ko';
+    function toggleLang() {
+      currentLang = (currentLang === 'ko') ? 'en' : 'ko';
+      var newLabel = (currentLang === 'ko') ? 'EN' : 'KO';
+      // 홈 화면 고정 텍스트
+      var sub = document.getElementById('home-subtitle');
+      if(sub) sub.textContent = (currentLang === 'ko') ? 'Mangoi 화상솔루션' : 'Mangoi Video Solution';
+      var badge = document.getElementById('home-card-badge');
+      if(badge) badge.textContent = (currentLang === 'ko') ? '다자간 통화' : 'Multi-party Call';
+      var title = document.getElementById('home-card-title');
+      if(title) title.textContent = (currentLang === 'ko') ? '화상통화 + (칠판·채팅·동영상)' : 'Video Call + (Board·Chat·Video)';
+      // data-ko / data-en 속성으로 범용 번역
+      document.querySelectorAll('[data-ko]').forEach(function(el){
+        var txt = el.getAttribute('data-' + currentLang);
+        if(txt !== null) el.textContent = txt;
+      });
+      // placeholder 번역
+      document.querySelectorAll('[data-ko-ph]').forEach(function(el){
+        var ph = el.getAttribute('data-' + currentLang + '-ph');
+        if(ph) el.placeholder = ph;
+      });
+      // 모든 lang-label 동기화
+      document.querySelectorAll('.lang-label-sync').forEach(function(el){ el.textContent = newLabel; });
+      var homeLabel = document.getElementById('lang-label');
+      if(homeLabel) homeLabel.textContent = newLabel;
+      // 버튼 스타일 (홈)
+      var btn = document.getElementById('lang-toggle');
+      if(btn){
+        btn.style.borderColor = (currentLang === 'ko') ? 'rgba(148,163,184,0.2)' : 'rgba(56,189,248,0.4)';
+        btn.style.color = (currentLang === 'ko') ? '#cbd5e1' : '#38bdf8';
+      }
+    }
+    </script>
+    <!-- 제목 그룹 (로고 이미지 제거됨) -->
+    <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:1.5rem;position:relative;z-index:1;">
+      <h1 id="home-subtitle" class="home-title" style="font-family:'Noto Sans KR',sans-serif;letter-spacing:-0.5px;margin:0;">Mangoi 화상솔루션</h1>
+    </div>
+    <div class="home-cards" style="position:relative;z-index:1;">
+        <button class="home-card home-card-large" onclick="showView('view-videocall-lobby')">
+            <span id="home-card-badge" class="badge badge-purple" style="font-size:0.9rem;padding:0.3rem 1rem;">다자간 통화</span>
+            <h2 id="home-card-title" style="font-size:1.8rem;">화상통화 + (칠판·채팅·동영상)</h2>
         </button>
     </div>
 </div>
@@ -932,13 +1239,17 @@
      [화면 3-a] 다자간 화상통화 로비
 ================================================================ -->
 <div id="view-videocall-lobby" class="view lobby">
+    <button id="lang-toggle-lobby" onclick="toggleLang()" style="position:absolute;top:1.2rem;right:1.2rem;z-index:10;background:rgba(30,41,59,0.5);backdrop-filter:blur(6px);border:1px solid rgba(148,163,184,0.2);border-radius:12px;padding:0.45rem 0.7rem;color:#cbd5e1;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.4rem;transition:all 0.3s;">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+        <span class="lang-label-sync">EN</span>
+    </button>
     <div class="lobby-box">
-        <h1>화상통화 +</h1>
-        <p class="desc">칠판 · 채팅 · PDF 공유</p>
-        <input id="vc-name-input" type="text" placeholder="이름 입력" />
-        <input id="vc-room-input" type="text" placeholder="방 코드 (비우면 자동 생성)" />
-        <button class="btn-primary" onclick="vcJoinRoom()">입장하기</button>
-        <button class="btn-back" onclick="showView('view-home')">← 메인으로</button>
+        <h1 data-ko="화상통화 +" data-en="Video Call +">화상통화 +</h1>
+        <p class="desc" data-ko="칠판 · 채팅 · PDF 공유" data-en="Whiteboard · Chat · PDF Sharing">칠판 · 채팅 · PDF 공유</p>
+        <input id="vc-name-input" type="text" data-ko-ph="이름 입력" data-en-ph="Enter name" placeholder="이름 입력" />
+        <input id="vc-room-input" type="text" data-ko-ph="방 코드 (비우면 자동 생성)" data-en-ph="Room code (leave empty for auto)" placeholder="방 코드 (비우면 자동 생성)" />
+        <button class="btn-primary" onclick="vcJoinRoom()" data-ko="입장하기" data-en="Join Room">입장하기</button>
+        <button class="btn-back" onclick="showView('view-home')" data-ko="← 메인으로" data-en="← Home">← 메인으로</button>
     </div>
 </div>
 
@@ -950,9 +1261,10 @@
     <div class="toolbar">
         <div class="toolbar-left">
             <span class="status-dot disconnected" id="vc-status-dot"></span>
-            <span class="room-info">
-                방: <strong id="vc-room-name"></strong>
-                · 참여자: <strong id="vc-user-count">0</strong>명
+            <span class="room-info" id="vc-room-info">
+                <span data-ko="방:" data-en="Room:">방:</span> <strong id="vc-room-name"></strong>
+                · <span data-ko="참여자:" data-en="Users:">참여자:</span> <strong id="vc-user-count">0</strong><span data-ko="명" data-en="">명</span>
+                · <span id="vc-ice-status" style="font-size:11px;color:#aaa;">v2.1</span>
             </span>
         </div>
         <div class="toolbar-center">
@@ -964,7 +1276,11 @@
             </button>
         </div>
         <div class="toolbar-right">
-            <button class="ctrl-btn danger" onclick="vcLeaveRoom()" title="나가기">✕</button>
+            <button class="ctrl-btn" onclick="toggleLang()" title="Language" style="background:rgba(148,163,184,0.1);color:#94a3b8;font-size:0.75rem;width:auto;padding:0 10px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:3px;vertical-align:middle;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <span class="lang-label-sync">EN</span>
+            </button>
+            <button class="ctrl-btn danger" onclick="vcLeaveRoom()" data-ko-title="나가기" data-en-title="Leave" title="나가기">✕</button>
         </div>
     </div>
 
@@ -976,12 +1292,12 @@
                 <button onclick="vcSetVideoSize('quarter', this)" class="active" title="화면의 1/4">1/4</button>
                 <button onclick="vcSetVideoSize('half', this)" title="화면의 1/2">1/2</button>
                 <button onclick="vcSetVideoSize('threequarter', this)" title="화면의 3/4">3/4</button>
-                <button onclick="vcSetVideoSize('full', this)" title="전체화면">전체</button>
+                <button onclick="vcSetVideoSize('full', this)" title="전체화면" data-ko="전체" data-en="Full">전체</button>
             </div>
             <div class="video-strip" id="vc-video-grid">
                 <div class="video-box" id="vc-local-box">
                     <video id="vc-local-video" autoplay muted playsinline></video>
-                    <span class="video-label" id="vc-local-label">나</span>
+                    <span class="video-label" id="vc-local-label" data-ko="나" data-en="Me">나</span>
                 </div>
                 <!-- 다른 참가자의 비디오는 JS로 동적 추가됩니다 -->
             </div>
@@ -991,26 +1307,27 @@
         <div class="content-pane" id="vc-content-pane">
             <!-- 탭 메뉴 -->
             <div class="tab-bar">
-                <button class="tab-btn active" onclick="vcSwitchTab('whiteboard')">🖊 칠판</button>
-                <button class="tab-btn" onclick="vcSwitchTab('pdf')">📄 PDF</button>
-                <button class="tab-btn" onclick="vcSwitchTab('video')">📹 동영상</button>
+                <button class="tab-btn active" onclick="vcSwitchTab('whiteboard')" data-ko="🖊 칠판" data-en="🖊 Board">🖊 칠판</button>
+                <button class="tab-btn" onclick="vcSwitchTab('pdf')" data-ko="📄 교재" data-en="📄 Materials">📄 교재</button>
+                <button class="tab-btn" onclick="vcSwitchTab('video')" data-ko="📹 동영상" data-en="📹 Video">📹 동영상</button>
             </div>
 
             <!-- 탭 콘텐츠 -->
             <div class="tab-content">
+
         <!-- 칠판 탭 -->
         <div class="tab-panel active" id="tab-whiteboard">
             <div class="whiteboard-container">
                 <div class="wb-toolbar">
-                    <button class="active" onclick="wbSetTool('pen')">✏️ 펜</button>
-                    <button onclick="wbSetTool('eraser')">🧽 지우개</button>
-                    <button onclick="wbSetTool('line')">📏 선</button>
-                    <button onclick="wbSetTool('rect')">⬜ 사각형</button>
-                    <button onclick="wbSetTool('circle')">⭕ 원</button>
+                    <button class="active" onclick="wbSetTool('pen')" data-ko="✏️ 펜" data-en="✏️ Pen">✏️ 펜</button>
+                    <button onclick="wbSetTool('eraser')" data-ko="🧽 지우개" data-en="🧽 Eraser">🧽 지우개</button>
+                    <button onclick="wbSetTool('line')" data-ko="📏 선" data-en="📏 Line">📏 선</button>
+                    <button onclick="wbSetTool('rect')" data-ko="⬜ 사각형" data-en="⬜ Rect">⬜ 사각형</button>
+                    <button onclick="wbSetTool('circle')" data-ko="⭕ 원" data-en="⭕ Circle">⭕ 원</button>
                     <input type="color" id="wb-color" value="#000000" title="색상" style="width:32px;height:28px;border:none;cursor:pointer;" />
                     <input type="range" id="wb-size" min="1" max="30" value="3" title="굵기" style="width:80px;" />
-                    <button onclick="wbClear()">🗑️ 전체 지우기</button>
-                    <button onclick="wbSave()">💾 저장</button>
+                    <button onclick="wbClear()" data-ko="🗑️ 전체 지우기" data-en="🗑️ Clear All">🗑️ 전체 지우기</button>
+                    <button onclick="wbSave()" data-ko="💾 저장" data-en="💾 Save">💾 저장</button>
                 </div>
                 <div class="wb-canvas-wrap">
                     <canvas id="wb-canvas"></canvas>
@@ -1022,13 +1339,13 @@
         <div class="tab-panel" id="tab-pdf">
             <div class="pdf-container">
                 <div class="pdf-controls">
-                    <label style="padding:0.4rem 0.8rem; border-radius:8px; background:rgba(148,163,184,0.15); color:#e2e8f0; font-size:0.85rem; cursor:pointer;">
-                        📁 PDF 업로드
-                        <input type="file" accept=".pdf" id="pdf-upload" style="display:none;" onchange="pdfUpload(this)" />
+                    <label style="padding:0.4rem 0.8rem; border-radius:8px; background:rgba(148,163,184,0.15); color:#e2e8f0; font-size:0.85rem; cursor:pointer;" data-ko="📁 교재 업로드 (PDF/JPG/PNG)" data-en="📁 Upload (PDF/JPG/PNG)">
+                        📁 교재 업로드 (PDF/JPG/PNG)
+                        <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" id="pdf-upload" style="display:none;" onchange="pdfUpload(this)" />
                     </label>
-                    <button onclick="pdfPrevPage()">◀ 이전</button>
+                    <button onclick="pdfPrevPage()" data-ko="◀ 이전" data-en="◀ Prev">◀ 이전</button>
                     <span id="pdf-page-info" style="font-size:0.85rem;color:#94a3b8;">-</span>
-                    <button onclick="pdfNextPage()">다음 ▶</button>
+                    <button onclick="pdfNextPage()" data-ko="다음 ▶" data-en="Next ▶">다음 ▶</button>
                     <span style="margin-left:8px;display:inline-flex;gap:4px;">
                         <button id="pdf-view-1" class="pdf-view-btn active" onclick="pdfSetPagesPerView(1, this)" title="한 페이지 보기">📄</button>
                         <button id="pdf-view-2" class="pdf-view-btn" onclick="pdfSetPagesPerView(2, this)" title="두 페이지 보기">📄📄</button>
@@ -1039,16 +1356,16 @@
                         <button onclick="pdfZoomIn()" title="확대">🔍+</button>
                         <button onclick="pdfZoomReset()" title="원래 크기">1:1</button>
                     </span>
-                    <button onclick="pdfStopShare()" style="background:rgba(239,68,68,0.2);color:#ef4444;">공유 중지</button>
+                    <button onclick="pdfStopShare()" style="background:rgba(239,68,68,0.2);color:#ef4444;" data-ko="공유 중지" data-en="Stop Share">공유 중지</button>
                 </div>
                 <!-- PDF 위에 그리기 (주석) 툴바 -->
                 <div class="pdf-anno-bar">
-                    <button id="pdf-tool-none" class="active" onclick="pdfSetDrawTool('none', this)" title="그리기 끔">🖱 보기</button>
-                    <button id="pdf-tool-pen" onclick="pdfSetDrawTool('pen', this)" title="펜">✏️ 펜</button>
-                    <button id="pdf-tool-eraser" onclick="pdfSetDrawTool('eraser', this)" title="지우개">🧽 지우개</button>
+                    <button id="pdf-tool-none" class="active" onclick="pdfSetDrawTool('none', this)" title="그리기 끔" data-ko="🖱 보기" data-en="🖱 View">🖱 보기</button>
+                    <button id="pdf-tool-pen" onclick="pdfSetDrawTool('pen', this)" title="펜" data-ko="✏️ 펜" data-en="✏️ Pen">✏️ 펜</button>
+                    <button id="pdf-tool-eraser" onclick="pdfSetDrawTool('eraser', this)" title="지우개" data-ko="🧽 지우개" data-en="🧽 Eraser">🧽 지우개</button>
                     <input type="color" id="pdf-anno-color" value="#ef4444" title="색상" style="width:32px;height:26px;border:none;cursor:pointer;" />
                     <input type="range" id="pdf-anno-size" min="1" max="20" value="3" title="굵기" style="width:80px;" />
-                    <button onclick="pdfClearAnno()" title="이 페이지 주석 모두 지우기">🗑 지우기</button>
+                    <button onclick="pdfClearAnno()" title="이 페이지 주석 모두 지우기" data-ko="🗑 지우기" data-en="🗑 Clear">🗑 지우기</button>
                 </div>
                 <!-- 위쪽 팬 툴바 (좌우 이동) -->
                 <div class="pdf-pan-top">
@@ -1081,17 +1398,17 @@
         <div class="tab-panel" id="tab-video">
             <div class="video-player-container">
                 <div class="vp-controls">
-                    <input id="vp-url" type="text" placeholder="YouTube 주소 또는 동영상 URL을 붙여넣으세요" onkeydown="if(event.key==='Enter')vpLoadUrl()" />
-                    <button onclick="vpLoadUrl()">🔗 URL 재생</button>
-                    <label class="vp-file-btn">
+                    <input id="vp-url" type="text" placeholder="YouTube 주소 또는 동영상 URL을 붙여넣으세요" data-ko-ph="YouTube 주소 또는 동영상 URL을 붙여넣으세요" data-en-ph="Paste YouTube or video URL here" onkeydown="if(event.key==='Enter')vpLoadUrl()" />
+                    <button onclick="vpLoadUrl()" data-ko="🔗 URL 재생" data-en="🔗 Play URL">🔗 URL 재생</button>
+                    <label class="vp-file-btn" data-ko="📁 파일 업로드" data-en="📁 Upload File">
                         📁 파일 업로드
                         <input type="file" accept="video/*" id="vp-upload" onchange="vpUploadFile(this)" />
                     </label>
-                    <button onclick="vpTogglePiP()" title="미니 플레이어 토글 — 칠판·PDF 위에 떠서 보임">📌 미니</button>
-                    <button onclick="vpClear()">🗑 닫기</button>
+                    <button onclick="vpTogglePiP()" title="미니 플레이어 토글" data-ko="📌 미니" data-en="📌 Mini">📌 미니</button>
+                    <button onclick="vpClear()" data-ko="🗑 닫기" data-en="🗑 Close">🗑 닫기</button>
                 </div>
                 <div class="vp-stage" id="vp-stage">
-                    <div class="vp-empty">🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.<br><span style="font-size:0.8rem;color:#475569;">📌 미니 버튼을 누르면 칠판·PDF를 보면서 동시에 시청할 수 있습니다.</span></div>
+                    <div class="vp-empty" data-ko="🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요." data-en="🎬 Paste a YouTube URL or upload a video file.">🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.</div>
                 </div>
             </div>
         </div>
@@ -1102,16 +1419,16 @@
     <!-- 세로 모드일 때 가로 회전 안내 오버레이 (모바일 전용) -->
     <div class="rotate-hint" id="vc-rotate-hint">
         <div class="rotate-icon">📱</div>
-        <h2>가로 모드로 돌려주세요</h2>
-        <p>화면이 작아 수업은 <strong>가로(landscape)</strong> 모드에 최적화되어 있습니다.<br>
+        <h2 data-ko="가로 모드로 돌려주세요" data-en="Please rotate to landscape">가로 모드로 돌려주세요</h2>
+        <p data-ko="화면이 작아 수업은 가로(landscape) 모드에 최적화되어 있습니다. 휴대폰을 옆으로 돌리면 왼쪽에 영상, 오른쪽에 칠판·PDF·동영상이 보입니다." data-en="This class is optimized for landscape mode. Rotate your phone sideways for the best experience.">화면이 작아 수업은 <strong>가로(landscape)</strong> 모드에 최적화되어 있습니다.<br>
            휴대폰을 옆으로 돌리면 왼쪽에 영상, 오른쪽에 칠판·PDF·동영상이 보입니다.</p>
-        <button onclick="document.getElementById('vc-rotate-hint').style.display='none'">그래도 세로로 보기</button>
+        <button onclick="document.getElementById('vc-rotate-hint').style.display='none'" data-ko="그래도 세로로 보기" data-en="Use portrait anyway">그래도 세로로 보기</button>
     </div>
 
     <!-- 플로팅 미니 동영상 플레이어 (칠판·PDF 보면서 동시 시청) -->
     <div class="vp-floating" id="vp-floating" style="display:none;">
         <div class="vp-floating-header" id="vp-floating-header">
-            <span>📹 동영상 (드래그 이동 · 모서리 크기 조절)</span>
+            <span data-ko="📹 동영상 (드래그 이동 · 모서리 크기 조절)" data-en="📹 Video (Drag to move · Resize from corners)">📹 동영상 (드래그 이동 · 모서리 크기 조절)</span>
             <button onclick="vpFloatingClose()" title="닫기">✕</button>
         </div>
         <div class="vp-floating-body" id="vp-floating-body"></div>
@@ -1120,13 +1437,13 @@
     <!-- 채팅 사이드 패널 -->
     <div class="chat-panel" id="vc-chat-panel">
         <div class="chat-header">
-            <strong>채팅</strong>
+            <strong data-ko="채팅" data-en="Chat">채팅</strong>
             <button onclick="vcToggleChat()" style="background:none;color:#94a3b8;font-size:1.2rem;">✕</button>
         </div>
         <div class="chat-messages" id="vc-chat-messages"></div>
         <div class="chat-input-area">
-            <input id="vc-chat-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter') vcSendChat();" />
-            <button onclick="vcSendChat()">전송</button>
+            <input id="vc-chat-input" type="text" placeholder="메시지 입력..." data-ko-ph="메시지 입력..." data-en-ph="Type a message..." onkeydown="if(event.key==='Enter') vcSendChat();" />
+            <button onclick="vcSendChat()" data-ko="전송" data-en="Send">전송</button>
         </div>
     </div>
 </div>
@@ -1188,13 +1505,25 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
     // ── 재연결 설정 ──
     let ws = null;
     let reconnectAttempts = 0;       // 현재 재연결 시도 횟수
-    const MAX_RECONNECT = 5;         // 최대 재연결 시도 횟수
+    const MAX_RECONNECT = 10;        // 최대 재연결 시도 횟수 (5→10)
     let reconnectTimer = null;       // 재연결 타이머 ID
     let intentionalClose = false;    // 사용자가 의도적으로 닫았는지 여부
+    let pingInterval = null;         // keepalive ping 타이머
+
+    function startPing() {
+        stopPing();
+        pingInterval = setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({ type: 'ping' }));
+            }
+        }, 25000); // 25초마다 ping (Cloudflare 유휴 타임아웃 방지)
+    }
+    function stopPing() {
+        if (pingInterval) { clearInterval(pingInterval); pingInterval = null; }
+    }
 
     function connect() {
         // wss:// (암호화된 WebSocket) 프로토콜 사용
-        // location.host는 현재 페이지의 호스트(도메인:포트)를 가져옴
         const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
         const url = `${protocol}//${location.host}${path}`;
 
@@ -1202,7 +1531,17 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
         // ── 연결 성공 시 ──
         ws.onopen = () => {
+            console.log('[WebSocket] 연결 성공! reconnectAttempts:', reconnectAttempts);
+            const isReconnect = reconnectAttempts > 0;
             reconnectAttempts = 0;  // 재연결 카운터 초기화
+            startPing(); // keepalive 시작
+
+            // ★ 재연결 시 기존 PeerConnection 모두 정리 (새로 생성되도록)
+            if (isReconnect && typeof vcCleanupAllPeers === 'function') {
+                console.log('[WebSocket] 재연결 감지 → 기존 PeerConnection 모두 정리');
+                vcCleanupAllPeers();
+            }
+
             if (onOpen) onOpen(ws);
         };
 
@@ -1210,6 +1549,7 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
         ws.onmessage = (event) => {
             try {
                 const data = JSON.parse(event.data);
+                if (data.type === 'pong') return; // keepalive pong 무시
                 if (onMessage) onMessage(data, ws);
             } catch (e) {
                 console.error('[WebSocket] 메시지 파싱 오류:', e);
@@ -1218,14 +1558,13 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
         // ── 연결 종료 시 ──
         ws.onclose = (event) => {
+            console.log('[WebSocket] 연결 종료: code=' + event.code + ' reason=' + event.reason);
+            stopPing();
             if (onClose) onClose(event);
 
             // 의도적 종료가 아니면 자동 재연결 시도
             if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
                 reconnectAttempts++;
-                // 지수 백오프(Exponential Backoff):
-                // 재연결할수록 대기 시간을 늘려서 서버 부하를 줄임
-                // 1초 → 2초 → 4초 → 8초 → 16초
                 const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 16000);
                 console.log(`[WebSocket] ${delay/1000}초 후 재연결 시도... (${reconnectAttempts}/${MAX_RECONNECT})`);
                 reconnectTimer = setTimeout(connect, delay);
@@ -1242,19 +1581,32 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
     // 외부에서 사용할 수 있는 인터페이스 반환
     return {
-        // WebSocket 인스턴스에 접근 (항상 최신 ws를 반환)
         get ws() { return ws; },
 
-        // 메시지 전송 헬퍼: 연결 상태 확인 후 전송
         send(data) {
             if (ws && ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify(data));
+            } else {
+                console.warn('[WebSocket] 전송 실패: 연결 끊김 상태');
             }
         },
 
-        // 의도적 종료 (재연결하지 않음)
+        /** 앱 복귀 등 즉시 재연결이 필요할 때 호출 */
+        reconnectNow() {
+            if (ws && (ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING)) {
+                console.log('[WebSocket] reconnectNow: 즉시 재연결 시도');
+                clearTimeout(reconnectTimer);
+                reconnectAttempts = 0;
+                intentionalClose = false;
+                connect();
+            } else if (!ws || ws.readyState === WebSocket.CONNECTING) {
+                // 연결 중이면 그대로 두고, 필요 시 재연결은 onclose에서 처리
+            }
+        },
+
         close() {
             intentionalClose = true;
+            stopPing();
             clearTimeout(reconnectTimer);
             if (ws) ws.close();
         }
@@ -1280,31 +1632,116 @@ function createWebSocket(path, onMessage, onOpen, onClose) {
 
    아래 설정에서 TURN 서버 주소/계정을 입력하면 됩니다.
 ================================================================ */
-const ICE_SERVERS = {
+// ICE_SERVERS: 서버에서 동적으로 TURN 자격증명을 가져와서 설정
+// (Cloudflare TURN이 설정되면 동적 자격증명, 아니면 공개 STUN/TURN 폴백)
+let ICE_SERVERS = {
     iceServers: [
-        // ── 무료 STUN 서버 (Google 제공) ──
-        // 대부분의 경우 이것만으로 P2P 연결이 됩니다.
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
-
-        // ── TURN 서버 (필요 시 아래 주석을 해제하고 설정) ──
-        // 방화벽이 강한 네트워크에서는 TURN 서버가 필요합니다.
-        // Cloudflare TURN, Twilio, 또는 직접 구축한 서버를 사용할 수 있습니다.
-        //
-        // {
-        //     urls: 'turn:YOUR_TURN_SERVER:3478',  // TURN 서버 주소
-        //     username: 'YOUR_USERNAME',            // 인증 사용자명
-        //     credential: 'YOUR_PASSWORD'           // 인증 비밀번호
-        // },
-        //
-        // TURNS (TLS 암호화된 TURN):
-        // {
-        //     urls: 'turns:YOUR_TURN_SERVER:443',
-        //     username: 'YOUR_USERNAME',
-        //     credential: 'YOUR_PASSWORD'
-        // }
+        { urls: 'stun:stun.cloudflare.com:3478' }
     ]
 };
+
+// 서버에서 최신 ICE 서버 설정을 가져옴 (TURN 포함)
+async function fetchIceServers() {
+    try {
+        const resp = await fetch('/api/turn-config');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.iceServers && data.iceServers.length > 0) {
+                ICE_SERVERS = { iceServers: data.iceServers };
+                console.log('[ICE] 서버에서 ICE 설정 로드 완료:', ICE_SERVERS.iceServers.length, '개 서버');
+            }
+        }
+    } catch (e) {
+        console.warn('[ICE] 서버 설정 로드 실패, 기본값 사용:', e);
+    }
+}
+// 페이지 로드 시 즉시 ICE 설정 가져오기
+fetchIceServers();
+
+/**
+ * getUserMedia 에러를 사용자 친화적인 한국어 메시지로 변환합니다.
+ */
+function describeMediaError(err) {
+    if (!err) return '알 수 없는 오류';
+    const name = err.name || '';
+    const detail = err.message ? ' (' + err.message + ')' : '';
+    switch (name) {
+        case 'NotAllowedError':
+        case 'PermissionDeniedError':
+            return '마이크/카메라 사용 권한이 거부되었습니다. 브라우저 주소창의 🔒 아이콘 → 카메라/마이크 → "허용"으로 변경한 후 새로고침하세요.' + detail;
+        case 'NotFoundError':
+        case 'DevicesNotFoundError':
+            return '마이크 또는 카메라 장치를 찾을 수 없습니다. OS 사운드 설정에서 입력 장치가 활성화되어 있는지 확인하세요.' + detail;
+        case 'NotReadableError':
+        case 'TrackStartError':
+            return '다른 앱이 마이크/카메라를 점유 중입니다. Zoom, Teams, Discord, 다른 브라우저 탭 등을 종료한 후 다시 시도하세요.' + detail;
+        case 'OverconstrainedError':
+        case 'ConstraintNotSatisfiedError':
+            return '요청한 미디어 설정이 장치에서 지원되지 않습니다.' + detail;
+        case 'SecurityError':
+            return '보안 정책에 의해 미디어 접근이 차단되었습니다. (HTTPS 필요)' + detail;
+        case 'TypeError':
+            return '브라우저가 미디어 API를 지원하지 않습니다.' + detail;
+        default:
+            return (name ? '[' + name + '] ' : '') + (err.message || '미디어 접근 실패');
+    }
+}
+
+/**
+ * 카메라/마이크를 안정적으로 획득합니다.
+ * - 데스크탑에서 기본 장치 선택이 실패하는 경우 대비: 전체 → 제약 완화 → 오디오 전용 fallback
+ * - 에코 제거/노이즈 억제/자동 게인을 명시적으로 활성화해 데스크탑 통화 품질 개선
+ */
+async function acquireLocalMedia({ video = true, audio = true } = {}) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        const e = new Error('이 브라우저는 getUserMedia를 지원하지 않습니다.');
+        e.name = 'TypeError';
+        throw e;
+    }
+
+    const audioConstraints = audio ? {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+        sampleRate: { ideal: 48000 }
+    } : false;
+
+    const videoConstraints = video ? {
+        width:  { ideal: 1280 },
+        height: { ideal: 720 },
+        frameRate: { ideal: 30, max: 30 }
+    } : false;
+
+    // 1차: 고급 제약
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: videoConstraints,
+            audio: audioConstraints
+        });
+        // 오디오 트랙이 0개인데 요청은 했다면 최소 제약으로 재시도
+        if (audio && stream.getAudioTracks().length === 0) {
+            console.warn('[media] 고급 제약으로는 오디오 트랙 0 → 최소 제약 재시도');
+            try { stream.getTracks().forEach(t => t.stop()); } catch(_) {}
+            return await navigator.mediaDevices.getUserMedia({ video, audio: true });
+        }
+        return stream;
+    } catch (e1) {
+        // OverconstrainedError 등: 2차 최소 제약
+        console.warn('[media] 고급 제약 실패, 최소 제약으로 재시도:', e1 && e1.name);
+        try {
+            return await navigator.mediaDevices.getUserMedia({ video, audio });
+        } catch (e2) {
+            // 3차: 오디오 전용 fallback (요청이 video+audio였을 때만)
+            if (video && audio) {
+                console.warn('[media] 전체 실패 → 오디오만 시도:', e2 && e2.name);
+                return await navigator.mediaDevices.getUserMedia({ video: false, audio: true });
+            }
+            throw e2;
+        }
+    }
+}
 
 
 /* ================================================================
@@ -1347,15 +1784,19 @@ async function signalingJoinRoom() {
     try {
         // ── 카메라 & 마이크 접근 요청 ──
         // getUserMedia: 브라우저가 사용자에게 카메라/마이크 허용 팝업을 보여줍니다.
-        sigLocalStream = await navigator.mediaDevices.getUserMedia({
-            video: true,   // 카메라 사용
-            audio: true    // 마이크 사용
-        });
+        sigLocalStream = await acquireLocalMedia({ video: true, audio: true });
         // 내 비디오 요소에 스트림 연결
         document.getElementById('sig-local-video').srcObject = sigLocalStream;
-        sigLog('info', '카메라 & 마이크 연결 완료');
+        const aCount = sigLocalStream.getAudioTracks().length;
+        const vCount = sigLocalStream.getVideoTracks().length;
+        sigLog('info', `미디어 연결 완료 (비디오: ${vCount}개, 오디오: ${aCount}개)`);
+        if (aCount === 0) {
+            sigLog('warn', '⚠️ 마이크가 감지되지 않았습니다. 브라우저 주소창의 마이크 아이콘 / OS 사운드 설정에서 입력 장치를 확인하세요.');
+        }
     } catch (err) {
-        sigLog('error', `미디어 접근 실패: ${err.message}`);
+        const msg = describeMediaError(err);
+        sigLog('error', `미디어 접근 실패: ${msg}`);
+        alert('미디어 접근 실패\n\n' + msg);
         // 카메라 없이도 계속 진행 (오디오만 가능)
     }
 
@@ -1623,15 +2064,101 @@ function sigLog(level, message) {
 
 let vcConn = null;              // WebSocket 연결
 let vcLocalStream = null;       // 내 미디어 스트림
-let vcPeerConnections = {};     // { oderId: RTCPeerConnection } 맵
+let vcPeerConnections = {};     // { userId: RTCPeerConnection } 맵
 let vcRoomId = '';
 let vcUsername = '';
 let vcUserId = '';              // 서버가 부여한 내 ID
+
+/* ── Wake Lock (화면 꺼짐 방지) & 백그라운드 복귀 재연결 ── */
+let wakeLock = null;
+async function requestWakeLock() {
+    try {
+        if ('wakeLock' in navigator) {
+            wakeLock = await navigator.wakeLock.request('screen');
+            console.log('[wakeLock] 화면 꺼짐 방지 활성화');
+        }
+    } catch (err) { console.error('[wakeLock] 실패:', err); }
+}
+/** 모든 비디오 엘리먼트를 다시 재생 (visibilitychange/pageshow/resume에서 공통 호출) */
+function vcResumeAllVideos() {
+    document.querySelectorAll('video').forEach(v => {
+        if (v.srcObject && v.paused) {
+            const p = v.play();
+            if (p && p.catch) p.catch(err => console.warn('[resume] video.play() 실패:', err && err.name));
+        }
+    });
+}
+
+/** 앱 복귀 시: 트랙 enable + 비디오 재생 + ICE/WebSocket 복구 */
+async function vcOnAppResume(reason) {
+    console.log('[app-resume] 복귀 감지:', reason);
+    try { await requestWakeLock(); } catch(_) {}
+
+    // 1) 로컬 트랙 다시 enable + 상태 확인
+    if (vcLocalStream) {
+        vcLocalStream.getTracks().forEach(t => {
+            t.enabled = true;
+            if (t.readyState === 'ended') {
+                console.warn('[app-resume] 트랙 ended 상태, 복구 불가:', t.kind);
+            }
+        });
+    }
+
+    // 2) 모든 비디오 엘리먼트 play() 재호출 (모바일 브라우저가 일시정지한 경우 대응)
+    vcResumeAllVideos();
+
+    // 3) WebSocket 끊겨 있으면 자동 재연결 로직이 이미 타이머로 돌지만,
+    //    수동으로도 즉시 깨워서 재연결을 앞당김
+    try {
+        if (vcConn && vcConn.ws && vcConn.ws.readyState !== WebSocket.OPEN && typeof vcConn.reconnectNow === 'function') {
+            vcConn.reconnectNow();
+        }
+    } catch(_) {}
+
+    // 4) 피어 연결 중 disconnected/failed 상태면 ICE 재시작
+    for (const pc of Object.values(vcPeerConnections)) {
+        const s = pc.iceConnectionState;
+        if (s === 'disconnected' || s === 'failed' || s === 'closed') {
+            console.log('[app-resume] ICE 재시작:', s);
+            try { pc.restartIce(); } catch(_) {}
+        }
+    }
+
+    // 5) 한 번 더 500ms 뒤에 play 재시도 (iOS Safari가 play() 거부 후 바로 다시 부르면 성공하는 경우 있음)
+    setTimeout(vcResumeAllVideos, 500);
+}
+
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+        vcOnAppResume('visibilitychange');
+    }
+});
+// ★ bfcache(브라우저 뒤로가기·앱 스위치 후 복귀) 전용: pageshow의 persisted=true 케이스
+window.addEventListener('pageshow', (e) => {
+    if (e.persisted) vcOnAppResume('pageshow-bfcache');
+    else vcResumeAllVideos(); // 일반 복귀에서도 play 재시도
+});
+// ★ 모바일 Chrome/Safari의 tab freeze 해제 이벤트
+window.addEventListener('resume', () => vcOnAppResume('resume'));
+window.addEventListener('focus',  () => vcResumeAllVideos());
+
+/** WebSocket 재연결 시 기존 PeerConnection 모두 정리 (전역 함수 — createWebSocket에서 호출) */
+function vcCleanupAllPeers() {
+    console.log('[vc] vcCleanupAllPeers: 기존 PC', Object.keys(vcPeerConnections).length, '개 정리');
+    Object.keys(vcPeerConnections).forEach(id => {
+        try { vcPeerConnections[id].close(); } catch(_) {}
+        const el = document.getElementById(`vc-video-${id}`);
+        if (el) el.remove();
+    });
+    vcPeerConnections = {};
+}
 let vcMicOn = true;
 let vcCamOn = true;
+let vcIsObserver = false;       // 관찰자 모드 (수신 전용)
 
 /** 다자간 통화 방 입장 */
 async function vcJoinRoom() {
+    vcIsObserver = false; // 일반 입장 모드 확인
     vcUsername = document.getElementById('vc-name-input').value.trim();
     if (!vcUsername) { alert('이름을 입력하세요.'); return; }
     vcRoomId = document.getElementById('vc-room-input').value.trim() || 'room-' + Math.random().toString(36).substr(2, 6);
@@ -1639,17 +2166,40 @@ async function vcJoinRoom() {
     showView('view-videocall-call');
     document.body.classList.add('vc-in-call');
     document.getElementById('vc-room-name').textContent = vcRoomId;
+    requestWakeLock(); // 화면 꺼짐 방지 활성화
     // 칠판 캔버스가 보이는 시점에 실제 크기로 리사이즈 (display:none → flex 직후)
     setTimeout(() => { if (typeof wbResize === 'function') wbResize(); }, 100);
 
+    // ICE 서버 설정 먼저 가져오기 (TURN 포함)
+    await fetchIceServers();
+    console.log('[vc] ICE 서버 설정:', JSON.stringify(ICE_SERVERS.iceServers.map(s => s.urls)));
+
     try {
-        vcLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        vcLocalStream = await acquireLocalMedia({ video: true, audio: true });
         document.getElementById('vc-local-video').srcObject = vcLocalStream;
-        document.getElementById('vc-local-label').textContent = `${vcUsername} (나)`;
+        document.getElementById('vc-local-label').textContent = vcUsername + (currentLang==='ko'?' (나)':' (Me)');
         attachStreamMonitor(document.getElementById('vc-local-box'), vcLocalStream);
         vcAddDetachButton(document.getElementById('vc-local-box'));
+        vcUpdateGridCount();
+        const vCount = vcLocalStream.getVideoTracks().length;
+        const aCount = vcLocalStream.getAudioTracks().length;
+        console.log('[vc] 미디어 접근 성공: video:', vCount, 'audio:', aCount);
+        if (aCount === 0) {
+            alert('⚠️ 마이크가 감지되지 않았습니다.\n\n• 브라우저 주소창의 🎤 아이콘을 확인하세요.\n• OS 사운드 설정 → 입력 장치를 확인하세요.\n• 다른 앱(Zoom, Teams 등)이 마이크를 점유 중이면 종료하세요.');
+        }
     } catch (err) {
-        console.error('미디어 접근 실패:', err);
+        const msg = describeMediaError(err);
+        console.error('[vc] 미디어 접근 실패:', err);
+        // 카메라/마이크 없이도 계속 진행 (오디오만 or 빈 스트림)
+        try {
+            vcLocalStream = await acquireLocalMedia({ video: false, audio: true });
+            console.log('[vc] 오디오만 접근 성공');
+            alert('카메라 접근 실패 — 오디오만 사용합니다.\n\n' + msg);
+        } catch(e2) {
+            vcLocalStream = new MediaStream();
+            console.warn('[vc] 미디어 완전 실패, 빈 스트림 사용');
+            alert('카메라/마이크 접근 실패\n\n' + describeMediaError(e2));
+        }
     }
 
     vcConn = createWebSocket(
@@ -1658,6 +2208,46 @@ async function vcJoinRoom() {
         (ws) => {
             setStatusDot('vc-status-dot', 'connected');
             ws.send(JSON.stringify({ type: 'join-room', data: { username: vcUsername } }));
+        },
+        () => setStatusDot('vc-status-dot', 'disconnected')
+    );
+    setStatusDot('vc-status-dot', 'connecting');
+}
+
+/** 관찰자 모드로 입장 (관리자 전용 — 미디어 없이 수신만) */
+async function vcJoinAsObserver(roomId) {
+    vcIsObserver = true;
+    vcUsername = '관찰자';
+    vcRoomId = roomId;
+
+    showView('view-videocall-call');
+    document.body.classList.add('vc-in-call');
+    document.getElementById('vc-room-name').textContent = roomId + ' (관찰 중)';
+
+    // ICE 서버 설정
+    await fetchIceServers();
+
+    // 관찰자는 로컬 미디어 없음 — 빈 스트림
+    vcLocalStream = new MediaStream();
+    const localBox = document.getElementById('vc-local-box');
+    if (localBox) localBox.style.display = 'none'; // 로컬 비디오 숨김
+
+    // 하단 툴바 숨김 (관찰자는 마이크/카메라/채팅 등 불필요)
+    const toolbar = document.getElementById('vc-bottom-toolbar');
+    if (toolbar) toolbar.style.display = 'none';
+
+    // 관찰자 표시 배너
+    const roomHeader = document.getElementById('vc-room-name');
+    if (roomHeader) {
+        roomHeader.innerHTML = `🔍 <span style="color:#f59e0b">${roomId}</span> 수업 관찰 중`;
+    }
+
+    vcConn = createWebSocket(
+        `/ws/video-call?roomId=${encodeURIComponent(vcRoomId)}`,
+        vcHandleMessage,
+        (ws) => {
+            setStatusDot('vc-status-dot', 'connected');
+            ws.send(JSON.stringify({ type: 'join-observe', data: { username: '관찰자' } }));
         },
         () => setStatusDot('vc-status-dot', 'disconnected')
     );
@@ -1674,18 +2264,32 @@ function vcHandleMessage(msg) {
 
         case 'existing-users':
             // 기존 사용자 각각에 대해 P2P 연결 시작 (내가 Offer를 보냄)
-            msg.data.users.forEach(user => {
-                vcCreatePeerAndOffer(user.userId, user.username);
+            console.log('[vc] existing-users:', msg.data.users.length, '명');
+            msg.data.users.forEach((user, idx) => {
+                // 각 사용자에 대해 약간의 지연을 주어 동시 offer 폭주 방지
+                setTimeout(() => vcCreatePeerAndOffer(user.userId, user.username), idx * 300);
             });
-            // PDF 공유 동기화
-            if (msg.data.pdfState && msg.data.pdfState.isSharing) {
-                pdfLoadRemote(msg.data.pdfState.pdfId, msg.data.pdfState.currentPage);
+            // PDF/이미지 공유 동기화
+            if (msg.data.pdfState) {
+                const epdfId = msg.data.pdfState.pdfId || (msg.data.pdfState.url ? msg.data.pdfState.url.replace('/api/video-call/pdf/', '') : null);
+                if (epdfId) pdfLoadRemote(epdfId, msg.data.pdfState.currentPage, msg.data.pdfState.kind);
             }
             break;
 
         case 'user-joined':
+            console.log('[vc] user-joined:', msg.data.userId, msg.data.username);
             updateUserCount(msg.data.userCount);
             vcAddChatSystem(`${msg.data.username} 님이 입장했습니다.`);
+            // 새 사용자가 offer를 보내오면 vcHandleOffer에서 PC 생성됨
+            // 하지만 안전장치로 5초 후 PC가 없으면 직접 offer 시도
+            if (msg.data.userId && !vcPeerConnections[msg.data.userId]) {
+                setTimeout(() => {
+                    if (!vcPeerConnections[msg.data.userId]) {
+                        console.log('[vc] 안전장치: offer 미수신 → 직접 연결 시도:', msg.data.userId);
+                        vcCreatePeerAndOffer(msg.data.userId, msg.data.username);
+                    }
+                }, 3000);
+            }
             break;
 
         case 'user-left':
@@ -1720,80 +2324,268 @@ function vcHandleMessage(msg) {
 
         // PDF
         case 'pdf-sync':
-            pdfLoadRemote(msg.data.pdfId, msg.data.currentPage);
+        case 'pdf-share': {
+            // 서버가 pdfId 또는 url을 보낼 수 있으므로 양쪽 모두 처리
+            const syncPdfId = msg.data.pdfId || (msg.data.url ? msg.data.url.replace('/api/video-call/pdf/', '') : null);
+            if (syncPdfId) {
+                pdfLoadRemote(syncPdfId, msg.data.currentPage, msg.data.kind);
+                vcSwitchTab('pdf');
+            }
             break;
+        }
         case 'pdf-page-change':
-            pdfGoToPage(msg.data.currentPage);
+            pdfGoToPage(msg.data.currentPage || msg.data.pageNum);
             break;
         case 'pdf-stop-share':
             pdfClearRemote();
+            break;
+
+        // 동영상 공유
+        case 'video-sync': {
+            const vUrl = msg.data.url;
+            if (vUrl) {
+                document.getElementById('vp-url').value = vUrl;
+                vpLoadUrlRemote(vUrl);
+                vcSwitchTab('video');
+            }
+            break;
+        }
+        case 'video-stop-share':
+            vpClearRemote();
+            break;
+
+        // 관찰자 전용 메시지: 새 참가자가 입장 → 관찰자가 offer 전송
+        case 'observer-user-joined':
+            if (vcIsObserver && msg.data.userId) {
+                console.log('[vc-observer] 새 참가자 감지, offer 전송:', msg.data.userId);
+                vcCreatePeerAndOffer(msg.data.userId, msg.data.username);
+            }
+            break;
+
+        // 관찰자 전용 메시지: 참가자 퇴장
+        case 'observer-user-left':
+            if (vcIsObserver && msg.data.userId) {
+                console.log('[vc-observer] 참가자 퇴장:', msg.data.userId);
+                vcRemovePeer(msg.data.userId);
+            }
             break;
     }
 }
 
 /** 특정 사용자에 대한 P2P 연결을 생성하고 Offer를 보냅니다. */
 async function vcCreatePeerAndOffer(userId, username) {
-    const pc = vcCreatePeer(userId, username);
-    const offer = await pc.createOffer();
-    await pc.setLocalDescription(offer);
-    vcConn.send({ type: 'offer', data: { targetUserId: userId, sdp: offer } });
+    try {
+        // 이미 연결이 있으면 건너뜀 (중복 방지)
+        if (vcPeerConnections[userId]) {
+            console.log('[vc-webrtc] createPeerAndOffer: 이미 PC 존재 →', userId, '건너뜀');
+            return;
+        }
+        console.log('[vc-webrtc] createPeerAndOffer →', userId, username);
+        const pc = vcCreatePeer(userId, username);
+        const offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        console.log('[vc-webrtc] offer 전송 →', userId, 'SDP type:', offer.type);
+        vcConn.send({ type: 'offer', data: { targetUserId: userId, sdp: pc.localDescription } });
+    } catch (e) {
+        console.error('[vc-webrtc] createPeerAndOffer 에러:', e);
+    }
 }
 
 /** RTCPeerConnection을 생성합니다 (다자간 통화용). */
 function vcCreatePeer(userId, username) {
+    // 기존 PC가 있으면 정리 후 새로 생성
+    if (vcPeerConnections[userId]) {
+        console.log('[vc-webrtc] 기존 PC 정리:', userId);
+        try { vcPeerConnections[userId].close(); } catch(_) {}
+        delete vcPeerConnections[userId];
+    }
+
+    console.log('[vc-webrtc] createPeer:', userId, username, 'ICE서버:', ICE_SERVERS.iceServers.length, '개');
     const pc = new RTCPeerConnection(ICE_SERVERS);
     vcPeerConnections[userId] = pc;
 
-    if (vcLocalStream) {
-        vcLocalStream.getTracks().forEach(t => pc.addTrack(t, vcLocalStream));
+    if (vcIsObserver) {
+        // 관찰자: 미디어 전송 안 함, recvonly transceiver 추가
+        pc.addTransceiver('video', { direction: 'recvonly' });
+        pc.addTransceiver('audio', { direction: 'recvonly' });
+        console.log('[vc-webrtc] 관찰자 모드: recvonly transceiver 추가');
+    } else if (vcLocalStream) {
+        const tracks = vcLocalStream.getTracks();
+        console.log('[vc-webrtc] addTrack:', tracks.length, '개 (video:', vcLocalStream.getVideoTracks().length, ', audio:', vcLocalStream.getAudioTracks().length, ')');
+        tracks.forEach(t => pc.addTrack(t, vcLocalStream));
+    } else {
+        console.warn('[vc-webrtc] ⚠ localStream 없음! 상대방에게 미디어가 전송되지 않음');
     }
 
     pc.onicecandidate = (event) => {
         if (event.candidate) {
+            console.log('[vc-webrtc] ICE candidate 전송:', userId, event.candidate.type || 'unknown', event.candidate.protocol || '');
             vcConn.send({ type: 'ice-candidate', data: { targetUserId: userId, candidate: event.candidate } });
+        } else {
+            console.log('[vc-webrtc] ICE gathering 완료:', userId);
+        }
+    };
+
+    pc.onicegatheringstatechange = () => {
+        console.log('[vc-webrtc] ICE gathering(' + userId + '):', pc.iceGatheringState);
+    };
+
+    pc.oniceconnectionstatechange = () => {
+        const st = pc.iceConnectionState;
+        console.log('[vc-webrtc] ICE(' + userId + '):', st);
+        // 화면에 ICE 상태 표시
+        const iceEl = document.getElementById('vc-ice-status');
+        if (iceEl) {
+            const labels = { 'new':'🔄연결중','checking':'🔍탐색중','connected':'✅연결됨','completed':'✅완료','failed':'❌실패','disconnected':'⚠끊김','closed':'🔒닫힘' };
+            iceEl.textContent = 'v2.1 P2P:' + (labels[st] || st);
+            iceEl.style.color = (st==='connected'||st==='completed') ? '#4CAF50' : st==='failed' ? '#f44336' : '#ff9800';
+        }
+        if (st === 'connected' || st === 'completed') {
+            console.log('[vc-webrtc] ✅ ICE 연결 성공:', userId);
+        }
+        if (st === 'failed') {
+            console.warn('[vc-webrtc] ❌ ICE 실패 → restartIce:', userId);
+            pc.restartIce();
+        }
+        if (st === 'disconnected') {
+            console.warn('[vc-webrtc] ⚠ ICE 끊김:', userId, '5초 후 재시도');
+            setTimeout(() => {
+                if (vcPeerConnections[userId] === pc && pc.iceConnectionState === 'disconnected') {
+                    console.warn('[vc-webrtc] ICE 여전히 끊김 → restartIce:', userId);
+                    pc.restartIce();
+                }
+            }, 5000);
+        }
+    };
+
+    pc.onconnectionstatechange = () => {
+        console.log('[vc-webrtc] conn(' + userId + '):', pc.connectionState);
+        if (pc.connectionState === 'connected') {
+            console.log('[vc-webrtc] ✅ P2P 연결 완료!', userId);
+        }
+        if (pc.connectionState === 'failed') {
+            console.error('[vc-webrtc] ❌ P2P 연결 실패:', userId);
         }
     };
 
     pc.ontrack = (event) => {
-        vcAddRemoteVideo(userId, username, event.streams[0]);
+        console.log('[vc-webrtc] ★ ontrack!', userId, event.track.kind, 'streams:', event.streams.length);
+        const stream = event.streams[0] || new MediaStream([event.track]);
+        vcAddRemoteVideo(userId, username, stream);
     };
 
     return pc;
 }
 
-/** Offer 수신 처리 */
+/** Offer 수신 처리 (글레어 방지 포함) */
 async function vcHandleOffer(data) {
-    const pc = vcCreatePeer(data.fromUserId, data.fromUsername || '참가자');
-    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-    const answer = await pc.createAnswer();
-    await pc.setLocalDescription(answer);
-    vcConn.send({ type: 'answer', data: { targetUserId: data.fromUserId, sdp: answer } });
+    try {
+        const fromId = data.fromUserId;
+        const fromName = data.fromUsername || '참가자';
+        console.log('[vc-webrtc] offer 수신 from:', fromId, fromName);
+
+        // 글레어(Glare) 처리: 양쪽이 동시에 offer를 보낸 경우
+        // → userId가 작은 쪽이 offer를 취소하고 answer로 응답
+        const existingPc = vcPeerConnections[fromId];
+        if (existingPc && existingPc.signalingState === 'have-local-offer') {
+            // 양쪽 다 offer를 보낸 상태 (글레어)
+            if (vcUserId < fromId) {
+                // 내 ID가 작으면: 내 offer를 취소하고, 상대 offer에 answer
+                console.log('[vc-webrtc] 글레어 감지! 내 offer 취소, 상대 offer 수락:', fromId);
+                await existingPc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+                const answer = await existingPc.createAnswer();
+                await existingPc.setLocalDescription(answer);
+                vcConn.send({ type: 'answer', data: { targetUserId: fromId, sdp: existingPc.localDescription } });
+                return;
+            } else {
+                // 내 ID가 크면: 상대 offer 무시 (내 offer가 우선)
+                console.log('[vc-webrtc] 글레어 감지! 내 offer 유지, 상대 offer 무시:', fromId);
+                return;
+            }
+        }
+
+        // 기존 PC가 있으면 정리
+        const pc = vcCreatePeer(fromId, fromName);
+        await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        console.log('[vc-webrtc] answer 전송 →', fromId, 'SDP type:', answer.type);
+        vcConn.send({ type: 'answer', data: { targetUserId: fromId, sdp: pc.localDescription } });
+    } catch (e) {
+        console.error('[vc-webrtc] handleOffer 에러:', e);
+    }
 }
 
 /** Answer 수신 처리 */
 async function vcHandleAnswer(data) {
-    const pc = vcPeerConnections[data.fromUserId];
-    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    try {
+        console.log('[vc-webrtc] answer 수신 from:', data.fromUserId);
+        const pc = vcPeerConnections[data.fromUserId];
+        if (pc) {
+            if (pc.signalingState !== 'have-local-offer') {
+                console.warn('[vc-webrtc] answer 수신 but signalingState:', pc.signalingState, '→ 무시');
+                return;
+            }
+            await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+            console.log('[vc-webrtc] ✅ answer 적용 완료:', data.fromUserId);
+        } else {
+            console.warn('[vc-webrtc] answer 수신 but PC 없음:', data.fromUserId);
+        }
+    } catch (e) {
+        console.error('[vc-webrtc] handleAnswer 에러:', e);
+    }
 }
 
 /** ICE Candidate 수신 처리 */
 async function vcHandleIce(data) {
     const pc = vcPeerConnections[data.fromUserId];
     if (pc && data.candidate) {
-        try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) {}
+        try {
+            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch(e) {
+            console.warn('[vc-webrtc] ICE candidate 추가 실패:', data.fromUserId, e.message);
+        }
+    } else if (!pc) {
+        console.warn('[vc-webrtc] ICE candidate 수신 but PC 없음:', data.fromUserId);
     }
 }
 
 /** 원격 참가자의 비디오를 화면에 추가 */
 function vcAddRemoteVideo(userId, username, stream) {
-    if (document.getElementById(`vc-video-${userId}`)) return;
+    // 이미 존재하는 비디오가 있으면 스트림만 교체
+    const existing = document.getElementById(`vc-video-${userId}`);
+    if (existing) {
+        const existingVid = existing.querySelector('video');
+        if (existingVid && existingVid.srcObject !== stream) {
+            existingVid.srcObject = stream;
+            existingVid.play().catch(e => console.warn('[vc] 기존 비디오 play 실패:', e));
+        }
+        return;
+    }
     const grid = document.getElementById('vc-video-grid');
     const box = document.createElement('div');
     box.className = 'video-box';
     box.id = `vc-video-${userId}`;
-    box.innerHTML = `<video autoplay playsinline></video><span class="video-label">${escHtml(username)}</span>`;
-    box.querySelector('video').srcObject = stream;
+    box.innerHTML = `<video autoplay playsinline muted></video><span class="video-label">${escHtml(username)}</span>`;
+    const vid = box.querySelector('video');
+    vid.srcObject = stream;
     grid.appendChild(box);
+    vcUpdateGridCount();
+    // 모바일 자동재생 정책 대응: muted로 시작 → 재생 후 unmute
+    vid.play().then(() => {
+        // 재생 시작 후 음소거 해제
+        setTimeout(() => { vid.muted = false; }, 500);
+        console.log('[vc] 원격 비디오 재생 시작:', userId);
+    }).catch(e => {
+        console.warn('[vc] 원격 비디오 자동재생 실패:', e.message);
+        // 자동재생 실패 시 유저 클릭으로 재생하도록 안내
+        const playBtn = document.createElement('button');
+        playBtn.textContent = '▶ 재생';
+        playBtn.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:10;padding:8px 16px;font-size:16px;background:#4CAF50;color:#fff;border:none;border-radius:8px;cursor:pointer;';
+        playBtn.onclick = () => { vid.muted = false; vid.play(); playBtn.remove(); };
+        box.style.position = 'relative';
+        box.appendChild(playBtn);
+    });
     attachStreamMonitor(box, stream);
     vcAddDetachButton(box);
 }
@@ -1936,6 +2728,19 @@ function vcRemovePeer(userId) {
     if (pc) { pc.close(); delete vcPeerConnections[userId]; }
     const box = document.getElementById(`vc-video-${userId}`);
     if (box) box.remove();
+    vcUpdateGridCount();
+}
+
+/**
+ * 비디오 그리드의 참가자 수(data-count)를 현재 DOM의 video-box 개수로 갱신.
+ * CSS `#vc-video-grid[data-count="N"]` 선택자가 세로/가로 모드 레이아웃을 결정.
+ */
+function vcUpdateGridCount() {
+    const grid = document.getElementById('vc-video-grid');
+    if (!grid) return;
+    // detached(팝아웃) 상태의 박스는 그리드 밖에 있으므로 실제 자식 중 video-box만 카운트
+    const n = grid.querySelectorAll(':scope > .video-box').length;
+    grid.setAttribute('data-count', String(Math.min(n, 9)));
 }
 
 /** 다자간 통화 방 나가기 */
@@ -1951,9 +2756,21 @@ function vcLeaveRoom() {
         vcLocalStream.getTracks().forEach(t => t.stop());
         vcLocalStream = null;
     }
+    // Wake Lock 해제
+    if (wakeLock) { wakeLock.release(); wakeLock = null; console.log('[wakeLock] 해제됨'); }
     vcConn = null;
     document.getElementById('vc-chat-messages').innerHTML = '';
     document.body.classList.remove('vc-in-call');
+
+    // 관찰자 모드 해제 시 UI 복원
+    if (vcIsObserver) {
+        vcIsObserver = false;
+        const localBox = document.getElementById('vc-local-box');
+        if (localBox) localBox.style.display = '';
+        const toolbar = document.getElementById('vc-bottom-toolbar');
+        if (toolbar) toolbar.style.display = '';
+    }
+
     showView('view-home');
 }
 
@@ -2181,52 +2998,125 @@ let pdfDrawTool = 'none';                 // 'none' | 'pen' | 'eraser'
 let pdfAnnotations = {};                  // { [pageNum]: [strokes] }
                                           // stroke = { tool, color, size, points: [[nx,ny], ...] (정규화 0~1) }
 
+// 파일 확장자/MIME으로 이미지 여부 판별
+function pdfIsImageFile(fileOrName, mimeType) {
+    const name = (typeof fileOrName === 'string') ? fileOrName : (fileOrName && fileOrName.name) || '';
+    const mt = mimeType || (fileOrName && fileOrName.type) || '';
+    if (mt === 'image/jpeg' || mt === 'image/png') return true;
+    const lower = name.toLowerCase();
+    return lower.endsWith('.jpg') || lower.endsWith('.jpeg') || lower.endsWith('.png');
+}
+
+// 이미지 1장을 PDF.js 호환 document 객체로 래핑 (numPages=1, getPage 제공)
+async function pdfBuildImageDoc(url) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const W = img.naturalWidth || img.width;
+            const H = img.naturalHeight || img.height;
+            const fakeDoc = {
+                numPages: 1,
+                _isImage: true,
+                getPage: async (n) => ({
+                    getViewport: ({ scale }) => ({ width: W * scale, height: H * scale }),
+                    render: ({ canvasContext, viewport }) => ({
+                        promise: new Promise((res) => {
+                            canvasContext.drawImage(img, 0, 0, viewport.width, viewport.height);
+                            res();
+                        })
+                    })
+                })
+            };
+            resolve(fakeDoc);
+        };
+        img.onerror = (e) => reject(new Error('이미지 로드 실패: ' + url));
+        img.src = url;
+    });
+}
+
 async function pdfUpload(input) {
     const file = input.files[0];
     if (!file) return;
     // file:// 프로토콜로 직접 열면 서버 API 호출이 불가능 → 사용자에게 명확히 안내
     if (location.protocol === 'file:') {
-        alert('PDF 업로드는 서버가 필요합니다.\n\nhttps://1p.workers.dev/ 로 접속하거나\n로컬에서 "npx wrangler dev" 로 실행해 주세요.\n\n(현재 file:// 로 열려 있어 업로드가 동작하지 않습니다.)');
+        alert('교재 업로드는 서버가 필요합니다.\n\nhttps://webrtc-unified-platform.navy111p.workers.dev/ 로 접속하거나\n로컬에서 "npx wrangler dev" 로 실행해 주세요.\n\n(현재 file:// 로 열려 있어 업로드가 동작하지 않습니다.)');
         input.value = '';
         return;
     }
+
+    // 클라이언트측 확장자/MIME 검증
+    const allowedExts = ['.pdf', '.jpg', '.jpeg', '.png'];
+    const lowerName = (file.name || '').toLowerCase();
+    const isAllowedExt = allowedExts.some(e => lowerName.endsWith(e));
+    if (!isAllowedExt) {
+        alert('PDF / JPG / PNG 파일만 업로드할 수 있습니다.');
+        input.value = '';
+        return;
+    }
+
     // FormData는 일부 프리뷰(iframe postMessage 브릿지) 환경에서 DataCloneError를 일으키므로
     // raw 바이너리(Blob)로 전송하고 메타데이터는 쿼리스트링으로 넘긴다.
     const qs = new URLSearchParams({
         roomId: vcRoomId || '',
-        filename: file.name || 'upload.pdf'
+        filename: file.name || 'upload'
     }).toString();
+
+    // 브라우저가 빈 type을 주는 경우 확장자로 보정
+    let sendType = file.type;
+    if (!sendType) {
+        if (lowerName.endsWith('.pdf')) sendType = 'application/pdf';
+        else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) sendType = 'image/jpeg';
+        else if (lowerName.endsWith('.png')) sendType = 'image/png';
+        else sendType = 'application/octet-stream';
+    }
 
     try {
         const res = await fetch('/api/video-call/upload-pdf?' + qs, {
             method: 'POST',
-            headers: { 'Content-Type': file.type || 'application/pdf' },
+            headers: { 'Content-Type': sendType },
             body: file
         });
         const result = await res.json();
         if (result.success && result.url) {
-            // 서버 응답: { success, filename, url: "/api/video-call/pdf/<fileKey>" }
-            // url에서 fileKey만 잘라 pdfId로 보관 (원격 피어 동기화에 사용)
             pdfCurrentId = result.url.replace('/api/video-call/pdf/', '');
-            await pdfLoad(result.url);
-            if (vcConn) vcConn.send({ type: 'pdf-share', data: { pdfId: pdfCurrentId, url: result.url, currentPage: 1 } });
+            const kind = result.kind || (pdfIsImageFile(file) ? 'image' : 'pdf');
+            await pdfLoad(result.url, kind);
+            if (vcConn) vcConn.send({ type: 'pdf-share', data: { pdfId: pdfCurrentId, url: result.url, currentPage: 1, kind } });
         } else {
-            console.error('PDF 업로드 응답 오류:', result);
-            alert('PDF 업로드에 실패했습니다: ' + (result.error || '알 수 없는 오류'));
+            console.error('업로드 응답 오류:', result);
+            alert('업로드에 실패했습니다: ' + (result.error || '알 수 없는 오류'));
         }
-    } catch(e) { console.error('PDF 업로드 실패:', e); alert('PDF 업로드 실패: ' + e.message); }
+    } catch(e) { console.error('업로드 실패:', e); alert('업로드 실패: ' + e.message); }
 }
 
-async function pdfLoad(url) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    pdfDoc = await pdfjsLib.getDocument(url).promise;
+async function pdfLoad(url, kind) {
+    // kind가 지정되지 않았으면 URL/MIME으로 추정 (레거시 호출 호환)
+    if (!kind) {
+        // HEAD 시도: Content-Type을 보고 판단
+        try {
+            const head = await fetch(url, { method: 'HEAD' });
+            const ct = (head.headers.get('content-type') || '').toLowerCase();
+            if (ct.includes('image/')) kind = 'image';
+            else kind = 'pdf';
+        } catch(_) {
+            kind = pdfIsImageFile(url) ? 'image' : 'pdf';
+        }
+    }
+
+    if (kind === 'image') {
+        pdfDoc = await pdfBuildImageDoc(url);
+    } else {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        pdfDoc = await pdfjsLib.getDocument(url).promise;
+    }
     pdfPageNum = 1;
     pdfRender();
 }
 
-async function pdfLoadRemote(pdfId, page) {
+async function pdfLoadRemote(pdfId, page, kind) {
     pdfCurrentId = pdfId;
-    await pdfLoad(`/api/video-call/pdf/${pdfId}`);
+    await pdfLoad(`/api/video-call/pdf/${pdfId}`, kind);
     pdfPageNum = page || 1;
     pdfRender();
 }
@@ -2427,11 +3317,125 @@ function vpExtractYouTubeId(url) {
 }
 
 function vpLoadUrl() {
-    const url = (document.getElementById('vp-url').value || '').trim();
+    let url = (document.getElementById('vp-url').value || '').trim();
     if (!url) { alert('URL을 입력하세요.'); return; }
+    // 프로토콜 누락 시 https:// 자동 보정
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+
     const stage = vpIsFloating ? document.getElementById('vp-floating-body') : document.getElementById('vp-stage');
     stage.innerHTML = '';
+
     const ytId = vpExtractYouTubeId(url);
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    const isVideoFile = /\.(mp4|webm|ogg|mov|m4v|mkv)(\?.*)?$/i.test(url);
+
+    // 동영상 URL을 다른 참가자에게 공유
+    if (vcConn) {
+        vcConn.send({ type: 'video-share', data: { url: url, type: ytId ? 'youtube' : vimeoMatch ? 'vimeo' : isVideoFile ? 'file' : 'web' } });
+    }
+
+    if (ytId) {
+        // YouTube
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&playsinline=1`;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        iframe.allowFullscreen = true;
+        iframe.setAttribute('playsinline', '');
+        stage.appendChild(iframe);
+    } else if (vimeoMatch) {
+        // Vimeo
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+        iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+        iframe.allowFullscreen = true;
+        stage.appendChild(iframe);
+    } else if (isVideoFile) {
+        // 직접 동영상 파일
+        const vid = document.createElement('video');
+        vid.src = url;
+        vid.controls = true;
+        vid.autoplay = true;
+        vid.playsInline = true;
+        stage.appendChild(vid);
+    } else {
+        // 일반 웹사이트 → iframe 시도 + 즉시 접근 가능한 "새 탭 열기" + 차단 감지
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;background:#0f172a;';
+
+        // 상단 주소 바 + 컨트롤
+        const bar = document.createElement('div');
+        bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 10px;background:#1e293b;border-bottom:1px solid #334155;font-size:12px;color:#cbd5e1;flex:0 0 auto;';
+        bar.innerHTML = `<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌐 ${url}</span>
+            <button type="button" data-act="open" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">🔗 새 탭에서 열기</button>
+            <button type="button" data-act="retry" style="padding:6px 10px;background:#334155;color:#e2e8f0;border:none;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">↻</button>`;
+        bar.querySelector('[data-act="open"]').onclick = () => window.open(url, '_blank', 'noopener');
+        bar.querySelector('[data-act="retry"]').onclick = () => vpLoadUrl();
+
+        // iframe 컨테이너 (position:relative 로 안내 오버레이 절대배치 가능)
+        const frameBox = document.createElement('div');
+        frameBox.style.cssText = 'position:relative;flex:1 1 auto;min-height:0;background:#fff;';
+
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
+        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox');
+        iframe.setAttribute('referrerpolicy', 'no-referrer');
+
+        // 로딩 스피너 (처음부터 표시, load 시 제거)
+        const loading = document.createElement('div');
+        loading.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#94a3b8;font-size:13px;gap:10px;';
+        loading.innerHTML = `<div style="width:36px;height:36px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:vp-spin 0.8s linear infinite;"></div>
+            <div>로딩 중… <span style="color:#64748b;">(${url.replace(/^https?:\/\//,'').slice(0,40)})</span></div>`;
+
+        // 차단 안내 오버레이 (감지되면 표시)
+        const makeBlockedNotice = () => {
+            loading.remove();
+            const notice = document.createElement('div');
+            notice.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;padding:24px;text-align:center;';
+            notice.innerHTML = `<div style="font-size:48px;margin-bottom:14px;">🚫</div>
+                <div style="font-size:15px;margin-bottom:8px;font-weight:600;">이 사이트는 화면 안에 띄울 수 없습니다</div>
+                <div style="font-size:12px;color:#94a3b8;margin-bottom:20px;max-width:420px;line-height:1.5;">보안 정책(X-Frame-Options / CSP)으로 iframe 임베드를 차단한 사이트입니다. 새 탭에서 여세요.</div>
+                <button type="button" style="padding:10px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">🔗 ${url.replace(/^https?:\/\//,'').slice(0,40)} — 새 탭에서 열기</button>`;
+            notice.querySelector('button').onclick = () => window.open(url, '_blank', 'noopener');
+            frameBox.appendChild(notice);
+        };
+
+        // 차단 감지 1: load 이벤트가 안 뜨면 (3초) 안내
+        let loaded = false;
+        const blockTimer = setTimeout(() => { if (!loaded) makeBlockedNotice(); }, 3000);
+
+        iframe.addEventListener('load', () => {
+            loaded = true;
+            clearTimeout(blockTimer);
+            loading.remove();
+            // 차단 감지 2: load는 떴지만 about:blank로 리다이렉트된 경우
+            try {
+                const doc = iframe.contentDocument;
+                if (doc && doc.body && doc.body.children.length === 0 && doc.URL === 'about:blank') {
+                    makeBlockedNotice();
+                }
+            } catch (e) { /* cross-origin 접근 불가 = 정상 로드 */ }
+        });
+
+        frameBox.appendChild(iframe);
+        frameBox.appendChild(loading);
+        wrapper.appendChild(bar);
+        wrapper.appendChild(frameBox);
+        stage.appendChild(wrapper);
+    }
+}
+
+/** 원격에서 동영상 URL을 수신했을 때 로컬에서 재생 (WebSocket 재전송 안 함) */
+function vpLoadUrlRemote(url) {
+    if (!url) return;
+    document.getElementById('vp-url').value = url;
+    const stage = vpIsFloating ? document.getElementById('vp-floating-body') : document.getElementById('vp-stage');
+    stage.innerHTML = '';
+
+    const ytId = vpExtractYouTubeId(url);
+    const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+    const isVideoFile = /\.(mp4|webm|ogg|mov|m4v|mkv)(\?.*)?$/i.test(url);
+
     if (ytId) {
         const iframe = document.createElement('iframe');
         iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&playsinline=1`;
@@ -2439,14 +3443,40 @@ function vpLoadUrl() {
         iframe.allowFullscreen = true;
         iframe.setAttribute('playsinline', '');
         stage.appendChild(iframe);
-    } else {
+    } else if (vimeoMatch) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+        iframe.allow = 'autoplay; fullscreen; picture-in-picture';
+        iframe.allowFullscreen = true;
+        stage.appendChild(iframe);
+    } else if (isVideoFile) {
         const vid = document.createElement('video');
         vid.src = url;
         vid.controls = true;
         vid.autoplay = true;
         vid.playsInline = true;
         stage.appendChild(vid);
+    } else {
+        const wrapper = document.createElement('div');
+        wrapper.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;padding:24px;text-align:center;';
+        wrapper.innerHTML = `<div style="font-size:48px;margin-bottom:14px;">🔗</div>
+            <div style="font-size:14px;margin-bottom:8px;">공유된 링크</div>
+            <button onclick="window.open('${url}','_blank')" style="padding:10px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">새 탭에서 열기</button>`;
+        stage.appendChild(wrapper);
     }
+    console.log('[vc] 원격 동영상 수신:', url);
+}
+
+/** 원격에서 동영상 공유 중지 수신 */
+function vpClearRemote() {
+    const stage = document.getElementById('vp-stage');
+    stage.innerHTML = '<div class="vp-empty">'+(currentLang==='en'?'🎬 Paste a YouTube URL or upload a video file.':'🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.')+'</div>';
+    const body = document.getElementById('vp-floating-body');
+    if (body) body.innerHTML = '';
+    const floating = document.getElementById('vp-floating');
+    if (floating) floating.style.display = 'none';
+    vpIsFloating = false;
+    document.getElementById('vp-url').value = '';
 }
 
 function vpUploadFile(input) {
@@ -2464,8 +3494,9 @@ function vpUploadFile(input) {
 }
 
 function vpClear() {
+    if (vcConn) vcConn.send({ type: 'video-stop-share', data: {} });
     const stage = document.getElementById('vp-stage');
-    stage.innerHTML = '<div class="vp-empty">🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.</div>';
+    stage.innerHTML = '<div class="vp-empty">'+(currentLang==='en'?'🎬 Paste a YouTube URL or upload a video file.':'🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.')+'</div>';
     const body = document.getElementById('vp-floating-body');
     if (body) body.innerHTML = '';
     const floating = document.getElementById('vp-floating');
@@ -2482,12 +3513,12 @@ function vpTogglePiP() {
     const body = document.getElementById('vp-floating-body');
     if (!vpIsFloating) {
         const media = stage.querySelector('iframe, video');
-        if (!media) { alert('먼저 영상을 불러오세요.'); return; }
+        if (!media) { alert(currentLang==='en'?'Load a video first.':'먼저 영상을 불러오세요.'); return; }
         body.innerHTML = '';
         body.appendChild(media);
         floating.style.display = 'flex';
         vpIsFloating = true;
-        stage.innerHTML = '<div class="vp-empty">📌 미니 플레이어로 이동했습니다.<br><span style="font-size:0.8rem;color:#475569;">✕를 누르거나 다시 📌를 누르면 되돌아옵니다.</span></div>';
+        stage.innerHTML = '<div class="vp-empty">'+(currentLang==='en'?'📌 Moved to mini player.<br><span style="font-size:0.8rem;color:#475569;">Press ✕ or 📌 again to return.</span>':'📌 미니 플레이어로 이동했습니다.<br><span style="font-size:0.8rem;color:#475569;">✕를 누르거나 다시 📌를 누르면 되돌아옵니다.</span>')+'</div>';
         vpMakeDraggable();
     } else {
         vpFloatingClose();
@@ -2612,8 +3643,20 @@ function escHtml(text) {
 ================================================================ */
 window.addEventListener('DOMContentLoaded', () => {
     wbInit();  // 칠판 이벤트 리스너 등록
+
+    // URL 파라미터로 관찰자 모드 입장 (?observe=roomId)
+    const urlParams = new URLSearchParams(window.location.search);
+    const observeRoom = urlParams.get('observe');
+    if (observeRoom) {
+        // 약간 지연 후 관찰자 모드 입장 (UI 초기화 완료 대기)
+        setTimeout(() => vcJoinAsObserver(observeRoom), 500);
+    }
 });
 </script>
+
+<!-- v3 명세서 신규 기능: 출석 자동기록 / VAD / 비상 카카오 / 보상 / 대시보드 / 녹화 -->
+<script src="/js/mango.js"></script>
+<script src="/js/mango-rec.js"></script>
 
 </body>
 </html>
