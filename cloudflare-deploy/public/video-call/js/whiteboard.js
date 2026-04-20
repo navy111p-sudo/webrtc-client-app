@@ -1,7 +1,6 @@
 /**
- * whiteboard.js – Canvas API 기반 실시간 칠판
+ * whiteboard.js – Canvas API 기반 실시간 칠판 (Native WebSocket)
  * 도구: 펜, 지우개, 직선, 사각형, 원
- * Socket.io를 통해 다른 참가자에게 실시간 동기화
  */
 let wbCanvas, wbCtx;
 let wbDrawing = false;
@@ -9,7 +8,7 @@ let wbTool = 'pen';
 let wbColor = '#000000';
 let wbSize = 3;
 let wbStartX, wbStartY;
-let wbSnapshot = null; // 도형 그릴 때 배경 보존용
+let wbSnapshot = null;
 
 function initWhiteboard() {
   wbCanvas = document.getElementById('whiteboard-canvas');
@@ -48,7 +47,7 @@ function initWhiteboard() {
   document.getElementById('wb-clear').addEventListener('click', () => {
     wbCtx.fillStyle = '#ffffff';
     wbCtx.fillRect(0, 0, wbCanvas.width, wbCanvas.height);
-    socket.emit('whiteboard-clear');
+    sendWsMessage({ type: 'whiteboard-clear' });
   });
 
   // ── 이미지 저장 ──
@@ -57,15 +56,6 @@ function initWhiteboard() {
     link.download = `칠판_${new Date().toLocaleString('ko')}.png`;
     link.href = wbCanvas.toDataURL();
     link.click();
-  });
-
-  // ── 소켓 수신 ──
-  socket.on('whiteboard-draw', (data) => {
-    drawRemote(data);
-  });
-  socket.on('whiteboard-clear', () => {
-    wbCtx.fillStyle = '#ffffff';
-    wbCtx.fillRect(0, 0, wbCanvas.width, wbCanvas.height);
   });
 }
 
@@ -89,7 +79,6 @@ function resizeWhiteboard() {
   }
 }
 
-// ── 좌표 계산 ──
 function getPos(e) {
   const rect = wbCanvas.getBoundingClientRect();
   return {
@@ -98,7 +87,6 @@ function getPos(e) {
   };
 }
 
-// ── 마우스 핸들러 ──
 function wbMouseDown(e) {
   wbDrawing = true;
   const pos = getPos(e);
@@ -109,7 +97,6 @@ function wbMouseDown(e) {
     wbCtx.beginPath();
     wbCtx.moveTo(pos.x, pos.y);
   } else {
-    // 도형 → 현재 스냅샷 저장
     wbSnapshot = wbCtx.getImageData(0, 0, wbCanvas.width, wbCanvas.height);
   }
 }
@@ -120,7 +107,7 @@ function wbMouseMove(e) {
 
   if (wbTool === 'pen' || wbTool === 'eraser') {
     drawLine(wbStartX, wbStartY, pos.x, pos.y, wbTool === 'eraser' ? '#ffffff' : wbColor, wbTool === 'eraser' ? wbSize * 4 : wbSize);
-    socket.emit('whiteboard-draw', {
+    sendWsMessage({ type: 'whiteboard-draw', data: {
       type: 'line',
       x1: wbStartX / wbCanvas.width,
       y1: wbStartY / wbCanvas.height,
@@ -128,11 +115,10 @@ function wbMouseMove(e) {
       y2: pos.y / wbCanvas.height,
       color: wbTool === 'eraser' ? '#ffffff' : wbColor,
       size: wbTool === 'eraser' ? wbSize * 4 : wbSize
-    });
+    } });
     wbStartX = pos.x;
     wbStartY = pos.y;
   } else {
-    // 도형 미리보기 (스냅샷 복원 후 그리기)
     wbCtx.putImageData(wbSnapshot, 0, 0);
     drawShape(wbTool, wbStartX, wbStartY, pos.x, pos.y, wbColor, wbSize);
   }
@@ -144,8 +130,7 @@ function wbMouseUp(e) {
 
   if (wbTool !== 'pen' && wbTool !== 'eraser' && e && e.clientX !== undefined) {
     const pos = getPos(e);
-    // 최종 도형 전송
-    socket.emit('whiteboard-draw', {
+    sendWsMessage({ type: 'whiteboard-draw', data: {
       type: wbTool,
       x1: wbStartX / wbCanvas.width,
       y1: wbStartY / wbCanvas.height,
@@ -153,12 +138,11 @@ function wbMouseUp(e) {
       y2: pos.y / wbCanvas.height,
       color: wbColor,
       size: wbSize
-    });
+    } });
   }
   wbSnapshot = null;
 }
 
-// ── 터치 핸들러 ──
 function wbTouchStart(e) {
   e.preventDefault();
   const touch = e.touches[0];
@@ -173,7 +157,6 @@ function wbTouchMove(e) {
   wbCanvas.dispatchEvent(mouseEvent);
 }
 
-// ── 그리기 함수 ──
 function drawLine(x1, y1, x2, y2, color, size) {
   wbCtx.strokeStyle = color;
   wbCtx.lineWidth = size;
@@ -212,7 +195,6 @@ function drawShape(type, x1, y1, x2, y2, color, size) {
   }
 }
 
-// ── 원격 그리기 수신 ──
 function drawRemote(data) {
   const w = wbCanvas.width;
   const h = wbCanvas.height;
@@ -226,4 +208,9 @@ function drawRemote(data) {
   } else {
     drawShape(data.type, x1, y1, x2, y2, data.color, data.size);
   }
+}
+
+function handleWhiteboardClear() {
+  wbCtx.fillStyle = '#ffffff';
+  wbCtx.fillRect(0, 0, wbCanvas.width, wbCanvas.height);
 }

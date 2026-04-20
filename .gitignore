@@ -1,11 +1,5 @@
 node_modules/
+uploads/*.pdf
+.env
 .wrangler/
-*.bak
-*.log
-*.js
-!public/js/*.js
-deploy-copy.txt
-deploy.txt
-verify.js
-verify.log
-index.lock.bak
+.dev.vars

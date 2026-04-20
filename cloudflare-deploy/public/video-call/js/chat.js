@@ -1,5 +1,5 @@
 /**
- * chat.js – Socket.io 기반 실시간 문자 채팅
+ * chat.js – Native WebSocket 기반 실시간 문자 채팅
  */
 function initChat() {
   const $input = document.getElementById('chat-input');
@@ -9,7 +9,7 @@ function initChat() {
   function sendMessage() {
     const text = $input.value.trim();
     if (!text) return;
-    socket.emit('chat-message', text);
+    sendWsMessage({ type: 'chat-message', data: { message: text } });
     $input.value = '';
     $input.focus();
   }
@@ -21,17 +21,17 @@ function initChat() {
       sendMessage();
     }
   });
+}
 
-  // ── 메시지 수신 ──
-  socket.on('chat-message', (data) => {
-    appendMessage(data);
+// ── WebSocket 핸들러 (app.js에서 오버라이드) ──
+function handleChatMessageReceived(data) {
+  appendMessage(data);
 
-    // 채팅 패널이 닫혀있으면 뱃지 표시
-    const panel = document.getElementById('chat-panel');
-    if (!panel.classList.contains('open') && !data.isSystem) {
-      showChatBadge();
-    }
-  });
+  // 채팅 패널이 닫혀있으면 뱃지 표시
+  const panel = document.getElementById('chat-panel');
+  if (!panel.classList.contains('open') && !data.isSystem) {
+    showChatBadge();
+  }
 }
 
 function appendMessage({ username: author, message, timestamp, isSystem }) {

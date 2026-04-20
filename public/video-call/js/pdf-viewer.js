@@ -1,5 +1,6 @@
 /**
- * pdf-viewer.js – PDF 업로드 + PDF.js 렌더링 + 페이지 동기화 (Native WebSocket)
+ * pdf-viewer.js – PDF 업로드 + PDF.js 렌더링 + 페이지 동기화
+ * [통합] 업로드 경로: /api/video-call/upload-pdf
  */
 let pdfDoc = null;
 let pdfCurrentPage = 1;
@@ -19,7 +20,7 @@ const $pdfPlaceholder = document.getElementById('pdf-placeholder');
 const $pdfContainer   = document.getElementById('pdf-container');
 const $pdfFit         = document.getElementById('pdf-fit');
 
-// ── PDF 업로드 ──
+// ── PDF 업로드 (통합 API 경로) ──
 $pdfUpload.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   if (!file) return;
@@ -33,7 +34,7 @@ $pdfUpload.addEventListener('change', async (e) => {
     if (data.success) {
       await loadPdf(data.url);
       isSharing = true;
-      sendWsMessage({ type: 'pdf-share', data: { url: data.url, currentPage: 1 } });
+      socket.emit('pdf-share', { url: data.url, currentPage: 1 });
       $pdfStop.classList.remove('hidden');
     }
   } catch (err) {
@@ -88,14 +89,14 @@ async function renderPdfPage(pageNum) {
 $pdfPrev.addEventListener('click', () => {
   if (pdfCurrentPage > 1) {
     renderPdfPage(pdfCurrentPage - 1);
-    if (isSharing) sendWsMessage({ type: 'pdf-page-change', data: { pageNum: pdfCurrentPage } });
+    if (isSharing) socket.emit('pdf-page-change', pdfCurrentPage);
   }
 });
 
 $pdfNext.addEventListener('click', () => {
   if (pdfCurrentPage < pdfTotalPages) {
     renderPdfPage(pdfCurrentPage + 1);
-    if (isSharing) sendWsMessage({ type: 'pdf-page-change', data: { pageNum: pdfCurrentPage } });
+    if (isSharing) socket.emit('pdf-page-change', pdfCurrentPage);
   }
 });
 
@@ -112,7 +113,7 @@ $pdfFit.addEventListener('click', () => { if (pdfDoc) renderPdfPage(pdfCurrentPa
 // ── 공유 중지 ──
 $pdfStop.addEventListener('click', () => {
   stopPdfShare();
-  sendWsMessage({ type: 'pdf-stop-share' });
+  socket.emit('pdf-stop-share');
 });
 
 function stopPdfShare() {
@@ -123,17 +124,15 @@ function stopPdfShare() {
   $pdfPlaceholder.classList.remove('hidden');
 }
 
-// ── WebSocket 핸들러 ──
-function handlePdfSync(data) {
+// ── 소켓: PDF 동기화 수신 ──
+socket.on('pdf-sync', async (data) => {
   if (data && data.url) {
-    loadPdf(data.url).then(() => {
-      if (data.currentPage) return renderPdfPage(data.currentPage);
-    });
+    await loadPdf(data.url);
+    if (data.currentPage) await renderPdfPage(data.currentPage);
     $pdfStop.classList.remove('hidden');
     isSharing = false;
   }
-}
+});
 
-function handlePdfPageChange({ pageNum }) {
-  if (pdfDoc) renderPdfPage(pageNum);
-}
+socket.on('pdf-page-change', (pageNum) => { if (pdfDoc) renderPdfPage(pageNum); });
+socket.on('pdf-stop-share', () => { stopPdfShare(); });

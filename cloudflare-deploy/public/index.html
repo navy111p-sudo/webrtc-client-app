@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mangoi 화상솔루션</title>
+
+    <!-- ============================================================
+         [CSS] 전체 스타일 정의
+         - 다크 테마 기반
+         - 뷰(화면) 전환은 .view 클래스의 display를 토글하여 구현
+         - 반응형 디자인 (모바일 대응)
+    ============================================================ -->
+    <style>
+        /* ── 전역 리셋 & 기본 설정 ── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;      /* 어두운 남색 배경 */
+            color: #e2e8f0;           /* 밝은 회색 텍스트 */
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        button { cursor: pointer; border: none; font-family: inherit; }
+        input  { font-family: inherit; }
+
+        /* ── 뷰(화면) 전환 시스템 ──
+           모든 화면(.view)은 기본적으로 숨겨져 있고,
+           .view.active 클래스가 붙은 화면만 보입니다.
+           이렇게 하면 페이지 이동 없이 화면을 전환할 수 있습니다(SPA). */
+        .view { display: none; }
+        .view.active { display: flex; }
+
+        /* ── [화면1] 메인 대시보드 ── */
+        #view-home {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .home-title {
+            font-size: 2.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #38bdf8, #818cf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+        .home-subtitle { color: #94a3b8; margin-bottom: 2.5rem; font-size: 1.1rem; }
+
+        /* 메인 화면의 카드 버튼들 */
+        .home-cards { display: flex; flex-direction: column; gap: 1.2rem; width: 100%; max-width: 480px; }
+        .home-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(148, 163, 184, 0.15);
+            border-radius: 16px;
+            padding: 1.8rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            color: inherit;
+        }
+        .home-card:hover {
+            border-color: #38bdf8;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(56, 189, 248, 0.12);
+        }
+        .home-card h2 { font-size: 1.3rem; margin-bottom: 0.4rem; }
+        .home-card p  { color: #94a3b8; font-size: 0.9rem; }
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 99px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            margin-bottom: 0.6rem;
+        }
+        .badge-blue   { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .badge-purple { background: rgba(129,140,248,0.15); color: #818cf8; }
+
+        /* ── [공통] 로비(입장) 화면 ── */
+        .lobby {
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        .lobby-box {
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 20px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .lobby-box h1 {
+            font-size: 1.8rem;
+            color: #38bdf8;
+            margin-bottom: 0.4rem;
+        }
+        .lobby-box .desc { color: #94a3b8; margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .lobby-box input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            margin-bottom: 0.8rem;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.2);
+            background: rgba(15, 23, 42, 0.6);
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+        .lobby-box input::placeholder { color: #64748b; }
+        .btn-primary {
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+            transition: opacity 0.2s;
+        }
+        .btn-primary:hover { opacity: 0.9; }
+        .btn-back {
+            background: none;
+            color: #94a3b8;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+        .btn-back:hover { color: #e2e8f0; }
+
+        /* ── [화면2] 1:1 화상통화 ── */
+        #view-signaling-call {
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 상단 툴바 */
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.7rem 1.2rem;
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid rgba(148,163,184,0.1);
+            z-index: 10;
+        }
+        .toolbar-left { display: flex; align-items: center; gap: 0.8rem; }
+        .toolbar-center { display: flex; gap: 0.5rem; }
+        .toolbar-right { display: flex; gap: 0.5rem; }
+        .room-info {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        .room-info strong { color: #38bdf8; }
+
+        /* 미디어 컨트롤 버튼 (마이크/카메라/종료 등) */
+        .ctrl-btn {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: all 0.2s;
+        }
+        .ctrl-btn.on  { background: rgba(148,163,184,0.15); color: #e2e8f0; }
+        .ctrl-btn.off { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .ctrl-btn.danger { background: #ef4444; color: #fff; }
+        .ctrl-btn.danger:hover { background: #dc2626; }
+
+        /* 연결 상태 표시 */
+        .status-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .status-dot.connected    { background: #22c55e; }
+        .status-dot.disconnected { background: #ef4444; }
+        .status-dot.connecting   { background: #f59e0b; animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+        /* 비디오 그리드 (1:1 통화) */
+        .video-area {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            padding: 12px;
+            background: #0f172a;
+        }
+        .video-box {
+            position: relative;
+            background: #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+        }
+        .video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+        }
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+        .video-placeholder {
+            color: #475569;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        /* ── [화면3] 다자간 화상통화 ── */
+        #view-videocall-call {
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* 탭 메뉴 */
+        .tab-bar {
+            display: flex;
+            gap: 2px;
+            background: rgba(15,23,42,0.95);
+            padding: 0 1rem;
+            border-bottom: 1px solid rgba(148,163,184,0.1);
+        }
+        .tab-btn {
+            padding: 0.6rem 1.2rem;
+            background: none;
+            color: #64748b;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn.active { color: #38bdf8; border-bottom-color: #38bdf8; }
+        .tab-btn:hover  { color: #e2e8f0; }
+
+        /* 탭 콘텐츠 영역 */
+        .tab-content { flex: 1; position: relative; overflow: hidden; }
+        .tab-panel { display: none; width: 100%; height: 100%; }
+        .tab-panel.active { display: flex; }
+
+        /* 다자간 비디오 그리드 (탭 안에서 사용 — 사용 안 함, 호환용) */
+        .multi-video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 10px;
+            padding: 10px;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            align-content: start;
+        }
+
+        /* 좌(영상) / 우(콘텐츠) 2분할 메인 행 */
+        .vc-main-row {
+            display: flex;
+            flex: 1;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .video-pane {
+            display: flex;
+            flex-direction: column;
+            background: rgba(15,23,42,0.95);
+            border-right: 1px solid rgba(148,163,184,0.15);
+            transition: width 0.25s ease;
+            flex-shrink: 0;
+            min-width: 200px;
+        }
+        .content-pane {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        /* 영상 크기 단계 — 부모 클래스로 폭 제어 */
+        .vc-main-row.video-quarter       .video-pane { width: 25%; }
+        .vc-main-row.video-half          .video-pane { width: 50%; }
+        .vc-main-row.video-threequarter  .video-pane { width: 75%; }
+        .vc-main-row.video-full          .video-pane { width: 100%; }
+        .vc-main-row.video-full          .content-pane { display: none; }
+
+        /* 영상 사이즈 조절 바 */
+        .video-size-bar {
+            display: flex;
+            gap: 4px;
+            padding: 6px 8px;
+            border-bottom: 1px solid rgba(148,163,184,0.15);
+            flex-shrink: 0;
+        }
+        .video-size-bar button {
+            flex: 1;
+            padding: 4px 0;
+            border-radius: 6px;
+            background: rgba(148,163,184,0.15);
+            color: #cbd5e1;
+            font-size: 0.75rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .video-size-bar button:hover { background: rgba(148,163,184,0.3); }
+        .video-size-bar button.active {
+            background: #2563eb;
+            color: #fff;
+        }
+
+        /* 영상 그리드 (좌측 패널 내부) — auto-fit으로 박스가 패널 폭을 채움 */
+        .video-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 8px;
+            padding: 8px;
+            overflow-y: auto;
+            flex: 1;
+            min-height: 0;
+            align-content: start;
+        }
+        .video-strip .video-box {
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            position: relative;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        /* 비디오 박스 우측 상단 '분리/복귀' 버튼 */
+        .video-detach-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            z-index: 5;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: none;
+            background: rgba(0,0,0,0.55);
+            color: #fff;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+        }
+        .video-detach-btn:hover { background: rgba(37,99,235,0.85); }
+
+        /* 분리(팝아웃)된 비디오 — 화면 어디든 드래그 가능한 독립 창 */
+        .video-box.detached {
+            position: fixed;
+            width: 280px;
+            height: auto;
+            aspect-ratio: 16 / 9;
+            z-index: 9999;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            border: 1px solid rgba(148,163,184,0.35);
+            cursor: move;
+            resize: both;
+            overflow: hidden;
+            min-width: 160px;
+            min-height: 90px;
+        }
+        .video-box.detached video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        /* 비디오 하단 상태 표시 (소리/화면/음량) */
+        .video-status {
+            position: absolute;
+            bottom: 6px;
+            right: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px;
+            background: rgba(0,0,0,0.65);
+            border-radius: 6px;
+            font-size: 0.78rem;
+            color: #fff;
+            pointer-events: none;
+        }
+        .video-status .vs-icon { line-height: 1; }
+        .video-status .vs-icon.off { opacity: 0.55; filter: grayscale(1); }
+        .vol-meter {
+            display: inline-flex;
+            align-items: flex-end;
+            gap: 2px;
+            height: 14px;
+        }
+        .vol-meter span {
+            display: inline-block;
+            width: 3px;
+            background: rgba(148,163,184,0.45);
+            border-radius: 1px;
+            transition: background 0.05s, height 0.05s;
+        }
+        .vol-meter span:nth-child(1) { height: 3px; }
+        .vol-meter span:nth-child(2) { height: 5px; }
+        .vol-meter span:nth-child(3) { height: 7px; }
+        .vol-meter span:nth-child(4) { height: 9px; }
+        .vol-meter span:nth-child(5) { height: 11px; }
+        .vol-meter span:nth-child(6) { height: 14px; }
+        .vol-meter span.on { background: #22c55e; }
+        .video-strip .video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .video-strip .video-label {
+            position: absolute;
+            left: 8px;
+            bottom: 6px;
+            padding: 2px 8px;
+            background: rgba(0,0,0,0.55);
+            color: #e2e8f0;
+            font-size: 0.75rem;
+            border-radius: 6px;
+        }
+
+        /* 칠판(화이트보드) */
+        .whiteboard-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+        }
+        .wb-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(30,41,59,0.9);
+            flex-wrap: wrap;
+        }
+        .wb-toolbar button {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            background: rgba(148,163,184,0.15);
+            color: #e2e8f0;
+            font-size: 0.8rem;
+        }
+        .wb-toolbar button.active { background: #2563eb; }
+        .wb-canvas-wrap {
+            flex: 1;
+            background: #fff;
+            position: relative;
+        }
+        .wb-canvas-wrap canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        /* PDF 뷰어 */
+        .pdf-container {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            padding: 0.8rem;
+            box-sizing: border-box;
+        }
+        .pdf-controls { flex-shrink: 0; }
+        .pdf-pan-top { flex-shrink: 0; }
+        .pdf-canvas-wrap canvas {
+            display: block;
+        }
+        .pdf-controls {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            margin-bottom: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .pdf-controls button {
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            background: rgba(148,163,184,0.15);
+            color: #e2e8f0;
+            font-size: 0.85rem;
+        }
+        /* PDF 메인 영역: 가운데(스크롤 + 캔버스) + 오른쪽 세로 툴바 */
+        .pdf-main-row {
+            display: flex;
+            width: 100%;
+            flex: 1;
+            min-height: 0;
+            gap: 8px;
+            align-items: stretch;
+        }
+        .pdf-scroll-wrap {
+            flex: 1;
+            min-width: 0;
+            overflow: auto;
+            background: #fff;
+            border-radius: 8px;
+            scroll-behavior: smooth;
+        }
+        .pdf-canvas-wrap {
+            display: inline-flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        .pdf-page-wrap { position: relative; display: inline-block; }
+        .pdf-anno {
+            position: absolute;
+            top: 0; left: 0;
+            pointer-events: none;
+        }
+        .pdf-anno.active { pointer-events: auto; cursor: crosshair; }
+        /* 주석 툴바 */
+        .pdf-anno-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            padding: 4px 8px;
+            background: rgba(30,41,59,0.6);
+            border-radius: 6px;
+            flex-wrap: wrap;
+        }
+        .pdf-anno-bar button {
+            padding: 0.3rem 0.7rem;
+            border-radius: 6px;
+            background: rgba(148,163,184,0.15);
+            color: #cbd5e1;
+            font-size: 0.78rem;
+            border: none;
+            cursor: pointer;
+        }
+        .pdf-anno-bar button.active { background: #2563eb; color: #fff; }
+        .pdf-view-btn {
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
+            background: rgba(148,163,184,0.15);
+            color: #cbd5e1;
+            font-size: 0.85rem;
+            border: none;
+            cursor: pointer;
+        }
+        .pdf-view-btn.active { background: #2563eb; color: #fff; }
+        /* 위/오른쪽 팬 툴바 */
+        .pdf-pan-top {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .pdf-pan-right {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 8px;
+            padding: 4px;
+        }
+        .pdf-pan-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(59,130,246,0.85);
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+            transition: background 0.15s;
+        }
+        .pdf-pan-btn:hover { background: rgba(59,130,246,1); }
+        .pdf-pan-btn:active { transform: scale(0.95); }
+
+        /* 채팅 사이드 패널 */
+        .chat-panel {
+            position: fixed;
+            top: 0; right: 0;
+            width: 340px;
+            height: 100vh;
+            background: rgba(15, 23, 42, 0.97);
+            border-left: 1px solid rgba(148,163,184,0.15);
+            display: flex;
+            flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 100;
+        }
+        .chat-panel.open { transform: translateX(0); }
+        .chat-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(148,163,184,0.1);
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .chat-msg { max-width: 85%; }
+        .chat-msg.mine { align-self: flex-end; }
+        .chat-msg.mine .msg-bubble { background: #2563eb; }
+        .chat-msg.other .msg-bubble { background: #334155; }
+        .chat-msg.system { align-self: center; }
+        .chat-msg.system .msg-bubble { background: rgba(148,163,184,0.1); color: #94a3b8; font-size: 0.8rem; }
+        .msg-sender { font-size: 0.7rem; color: #94a3b8; margin-bottom: 2px; }
+        .msg-bubble { padding: 0.5rem 0.8rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; }
+        .msg-time { font-size: 0.65rem; color: #64748b; margin-top: 2px; text-align: right; }
+        .chat-input-area {
+            display: flex;
+            gap: 0.5rem;
+            padding: 0.8rem;
+            border-top: 1px solid rgba(148,163,184,0.1);
+        }
+        .chat-input-area input {
+            flex: 1;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            border: 1px solid rgba(148,163,184,0.2);
+            background: rgba(30,41,59,0.6);
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+        .chat-input-area button {
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* 채팅 알림 배지 */
+        .chat-badge {
+            position: absolute;
+            top: -4px; right: -4px;
+            background: #ef4444;
+            color: #fff;
+            font-size: 0.6rem;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .chat-badge.hidden { display: none; }
+
+        /* ── 로그 패널 (1:1 통화 디버깅용) ── */
+        .log-panel {
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            background: rgba(0,0,0,0.3);
+            font-family: monospace;
+            font-size: 0.75rem;
+            border-top: 1px solid rgba(148,163,184,0.1);
+        }
+        .log-entry { padding: 2px 0; }
+        .log-entry.info  { color: #38bdf8; }
+        .log-entry.warn  { color: #f59e0b; }
+        .log-entry.error { color: #ef4444; }
+        .log-entry.success { color: #22c55e; }
+
+        /* ── 동영상 플레이어 탭 ── */
+        .video-player-container { display:flex; flex-direction:column; height:100%; width:100%; }
+        .vp-controls {
+            display:flex; gap:6px; padding:8px;
+            background:rgba(15,23,42,0.6);
+            border-bottom:1px solid rgba(148,163,184,0.15);
+            flex-wrap:wrap; align-items:center;
+            flex-shrink:0;
+        }
+        .vp-controls #vp-url {
+            flex:1; min-width:180px; padding:6px 10px;
+            background:rgba(148,163,184,0.1);
+            border:1px solid rgba(148,163,184,0.3);
+            border-radius:6px; color:#e2e8f0; font-size:0.85rem;
+        }
+        .vp-controls button, .vp-file-btn {
+            padding:6px 10px; border:none; border-radius:6px;
+            background:rgba(148,163,184,0.2); color:#e2e8f0;
+            cursor:pointer; font-size:0.85rem; white-space:nowrap;
+        }
+        .vp-controls button:hover, .vp-file-btn:hover { background:rgba(148,163,184,0.35); }
+        .vp-file-btn input { display:none; }
+        .vp-stage {
+            flex:1; background:#000;
+            display:flex; align-items:center; justify-content:center;
+            position:relative; min-height:0;
+        }
+        .vp-empty { color:#64748b; font-size:0.95rem; padding:20px; text-align:center; }
+        .vp-stage iframe, .vp-stage video { width:100%; height:100%; border:0; background:#000; }
+
+        /* 플로팅 미니 플레이어 (칠판·PDF 위에 떠서 보임) */
+        .vp-floating {
+            position:fixed; right:16px; bottom:80px;
+            width:320px; height:200px;
+            background:#000;
+            border:1px solid rgba(148,163,184,0.4);
+            border-radius:10px;
+            z-index:900;
+            display:flex; flex-direction:column;
+            box-shadow:0 8px 28px rgba(0,0,0,0.6);
+            resize: both; overflow: hidden;
+            min-width:200px; min-height:140px;
+        }
+        .vp-floating-header {
+            display:flex; align-items:center; justify-content:space-between;
+            padding:4px 8px;
+            background:rgba(15,23,42,0.95);
+            font-size:0.78rem; color:#cbd5e1;
+            cursor:move; user-select:none;
+            border-bottom:1px solid rgba(148,163,184,0.2);
+        }
+        .vp-floating-header button {
+            background:none; border:0; color:#f87171;
+            cursor:pointer; font-size:1rem; padding:0 4px;
+        }
+        .vp-floating-body { flex:1; background:#000; position:relative; min-height:0; }
+        .vp-floating-body iframe, .vp-floating-body video { width:100%; height:100%; border:0; }
+
+        /* ── 반응형: 태블릿/모바일 ──
+           수업은 가로(landscape)로 진행하도록 설계.
+           좌측=영상 / 우측=칠판·PDF·동영상 분할을 모바일에서도 유지. */
+        @media (max-width: 900px) {
+            /* 기본은 가로 분할 유지 (세로로 쌓지 않음) */
+            .vc-main-row { flex-direction: row; }
+            .video-pane {
+                height: auto;
+                min-width: 90px;
+                border-right: 1px solid rgba(148,163,184,0.2);
+                border-bottom: none;
+            }
+            .vc-main-row.video-quarter       .video-pane { width: 25% !important; }
+            .vc-main-row.video-half          .video-pane { width: 40% !important; }
+            .vc-main-row.video-threequarter  .video-pane { width: 55% !important; }
+            .vc-main-row.video-full          .video-pane { width: 100% !important; }
+            .content-pane { min-height: 0; flex: 1; }
+            .video-strip { grid-template-columns: 1fr; gap:4px; padding:4px; }
+            .video-size-bar { padding: 4px 6px; flex-wrap: wrap; }
+            .video-size-bar button { font-size: 0.7rem; padding:3px 0; }
+            .tab-bar { overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+            .tab-btn { flex-shrink:0; font-size:0.85rem; padding:0.6rem 0.8rem; }
+            .wb-toolbar, .pdf-controls, .pdf-anno-bar {
+                flex-wrap:wrap; gap:4px; padding:4px 6px;
+            }
+            .wb-toolbar button, .pdf-controls button, .pdf-anno-bar button {
+                padding:4px 6px; font-size:0.8rem;
+            }
+            .vp-floating { width:220px; height:140px; right:8px; bottom:70px; }
+            .chat-panel { width: 100%; }
+        }
+        @media (max-width: 640px) {
+            .video-area { grid-template-columns: 1fr; }
+            .multi-video-grid { grid-template-columns: 1fr; }
+            .home-title { font-size: 1.8rem; }
+            .home-subtitle { font-size: 0.9rem; }
+            .home-cards { grid-template-columns: 1fr; gap:10px; }
+            .toolbar { flex-wrap:wrap; padding:4px 6px; gap:4px; }
+            .toolbar-left, .toolbar-center, .toolbar-right { gap:4px; }
+            .ctrl-btn { padding:6px 8px; font-size:0.9rem; }
+            .room-info { font-size:0.8rem; }
+            .lobby-box { padding:1.5rem 1rem; width:90%; }
+            .lobby-box h1 { font-size:1.5rem; }
+            .vp-controls { padding:4px 6px; gap:4px; }
+            .vp-controls #vp-url { min-width:0; flex:1 1 100%; }
+            .vp-floating { width:180px; height:110px; right:6px; bottom:64px; }
+            .pdf-pan-top, .pdf-pan-right { display:none; } /* 모바일에서는 스와이프 사용 */
+        }
+
+        /* ── 세로(portrait) 모바일: 가로 모드 전환 안내 오버레이 ── */
+        .rotate-hint {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10000;
+            background: rgba(15,23,42,0.97);
+            color: #e2e8f0;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+            gap: 1rem;
+        }
+        .rotate-hint .rotate-icon {
+            font-size: 4rem;
+            animation: rotate-wiggle 1.6s ease-in-out infinite;
+            transform-origin: 50% 50%;
+        }
+        .rotate-hint h2 { margin: 0; font-size: 1.3rem; color: #fff; }
+        .rotate-hint p { margin: 0; font-size: 0.95rem; color: #94a3b8; line-height: 1.6; }
+        .rotate-hint button {
+            margin-top: 1rem;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: 1px solid rgba(148,163,184,0.3);
+            background: rgba(37,99,235,0.85);
+            color: #fff;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        @keyframes rotate-wiggle {
+            0%, 100% { transform: rotate(-15deg); }
+            50%      { transform: rotate(75deg); }
+        }
+        /* 세로 방향의 작은 화면에서만 안내 노출 */
+        @media (orientation: portrait) and (max-width: 820px) {
+            body.vc-in-call .rotate-hint { display: flex; }
+        }
+        /* 터치 디바이스용: 그리기 중 스크롤 방지 */
+        .pdf-anno.active { touch-action: none; }
+    </style>
+</head>
+<body>
+
+<!-- ================================================================
+     [화면 1] 메인 대시보드 (홈)
+     ─────────────────────────────────────────────────────────────────
+     앱을 처음 열면 이 화면이 보입니다.
+     '1:1 화상통화 시작' 또는 '다자간 화상통화' 버튼을 누르면
+     페이지 이동 없이 해당 로비 화면으로 전환됩니다.
+================================================================ -->
+<div id="view-home" class="view active">
+    <h1 class="home-title">Mangoi 화상솔루션</h1>
+    <p class="home-subtitle">실시간 영상통화 & 시그널링 서비스</p>
+    <div class="home-cards">
+        <!-- 버튼 클릭 시 showView('view-signaling-lobby')를 호출하여 화면을 전환 -->
+        <button class="home-card" onclick="showView('view-signaling-lobby')">
+            <span class="badge badge-blue">1:1 통화</span>
+            <h2>1:1 화상통화 시작</h2>
+            <p>방 이름을 입력하고 상대방과 1:1 영상통화를 시작합니다.</p>
+        </button>
+        <button class="home-card" onclick="showView('view-videocall-lobby')">
+            <span class="badge badge-purple">다자간 통화</span>
+            <h2>화상통화 + (칠판·채팅·PDF)</h2>
+            <p>최대 10명이 참여하는 화상통화, 칠판, 채팅, PDF 공유</p>
+        </button>
+    </div>
+</div>
+
+<!-- ================================================================
+     [화면 2-a] 1:1 통화 로비 (방 이름 입력)
+================================================================ -->
+<div id="view-signaling-lobby" class="view lobby">
+    <div class="lobby-box">
+        <h1>1:1 화상통화</h1>
+        <p class="desc">방 이름을 입력하면 같은 방에 있는 상대와 통화됩니다</p>
+        <input id="sig-room-input" type="text" placeholder="방 이름 입력 (예: my-room)" />
+        <button class="btn-primary" onclick="signalingJoinRoom()">입장하기</button>
+        <button class="btn-back" onclick="showView('view-home')">← 메인으로</button>
+    </div>
+</div>
+
+<!-- ================================================================
+     [화면 2-b] 1:1 통화 진행 화면
+     ─────────────────────────────────────────────────────────────────
+     입장 후 이 div 내부에 비디오, 컨트롤, 로그가 표시됩니다.
+     페이지 이동 없이 view-signaling-lobby가 숨겨지고
+     이 화면이 나타납니다.
+================================================================ -->
+<div id="view-signaling-call" class="view">
+    <!-- 상단 툴바: 방 정보 + 미디어 컨트롤 + 종료 -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <span class="status-dot disconnected" id="sig-status-dot"></span>
+            <span class="room-info">방: <strong id="sig-room-name"></strong></span>
+        </div>
+        <div class="toolbar-center">
+            <!-- 마이크 토글 버튼 -->
+            <button class="ctrl-btn on" id="sig-btn-mic" onclick="sigToggleMic()" title="마이크">
+                🎤
+            </button>
+            <!-- 카메라 토글 버튼 -->
+            <button class="ctrl-btn on" id="sig-btn-cam" onclick="sigToggleCam()" title="카메라">
+                📷
+            </button>
+        </div>
+        <div class="toolbar-right">
+            <!-- 통화 시작 / 종료 버튼 -->
+            <button class="ctrl-btn on" id="sig-btn-call" onclick="sigStartCall()" title="통화 시작">
+                📞
+            </button>
+            <button class="ctrl-btn danger" onclick="sigLeaveRoom()" title="나가기">
+                ✕
+            </button>
+        </div>
+    </div>
+
+    <!-- 비디오 영역: 내 화면 + 상대방 화면 -->
+    <div class="video-area">
+        <div class="video-box">
+            <!-- autoplay: 자동 재생, muted: 자신의 소리 안 들림, playsinline: 모바일 전체화면 방지 -->
+            <video id="sig-local-video" autoplay muted playsinline></video>
+            <span class="video-label">내 화면</span>
+        </div>
+        <div class="video-box">
+            <video id="sig-remote-video" autoplay playsinline style="display:none;"></video>
+            <div class="video-placeholder" id="sig-remote-placeholder">
+                상대방 대기 중...
+            </div>
+            <span class="video-label">상대방</span>
+        </div>
+    </div>
+
+    <!-- 로그 패널: 시그널링 이벤트를 실시간으로 보여줍니다 -->
+    <div class="log-panel" id="sig-log"></div>
+</div>
+
+<!-- ================================================================
+     [화면 3-a] 다자간 화상통화 로비
+================================================================ -->
+<div id="view-videocall-lobby" class="view lobby">
+    <div class="lobby-box">
+        <h1>화상통화 +</h1>
+        <p class="desc">칠판 · 채팅 · PDF 공유</p>
+        <input id="vc-name-input" type="text" placeholder="이름 입력" />
+        <input id="vc-room-input" type="text" placeholder="방 코드 (비우면 자동 생성)" />
+        <button class="btn-primary" onclick="vcJoinRoom()">입장하기</button>
+        <button class="btn-back" onclick="showView('view-home')">← 메인으로</button>
+    </div>
+</div>
+
+<!-- ================================================================
+     [화면 3-b] 다자간 화상통화 진행 화면
+================================================================ -->
+<div id="view-videocall-call" class="view">
+    <!-- 상단 툴바 -->
+    <div class="toolbar">
+        <div class="toolbar-left">
+            <span class="status-dot disconnected" id="vc-status-dot"></span>
+            <span class="room-info">
+                방: <strong id="vc-room-name"></strong>
+                · 참여자: <strong id="vc-user-count">0</strong>명
+            </span>
+        </div>
+        <div class="toolbar-center">
+            <button class="ctrl-btn on" id="vc-btn-mic" onclick="vcToggleMic()" title="마이크">🎤</button>
+            <button class="ctrl-btn on" id="vc-btn-cam" onclick="vcToggleCam()" title="카메라">📷</button>
+            <button class="ctrl-btn on" id="vc-btn-chat" onclick="vcToggleChat()" title="채팅" style="position:relative;">
+                💬
+                <span class="chat-badge hidden" id="vc-chat-badge">0</span>
+            </button>
+        </div>
+        <div class="toolbar-right">
+            <button class="ctrl-btn danger" onclick="vcLeaveRoom()" title="나가기">✕</button>
+        </div>
+    </div>
+
+    <!-- 좌(영상) / 우(칠판·PDF) 2분할 -->
+    <div class="vc-main-row video-quarter" id="vc-main-row">
+        <!-- 좌측: 영상 패널 -->
+        <div class="video-pane" id="vc-video-pane">
+            <div class="video-size-bar">
+                <button onclick="vcSetVideoSize('quarter', this)" class="active" title="화면의 1/4">1/4</button>
+                <button onclick="vcSetVideoSize('half', this)" title="화면의 1/2">1/2</button>
+                <button onclick="vcSetVideoSize('threequarter', this)" title="화면의 3/4">3/4</button>
+                <button onclick="vcSetVideoSize('full', this)" title="전체화면">전체</button>
+            </div>
+            <div class="video-strip" id="vc-video-grid">
+                <div class="video-box" id="vc-local-box">
+                    <video id="vc-local-video" autoplay muted playsinline></video>
+                    <span class="video-label" id="vc-local-label">나</span>
+                </div>
+                <!-- 다른 참가자의 비디오는 JS로 동적 추가됩니다 -->
+            </div>
+        </div>
+
+        <!-- 우측: 탭(칠판/PDF) 콘텐츠 -->
+        <div class="content-pane" id="vc-content-pane">
+            <!-- 탭 메뉴 -->
+            <div class="tab-bar">
+                <button class="tab-btn active" onclick="vcSwitchTab('whiteboard')">🖊 칠판</button>
+                <button class="tab-btn" onclick="vcSwitchTab('pdf')">📄 PDF</button>
+                <button class="tab-btn" onclick="vcSwitchTab('video')">📹 동영상</button>
+            </div>
+
+            <!-- 탭 콘텐츠 -->
+            <div class="tab-content">
+        <!-- 칠판 탭 -->
+        <div class="tab-panel active" id="tab-whiteboard">
+            <div class="whiteboard-container">
+                <div class="wb-toolbar">
+                    <button class="active" onclick="wbSetTool('pen')">✏️ 펜</button>
+                    <button onclick="wbSetTool('eraser')">🧽 지우개</button>
+                    <button onclick="wbSetTool('line')">📏 선</button>
+                    <button onclick="wbSetTool('rect')">⬜ 사각형</button>
+                    <button onclick="wbSetTool('circle')">⭕ 원</button>
+                    <input type="color" id="wb-color" value="#000000" title="색상" style="width:32px;height:28px;border:none;cursor:pointer;" />
+                    <input type="range" id="wb-size" min="1" max="30" value="3" title="굵기" style="width:80px;" />
+                    <button onclick="wbClear()">🗑️ 전체 지우기</button>
+                    <button onclick="wbSave()">💾 저장</button>
+                </div>
+                <div class="wb-canvas-wrap">
+                    <canvas id="wb-canvas"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF 탭 -->
+        <div class="tab-panel" id="tab-pdf">
+            <div class="pdf-container">
+                <div class="pdf-controls">
+                    <label style="padding:0.4rem 0.8rem; border-radius:8px; background:rgba(148,163,184,0.15); color:#e2e8f0; font-size:0.85rem; cursor:pointer;">
+                        📁 PDF 업로드
+                        <input type="file" accept=".pdf" id="pdf-upload" style="display:none;" onchange="pdfUpload(this)" />
+                    </label>
+                    <button onclick="pdfPrevPage()">◀ 이전</button>
+                    <span id="pdf-page-info" style="font-size:0.85rem;color:#94a3b8;">-</span>
+                    <button onclick="pdfNextPage()">다음 ▶</button>
+                    <span style="margin-left:8px;display:inline-flex;gap:4px;">
+                        <button id="pdf-view-1" class="pdf-view-btn active" onclick="pdfSetPagesPerView(1, this)" title="한 페이지 보기">📄</button>
+                        <button id="pdf-view-2" class="pdf-view-btn" onclick="pdfSetPagesPerView(2, this)" title="두 페이지 보기">📄📄</button>
+                    </span>
+                    <span style="margin-left:8px;display:inline-flex;gap:4px;align-items:center;">
+                        <button onclick="pdfZoomOut()" title="축소">🔍−</button>
+                        <span id="pdf-zoom-info" style="font-size:0.8rem;color:#94a3b8;min-width:48px;text-align:center;">100%</span>
+                        <button onclick="pdfZoomIn()" title="확대">🔍+</button>
+                        <button onclick="pdfZoomReset()" title="원래 크기">1:1</button>
+                    </span>
+                    <button onclick="pdfStopShare()" style="background:rgba(239,68,68,0.2);color:#ef4444;">공유 중지</button>
+                </div>
+                <!-- PDF 위에 그리기 (주석) 툴바 -->
+                <div class="pdf-anno-bar">
+                    <button id="pdf-tool-none" class="active" onclick="pdfSetDrawTool('none', this)" title="그리기 끔">🖱 보기</button>
+                    <button id="pdf-tool-pen" onclick="pdfSetDrawTool('pen', this)" title="펜">✏️ 펜</button>
+                    <button id="pdf-tool-eraser" onclick="pdfSetDrawTool('eraser', this)" title="지우개">🧽 지우개</button>
+                    <input type="color" id="pdf-anno-color" value="#ef4444" title="색상" style="width:32px;height:26px;border:none;cursor:pointer;" />
+                    <input type="range" id="pdf-anno-size" min="1" max="20" value="3" title="굵기" style="width:80px;" />
+                    <button onclick="pdfClearAnno()" title="이 페이지 주석 모두 지우기">🗑 지우기</button>
+                </div>
+                <!-- 위쪽 팬 툴바 (좌우 이동) -->
+                <div class="pdf-pan-top">
+                    <button class="pdf-pan-btn" onclick="pdfPan(-150, 0)" title="왼쪽으로 이동">◀</button>
+                    <button class="pdf-pan-btn" onclick="pdfPan(150, 0)" title="오른쪽으로 이동">▶</button>
+                </div>
+                <div class="pdf-main-row">
+                    <div class="pdf-scroll-wrap" id="pdf-scroll-wrap">
+                        <div class="pdf-canvas-wrap" id="pdf-canvas-wrap">
+                            <div class="pdf-page-wrap" id="pdf-page-wrap-1">
+                                <canvas id="pdf-canvas"></canvas>
+                                <canvas id="pdf-anno" class="pdf-anno"></canvas>
+                            </div>
+                            <div class="pdf-page-wrap" id="pdf-page-wrap-2" style="display:none;">
+                                <canvas id="pdf-canvas-2"></canvas>
+                                <canvas id="pdf-anno-2" class="pdf-anno"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 오른쪽 팬 툴바 (상하 이동) -->
+                    <div class="pdf-pan-right">
+                        <button class="pdf-pan-btn" onclick="pdfPan(0, -150)" title="위로 이동">▲</button>
+                        <button class="pdf-pan-btn" onclick="pdfPan(0, 150)" title="아래로 이동">▼</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 동영상 탭 -->
+        <div class="tab-panel" id="tab-video">
+            <div class="video-player-container">
+                <div class="vp-controls">
+                    <input id="vp-url" type="text" placeholder="YouTube 주소 또는 동영상 URL을 붙여넣으세요" onkeydown="if(event.key==='Enter')vpLoadUrl()" />
+                    <button onclick="vpLoadUrl()">🔗 URL 재생</button>
+                    <label class="vp-file-btn">
+                        📁 파일 업로드
+                        <input type="file" accept="video/*" id="vp-upload" onchange="vpUploadFile(this)" />
+                    </label>
+                    <button onclick="vpTogglePiP()" title="미니 플레이어 토글 — 칠판·PDF 위에 떠서 보임">📌 미니</button>
+                    <button onclick="vpClear()">🗑 닫기</button>
+                </div>
+                <div class="vp-stage" id="vp-stage">
+                    <div class="vp-empty">🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.<br><span style="font-size:0.8rem;color:#475569;">📌 미니 버튼을 누르면 칠판·PDF를 보면서 동시에 시청할 수 있습니다.</span></div>
+                </div>
+            </div>
+        </div>
+            </div><!-- /.tab-content -->
+        </div><!-- /.content-pane -->
+    </div><!-- /.vc-main-row -->
+
+    <!-- 세로 모드일 때 가로 회전 안내 오버레이 (모바일 전용) -->
+    <div class="rotate-hint" id="vc-rotate-hint">
+        <div class="rotate-icon">📱</div>
+        <h2>가로 모드로 돌려주세요</h2>
+        <p>화면이 작아 수업은 <strong>가로(landscape)</strong> 모드에 최적화되어 있습니다.<br>
+           휴대폰을 옆으로 돌리면 왼쪽에 영상, 오른쪽에 칠판·PDF·동영상이 보입니다.</p>
+        <button onclick="document.getElementById('vc-rotate-hint').style.display='none'">그래도 세로로 보기</button>
+    </div>
+
+    <!-- 플로팅 미니 동영상 플레이어 (칠판·PDF 보면서 동시 시청) -->
+    <div class="vp-floating" id="vp-floating" style="display:none;">
+        <div class="vp-floating-header" id="vp-floating-header">
+            <span>📹 동영상 (드래그 이동 · 모서리 크기 조절)</span>
+            <button onclick="vpFloatingClose()" title="닫기">✕</button>
+        </div>
+        <div class="vp-floating-body" id="vp-floating-body"></div>
+    </div>
+
+    <!-- 채팅 사이드 패널 -->
+    <div class="chat-panel" id="vc-chat-panel">
+        <div class="chat-header">
+            <strong>채팅</strong>
+            <button onclick="vcToggleChat()" style="background:none;color:#94a3b8;font-size:1.2rem;">✕</button>
+        </div>
+        <div class="chat-messages" id="vc-chat-messages"></div>
+        <div class="chat-input-area">
+            <input id="vc-chat-input" type="text" placeholder="메시지 입력..." onkeydown="if(event.key==='Enter') vcSendChat();" />
+            <button onclick="vcSendChat()">전송</button>
+        </div>
+    </div>
+</div>
+
+<!-- PDF.js 라이브러리 (PDF 렌더링용) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<!-- ================================================================
+     [JavaScript] 전체 앱 로직
+     ─────────────────────────────────────────────────────────────────
+     구조:
+     1. 뷰(화면) 전환 시스템
+     2. WebSocket 연결 & 재연결 로직
+     3. ICE 서버 설정 (STUN/TURN)
+     4. 1:1 시그널링 통화
+     5. 다자간 화상통화
+     6. 칠판(화이트보드)
+     7. PDF 공유
+     8. 채팅
+================================================================ -->
+<script>
+/* ================================================================
+   1. 뷰(화면) 전환 시스템
+   ──────────────────────────────────────────────────────────────────
+   SPA(Single Page Application)의 핵심 원리:
+   - 모든 "화면"은 하나의 HTML 안에 있는 <div>입니다.
+   - showView()를 호출하면 모든 뷰에서 'active'를 제거하고,
+     원하는 뷰에만 'active'를 추가합니다.
+   - 이렇게 하면 브라우저가 새 페이지를 로드하지 않아 빠릅니다.
+================================================================ */
+function showView(viewId) {
+    // 1) 모든 뷰에서 'active' 클래스를 제거 (= 모든 화면 숨김)
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    // 2) 선택한 뷰에만 'active' 추가 (= 해당 화면만 표시)
+    document.getElementById(viewId).classList.add('active');
+}
+
+
+/* ================================================================
+   2. WebSocket 연결 & 재연결 로직
+   ──────────────────────────────────────────────────────────────────
+   WebSocket은 서버와 "실시간 양방향 통신"을 하기 위한 기술입니다.
+   HTTP와 달리 한번 연결하면 서버에서도 클라이언트로 메시지를 보낼 수 있습니다.
+
+   createWebSocket() 함수는 연결이 끊어졌을 때 자동으로 재연결을
+   시도하는 "방어 로직"을 포함합니다.
+================================================================ */
+
+/**
+ * WebSocket을 생성하고 재연결 로직을 설정합니다.
+ *
+ * @param {string} path - 연결할 WebSocket 경로 (예: '/ws/signaling?roomId=abc')
+ * @param {function} onMessage - 메시지 수신 시 호출될 콜백
+ * @param {function} onOpen - 연결 성공 시 콜백
+ * @param {function} onClose - 연결 종료 시 콜백
+ * @returns {object} { ws, close() } - WebSocket 인스턴스와 수동 종료 함수
+ */
+function createWebSocket(path, onMessage, onOpen, onClose) {
+    // ── 재연결 설정 ──
+    let ws = null;
+    let reconnectAttempts = 0;       // 현재 재연결 시도 횟수
+    const MAX_RECONNECT = 5;         // 최대 재연결 시도 횟수
+    let reconnectTimer = null;       // 재연결 타이머 ID
+    let intentionalClose = false;    // 사용자가 의도적으로 닫았는지 여부
+
+    function connect() {
+        // wss:// (암호화된 WebSocket) 프로토콜 사용
+        // location.host는 현재 페이지의 호스트(도메인:포트)를 가져옴
+        const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const url = `${protocol}//${location.host}${path}`;
+
+        ws = new WebSocket(url);
+
+        // ── 연결 성공 시 ──
+        ws.onopen = () => {
+            reconnectAttempts = 0;  // 재연결 카운터 초기화
+            if (onOpen) onOpen(ws);
+        };
+
+        // ── 메시지 수신 시 ──
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (onMessage) onMessage(data, ws);
+            } catch (e) {
+                console.error('[WebSocket] 메시지 파싱 오류:', e);
+            }
+        };
+
+        // ── 연결 종료 시 ──
+        ws.onclose = (event) => {
+            if (onClose) onClose(event);
+
+            // 의도적 종료가 아니면 자동 재연결 시도
+            if (!intentionalClose && reconnectAttempts < MAX_RECONNECT) {
+                reconnectAttempts++;
+                // 지수 백오프(Exponential Backoff):
+                // 재연결할수록 대기 시간을 늘려서 서버 부하를 줄임
+                // 1초 → 2초 → 4초 → 8초 → 16초
+                const delay = Math.min(1000 * Math.pow(2, reconnectAttempts - 1), 16000);
+                console.log(`[WebSocket] ${delay/1000}초 후 재연결 시도... (${reconnectAttempts}/${MAX_RECONNECT})`);
+                reconnectTimer = setTimeout(connect, delay);
+            }
+        };
+
+        // ── 에러 발생 시 ──
+        ws.onerror = (error) => {
+            console.error('[WebSocket] 에러:', error);
+        };
+    }
+
+    connect(); // 최초 연결
+
+    // 외부에서 사용할 수 있는 인터페이스 반환
+    return {
+        // WebSocket 인스턴스에 접근 (항상 최신 ws를 반환)
+        get ws() { return ws; },
+
+        // 메시지 전송 헬퍼: 연결 상태 확인 후 전송
+        send(data) {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify(data));
+            }
+        },
+
+        // 의도적 종료 (재연결하지 않음)
+        close() {
+            intentionalClose = true;
+            clearTimeout(reconnectTimer);
+            if (ws) ws.close();
+        }
+    };
+}
+
+
+/* ================================================================
+   3. ICE 서버 설정 (STUN / TURN)
+   ──────────────────────────────────────────────────────────────────
+   WebRTC에서 피어(peer)끼리 직접 연결하려면 서로의 "공인 IP 주소"를
+   알아야 합니다. 하지만 대부분의 컴퓨터는 NAT(공유기) 뒤에 있어서
+   자신의 공인 IP를 모릅니다.
+
+   ⭐ STUN 서버: "너의 공인 IP는 이거야"라고 알려주는 서버
+      → 무료로 사용 가능 (Google STUN 서버 등)
+      → NAT가 단순한 경우 이것만으로 연결 가능
+
+   ⭐ TURN 서버: NAT가 복잡하거나 방화벽이 있을 때
+      미디어 데이터를 중계(relay)해주는 서버
+      → 직접 연결이 안 될 때 최후의 수단
+      → 보통 유료 (트래픽 비용 발생)
+
+   아래 설정에서 TURN 서버 주소/계정을 입력하면 됩니다.
+================================================================ */
+const ICE_SERVERS = {
+    iceServers: [
+        // ── 무료 STUN 서버 (Google 제공) ──
+        // 대부분의 경우 이것만으로 P2P 연결이 됩니다.
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+
+        // ── TURN 서버 (필요 시 아래 주석을 해제하고 설정) ──
+        // 방화벽이 강한 네트워크에서는 TURN 서버가 필요합니다.
+        // Cloudflare TURN, Twilio, 또는 직접 구축한 서버를 사용할 수 있습니다.
+        //
+        // {
+        //     urls: 'turn:YOUR_TURN_SERVER:3478',  // TURN 서버 주소
+        //     username: 'YOUR_USERNAME',            // 인증 사용자명
+        //     credential: 'YOUR_PASSWORD'           // 인증 비밀번호
+        // },
+        //
+        // TURNS (TLS 암호화된 TURN):
+        // {
+        //     urls: 'turns:YOUR_TURN_SERVER:443',
+        //     username: 'YOUR_USERNAME',
+        //     credential: 'YOUR_PASSWORD'
+        // }
+    ]
+};
+
+
+/* ================================================================
+   4. 1:1 시그널링 화상통화
+   ──────────────────────────────────────────────────────────────────
+   WebRTC 1:1 통화의 동작 원리:
+
+   [나] ←──WebSocket──→ [Cloudflare Worker] ←──WebSocket──→ [상대방]
+            (시그널링: SDP/ICE 교환)
+
+   1) 두 사람이 같은 "방"에 입장
+   2) 먼저 온 사람(Caller)이 "Offer"를 생성하여 보냄
+   3) 나중에 온 사람(Callee)이 "Answer"를 생성하여 응답
+   4) 양쪽 모두 ICE Candidate(연결 경로)를 교환
+   5) P2P 연결이 성립되면 → 미디어가 직접 전송됨 (서버 경유 X)
+================================================================ */
+
+// 1:1 통화에 사용되는 상태 변수들
+let sigConn = null;            // WebSocket 연결 객체
+let sigLocalStream = null;     // 내 카메라/마이크 스트림
+let sigPeerConnection = null;  // RTCPeerConnection (P2P 연결)
+let sigMySocketId = null;      // 서버가 부여한 내 고유 ID
+let sigRemotePeerId = null;    // 상대방의 고유 ID
+let sigRoomId = '';            // 현재 방 이름
+let sigMicOn = true;           // 마이크 상태
+let sigCamOn = true;           // 카메라 상태
+
+/**
+ * 1:1 통화 방에 입장합니다.
+ * 카메라/마이크를 켜고, WebSocket을 연결합니다.
+ */
+async function signalingJoinRoom() {
+    sigRoomId = document.getElementById('sig-room-input').value.trim();
+    if (!sigRoomId) { alert('방 이름을 입력하세요.'); return; }
+
+    // 화면 전환: 로비 → 통화 화면
+    showView('view-signaling-call');
+    document.getElementById('sig-room-name').textContent = sigRoomId;
+
+    try {
+        // ── 카메라 & 마이크 접근 요청 ──
+        // getUserMedia: 브라우저가 사용자에게 카메라/마이크 허용 팝업을 보여줍니다.
+        sigLocalStream = await navigator.mediaDevices.getUserMedia({
+            video: true,   // 카메라 사용
+            audio: true    // 마이크 사용
+        });
+        // 내 비디오 요소에 스트림 연결
+        document.getElementById('sig-local-video').srcObject = sigLocalStream;
+        sigLog('info', '카메라 & 마이크 연결 완료');
+    } catch (err) {
+        sigLog('error', `미디어 접근 실패: ${err.message}`);
+        // 카메라 없이도 계속 진행 (오디오만 가능)
+    }
+
+    // ── WebSocket 연결 (재연결 로직 포함) ──
+    sigConn = createWebSocket(
+        `/ws/signaling?roomId=${encodeURIComponent(sigRoomId)}`,
+        sigHandleMessage,  // 메시지 수신 핸들러
+        (ws) => {          // 연결 성공 시
+            setStatusDot('sig-status-dot', 'connected');
+            sigLog('success', '서버 연결 성공');
+            // 방 입장 메시지 전송
+            ws.send(JSON.stringify({ type: 'join', data: { roomId: sigRoomId } }));
+        },
+        () => {            // 연결 종료 시
+            setStatusDot('sig-status-dot', 'disconnected');
+            sigLog('warn', '서버 연결 끊김');
+        }
+    );
+    setStatusDot('sig-status-dot', 'connecting');
+}
+
+/**
+ * 서버로부터 수신한 메시지를 처리합니다.
+ * WebRTC 시그널링의 핵심 로직이 여기에 있습니다.
+ */
+function sigHandleMessage(msg) {
+    switch (msg.type) {
+        // ── 방 입장 확인 ──
+        // 서버는 { roomId, peers: [...기존 peerId 목록], isInitiator } 로 보냄
+        case 'room-joined':
+            sigLog('info', `방 입장 완료 (기존 참가자: ${msg.data.peers.length}명)`);
+            if (msg.data.isInitiator && msg.data.peers.length > 0) {
+                // 내가 두 번째로 입장했으므로 → 기존 참가자가 상대방
+                sigRemotePeerId = msg.data.peers[0];
+                sigLog('info', `상대방 감지 (ID: ${sigRemotePeerId}) → 자동 통화 시작`);
+                // 미디어가 준비되면 자동으로 Offer 전송
+                setTimeout(() => sigStartCall(), 500);
+            }
+            break;
+
+        // ── 방이 꽉 참 ──
+        case 'room-full':
+            sigLog('error', '방이 가득 찼습니다 (최대 2명)');
+            alert('방이 가득 찼습니다. 다른 방 이름을 사용해 주세요.');
+            break;
+
+        // ── 상대방이 입장함 → 내가 먼저 있었으므로 상대방 ID 기록 ──
+        case 'peer-joined':
+            sigRemotePeerId = msg.data.peerId;
+            sigLog('info', `상대방 입장 (ID: ${sigRemotePeerId}) → 상대방이 Offer를 보낼 예정`);
+            break;
+
+        // ── 상대방이 퇴장함 ──
+        case 'peer-left':
+            sigLog('warn', '상대방이 나갔습니다');
+            sigRemotePeerId = null;
+            sigClosePeerConnection();
+            break;
+
+        // ── SDP Offer 수신 → Answer를 생성하여 응답 ──
+        case 'offer':
+            sigLog('info', 'Offer 수신 → Answer 생성 중...');
+            sigHandleOffer(msg.data);
+            break;
+
+        // ── SDP Answer 수신 → P2P 연결 거의 완료 ──
+        case 'answer':
+            sigLog('info', 'Answer 수신');
+            sigHandleAnswer(msg.data);
+            break;
+
+        // ── ICE Candidate 수신 → 연결 경로 후보 추가 ──
+        case 'ice-candidate':
+            sigHandleIceCandidate(msg.data);
+            break;
+
+        case 'error-msg':
+            sigLog('error', `서버 오류: ${msg.data.message}`);
+            break;
+    }
+}
+
+/**
+ * RTCPeerConnection을 생성합니다.
+ * 이것이 WebRTC에서 실제 P2P 연결을 담당하는 핵심 객체입니다.
+ */
+function sigCreatePeerConnection() {
+    // ── RTCPeerConnection 생성 (ICE 서버 설정 사용) ──
+    // 위에서 정의한 STUN/TURN 서버를 사용하여 NAT 우회를 시도합니다.
+    sigPeerConnection = new RTCPeerConnection(ICE_SERVERS);
+
+    // ── 내 미디어 트랙(영상/음성)을 P2P 연결에 추가 ──
+    if (sigLocalStream) {
+        sigLocalStream.getTracks().forEach(track => {
+            sigPeerConnection.addTrack(track, sigLocalStream);
+        });
+    }
+
+    // ── ICE Candidate 발견 시 → 상대방에게 전달 ──
+    // ICE Candidate: 나와 상대방이 연결할 수 있는 "경로 후보"
+    // (직접 연결, STUN 반사, TURN 중계 등 여러 후보가 나옴)
+    sigPeerConnection.onicecandidate = (event) => {
+        if (event.candidate) {
+            sigConn.send({
+                type: 'ice-candidate',
+                data: {
+                    targetId: sigRemotePeerId,
+                    candidate: event.candidate
+                }
+            });
+        }
+    };
+
+    // ── 상대방의 미디어 트랙 수신 ──
+    // P2P 연결이 성립되면 상대방의 영상/음성이 여기로 들어옵니다.
+    sigPeerConnection.ontrack = (event) => {
+        sigLog('success', '상대방 영상 수신!');
+        const remoteVideo = document.getElementById('sig-remote-video');
+        remoteVideo.srcObject = event.streams[0];
+        remoteVideo.style.display = 'block';
+        document.getElementById('sig-remote-placeholder').style.display = 'none';
+    };
+
+    // ── 연결 상태 변화 모니터링 ──
+    sigPeerConnection.onconnectionstatechange = () => {
+        const state = sigPeerConnection.connectionState;
+        sigLog('info', `P2P 연결 상태: ${state}`);
+        if (state === 'connected') {
+            sigLog('success', '✅ P2P 연결 완료! 미디어가 직접 전송됩니다.');
+        } else if (state === 'failed' || state === 'disconnected') {
+            sigLog('error', `P2P 연결 ${state === 'failed' ? '실패' : '끊김'}`);
+        }
+    };
+
+    return sigPeerConnection;
+}
+
+/**
+ * 통화 시작: Offer를 생성하여 상대방에게 보냅니다.
+ * "내가 이런 코덱/해상도로 통화하고 싶어"라는 제안서입니다.
+ */
+async function sigStartCall() {
+    if (!sigRemotePeerId) { sigLog('warn', '아직 상대방이 없습니다'); return; }
+
+    sigCreatePeerConnection();
+
+    // SDP Offer 생성: 내 미디어 능력을 설명하는 문서
+    const offer = await sigPeerConnection.createOffer();
+    // Local Description 설정: 내가 보낸 Offer를 나도 기억
+    await sigPeerConnection.setLocalDescription(offer);
+
+    // 서버를 통해 상대방에게 Offer 전달
+    sigConn.send({
+        type: 'offer',
+        data: { targetId: sigRemotePeerId, sdp: offer }
+    });
+    sigLog('info', 'Offer 전송 완료');
+}
+
+/**
+ * Offer를 받았을 때: Answer를 생성하여 응답합니다.
+ * "네 제안을 수락하고, 내 미디어 능력은 이거야"라는 응답서입니다.
+ */
+async function sigHandleOffer(data) {
+    // 서버는 { senderId, sdp }로 전달합니다.
+    sigRemotePeerId = data.senderId;
+    sigCreatePeerConnection();
+
+    // Remote Description 설정: 상대방의 Offer를 기록
+    await sigPeerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    // SDP Answer 생성
+    const answer = await sigPeerConnection.createAnswer();
+    // Local Description 설정
+    await sigPeerConnection.setLocalDescription(answer);
+
+    // 서버를 통해 상대방에게 Answer 전달
+    sigConn.send({
+        type: 'answer',
+        data: { targetId: sigRemotePeerId, sdp: answer }
+    });
+    sigLog('info', 'Answer 전송 완료');
+}
+
+/** Answer를 받았을 때: Remote Description에 설정합니다. */
+async function sigHandleAnswer(data) {
+    if (sigPeerConnection) {
+        await sigPeerConnection.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    }
+}
+
+/** ICE Candidate를 받았을 때: P2P 연결 경로 후보에 추가합니다. */
+async function sigHandleIceCandidate(data) {
+    if (sigPeerConnection && data.candidate) {
+        try {
+            await sigPeerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {
+            console.error('ICE candidate 추가 실패:', e);
+        }
+    }
+}
+
+/** P2P 연결을 종료합니다. */
+function sigClosePeerConnection() {
+    if (sigPeerConnection) {
+        sigPeerConnection.close();
+        sigPeerConnection = null;
+    }
+    const rv = document.getElementById('sig-remote-video');
+    rv.style.display = 'none';
+    rv.srcObject = null;
+    document.getElementById('sig-remote-placeholder').style.display = 'block';
+}
+
+/** 마이크 On/Off 토글 */
+function sigToggleMic() {
+    if (!sigLocalStream) return;
+    sigMicOn = !sigMicOn;
+    sigLocalStream.getAudioTracks().forEach(t => t.enabled = sigMicOn);
+    const btn = document.getElementById('sig-btn-mic');
+    btn.className = `ctrl-btn ${sigMicOn ? 'on' : 'off'}`;
+    btn.textContent = sigMicOn ? '🎤' : '🔇';
+}
+
+/** 카메라 On/Off 토글 */
+function sigToggleCam() {
+    if (!sigLocalStream) return;
+    sigCamOn = !sigCamOn;
+    sigLocalStream.getVideoTracks().forEach(t => t.enabled = sigCamOn);
+    const btn = document.getElementById('sig-btn-cam');
+    btn.className = `ctrl-btn ${sigCamOn ? 'on' : 'off'}`;
+    btn.textContent = sigCamOn ? '📷' : '🚫';
+}
+
+/** 방 나가기: 모든 연결을 정리하고 홈으로 돌아갑니다. */
+function sigLeaveRoom() {
+    sigClosePeerConnection();
+    if (sigConn) sigConn.close();
+    if (sigLocalStream) {
+        sigLocalStream.getTracks().forEach(t => t.stop());
+        sigLocalStream = null;
+    }
+    sigConn = null;
+    sigMySocketId = null;
+    sigRemotePeerId = null;
+    document.getElementById('sig-log').innerHTML = '';
+    showView('view-home');
+}
+
+/** 로그 패널에 메시지를 추가합니다. */
+function sigLog(level, message) {
+    const panel = document.getElementById('sig-log');
+    const time = new Date().toLocaleTimeString('ko-KR');
+    panel.innerHTML += `<div class="log-entry ${level}">[${time}] ${message}</div>`;
+    panel.scrollTop = panel.scrollHeight;
+}
+
+
+/* ================================================================
+   5. 다자간 화상통화
+   ──────────────────────────────────────────────────────────────────
+   1:1과 비슷하지만, 여러 명이 참여하므로
+   각 참가자마다 별도의 RTCPeerConnection을 생성합니다.
+   (Mesh 토폴로지: 모든 참가자끼리 직접 연결)
+================================================================ */
+
+let vcConn = null;              // WebSocket 연결
+let vcLocalStream = null;       // 내 미디어 스트림
+let vcPeerConnections = {};     // { oderId: RTCPeerConnection } 맵
+let vcRoomId = '';
+let vcUsername = '';
+let vcUserId = '';              // 서버가 부여한 내 ID
+let vcMicOn = true;
+let vcCamOn = true;
+
+/** 다자간 통화 방 입장 */
+async function vcJoinRoom() {
+    vcUsername = document.getElementById('vc-name-input').value.trim();
+    if (!vcUsername) { alert('이름을 입력하세요.'); return; }
+    vcRoomId = document.getElementById('vc-room-input').value.trim() || 'room-' + Math.random().toString(36).substr(2, 6);
+
+    showView('view-videocall-call');
+    document.body.classList.add('vc-in-call');
+    document.getElementById('vc-room-name').textContent = vcRoomId;
+    // 칠판 캔버스가 보이는 시점에 실제 크기로 리사이즈 (display:none → flex 직후)
+    setTimeout(() => { if (typeof wbResize === 'function') wbResize(); }, 100);
+
+    try {
+        vcLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        document.getElementById('vc-local-video').srcObject = vcLocalStream;
+        document.getElementById('vc-local-label').textContent = `${vcUsername} (나)`;
+        attachStreamMonitor(document.getElementById('vc-local-box'), vcLocalStream);
+        vcAddDetachButton(document.getElementById('vc-local-box'));
+    } catch (err) {
+        console.error('미디어 접근 실패:', err);
+    }
+
+    vcConn = createWebSocket(
+        `/ws/video-call?roomId=${encodeURIComponent(vcRoomId)}`,
+        vcHandleMessage,
+        (ws) => {
+            setStatusDot('vc-status-dot', 'connected');
+            ws.send(JSON.stringify({ type: 'join-room', data: { username: vcUsername } }));
+        },
+        () => setStatusDot('vc-status-dot', 'disconnected')
+    );
+    setStatusDot('vc-status-dot', 'connecting');
+}
+
+/** 다자간 통화 메시지 처리 */
+function vcHandleMessage(msg) {
+    switch (msg.type) {
+        case 'room-joined':
+            vcUserId = msg.data.userId;
+            updateUserCount(msg.data.userCount);
+            break;
+
+        case 'existing-users':
+            // 기존 사용자 각각에 대해 P2P 연결 시작 (내가 Offer를 보냄)
+            msg.data.users.forEach(user => {
+                vcCreatePeerAndOffer(user.userId, user.username);
+            });
+            // PDF 공유 동기화
+            if (msg.data.pdfState && msg.data.pdfState.isSharing) {
+                pdfLoadRemote(msg.data.pdfState.pdfId, msg.data.pdfState.currentPage);
+            }
+            break;
+
+        case 'user-joined':
+            updateUserCount(msg.data.userCount);
+            vcAddChatSystem(`${msg.data.username} 님이 입장했습니다.`);
+            break;
+
+        case 'user-left':
+            updateUserCount(msg.data.userCount);
+            vcRemovePeer(msg.data.userId);
+            vcAddChatSystem(`${msg.data.username} 님이 퇴장했습니다.`);
+            break;
+
+        // WebRTC 시그널링
+        case 'offer':
+            vcHandleOffer(msg.data);
+            break;
+        case 'answer':
+            vcHandleAnswer(msg.data);
+            break;
+        case 'ice-candidate':
+            vcHandleIce(msg.data);
+            break;
+
+        // 채팅
+        case 'chat-message':
+            vcReceiveChat(msg.data);
+            break;
+
+        // 칠판
+        case 'whiteboard-draw':
+            wbReceiveDraw(msg.data);
+            break;
+        case 'whiteboard-clear':
+            wbReceiveClear();
+            break;
+
+        // PDF
+        case 'pdf-sync':
+            pdfLoadRemote(msg.data.pdfId, msg.data.currentPage);
+            break;
+        case 'pdf-page-change':
+            pdfGoToPage(msg.data.currentPage);
+            break;
+        case 'pdf-stop-share':
+            pdfClearRemote();
+            break;
+    }
+}
+
+/** 특정 사용자에 대한 P2P 연결을 생성하고 Offer를 보냅니다. */
+async function vcCreatePeerAndOffer(userId, username) {
+    const pc = vcCreatePeer(userId, username);
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    vcConn.send({ type: 'offer', data: { targetUserId: userId, sdp: offer } });
+}
+
+/** RTCPeerConnection을 생성합니다 (다자간 통화용). */
+function vcCreatePeer(userId, username) {
+    const pc = new RTCPeerConnection(ICE_SERVERS);
+    vcPeerConnections[userId] = pc;
+
+    if (vcLocalStream) {
+        vcLocalStream.getTracks().forEach(t => pc.addTrack(t, vcLocalStream));
+    }
+
+    pc.onicecandidate = (event) => {
+        if (event.candidate) {
+            vcConn.send({ type: 'ice-candidate', data: { targetUserId: userId, candidate: event.candidate } });
+        }
+    };
+
+    pc.ontrack = (event) => {
+        vcAddRemoteVideo(userId, username, event.streams[0]);
+    };
+
+    return pc;
+}
+
+/** Offer 수신 처리 */
+async function vcHandleOffer(data) {
+    const pc = vcCreatePeer(data.fromUserId, data.fromUsername || '참가자');
+    await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+    const answer = await pc.createAnswer();
+    await pc.setLocalDescription(answer);
+    vcConn.send({ type: 'answer', data: { targetUserId: data.fromUserId, sdp: answer } });
+}
+
+/** Answer 수신 처리 */
+async function vcHandleAnswer(data) {
+    const pc = vcPeerConnections[data.fromUserId];
+    if (pc) await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+}
+
+/** ICE Candidate 수신 처리 */
+async function vcHandleIce(data) {
+    const pc = vcPeerConnections[data.fromUserId];
+    if (pc && data.candidate) {
+        try { await pc.addIceCandidate(new RTCIceCandidate(data.candidate)); } catch(e) {}
+    }
+}
+
+/** 원격 참가자의 비디오를 화면에 추가 */
+function vcAddRemoteVideo(userId, username, stream) {
+    if (document.getElementById(`vc-video-${userId}`)) return;
+    const grid = document.getElementById('vc-video-grid');
+    const box = document.createElement('div');
+    box.className = 'video-box';
+    box.id = `vc-video-${userId}`;
+    box.innerHTML = `<video autoplay playsinline></video><span class="video-label">${escHtml(username)}</span>`;
+    box.querySelector('video').srcObject = stream;
+    grid.appendChild(box);
+    attachStreamMonitor(box, stream);
+    vcAddDetachButton(box);
+}
+
+/** 비디오 박스에 '분리/복귀' 버튼 + 드래그 기능 부여 */
+function vcAddDetachButton(box) {
+    if (!box || box.querySelector('.video-detach-btn')) return;
+    const btn = document.createElement('button');
+    btn.className = 'video-detach-btn';
+    btn.title = '독립 창으로 분리';
+    btn.textContent = '⇱';
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        vcToggleDetach(box, btn);
+    });
+    box.appendChild(btn);
+}
+
+/** 비디오 박스를 독립 팝아웃 창으로 분리 / 그리드로 복귀 */
+function vcToggleDetach(box, btn) {
+    if (box.classList.contains('detached')) {
+        // 복귀
+        box.classList.remove('detached');
+        box.style.left = box.style.top = box.style.width = box.style.height = '';
+        const grid = document.getElementById('vc-video-grid');
+        if (grid) grid.appendChild(box);
+        btn.textContent = '⇱';
+        btn.title = '독립 창으로 분리';
+    } else {
+        // 분리 — body 로 이동 후 fixed 위치
+        const rect = box.getBoundingClientRect();
+        document.body.appendChild(box);
+        box.classList.add('detached');
+        // 기존 그리드 위치 근처에서 시작
+        let left = rect.left, top = rect.top;
+        // 화면 밖이면 기본 좌표
+        if (left < 0 || top < 0 || left > window.innerWidth - 100) {
+            left = window.innerWidth - 320;
+            top = 80 + (document.querySelectorAll('.video-box.detached').length - 1) * 30;
+        }
+        box.style.left = left + 'px';
+        box.style.top  = top + 'px';
+        btn.textContent = '⇲';
+        btn.title = '그리드로 복귀';
+        vcMakeDraggable(box);
+    }
+}
+
+/** 분리된 비디오 박스 드래그로 이동 */
+function vcMakeDraggable(box) {
+    if (box.__dragBound) return;
+    box.__dragBound = true;
+    let startX = 0, startY = 0, origL = 0, origT = 0, dragging = false;
+    box.addEventListener('pointerdown', (e) => {
+        if (!box.classList.contains('detached')) return;
+        // 버튼/컨트롤 클릭 시 드래그 제외
+        if (e.target.closest('.video-detach-btn')) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        const r = box.getBoundingClientRect();
+        origL = r.left; origT = r.top;
+        box.setPointerCapture(e.pointerId);
+    });
+    box.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const nx = Math.max(0, Math.min(window.innerWidth - 60,  origL + (e.clientX - startX)));
+        const ny = Math.max(0, Math.min(window.innerHeight - 40, origT + (e.clientY - startY)));
+        box.style.left = nx + 'px';
+        box.style.top  = ny + 'px';
+    });
+    box.addEventListener('pointerup',   () => { dragging = false; });
+    box.addEventListener('pointercancel', () => { dragging = false; });
+}
+
+/** 비디오 박스에 소리·화면 상태 아이콘 + 음량 미터 부착 */
+function attachStreamMonitor(box, stream) {
+    if (!box || !stream) return;
+    let status = box.querySelector('.video-status');
+    if (!status) {
+        status = document.createElement('div');
+        status.className = 'video-status';
+        status.innerHTML =
+            '<span class="vs-icon vs-cam" title="화면">📷</span>' +
+            '<span class="vs-icon vs-mic" title="소리">🎤</span>' +
+            '<span class="vol-meter">' + '<span></span>'.repeat(6) + '</span>';
+        box.appendChild(status);
+    }
+    const camEl = status.querySelector('.vs-cam');
+    const micEl = status.querySelector('.vs-mic');
+    const bars  = status.querySelectorAll('.vol-meter span');
+
+    function syncIcons() {
+        const v = stream.getVideoTracks()[0];
+        const a = stream.getAudioTracks()[0];
+        const vOn = v && v.enabled && !v.muted;
+        const aOn = a && a.enabled && !a.muted;
+        camEl.textContent = vOn ? '📷' : '🚫';
+        camEl.classList.toggle('off', !vOn);
+        micEl.textContent = aOn ? '🎤' : '🔇';
+        micEl.classList.toggle('off', !aOn);
+    }
+    syncIcons();
+    const iconInt = setInterval(() => {
+        if (!box.isConnected) { clearInterval(iconInt); return; }
+        syncIcons();
+    }, 400);
+
+    // 음량 분석 (Web Audio API)
+    try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        const ctx = new AC();
+        const src = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 256;
+        src.connect(analyser);
+        const data = new Uint8Array(analyser.frequencyBinCount);
+        function loop() {
+            if (!box.isConnected) {
+                try { ctx.close(); } catch(e) {}
+                return;
+            }
+            analyser.getByteFrequencyData(data);
+            let sum = 0;
+            for (let i = 0; i < data.length; i++) sum += data[i];
+            const avg = sum / data.length; // 0~255
+            const a = stream.getAudioTracks()[0];
+            const muted = !(a && a.enabled);
+            const level = muted ? 0 : Math.min(bars.length, Math.floor(avg / 8));
+            bars.forEach((b, i) => b.classList.toggle('on', i < level));
+            requestAnimationFrame(loop);
+        }
+        loop();
+    } catch(e) { console.warn('음량 분석 실패:', e); }
+}
+
+/** 참가자 퇴장 시 비디오 및 연결 제거 */
+function vcRemovePeer(userId) {
+    const pc = vcPeerConnections[userId];
+    if (pc) { pc.close(); delete vcPeerConnections[userId]; }
+    const box = document.getElementById(`vc-video-${userId}`);
+    if (box) box.remove();
+}
+
+/** 다자간 통화 방 나가기 */
+function vcLeaveRoom() {
+    Object.keys(vcPeerConnections).forEach(id => {
+        vcPeerConnections[id].close();
+        const el = document.getElementById(`vc-video-${id}`);
+        if (el) el.remove();
+    });
+    vcPeerConnections = {};
+    if (vcConn) vcConn.close();
+    if (vcLocalStream) {
+        vcLocalStream.getTracks().forEach(t => t.stop());
+        vcLocalStream = null;
+    }
+    vcConn = null;
+    document.getElementById('vc-chat-messages').innerHTML = '';
+    document.body.classList.remove('vc-in-call');
+    showView('view-home');
+}
+
+/** 마이크 / 카메라 토글 */
+function vcToggleMic() {
+    if (!vcLocalStream) return;
+    vcMicOn = !vcMicOn;
+    vcLocalStream.getAudioTracks().forEach(t => t.enabled = vcMicOn);
+    const btn = document.getElementById('vc-btn-mic');
+    btn.className = `ctrl-btn ${vcMicOn ? 'on' : 'off'}`;
+    btn.textContent = vcMicOn ? '🎤' : '🔇';
+}
+function vcToggleCam() {
+    if (!vcLocalStream) return;
+    vcCamOn = !vcCamOn;
+    vcLocalStream.getVideoTracks().forEach(t => t.enabled = vcCamOn);
+    const btn = document.getElementById('vc-btn-cam');
+    btn.className = `ctrl-btn ${vcCamOn ? 'on' : 'off'}`;
+    btn.textContent = vcCamOn ? '📷' : '🚫';
+}
+
+/** 탭 전환 (event 인자가 없어도 안전하게 동작) */
+function vcSwitchTab(tabName, evt) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById(`tab-${tabName}`);
+    if (panel) panel.classList.add('active');
+    // 클릭 이벤트가 있으면 그 버튼을, 없으면 onclick 속성 매칭으로 active 처리
+    const e = evt || (typeof event !== 'undefined' ? event : null);
+    if (e && e.target) {
+        e.target.classList.add('active');
+    } else {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${tabName}'`)) b.classList.add('active');
+        });
+    }
+    if (tabName === 'whiteboard') wbResize();
+}
+
+// 영상 패널 크기 조절 (1/4, 1/2, 3/4, 전체)
+function vcSetVideoSize(size, btn) {
+    const row = document.getElementById('vc-main-row');
+    if (!row) return;
+    row.classList.remove('video-quarter', 'video-half', 'video-threequarter', 'video-full');
+    row.classList.add('video-' + size);
+    document.querySelectorAll('.video-size-bar button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    // 칠판 캔버스가 보이면 새 폭에 맞춰 크기 조정
+    setTimeout(() => { if (typeof wbResize === 'function') wbResize(); }, 280);
+}
+
+function updateUserCount(count) {
+    document.getElementById('vc-user-count').textContent = count || 0;
+}
+
+
+/* ================================================================
+   6. 칠판 (화이트보드)
+   ──────────────────────────────────────────────────────────────────
+   Canvas API를 사용한 실시간 공유 드로잉.
+   좌표를 0~1 범위로 정규화하여 화면 크기가 달라도 동일하게 표시됩니다.
+================================================================ */
+let wbTool = 'pen';
+let wbDrawing = false;
+let wbLastX = 0, wbLastY = 0;
+let wbSnapshot = null;
+
+function wbSetTool(tool) {
+    wbTool = tool;
+    document.querySelectorAll('.wb-toolbar button').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+}
+
+function wbResize() {
+    const canvas = document.getElementById('wb-canvas');
+    const wrap = canvas.parentElement;
+    canvas.width = wrap.clientWidth;
+    canvas.height = wrap.clientHeight;
+}
+
+function wbInit() {
+    const canvas = document.getElementById('wb-canvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.addEventListener('mousedown', e => {
+        wbDrawing = true;
+        const rect = canvas.getBoundingClientRect();
+        wbLastX = e.clientX - rect.left;
+        wbLastY = e.clientY - rect.top;
+        if (['line','rect','circle'].includes(wbTool)) {
+            wbSnapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+    });
+
+    canvas.addEventListener('mousemove', e => {
+        if (!wbDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const color = document.getElementById('wb-color').value;
+        const size = parseInt(document.getElementById('wb-size').value);
+
+        if (wbTool === 'pen' || wbTool === 'eraser') {
+            ctx.beginPath();
+            ctx.moveTo(wbLastX, wbLastY);
+            ctx.lineTo(x, y);
+            ctx.strokeStyle = wbTool === 'eraser' ? '#ffffff' : color;
+            ctx.lineWidth = wbTool === 'eraser' ? size * 3 : size;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // 정규화된 좌표를 서버로 전송 (다른 참가자에게 공유)
+            if (vcConn) {
+                vcConn.send({
+                    type: 'whiteboard-draw',
+                    data: {
+                        tool: wbTool,
+                        fromX: wbLastX / canvas.width,
+                        fromY: wbLastY / canvas.height,
+                        toX: x / canvas.width,
+                        toY: y / canvas.height,
+                        color, size
+                    }
+                });
+            }
+            wbLastX = x; wbLastY = y;
+        } else if (wbSnapshot) {
+            ctx.putImageData(wbSnapshot, 0, 0);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = size;
+            ctx.beginPath();
+            if (wbTool === 'line') {
+                ctx.moveTo(wbLastX, wbLastY);
+                ctx.lineTo(x, y);
+            } else if (wbTool === 'rect') {
+                ctx.rect(wbLastX, wbLastY, x - wbLastX, y - wbLastY);
+            } else if (wbTool === 'circle') {
+                const rx = Math.abs(x - wbLastX) / 2;
+                const ry = Math.abs(y - wbLastY) / 2;
+                ctx.ellipse(wbLastX + (x - wbLastX)/2, wbLastY + (y - wbLastY)/2, rx, ry, 0, 0, Math.PI*2);
+            }
+            ctx.stroke();
+        }
+    });
+
+    canvas.addEventListener('mouseup', e => {
+        if (wbDrawing && ['line','rect','circle'].includes(wbTool) && vcConn) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            vcConn.send({
+                type: 'whiteboard-draw',
+                data: {
+                    tool: wbTool,
+                    fromX: wbLastX / canvas.width, fromY: wbLastY / canvas.height,
+                    toX: x / canvas.width, toY: y / canvas.height,
+                    color: document.getElementById('wb-color').value,
+                    size: parseInt(document.getElementById('wb-size').value)
+                }
+            });
+        }
+        wbDrawing = false;
+        wbSnapshot = null;
+    });
+
+    // 터치 지원
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousedown', {clientX:t.clientX,clientY:t.clientY})); });
+    canvas.addEventListener('touchmove', e => { e.preventDefault(); const t = e.touches[0]; canvas.dispatchEvent(new MouseEvent('mousemove', {clientX:t.clientX,clientY:t.clientY})); });
+    canvas.addEventListener('touchend', e => { e.preventDefault(); canvas.dispatchEvent(new MouseEvent('mouseup', {})); });
+
+    window.addEventListener('resize', wbResize);
+    window.addEventListener('resize', () => { if (pdfDoc && pdfPagesPerView === 2) pdfRender(); });
+}
+
+/** 다른 참가자의 드로잉을 수신하여 그립니다 */
+function wbReceiveDraw(data) {
+    const canvas = document.getElementById('wb-canvas');
+    const ctx = canvas.getContext('2d');
+    const fx = data.fromX * canvas.width, fy = data.fromY * canvas.height;
+    const tx = data.toX * canvas.width, ty = data.toY * canvas.height;
+
+    ctx.beginPath();
+    ctx.strokeStyle = data.tool === 'eraser' ? '#ffffff' : data.color;
+    ctx.lineWidth = data.tool === 'eraser' ? data.size * 3 : data.size;
+    ctx.lineCap = 'round';
+
+    if (data.tool === 'pen' || data.tool === 'eraser') {
+        ctx.moveTo(fx, fy); ctx.lineTo(tx, ty);
+    } else if (data.tool === 'line') {
+        ctx.moveTo(fx, fy); ctx.lineTo(tx, ty);
+    } else if (data.tool === 'rect') {
+        ctx.rect(fx, fy, tx - fx, ty - fy);
+    } else if (data.tool === 'circle') {
+        const rx = Math.abs(tx - fx)/2, ry = Math.abs(ty - fy)/2;
+        ctx.ellipse(fx + (tx-fx)/2, fy + (ty-fy)/2, rx, ry, 0, 0, Math.PI*2);
+    }
+    ctx.stroke();
+}
+
+function wbReceiveClear() {
+    const canvas = document.getElementById('wb-canvas');
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+}
+
+function wbClear() {
+    wbReceiveClear();
+    if (vcConn) vcConn.send({ type: 'whiteboard-clear', data: {} });
+}
+
+function wbSave() {
+    const canvas = document.getElementById('wb-canvas');
+    const link = document.createElement('a');
+    link.download = 'whiteboard.png';
+    link.href = canvas.toDataURL();
+    link.click();
+}
+
+
+/* ================================================================
+   7. PDF 공유
+================================================================ */
+let pdfDoc = null, pdfPageNum = 1, pdfCurrentId = null, pdfPagesPerView = 1;
+let pdfZoom = 1;                          // 사용자 줌 배율
+let pdfDrawTool = 'none';                 // 'none' | 'pen' | 'eraser'
+let pdfAnnotations = {};                  // { [pageNum]: [strokes] }
+                                          // stroke = { tool, color, size, points: [[nx,ny], ...] (정규화 0~1) }
+
+async function pdfUpload(input) {
+    const file = input.files[0];
+    if (!file) return;
+    // file:// 프로토콜로 직접 열면 서버 API 호출이 불가능 → 사용자에게 명확히 안내
+    if (location.protocol === 'file:') {
+        alert('PDF 업로드는 서버가 필요합니다.\n\nhttps://1p.workers.dev/ 로 접속하거나\n로컬에서 "npx wrangler dev" 로 실행해 주세요.\n\n(현재 file:// 로 열려 있어 업로드가 동작하지 않습니다.)');
+        input.value = '';
+        return;
+    }
+    // FormData는 일부 프리뷰(iframe postMessage 브릿지) 환경에서 DataCloneError를 일으키므로
+    // raw 바이너리(Blob)로 전송하고 메타데이터는 쿼리스트링으로 넘긴다.
+    const qs = new URLSearchParams({
+        roomId: vcRoomId || '',
+        filename: file.name || 'upload.pdf'
+    }).toString();
+
+    try {
+        const res = await fetch('/api/video-call/upload-pdf?' + qs, {
+            method: 'POST',
+            headers: { 'Content-Type': file.type || 'application/pdf' },
+            body: file
+        });
+        const result = await res.json();
+        if (result.success && result.url) {
+            // 서버 응답: { success, filename, url: "/api/video-call/pdf/<fileKey>" }
+            // url에서 fileKey만 잘라 pdfId로 보관 (원격 피어 동기화에 사용)
+            pdfCurrentId = result.url.replace('/api/video-call/pdf/', '');
+            await pdfLoad(result.url);
+            if (vcConn) vcConn.send({ type: 'pdf-share', data: { pdfId: pdfCurrentId, url: result.url, currentPage: 1 } });
+        } else {
+            console.error('PDF 업로드 응답 오류:', result);
+            alert('PDF 업로드에 실패했습니다: ' + (result.error || '알 수 없는 오류'));
+        }
+    } catch(e) { console.error('PDF 업로드 실패:', e); alert('PDF 업로드 실패: ' + e.message); }
+}
+
+async function pdfLoad(url) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    pdfDoc = await pdfjsLib.getDocument(url).promise;
+    pdfPageNum = 1;
+    pdfRender();
+}
+
+async function pdfLoadRemote(pdfId, page) {
+    pdfCurrentId = pdfId;
+    await pdfLoad(`/api/video-call/pdf/${pdfId}`);
+    pdfPageNum = page || 1;
+    pdfRender();
+}
+
+async function pdfRender() {
+    if (!pdfDoc) return;
+    const wrap = document.getElementById('pdf-scroll-wrap');
+    const page1 = await pdfDoc.getPage(pdfPageNum);
+    const baseVp = page1.getViewport({ scale: 1 });
+    let baseScale;
+    if (pdfPagesPerView === 2) {
+        const availW = (wrap ? wrap.clientWidth : 800) - 40;
+        const availH = (wrap ? wrap.clientHeight : 600) - 16;
+        const halfW = (availW - 12) / 2;
+        baseScale = Math.min(halfW / baseVp.width, availH / baseVp.height);
+        if (!isFinite(baseScale) || baseScale <= 0) baseScale = 1.2;
+    } else {
+        baseScale = 2.2;
+    }
+    const scale = baseScale * pdfZoom;
+
+    // 1번 페이지
+    const canvas1 = document.getElementById('pdf-canvas');
+    const vp1 = page1.getViewport({ scale });
+    canvas1.width = vp1.width;
+    canvas1.height = vp1.height;
+    await page1.render({ canvasContext: canvas1.getContext('2d'), viewport: vp1 }).promise;
+    pdfSyncAnnoCanvas('pdf-anno', canvas1, pdfPageNum);
+
+    // 2번 페이지
+    const canvas2 = document.getElementById('pdf-canvas-2');
+    const wrap2 = document.getElementById('pdf-page-wrap-2');
+    if (pdfPagesPerView === 2 && pdfPageNum + 1 <= pdfDoc.numPages) {
+        const page2 = await pdfDoc.getPage(pdfPageNum + 1);
+        const vp2 = page2.getViewport({ scale });
+        canvas2.width = vp2.width;
+        canvas2.height = vp2.height;
+        wrap2.style.display = '';
+        await page2.render({ canvasContext: canvas2.getContext('2d'), viewport: vp2 }).promise;
+        pdfSyncAnnoCanvas('pdf-anno-2', canvas2, pdfPageNum + 1);
+    } else {
+        wrap2.style.display = 'none';
+    }
+    const info = pdfPagesPerView === 2 && pdfPageNum + 1 <= pdfDoc.numPages
+        ? `${pdfPageNum}-${pdfPageNum + 1} / ${pdfDoc.numPages}`
+        : `${pdfPageNum} / ${pdfDoc.numPages}`;
+    document.getElementById('pdf-page-info').textContent = info;
+    document.getElementById('pdf-zoom-info').textContent = Math.round(pdfZoom * 100) + '%';
+}
+
+// 주석 캔버스를 PDF 캔버스 크기에 맞추고 저장된 주석 다시 그림
+function pdfSyncAnnoCanvas(annoId, pdfCanvas, pageNum) {
+    const anno = document.getElementById(annoId);
+    if (!anno) return;
+    anno.width = pdfCanvas.width;
+    anno.height = pdfCanvas.height;
+    anno.style.width = pdfCanvas.style.width || (pdfCanvas.width + 'px');
+    anno.style.height = pdfCanvas.style.height || (pdfCanvas.height + 'px');
+    anno.dataset.page = pageNum;
+    pdfRedrawAnno(anno, pageNum);
+    pdfBindAnnoEvents(annoId);
+}
+
+function pdfRedrawAnno(anno, pageNum) {
+    const ctx = anno.getContext('2d');
+    ctx.clearRect(0, 0, anno.width, anno.height);
+    const strokes = pdfAnnotations[pageNum] || [];
+    strokes.forEach(s => pdfDrawStroke(ctx, anno.width, anno.height, s));
+}
+
+function pdfDrawStroke(ctx, w, h, s) {
+    if (!s.points || s.points.length === 0) return;
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = s.tool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = s.size;
+    ctx.beginPath();
+    s.points.forEach((p, i) => {
+        const x = p[0] * w, y = p[1] * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.restore();
+}
+
+// 줌
+function pdfZoomIn()  { pdfZoom = Math.min(4, pdfZoom + 0.2); if (pdfDoc) pdfRender(); }
+function pdfZoomOut() { pdfZoom = Math.max(0.4, pdfZoom - 0.2); if (pdfDoc) pdfRender(); }
+function pdfZoomReset() { pdfZoom = 1; if (pdfDoc) pdfRender(); }
+
+// 그리기 도구 전환
+function pdfSetDrawTool(t, btn) {
+    pdfDrawTool = t;
+    document.querySelectorAll('.pdf-anno-bar button').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    // pointer-events 토글: 'none'이면 PDF를 자유롭게 스크롤, 그 외엔 그리기 모드
+    document.querySelectorAll('.pdf-anno').forEach(a => a.classList.toggle('active', t !== 'none'));
+}
+
+function pdfClearAnno() {
+    const pages = pdfPagesPerView === 2 ? [pdfPageNum, pdfPageNum + 1] : [pdfPageNum];
+    pages.forEach(p => { delete pdfAnnotations[p]; });
+    document.querySelectorAll('.pdf-anno').forEach(anno => {
+        const p = parseInt(anno.dataset.page);
+        if (pages.includes(p)) anno.getContext('2d').clearRect(0, 0, anno.width, anno.height);
+    });
+}
+
+// 주석 캔버스 그리기 이벤트
+function pdfBindAnnoEvents(annoId) {
+    const anno = document.getElementById(annoId);
+    if (!anno || anno._bound) return;
+    anno._bound = true;
+    let drawing = false, currentStroke = null;
+    function pos(e) {
+        const r = anno.getBoundingClientRect();
+        return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+    }
+    anno.addEventListener('pointerdown', (e) => {
+        if (pdfDrawTool === 'none') return;
+        drawing = true;
+        anno.setPointerCapture(e.pointerId);
+        const color = document.getElementById('pdf-anno-color').value;
+        const size  = parseInt(document.getElementById('pdf-anno-size').value) || 3;
+        currentStroke = { tool: pdfDrawTool, color, size, points: [pos(e)] };
+        const pageNum = parseInt(anno.dataset.page);
+        if (!pdfAnnotations[pageNum]) pdfAnnotations[pageNum] = [];
+        pdfAnnotations[pageNum].push(currentStroke);
+    });
+    anno.addEventListener('pointermove', (e) => {
+        if (!drawing || !currentStroke) return;
+        currentStroke.points.push(pos(e));
+        const pageNum = parseInt(anno.dataset.page);
+        pdfRedrawAnno(anno, pageNum);
+    });
+    function endDraw() { drawing = false; currentStroke = null; }
+    anno.addEventListener('pointerup', endDraw);
+    anno.addEventListener('pointerleave', endDraw);
+    anno.addEventListener('pointercancel', endDraw);
+}
+
+// 한 번에 보일 페이지 수 변경 (1 또는 2)
+function pdfSetPagesPerView(n, btn) {
+    pdfPagesPerView = n;
+    document.querySelectorAll('.pdf-view-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+    if (pdfDoc) pdfRender();
+}
+
+// PDF 팬(스크롤) — 위/오른쪽 툴바에서 호출
+function pdfPan(dx, dy) {
+    const wrap = document.getElementById('pdf-scroll-wrap');
+    if (!wrap) return;
+    wrap.scrollBy({ left: dx, top: dy, behavior: 'smooth' });
+}
+
+function pdfGoToPage(num) { pdfPageNum = num; pdfRender(); }
+function pdfPrevPage() {
+    if (pdfPageNum <= 1) return;
+    pdfPageNum = Math.max(1, pdfPageNum - pdfPagesPerView);
+    pdfRender();
+    if (vcConn) vcConn.send({ type: 'pdf-page-change', data: { currentPage: pdfPageNum } });
+}
+function pdfNextPage() {
+    if (!pdfDoc || pdfPageNum >= pdfDoc.numPages) return;
+    pdfPageNum = Math.min(pdfDoc.numPages, pdfPageNum + pdfPagesPerView);
+    pdfRender();
+    if (vcConn) vcConn.send({ type: 'pdf-page-change', data: { currentPage: pdfPageNum } });
+}
+function pdfStopShare() {
+    pdfDoc = null;
+    pdfCurrentId = null;
+    document.getElementById('pdf-canvas').getContext('2d').clearRect(0, 0, 9999, 9999);
+    document.getElementById('pdf-page-info').textContent = '-';
+    if (vcConn) vcConn.send({ type: 'pdf-stop-share', data: {} });
+}
+function pdfClearRemote() {
+    pdfDoc = null; pdfCurrentId = null;
+    document.getElementById('pdf-canvas').getContext('2d').clearRect(0, 0, 9999, 9999);
+    document.getElementById('pdf-page-info').textContent = '-';
+}
+
+
+/* ================================================================
+   7b. 동영상 플레이어 (YouTube URL 또는 업로드 파일)
+   ──────────────────────────────────────────────────────────────────
+   - URL 또는 파일로 동영상 재생
+   - 📌 미니 버튼: 플로팅 창으로 분리해서 칠판·PDF 보면서 동시 시청
+================================================================ */
+let vpIsFloating = false;
+
+function vpExtractYouTubeId(url) {
+    const re = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtube\.com\/live\/)([a-zA-Z0-9_-]{11})/;
+    const m = url.match(re);
+    return m ? m[1] : null;
+}
+
+function vpLoadUrl() {
+    const url = (document.getElementById('vp-url').value || '').trim();
+    if (!url) { alert('URL을 입력하세요.'); return; }
+    const stage = vpIsFloating ? document.getElementById('vp-floating-body') : document.getElementById('vp-stage');
+    stage.innerHTML = '';
+    const ytId = vpExtractYouTubeId(url);
+    if (ytId) {
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.youtube.com/embed/${ytId}?autoplay=1&rel=0&playsinline=1`;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        iframe.allowFullscreen = true;
+        iframe.setAttribute('playsinline', '');
+        stage.appendChild(iframe);
+    } else {
+        const vid = document.createElement('video');
+        vid.src = url;
+        vid.controls = true;
+        vid.autoplay = true;
+        vid.playsInline = true;
+        stage.appendChild(vid);
+    }
+}
+
+function vpUploadFile(input) {
+    const f = input.files && input.files[0];
+    if (!f) return;
+    const url = URL.createObjectURL(f);
+    const stage = vpIsFloating ? document.getElementById('vp-floating-body') : document.getElementById('vp-stage');
+    stage.innerHTML = '';
+    const vid = document.createElement('video');
+    vid.src = url;
+    vid.controls = true;
+    vid.autoplay = true;
+    vid.playsInline = true;
+    stage.appendChild(vid);
+}
+
+function vpClear() {
+    const stage = document.getElementById('vp-stage');
+    stage.innerHTML = '<div class="vp-empty">🎬 YouTube 주소를 붙여넣거나 동영상 파일을 업로드하세요.</div>';
+    const body = document.getElementById('vp-floating-body');
+    if (body) body.innerHTML = '';
+    const floating = document.getElementById('vp-floating');
+    if (floating) floating.style.display = 'none';
+    vpIsFloating = false;
+    const urlInput = document.getElementById('vp-url');
+    if (urlInput) urlInput.value = '';
+}
+
+/** 미니 플레이어 토글: 스테이지 ↔ 플로팅 창 사이에서 미디어 요소를 이동 */
+function vpTogglePiP() {
+    const stage = document.getElementById('vp-stage');
+    const floating = document.getElementById('vp-floating');
+    const body = document.getElementById('vp-floating-body');
+    if (!vpIsFloating) {
+        const media = stage.querySelector('iframe, video');
+        if (!media) { alert('먼저 영상을 불러오세요.'); return; }
+        body.innerHTML = '';
+        body.appendChild(media);
+        floating.style.display = 'flex';
+        vpIsFloating = true;
+        stage.innerHTML = '<div class="vp-empty">📌 미니 플레이어로 이동했습니다.<br><span style="font-size:0.8rem;color:#475569;">✕를 누르거나 다시 📌를 누르면 되돌아옵니다.</span></div>';
+        vpMakeDraggable();
+    } else {
+        vpFloatingClose();
+    }
+}
+
+function vpFloatingClose() {
+    const stage = document.getElementById('vp-stage');
+    const floating = document.getElementById('vp-floating');
+    const body = document.getElementById('vp-floating-body');
+    const media = body.querySelector('iframe, video');
+    if (media) {
+        stage.innerHTML = '';
+        stage.appendChild(media);
+    }
+    floating.style.display = 'none';
+    vpIsFloating = false;
+}
+
+/** 미니 플레이어 헤더 드래그로 위치 이동 */
+function vpMakeDraggable() {
+    const floating = document.getElementById('vp-floating');
+    const header = document.getElementById('vp-floating-header');
+    if (floating._dragBound) return;
+    floating._dragBound = true;
+    let dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+    header.addEventListener('pointerdown', (e) => {
+        if (e.target.tagName === 'BUTTON') return;
+        dragging = true;
+        try { header.setPointerCapture(e.pointerId); } catch(_){}
+        const r = floating.getBoundingClientRect();
+        sx = e.clientX; sy = e.clientY; ox = r.left; oy = r.top;
+        floating.style.right = 'auto';
+        floating.style.bottom = 'auto';
+        floating.style.left = ox + 'px';
+        floating.style.top = oy + 'px';
+    });
+    header.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const maxX = window.innerWidth - 80;
+        const maxY = window.innerHeight - 40;
+        const nx = Math.max(0, Math.min(maxX, ox + e.clientX - sx));
+        const ny = Math.max(0, Math.min(maxY, oy + e.clientY - sy));
+        floating.style.left = nx + 'px';
+        floating.style.top = ny + 'px';
+    });
+    const end = () => { dragging = false; };
+    header.addEventListener('pointerup', end);
+    header.addEventListener('pointercancel', end);
+}
+
+
+/* ================================================================
+   8. 채팅
+================================================================ */
+let chatUnread = 0;
+
+function vcToggleChat() {
+    const panel = document.getElementById('vc-chat-panel');
+    panel.classList.toggle('open');
+    if (panel.classList.contains('open')) {
+        chatUnread = 0;
+        document.getElementById('vc-chat-badge').classList.add('hidden');
+    }
+}
+
+function vcSendChat() {
+    const input = document.getElementById('vc-chat-input');
+    const text = input.value.trim();
+    if (!text || !vcConn) return;
+    vcConn.send({ type: 'chat-message', data: { message: text } });
+    input.value = '';
+}
+
+function vcReceiveChat(data) {
+    const container = document.getElementById('vc-chat-messages');
+    const isMine = data.userId === vcUserId;
+    const isSystem = data.type === 'system';
+    const cls = isSystem ? 'system' : (isMine ? 'mine' : 'other');
+    const time = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+
+    let html = `<div class="chat-msg ${cls}">`;
+    if (!isSystem && !isMine) html += `<div class="msg-sender">${escHtml(data.username)}</div>`;
+    html += `<div class="msg-bubble">${escHtml(data.message)}</div>`;
+    html += `<div class="msg-time">${time}</div></div>`;
+    container.innerHTML += html;
+    container.scrollTop = container.scrollHeight;
+
+    if (!isMine && !document.getElementById('vc-chat-panel').classList.contains('open')) {
+        chatUnread++;
+        const badge = document.getElementById('vc-chat-badge');
+        badge.textContent = chatUnread;
+        badge.classList.remove('hidden');
+    }
+}
+
+function vcAddChatSystem(message) {
+    vcReceiveChat({ type: 'system', message, userId: '_system', username: '시스템' });
+}
+
+
+/* ================================================================
+   유틸리티 함수
+================================================================ */
+
+/** 상태 점 업데이트 (초록/빨강/노랑) */
+function setStatusDot(id, state) {
+    const dot = document.getElementById(id);
+    dot.className = `status-dot ${state}`;
+}
+
+/** HTML 이스케이프 (XSS 방지) */
+function escHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+/* ================================================================
+   초기화
+================================================================ */
+window.addEventListener('DOMContentLoaded', () => {
+    wbInit();  // 칠판 이벤트 리스너 등록
+});
+</script>
+
+</body>
+</html>

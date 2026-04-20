@@ -64,9 +64,8 @@
     <div class="log" id="log"></div>
   </div>
 
-<script src="/socket.io/socket.io.js"></script>
 <script>
-// [통합] /signaling 네임스페이스 사용
+// Native WebSocket 기반 시그널링 클라이언트 (Socket.IO 대체)
 const localVideo  = document.getElementById('localVideo');
 const remoteVideo = document.getElementById('remoteVideo');
 const roomInput   = document.getElementById('roomInput');
@@ -76,8 +75,9 @@ const hangupBtn   = document.getElementById('hangupBtn');
 const statusEl    = document.getElementById('status');
 const logEl       = document.getElementById('log');
 
-let socket = null, localStream = null, peerConnection = null;
+let ws = null, localStream = null, peerConnection = null;
 let currentRoom = null, remotePeerId = null;
+let socketId = null;
 
 const ICE_SERVERS = {
   iceServers: [
@@ -99,76 +99,121 @@ function setStatus(text, color) {
 }
 
 function connectSocket() {
-  socket = io('/signaling');
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  const host = window.location.host;
+  const roomId = roomInput.value.trim() || 'signaling-test';
 
-  socket.on('connect', () => {
-    log('시그널링 서버 연결 완료 (/signaling 네임스페이스)', 'ok');
+  ws = new WebSocket(`${protocol}//${host}/ws/signaling?roomId=${encodeURIComponent(roomId)}`);
+
+  ws.onopen = () => {
+    log('서버 연결 완료 (WebSocket)', 'ok');
     setStatus('서버 연결됨', 'green');
-  });
+  };
 
-  socket.on('disconnect', () => {
+  ws.onmessage = (event) => {
+    try {
+      const msg = JSON.parse(event.data);
+      handleWebSocketMessage(msg);
+    } catch (err) {
+      console.error('Message parse error:', err);
+    }
+  };
+
+  ws.onerror = () => {
+    log('서버 연결 오류', 'err');
+    setStatus('서버 연결 오류', 'red');
+  };
+
+  ws.onclose = () => {
     log('서버 연결 끊김', 'err');
     setStatus('서버 연결 끊김', 'red');
-  });
+  };
+}
 
-  socket.on('room-joined', async ({ roomId, peers, isInitiator }) => {
-    currentRoom = roomId;
-    log('방 "' + roomId + '" 참가 완료 (현재 피어: ' + peers.length + '명)', 'ok');
-    setStatus('방: ' + roomId, 'green');
-    joinBtn.textContent = '방 나가기';
-    if (peers.length > 0) {
-      remotePeerId = peers[0];
-      callBtn.disabled = false;
-      log('상대방이 이미 있습니다. "통화 시작"을 눌러주세요.', 'info');
-    }
-  });
+function handleWebSocketMessage(msg) {
+  const { type, data } = msg;
 
-  socket.on('peer-joined', ({ peerId }) => {
-    log('새 피어 입장: ' + peerId, 'info');
-    remotePeerId = peerId;
+  switch (type) {
+    case 'room-joined':
+      handleRoomJoined(data);
+      break;
+    case 'peer-joined':
+      handlePeerJoined(data);
+      break;
+    case 'peer-left':
+      handlePeerLeft(data);
+      break;
+    case 'room-full':
+      handleRoomFull(data);
+      break;
+    case 'offer':
+      handleOffer(data);
+      break;
+    case 'answer':
+      handleAnswer(data);
+      break;
+    case 'ice-candidate':
+      handleIceCandidate(data);
+      break;
+    case 'error-msg':
+      log('서버 오류: ' + data.message, 'err');
+      break;
+  }
+}
+
+function handleRoomJoined({ roomId, peers, isInitiator }) {
+  currentRoom = roomId;
+  log('방 "' + roomId + '" 참가 완료 (현재 피어: ' + peers.length + '명)', 'ok');
+  setStatus('방: ' + roomId, 'green');
+  joinBtn.textContent = '방 나가기';
+  if (peers.length > 0) {
+    remotePeerId = peers[0];
     callBtn.disabled = false;
-  });
+    log('상대방이 이미 있습니다. "통화 시작"을 눌러주세요.', 'info');
+  }
+}
 
-  socket.on('peer-left', ({ peerId }) => {
-    log('피어 퇴장: ' + peerId, 'warn');
-    if (peerId === remotePeerId) {
-      closePeerConnection();
-      remotePeerId = null;
-      callBtn.disabled = true;
-    }
-  });
+function handlePeerJoined({ peerId }) {
+  log('새 피어 입장: ' + peerId, 'info');
+  remotePeerId = peerId;
+  callBtn.disabled = false;
+}
 
-  socket.on('room-full', ({ roomId }) => {
-    log('방 "' + roomId + '"이 꽉 찼습니다.', 'err');
-  });
+function handlePeerLeft({ peerId }) {
+  log('피어 퇴장: ' + peerId, 'warn');
+  if (peerId === remotePeerId) {
+    closePeerConnection();
+    remotePeerId = null;
+    callBtn.disabled = true;
+  }
+}
 
-  socket.on('offer', async ({ senderId, sdp }) => {
-    log('Offer 수신', 'info');
-    remotePeerId = senderId;
-    await createPeerConnection();
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-    const answer = await peerConnection.createAnswer();
-    await peerConnection.setLocalDescription(answer);
-    socket.emit('answer', { targetId: senderId, sdp: answer });
-    log('Answer 전송 완료', 'ok');
-    hangupBtn.disabled = false;
-  });
+function handleRoomFull({ roomId }) {
+  log('방 "' + roomId + '"이 꽉 찼습니다.', 'err');
+}
 
-  socket.on('answer', async ({ senderId, sdp }) => {
-    log('Answer 수신', 'info');
-    await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
-  });
+async function handleOffer({ senderId, sdp }) {
+  log('Offer 수신', 'info');
+  remotePeerId = senderId;
+  await createPeerConnection();
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+  const answer = await peerConnection.createAnswer();
+  await peerConnection.setLocalDescription(answer);
+  sendMessage({ type: 'answer', data: { targetId: senderId, sdp: answer } });
+  log('Answer 전송 완료', 'ok');
+  hangupBtn.disabled = false;
+}
 
-  socket.on('ice-candidate', async ({ senderId, candidate }) => {
-    log('ICE candidate 수신', 'info');
-    if (peerConnection) {
-      await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-    }
-  });
+async function handleAnswer({ senderId, sdp }) {
+  log('Answer 수신', 'info');
+  await peerConnection.setRemoteDescription(new RTCSessionDescription(sdp));
+}
 
-  socket.on('error-msg', ({ message }) => {
-    log('서버 오류: ' + message, 'err');
-  });
+async function handleIceCandidate({ senderId, candidate }) {
+  log('ICE candidate 수신', 'info');
+  if (peerConnection) {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+  }
 }
 
 async function getLocalStream() {
@@ -197,7 +242,7 @@ async function createPeerConnection() {
   };
   peerConnection.onicecandidate = (event) => {
     if (event.candidate) {
-      socket.emit('ice-candidate', { targetId: remotePeerId, candidate: event.candidate });
+      sendMessage({ type: 'ice-candidate', data: { targetId: remotePeerId, candidate: event.candidate } });
     }
   };
   peerConnection.onconnectionstatechange = () => {
@@ -219,20 +264,32 @@ function closePeerConnection() {
   log('PeerConnection 종료', 'warn');
 }
 
+function sendMessage(msg) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify(msg));
+  }
+}
+
 joinBtn.addEventListener('click', () => {
   if (currentRoom) {
-    socket.emit('leave');
+    sendMessage({ type: 'leave' });
     closePeerConnection();
     currentRoom = null; remotePeerId = null;
     joinBtn.textContent = '방 참가';
     callBtn.disabled = true;
     setStatus('서버 연결됨', 'green');
     log('방에서 나갔습니다.', 'warn');
+    if (ws) ws.close();
     return;
   }
   const room = roomInput.value.trim();
   if (!room) { log('방 이름을 입력하세요.', 'warn'); return; }
-  socket.emit('join', room);
+  connectSocket();
+  setTimeout(() => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      sendMessage({ type: 'join' });
+    }
+  }, 100);
 });
 
 callBtn.addEventListener('click', async () => {
@@ -240,7 +297,7 @@ callBtn.addEventListener('click', async () => {
   await createPeerConnection();
   const offer = await peerConnection.createOffer();
   await peerConnection.setLocalDescription(offer);
-  socket.emit('offer', { targetId: remotePeerId, sdp: offer });
+  sendMessage({ type: 'offer', data: { targetId: remotePeerId, sdp: offer } });
   log('Offer 전송 완료', 'ok');
   hangupBtn.disabled = false;
   callBtn.disabled = true;
@@ -251,8 +308,6 @@ hangupBtn.addEventListener('click', () => {
   callBtn.disabled = false;
   setStatus('방: ' + currentRoom, 'green');
 });
-
-connectSocket();
 </script>
 </body>
 </html>
