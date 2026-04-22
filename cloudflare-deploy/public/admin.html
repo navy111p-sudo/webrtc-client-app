@@ -108,18 +108,36 @@
 </div>
 
 <div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="🎥 녹화 목록" data-en="🎥 Recordings">🎥 녹화 목록</div>
+  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <span data-ko="🎥 녹화 목록 (D1 메타 + R2 파일 통합)" data-en="🎥 Recordings (D1 meta + R2 files unified)">🎥 녹화 목록 (D1 메타 + R2 파일 통합)</span>
+    <span id="rec-counts" style="font-size:12px;font-weight:400;color:#6b7280;"></span>
+  </div>
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+       data-ko="💡 D1 = 녹화 메타데이터 DB (방 번호·교사·시간 등) · R2 = 녹화 파일 저장소 (동영상 .webm). 두 곳 모두 있어야 정상입니다."
+       data-en="💡 D1 = recording metadata DB (room/teacher/time) · R2 = recording file storage (video .webm). Both must exist for a healthy recording.">
+    💡 D1 = 녹화 메타데이터 DB (방 번호·교사·시간 등) · R2 = 녹화 파일 저장소 (동영상 .webm). 두 곳 모두 있어야 정상입니다.
+  </div>
+  <div id="rec-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px 0;">
+    <button class="rec-filter active" data-filter="all" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#111827;color:#fff;font-size:12px;cursor:pointer;" data-ko="전체" data-en="All">전체</button>
+    <button class="rec-filter" data-filter="both" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="D1+R2 (정상)" data-en="D1+R2 (healthy)">D1+R2 (정상)</button>
+    <button class="rec-filter" data-filter="d1only" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="D1만 / 파일 누락" data-en="D1 only / file missing">D1만 / 파일 누락</button>
+    <button class="rec-filter" data-filter="orphan" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="R2만 / 메타 누락(고아)" data-en="R2 only / meta missing (orphan)">R2만 / 메타 누락(고아)</button>
+  </div>
   <table>
-    <thead><tr><th data-ko="방" data-en="Room">방</th><th data-ko="교사" data-en="Teacher">교사</th><th data-ko="시작" data-en="Start">시작</th><th data-ko="시간" data-en="Duration">시간</th><th data-ko="크기" data-en="Size">크기</th><th data-ko="참가자" data-en="Users">참가자</th><th data-ko="상태" data-en="Status">상태</th><th data-ko="재생" data-en="Play">재생</th></tr></thead>
+    <thead>
+      <tr>
+        <th data-ko="방" data-en="Room">방</th>
+        <th data-ko="교사" data-en="Teacher">교사</th>
+        <th data-ko="시작" data-en="Start">시작</th>
+        <th data-ko="시간" data-en="Duration">시간</th>
+        <th data-ko="크기" data-en="Size">크기</th>
+        <th data-ko="참가자" data-en="Users">참가자</th>
+        <th data-ko="상태" data-en="Status">상태</th>
+        <th data-ko="스토리지" data-en="Storage">스토리지</th>
+        <th data-ko="재생" data-en="Play">재생</th>
+      </tr>
+    </thead>
     <tbody id="recordings-table"></tbody>
-  </table>
-</div>
-
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="📁 R2 녹화 파일" data-en="📁 R2 Recording Files">📁 R2 녹화 파일</div>
-  <table>
-    <thead><tr><th data-ko="파일명" data-en="Filename">파일명</th><th data-ko="크기" data-en="Size">크기</th><th data-ko="업로드" data-en="Uploaded">업로드</th><th data-ko="재생" data-en="Play">재생</th></tr></thead>
-    <tbody id="r2-recordings-table"><tr><td colspan="4" class="empty">로딩 중...</td></tr></tbody>
   </table>
 </div>
 
@@ -153,7 +171,6 @@ function toggleAdminLang() {
   loadRecordings();
   loadRetention();
   loadActiveRooms();
-  loadR2Recordings();
 }
 
 function fmtMs(ms) {
@@ -265,8 +282,12 @@ async function load() {
     : emerg.map(e => `<tr><td>${e.event_type}</td><td>${e.c}</td></tr>`).join('');
 }
 
+// 통합 녹화 목록 상태 (필터링을 위해 전역 보관)
+var _unifiedRecRows = [];
+var _currentRecFilter = 'all';
+
 async function loadRecordings() {
-  // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 매칭
+  // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 완전 통합
   let recRes, blobRes;
   try {
     [recRes, blobRes] = await Promise.all([
@@ -279,16 +300,14 @@ async function loadRecordings() {
   }
   const list = recRes || [];
   const blobs = (blobRes.items || []).sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
-  const tb = document.getElementById('recordings-table');
-  if (!list.length && !blobs.length) {
-    tb.innerHTML = '<tr><td colspan="8" class="empty">'+(adminLang==='en'?'No recordings':'녹화 기록 없음')+'</td></tr>';
-    return;
-  }
 
-  // blob을 room_id별로 그룹핑 (키 형식: roomId/date/timestamp-filename)
+  // R2 blob을 key로 빠르게 조회할 수 있는 Map 구성
+  const blobByKey = new Map();
+  for (const b of blobs) blobByKey.set(b.key, b);
+
+  // 시간 기반 매칭 (file_url이 비어 있는 D1 레코드를 위해)
   function findBlobForRecording(rec) {
-    if (rec.file_url) return rec.file_url;
-    // timestamp 기반으로 가장 가까운 blob 매칭 (±60초)
+    if (rec.file_url && blobByKey.has(rec.file_url)) return rec.file_url;
     for (const b of blobs) {
       const keyParts = b.key.split('/');
       if (keyParts[0] === rec.room_id) {
@@ -300,44 +319,156 @@ async function loadRecordings() {
     return null;
   }
 
-  tb.innerHTML = list.map(r => {
-    const d = new Date(r.started_at);
+  // 통합 행 생성: D1 레코드를 먼저 걸고, 매칭된 R2 blob은 "사용됨" 표시
+  const usedBlobKeys = new Set();
+  const rows = [];
+
+  for (const r of list) {
+    const matchedKey = findBlobForRecording(r);
+    if (matchedKey) usedBlobKeys.add(matchedKey);
+    const hasD1 = true;
+    const hasR2 = !!matchedKey;
+    const source = hasD1 && hasR2 ? 'both' : 'd1only';
+    const matchedBlob = matchedKey ? blobByKey.get(matchedKey) : null;
+
+    rows.push({
+      source,           // 'both' | 'd1only' | 'orphan'
+      startedAt: r.started_at || 0,
+      room_id: r.room_id,
+      teacher: r.teacher_name || r.teacher_id || '-',
+      duration_ms: r.duration_ms || 0,
+      size_bytes: r.size_bytes || (matchedBlob ? matchedBlob.size : 0),
+      participant_names: r.participant_names,
+      consented_user_ids: r.consented_user_ids,
+      status: r.status,
+      blobKey: matchedKey,
+      blobUrl: matchedBlob ? matchedBlob.url : null,
+      originalName: matchedBlob ? matchedBlob.originalName : null
+    });
+  }
+
+  // D1에 없고 R2에만 존재하는 "고아" blob
+  for (const b of blobs) {
+    if (usedBlobKeys.has(b.key)) continue;
+    const keyParts = b.key.split('/');
+    const roomId = keyParts[0] || '-';
+    rows.push({
+      source: 'orphan',
+      startedAt: b.uploaded ? new Date(b.uploaded).getTime() : 0,
+      room_id: roomId,
+      teacher: '-',
+      duration_ms: 0,
+      size_bytes: b.size || 0,
+      participant_names: '[]',
+      consented_user_ids: '[]',
+      status: 'orphan',
+      blobKey: b.key,
+      blobUrl: b.url,
+      originalName: b.originalName || (keyParts[keyParts.length-1] || b.key)
+    });
+  }
+
+  // 최신순 정렬
+  rows.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+  _unifiedRecRows = rows;
+  renderRecordingsTable();
+}
+
+function renderRecordingsTable() {
+  const tb = document.getElementById('recordings-table');
+  const rows = _unifiedRecRows || [];
+  const filter = _currentRecFilter || 'all';
+  const filtered = filter === 'all' ? rows : rows.filter(r => r.source === filter);
+
+  // 카운트 배지 업데이트
+  const cBoth = rows.filter(r => r.source === 'both').length;
+  const cD1 = rows.filter(r => r.source === 'd1only').length;
+  const cOrphan = rows.filter(r => r.source === 'orphan').length;
+  const cEl = document.getElementById('rec-counts');
+  if (cEl) {
+    cEl.textContent = adminLang === 'en'
+      ? ('Total ' + rows.length + ' · Healthy(D1+R2) ' + cBoth + ' · D1 only ' + cD1 + ' · Orphan(R2 only) ' + cOrphan)
+      : ('총 ' + rows.length + '건 · 정상(D1+R2) ' + cBoth + ' · D1만 ' + cD1 + ' · 고아(R2만) ' + cOrphan);
+  }
+
+  if (!filtered.length) {
+    tb.innerHTML = '<tr><td colspan="9" class="empty">'+(adminLang==='en'?'No recordings':'녹화 기록 없음')+'</td></tr>';
+    return;
+  }
+
+  tb.innerHTML = filtered.map(r => {
+    const d = r.startedAt ? new Date(r.startedAt) : null;
     const dur = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
-    const dm = String(Math.floor(dur/60)).padStart(2,'0') + ':' + String(dur%60).padStart(2,'0');
+    const dm = dur ? (String(Math.floor(dur/60)).padStart(2,'0') + ':' + String(dur%60).padStart(2,'0')) : '-';
     const sz = r.size_bytes ? (r.size_bytes/(1024*1024)).toFixed(1) + 'MB' : '-';
+
     let names = [];
     try { names = JSON.parse(r.participant_names || '[]'); } catch(_){}
     let consent = [];
     try { consent = JSON.parse(r.consented_user_ids || '[]'); } catch(_){}
-    const statusBadge = r.status === 'completed' ? '<span class="badge ok">'+(adminLang==='en'?'Done':'완료')+'</span>'
-                      : r.status === 'recording' ? '<span class="badge warn">'+(adminLang==='en'?'Recording':'녹화중')+'</span>'
-                      : r.status === 'deleted' ? '<span class="badge" style="background:#fee;color:#dc2626;">'+(adminLang==='en'?'Deleted':'삭제됨')+'</span>'
-                      : r.status;
-    let playBtn = '-';
-    if (r.status === 'completed' && r.size_bytes > 0) {
-      // 1순위: DB의 file_url (R2 키)
-      let blobKey = r.file_url;
-      // 2순위: R2 blob 목록에서 매칭
-      if (!blobKey) blobKey = findBlobForRecording(r);
-      if (blobKey) {
-        const playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
-        playBtn = `<button onclick="playRecording('${playUrl}', '방 ${r.room_id} - ${(r.teacher_name || "").replace(/'/g,"")}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button>`;
-      } else {
-        playBtn = '<span style="color:#94a3b8;font-size:11px;">'+(adminLang==='en'?'Pending upload':'업로드 대기')+'</span>';
-      }
+
+    // 상태 배지
+    let statusBadge;
+    if (r.status === 'completed')      statusBadge = '<span class="badge ok">'+(adminLang==='en'?'Done':'완료')+'</span>';
+    else if (r.status === 'recording') statusBadge = '<span class="badge warn">'+(adminLang==='en'?'Recording':'녹화중')+'</span>';
+    else if (r.status === 'deleted')   statusBadge = '<span class="badge" style="background:#fee;color:#dc2626;">'+(adminLang==='en'?'Deleted':'삭제됨')+'</span>';
+    else if (r.status === 'orphan')    statusBadge = '<span class="badge" style="background:#fff7ed;color:#c2410c;">'+(adminLang==='en'?'Orphan':'고아')+'</span>';
+    else                                statusBadge = r.status || '-';
+
+    // 스토리지 배지 (D1=메타데이터 DB, R2=파일 저장소)
+    let storageBadge;
+    if (r.source === 'both')         storageBadge = '<span class="badge ok" title="정상: D1(메타) + R2(파일) 모두 존재">D1+R2</span>';
+    else if (r.source === 'd1only')  storageBadge = '<span class="badge warn" title="주의: D1(메타)만 있음. R2에 동영상 파일 없음(업로드 실패 또는 진행 중)">'+(adminLang==='en'?'D1 only':'D1만')+'</span>';
+    else                              storageBadge = '<span class="badge" style="background:#fff7ed;color:#c2410c;" title="주의: R2(파일)만 있음. D1 메타데이터 없음(고아 파일)">'+(adminLang==='en'?'R2 only':'R2만')+'</span>';
+
+    // 재생/액션 버튼
+    let playBtn;
+    if (r.blobKey) {
+      const playUrl = '/api/recordings/blob/' + encodeURIComponent(r.blobKey);
+      const titleText = '방 ' + (r.room_id || '-') + ' - ' + String(r.teacher || '').replace(/'/g,"");
+      playBtn = '<button onclick="playRecording(\''+playUrl+'\', \''+titleText.replace(/'/g,"\\'")+'\')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ '+(adminLang==='en'?'Play':'재생')+'</button>';
+    } else if (r.status === 'recording') {
+      playBtn = '<span style="color:#94a3b8;font-size:11px;">'+(adminLang==='en'?'In progress':'녹화중')+'</span>';
+    } else {
+      playBtn = '<span style="color:#94a3b8;font-size:11px;">'+(adminLang==='en'?'Pending upload':'업로드 대기')+'</span>';
     }
-    return `<tr>
-      <td>${r.room_id}</td>
-      <td>${r.teacher_name || r.teacher_id}</td>
-      <td>${d.toLocaleString('ko-KR')}</td>
-      <td>${dm}</td>
-      <td>${sz}</td>
-      <td>${names.length}${adminLang==='en'?' (consent '+consent.length+')':'명 (동의 '+consent.length+')'}</td>
-      <td>${statusBadge}</td>
-      <td>${playBtn}</td>
-    </tr>`;
+
+    const roomCell   = r.room_id || '-';
+    const teacherCell = r.teacher || '-';
+    const startCell  = d ? d.toLocaleString(adminLang==='en'?'en-US':'ko-KR') : '-';
+    const usersCell  = (r.source === 'orphan')
+      ? '-'
+      : (names.length + (adminLang==='en'?' (consent '+consent.length+')':'명 (동의 '+consent.length+')'));
+
+    return '<tr>'
+      + '<td>' + roomCell + '</td>'
+      + '<td>' + teacherCell + '</td>'
+      + '<td>' + startCell + '</td>'
+      + '<td>' + dm + '</td>'
+      + '<td>' + sz + '</td>'
+      + '<td>' + usersCell + '</td>'
+      + '<td>' + statusBadge + '</td>'
+      + '<td>' + storageBadge + '</td>'
+      + '<td>' + playBtn + '</td>'
+      + '</tr>';
   }).join('');
 }
+
+// 필터 버튼 바인딩
+document.addEventListener('click', function(ev) {
+  const btn = ev.target.closest('.rec-filter');
+  if (!btn) return;
+  _currentRecFilter = btn.getAttribute('data-filter') || 'all';
+  document.querySelectorAll('.rec-filter').forEach(b => {
+    b.classList.remove('active');
+    b.style.background = '#fff';
+    b.style.color = '#111827';
+  });
+  btn.classList.add('active');
+  btn.style.background = '#111827';
+  btn.style.color = '#fff';
+  renderRecordingsTable();
+});
 
 async function loadRetention() {
   try {
@@ -419,33 +550,6 @@ function closePlayback() {
   modal.style.display = 'none';
 }
 
-// ── R2 녹화 파일 목록 ──
-async function loadR2Recordings() {
-  try {
-    const r = await fetch('/api/recordings/blob/list');
-    const data = await r.json();
-    const items = data.items || [];
-    const tb = document.getElementById('r2-recordings-table');
-    if (items.length === 0) {
-      tb.innerHTML = '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'No recording files':'녹화 파일 없음')+'</td></tr>';
-      return;
-    }
-    tb.innerHTML = items.map(item => {
-      const sz = item.size ? (item.size/(1024*1024)).toFixed(1) + 'MB' : '-';
-      const uploaded = item.uploaded ? new Date(item.uploaded).toLocaleString('ko-KR') : '-';
-      const name = item.originalName || item.key.split('/').pop();
-      return `<tr>
-        <td title="${item.key}">${name}</td>
-        <td>${sz}</td>
-        <td>${uploaded}</td>
-        <td><button onclick="playRecording('${item.url}', '${name}')" style="background:#3b82f6;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;">▶ 재생</button></td>
-      </tr>`;
-    }).join('');
-  } catch(e) {
-    document.getElementById('r2-recordings-table').innerHTML = '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'Load failed':'로딩 실패')+'</td></tr>';
-  }
-}
-
 async function testR2() {
   const el = document.getElementById('test-r2-result');
   el.textContent = adminLang==='en'?'Testing...':'테스트 중...';
@@ -490,7 +594,7 @@ document.getElementById('refresh').onclick = async function() {
 };
 document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadR2Recordings()]);
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms()]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>
