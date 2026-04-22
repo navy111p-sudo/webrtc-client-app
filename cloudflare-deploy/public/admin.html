@@ -106,6 +106,35 @@
   <button id="test-r2-btn" onclick="testR2()" style="background:#3b82f6;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;margin-right:8px;" data-ko="🔧 R2 저장소 테스트" data-en="🔧 R2 Storage Test">🔧 R2 저장소 테스트</button>
   <span id="test-r2-result" style="font-size:13px;color:#94a3b8;"></span>
 </div>
+<!-- 🎯 집중도 분석 위젯 (focus-integrator.pages.dev 임베드) -->
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+    <span data-ko="🎯 실시간 집중도 분석 (시선 60% + 발화 40%)"
+          data-en="🎯 Real-time Focus Analysis (Gaze 60% + Speech 40%)">🎯 실시간 집중도 분석 (시선 60% + 발화 40%)</span>
+    <div style="display:flex; gap:6px;">
+      <button type="button"
+              onclick="document.getElementById('focus-frame').contentWindow.location.reload()"
+              style="padding:4px 12px; border-radius:14px; border:1px solid #d1d5db; background:#fff; color:#111827; font-size:12px; cursor:pointer;"
+              data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
+      <a href="https://focus-integrator.pages.dev/" target="_blank" rel="noopener"
+         style="padding:4px 12px; border-radius:14px; border:1px solid #d1d5db; background:#111827; color:#fff; font-size:12px; text-decoration:none;"
+         data-ko="새 창에서 ↗" data-en="Open in new tab ↗">새 창에서 ↗</a>
+    </div>
+  </div>
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin:10px 0;line-height:1.6;"
+       data-ko="💡 에이전트1(시선) + 에이전트2(발화) JSON 입력 → 가중치 계산 → 최종 집중도 점수 출력"
+       data-en="💡 Agent1(gaze) + Agent2(speech) JSON input → weighted calculation → final focus score">
+    💡 에이전트1(시선) + 에이전트2(발화) JSON 입력 → 가중치 계산 → 최종 집중도 점수 출력
+  </div>
+  <iframe id="focus-frame"
+          src="https://focus-integrator.pages.dev/"
+          style="width:100%; height:760px; border:1px solid #e5e7eb; border-radius:10px; background:#0b1020; display:block;"
+          loading="lazy"
+          sandbox="allow-scripts allow-same-origin allow-forms"></iframe>
+  <div style="margin-top:10px; font-size:12px; color:#6b7280;">
+    API: <code style="background:#f9fafb; padding:2px 6px; border-radius:4px; border:1px solid #e5e7eb;">POST https://focus-integrator.pages.dev/api/integrate</code>
+  </div>
+</div>
 
 <div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
