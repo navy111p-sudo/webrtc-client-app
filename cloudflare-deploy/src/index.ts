@@ -483,6 +483,14 @@ async function handleVideoCallWebSocket(request: Request, url: URL, env: Env): P
 
 async function handleActiveRooms(env: Env): Promise<Response> {
   try {
+    // KV 바인딩이 없는 경우 빈 배열로 안전 반환
+    if (!env.SESSION_STATE) {
+      return new Response(JSON.stringify([]), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+      });
+    }
+
     // KV에서 active-room: 프리픽스로 활성 방 목록 조회
     const list = await env.SESSION_STATE.list({ prefix: 'active-room:' });
     const rooms: any[] = [];
@@ -495,17 +503,22 @@ async function handleActiveRooms(env: Env): Promise<Response> {
         const durableObject = env.VIDEO_CALL_ROOM.get(durableObjectId);
         const statusUrl = new URL(`https://internal/status?roomId=${roomId}`);
         const statusResp = await durableObject.fetch(statusUrl.toString());
-        const status = await statusResp.json() as any;
 
-        // 유저가 0명이면 KV에서 제거
-        if (status.userCount === 0) {
-          await env.SESSION_STATE.delete(key.name);
+        // 응답이 JSON 이 아니거나 비정상이면 KV 정리 후 continue
+        let status: any = null;
+        if (statusResp.ok) {
+          const text = await statusResp.text();
+          try { status = JSON.parse(text); } catch { status = null; }
+        }
+
+        if (!status || typeof status.userCount !== 'number' || status.userCount === 0) {
+          try { await env.SESSION_STATE.delete(key.name); } catch {}
           continue;
         }
         rooms.push(status);
       } catch (e) {
-        // DO가 이미 사라진 경우 KV 정리
-        await env.SESSION_STATE.delete(key.name);
+        // DO가 이미 사라진 경우 KV 정리 — 정리 실패는 무시
+        try { await env.SESSION_STATE.delete(key.name); } catch {}
       }
     }
 
@@ -515,9 +528,10 @@ async function handleActiveRooms(env: Env): Promise<Response> {
     });
   } catch (err: any) {
     console.error('[active-rooms] error:', err);
-    return new Response(JSON.stringify({ error: err?.message || 'Failed' }), {
-      status: 500,
-      headers: { 'Content-Type': 'application/json' }
+    // 관리자 UI 가 빈 배열도 정상적으로 처리하므로, 500 대신 []+200 반환
+    return new Response(JSON.stringify([]), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
     });
   }
 }

@@ -41,6 +41,24 @@ export class VideoCallRoom {
     if (request.headers.get('Upgrade') === 'websocket') {
       return this.handleWebSocket(request);
     }
+
+    // 관리자/active-rooms 용 상태 조회 HTTP 핸들러
+    // /status → { roomId, userCount, users: [{userId, username}] }
+    if (url.pathname === '/status') {
+      const users = Array.from(this.users.entries()).map(([userId, u]) => ({
+        userId,
+        username: u.username,
+      }));
+      return new Response(
+        JSON.stringify({
+          roomId: this.roomId,
+          userCount: this.users.size,
+          users,
+        }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response('Invalid request', { status: 400 });
   }
 

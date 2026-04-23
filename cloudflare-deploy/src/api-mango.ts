@@ -100,6 +100,93 @@ export async function handleMangoApi(
       return json({ ok: true, recorded_at: now });
     }
 
+    // ===== 시선 점수 =====
+    //  - public/js/mango-gaze.js 가 10초마다 호출
+    //  - session_* 필드가 있으면 그걸 누적값으로 사용(권장)
+    //  - 없으면 이번 윈도우의 forward_samples/samples 로 단순 덮어쓰기
+    //  - 같은 (room_id, user_id) 의 가장 최신 attendance row 를 업데이트
+    if (path === '/api/gaze-score' && method === 'POST') {
+      const b = await request.json() as any;
+      if (!b.room_id || !b.user_id) {
+        return json({ ok: false, error: 'room_id and user_id required' }, 400);
+      }
+      const now = Date.now();
+      const cameraOff = b.camera_off === true;
+
+      // 점수/샘플 결정: session_* 가 들어왔으면 누적값으로, 아니면 윈도우값 사용
+      const totalSamples = (typeof b.session_samples === 'number')
+        ? b.session_samples
+        : Number(b.samples || 0);
+      const forwardSamples = (typeof b.session_forward_samples === 'number')
+        ? b.session_forward_samples
+        : Number(b.forward_samples || 0);
+      let score: number | null = null;
+      if (cameraOff) {
+        // 카메라 OFF 신호 → 점수는 null 로 유지 (admin 에서 "—" 로 보이되 샘플=0 으로 원인 구분 가능)
+        score = null;
+      } else if (typeof b.session_score === 'number' && !Number.isNaN(b.session_score)) {
+        score = b.session_score;
+      } else if (typeof b.gaze_score === 'number' && !Number.isNaN(b.gaze_score)) {
+        score = b.gaze_score;
+      } else if (totalSamples > 0) {
+        score = Math.round((forwardSamples / totalSamples) * 1000) / 10;
+      }
+
+      // 가장 최근 열린 attendance row 우선, 없으면 가장 최근 row 로 fallback
+      // (heartbeat 타이밍/예상치 못한 leave 순서 문제로 left_at 이 먼저 찍힌 경우 대비)
+      const targetRow = await env.DB.prepare(
+        `SELECT id, gaze_score FROM attendance
+         WHERE room_id = ? AND user_id = ?
+         ORDER BY (CASE WHEN left_at IS NULL THEN 0 ELSE 1 END), joined_at DESC
+         LIMIT 1`
+      ).bind(b.room_id, b.user_id).first<{ id: number; gaze_score: number | null }>();
+
+      if (!targetRow) {
+        // attendance row 자체가 없으면(이례적) 하나 만들어둔다 — 점수 보고가 유실되지 않도록.
+        const date = today(now);
+        const res = await env.DB.prepare(
+          `INSERT INTO attendance (room_id, user_id, username, role, joined_at, status, date,
+             gaze_score, gaze_samples, gaze_forward_samples)
+           VALUES (?, ?, ?, ?, ?, 'present', ?, ?, ?, ?)`
+        ).bind(
+          b.room_id, b.user_id, b.username || null, b.role || 'student',
+          now, date,
+          score, totalSamples, forwardSamples
+        ).run();
+        return json({
+          ok: true, attendance_id: res.meta.last_row_id,
+          gaze_score: score, bootstrapped: true, camera_off: cameraOff
+        });
+      }
+
+      // 카메라 OFF 신호인 경우엔 기존에 유효한 score 가 있다면 덮어쓰지 않음
+      // (중간에 카메라를 잠깐 끈 경우에도 이전 측정치를 보존)
+      if (cameraOff && targetRow.gaze_score !== null && targetRow.gaze_score !== undefined) {
+        await env.DB.prepare(
+          `UPDATE attendance
+             SET gaze_samples = ?, gaze_forward_samples = ?
+           WHERE id = ?`
+        ).bind(totalSamples, forwardSamples, targetRow.id).run();
+        return json({
+          ok: true, attendance_id: targetRow.id,
+          gaze_score: targetRow.gaze_score,
+          camera_off: true, preserved_previous: true
+        });
+      }
+
+      await env.DB.prepare(
+        `UPDATE attendance
+         SET gaze_score = ?,
+             gaze_samples = ?,
+             gaze_forward_samples = ?
+         WHERE id = ?`
+      ).bind(score, totalSamples, forwardSamples, targetRow.id).run();
+      return json({
+        ok: true, attendance_id: targetRow.id,
+        gaze_score: score, camera_off: cameraOff, recorded_at: now
+      });
+    }
+
     // ===== 카카오 ID =====
     if (path === '/api/kakao-id' && method === 'POST') {
       const b = await request.json() as any;
@@ -264,15 +351,94 @@ export async function handleMangoApi(
     }
 
     if (path === '/api/recordings' && method === 'GET') {
+      // 녹화 목록 조회 — D1 의 recordings 메타데이터 + (참여도 점수) 함께 반환.
+      // 참여도 점수는 attendance 테이블의 talk-time 비율로 도출한다.
+      //   speaking_score : (총 활성 발화시간 / 총 세션시간) × 100
+      //                    같은 room_id 이면서 해당 녹화 시간대(joined_at 이 녹화 window 내부)인
+      //                    attendance 행만 평균. 시간대 필터가 없으면 과거 수업 데이터가
+      //                    섞여 점수가 일정하게 나오므로 반드시 window 로 제한해야 함.
+      //   gaze_score    : MediaPipe FaceLandmarker 로 계산된 "정면 응시 비율"(%).
+      //                   public/js/mango-gaze.js → /api/gaze-score 경로로 attendance 에 누적.
+      //                   speaking_score 와 동일 시간 window 로 평균.
+      // 가중평균/총참여도(participation_score) 계산은 프런트(JS)에서 수행하여 점수 정의 변경 시 배포 없이 조정 가능하게 함.
       const teacherId = url.searchParams.get('teacher_id');
       const roomId = url.searchParams.get('room_id');
-      let q = `SELECT id, room_id, teacher_id, teacher_name, filename, file_url, size_bytes, duration_ms,
-               participant_names, consented_user_ids, started_at, ended_at, status, storage, expires_at
-               FROM recordings WHERE 1=1`;
+      let q = `SELECT r.id, r.room_id, r.teacher_id, r.teacher_name, r.filename, r.file_url,
+                      r.size_bytes, r.duration_ms,
+                      r.participant_names, r.consented_user_ids,
+                      r.started_at, r.ended_at, r.status, r.storage, r.expires_at,
+                      /* 시선 점수 — 해당 녹화 시간대의 attendance.gaze_score 평균
+                         window = [started_at - 30s, ended_at 또는 started_at + duration + 30s] */
+                      (SELECT ROUND(AVG(a.gaze_score), 1)
+                       FROM attendance a
+                       WHERE a.room_id = r.room_id
+                         AND a.gaze_score IS NOT NULL
+                         AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                         AND a.joined_at <= (
+                               COALESCE(
+                                 r.ended_at,
+                                 r.started_at + COALESCE(r.duration_ms, 0),
+                                 r.started_at + 10800000
+                               ) + 30000
+                             )
+                      ) AS gaze_score,
+                      /* 말하기 점수 — 해당 녹화 시간대에 속한 attendance 행만 평균(0~100)
+                         window = [started_at - 30s, ended_at 또는 started_at + duration + 30s]
+                         ended_at 이 null 이면 started_at + duration_ms 로 대체,
+                         duration 도 없으면 started_at + 3h (비정상 케이스) 로 제한 */
+                      (SELECT ROUND(AVG(
+                                CAST(a.total_active_ms AS REAL) * 100.0
+                                / NULLIF(a.total_session_ms, 0)
+                              ), 1)
+                       FROM attendance a
+                       WHERE a.room_id = r.room_id
+                         AND a.total_session_ms > 0
+                         AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                         AND a.joined_at <= (
+                               COALESCE(
+                                 r.ended_at,
+                                 r.started_at + COALESCE(r.duration_ms, 0),
+                                 r.started_at + 10800000
+                               ) + 30000
+                             )
+                      ) AS speaking_score,
+                      /* 진단 필드 (admin UI 툴팁용) — "왜 점수가 — 인가?" 를 사후 추적 */
+                      (SELECT COUNT(1) FROM attendance a
+                        WHERE a.room_id = r.room_id
+                          AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                          AND a.joined_at <= (
+                                COALESCE(r.ended_at,
+                                         r.started_at + COALESCE(r.duration_ms, 0),
+                                         r.started_at + 10800000) + 30000
+                              )
+                      ) AS attendance_count,
+                      (SELECT COUNT(1) FROM attendance a
+                        WHERE a.room_id = r.room_id
+                          AND (a.gaze_samples = 0 OR a.gaze_samples IS NULL)
+                          AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                          AND a.joined_at <= (
+                                COALESCE(r.ended_at,
+                                         r.started_at + COALESCE(r.duration_ms, 0),
+                                         r.started_at + 10800000) + 30000
+                              )
+                      ) AS gaze_missing_count,
+                      (SELECT COUNT(1) FROM attendance a
+                        WHERE a.room_id = r.room_id
+                          AND COALESCE(a.total_session_ms, 0) > 0
+                          AND COALESCE(a.total_active_ms, 0) = 0
+                          AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                          AND a.joined_at <= (
+                                COALESCE(r.ended_at,
+                                         r.started_at + COALESCE(r.duration_ms, 0),
+                                         r.started_at + 10800000) + 30000
+                              )
+                      ) AS speaking_zero_count
+               FROM recordings r
+               WHERE 1=1`;
       const binds: any[] = [];
-      if (teacherId) { q += ' AND teacher_id = ?'; binds.push(teacherId); }
-      if (roomId) { q += ' AND room_id = ?'; binds.push(roomId); }
-      q += ' ORDER BY started_at DESC LIMIT 100';
+      if (teacherId) { q += ' AND r.teacher_id = ?'; binds.push(teacherId); }
+      if (roomId)    { q += ' AND r.room_id = ?';    binds.push(roomId); }
+      q += ' ORDER BY r.started_at DESC LIMIT 100';
       const stmt = env.DB.prepare(q);
       const rs = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
       return json(rs.results || []);
