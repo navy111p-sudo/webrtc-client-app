@@ -636,4 +636,69 @@ function observeRoom(roomId) {
 
 // ── 녹화 재생 ──
 function playRecording(url, title) {
-  const modal = document.getElementById('playb
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  const titleEl = document.getElementById('playback-title');
+  titleEl.textContent = title || '녹화 재생';
+  video.src = url;
+  modal.style.display = 'flex';
+}
+function closePlayback() {
+  const modal = document.getElementById('playback-modal');
+  const video = document.getElementById('playback-video');
+  video.pause();
+  video.src = '';
+  modal.style.display = 'none';
+}
+
+async function testR2() {
+  const el = document.getElementById('test-r2-result');
+  el.textContent = adminLang==='en'?'Testing...':'테스트 중...';
+  el.style.color = '#94a3b8';
+  try {
+    const r = await fetch('/api/recordings/test-r2');
+    const d = await r.json();
+    if (d.ok) {
+      const recCount = (d.recordingFiles || []).length;
+      el.style.color = '#22c55e';
+      el.textContent = adminLang==='en'
+        ? '✅ R2 OK! Read/Write OK. Files: ' + recCount
+        : '✅ R2 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
+      if (recCount > 0) {
+        el.textContent += ' — ' + d.recordingFiles.map(f => f.key + ' (' + (f.size/1024).toFixed(0) + 'KB)').join(', ');
+      }
+    } else {
+      el.style.color = '#dc2626';
+      el.textContent = '❌ R2 ' + (adminLang==='en'?'Error: ':'에러: ') + (d.error || JSON.stringify(d));
+    }
+  } catch(e) {
+    el.style.color = '#dc2626';
+    el.textContent = '❌ ' + (adminLang==='en'?'Request failed: ':'요청 실패: ') + e.message;
+  }
+}
+
+document.getElementById('rooms-refresh').onclick = loadActiveRooms;
+document.getElementById('refresh').onclick = async function() {
+  const btn = this;
+  btn.disabled = true;
+  btn.textContent = adminLang==='en'?'⏳ Loading...':'⏳ 로딩...';
+  try {
+    await Promise.allSettled([
+      load(),
+      loadRecordings(),
+      loadRetention(),
+      loadActiveRooms()
+    ]);
+  } catch(e) { console.warn('refresh error:', e); }
+  btn.disabled = false;
+  btn.textContent = adminLang==='en'?'🔄 Refresh':'🔄 새로고침';
+};
+document.getElementById('period').onchange = load;
+// 초기 로드 (각각 독립적으로)
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms()]);
+// 활성 방 목록 15초마다 자동 갱신
+setInterval(loadActiveRooms, 15000);
+</script>
+
+</body>
+</html>
