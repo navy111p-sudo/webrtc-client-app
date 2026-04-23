@@ -3698,6 +3698,21 @@ window.addEventListener('DOMContentLoaded', () => {
 <!-- v3 명세서 신규 기능: 출석 자동기록 / VAD / 비상 카카오 / 보상 / 대시보드 / 녹화 -->
 <script src="/js/mango.js"></script>
 <script src="/js/mango-rec.js"></script>
+<!--
+  mango-attendance.js
+  WebRTC 수업 중 출석 자동 등록 + 발화시간 자동 집계.
+  반드시 mango.js(MangoV3.userId) 이후에 로드되어야 함.
+  body.vc-in-call 클래스를 감지해 start/stop 을 자동 토글한다.
+-->
+<script src="/js/mango-attendance.js"></script>
+<!--
+  mango-gaze.js
+  MediaPipe FaceLandmarker 로 로컬 비디오의 yaw/pitch 를 분석,
+  "정면 응시 비율" 을 10초마다 /api/gaze-score 로 전송.
+  mango-attendance.js 와 동일하게 body.vc-in-call 신호로 자동 토글.
+  localStorage.mango_gaze_disabled=1 이면 비활성화.
+-->
+<script src="/js/mango-gaze.js"></script>
 
 </body>
 </html>

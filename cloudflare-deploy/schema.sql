@@ -34,7 +34,10 @@ CREATE TABLE IF NOT EXISTS attendance (
   date TEXT,
   total_session_ms INTEGER DEFAULT 0,
   total_active_ms INTEGER DEFAULT 0,
-  disconnect_count INTEGER DEFAULT 0
+  disconnect_count INTEGER DEFAULT 0,
+  gaze_score REAL,
+  gaze_samples INTEGER DEFAULT 0,
+  gaze_forward_samples INTEGER DEFAULT 0
 );
 CREATE INDEX IF NOT EXISTS idx_attendance_room ON attendance(room_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_user ON attendance(user_id);
