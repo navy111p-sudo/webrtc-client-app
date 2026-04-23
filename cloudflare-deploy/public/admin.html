@@ -33,6 +33,15 @@
   .badge.warn { background: #fef3c7; color: #92400e; }
   .badge.ok { background: #d1fae5; color: #065f46; }
   .empty { text-align: center; color: #9ca3af; padding: 24px; }
+  /* === 참여도 점수 셀 === */
+  /* 점수 컬럼은 숫자가 깔끔하게 정렬되도록 오른쪽 정렬 + 등폭 숫자 폰트 적용 */
+  .score-cell { text-align: right; font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+  /* 총 참여도(%) 셀 색상 — 80% 이상 녹색, 50~79% 노랑, 그 미만 빨강 */
+  .score-high { background:#d1fae5; color:#065f46; font-weight:600; }
+  .score-mid  { background:#fef3c7; color:#92400e; font-weight:600; }
+  .score-low  { background:#fee2e2; color:#991b1b; font-weight:600; }
+  /* 데이터 없음(시선 점수 등) 표시 */
+  .score-na   { color:#9ca3af; }
   @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -162,6 +171,10 @@
         <th data-ko="크기" data-en="Size">크기</th>
         <th data-ko="참가자" data-en="Users">참가자</th>
         <th data-ko="상태" data-en="Status">상태</th>
+        <!-- ▼ 학생별 참여도 점수 컬럼 (상태 바로 오른쪽에 위치 — 엑셀처럼 행에 펼쳐 표시) -->
+        <th class="score-cell" data-ko="시선 점수" data-en="Gaze">시선 점수</th>
+        <th class="score-cell" data-ko="말하기 점수" data-en="Speak">말하기 점수</th>
+        <th class="score-cell" data-ko="총 참여도" data-en="Engagement">총 참여도</th>
         <th data-ko="스토리지" data-en="Storage">스토리지</th>
         <th data-ko="재생" data-en="Play">재생</th>
       </tr>
@@ -372,7 +385,11 @@ async function loadRecordings() {
       status: r.status,
       blobKey: matchedKey,
       blobUrl: matchedBlob ? matchedBlob.url : null,
-      originalName: matchedBlob ? matchedBlob.originalName : null
+      originalName: matchedBlob ? matchedBlob.originalName : null,
+      // 학생별 참여도 점수 — API(/api/recordings) 가 D1 attendance 집계 결과로 채워줌.
+      // gaze_score 는 시선 추적 데이터가 아직 없어 NULL 로 옴 → UI 에서 "—" 로 표시.
+      gaze_score: r.gaze_score,         // 0~100 또는 null
+      speaking_score: r.speaking_score  // 0~100 또는 null (방의 평균 발화비율)
     });
   }
 
@@ -393,7 +410,10 @@ async function loadRecordings() {
       status: 'orphan',
       blobKey: b.key,
       blobUrl: b.url,
-      originalName: b.originalName || (keyParts[keyParts.length-1] || b.key)
+      originalName: b.originalName || (keyParts[keyParts.length-1] || b.key),
+      // 고아 blob (R2 만 있음) 은 D1 메타가 없으므로 점수도 없음
+      gaze_score: null,
+      speaking_score: null
     });
   }
 
@@ -421,7 +441,8 @@ function renderRecordingsTable() {
   }
 
   if (!filtered.length) {
-    tb.innerHTML = '<tr><td colspan="9" class="empty">'+(adminLang==='en'?'No recordings':'녹화 기록 없음')+'</td></tr>';
+    // colspan 은 thead 의 컬럼 수와 같아야 함 (방/교사/시작/시간/크기/참가자/시선/말하기/총참여도/상태/스토리지/재생 = 12)
+    tb.innerHTML = '<tr><td colspan="12" class="empty">'+(adminLang==='en'?'No recordings':'녹화 기록 없음')+'</td></tr>';
     return;
   }
 
@@ -469,6 +490,34 @@ function renderRecordingsTable() {
       ? '-'
       : (names.length + (adminLang==='en'?' (consent '+consent.length+')':'명 (동의 '+consent.length+')'));
 
+    // === 학생별 참여도 점수 셀 3개 ===
+    // 점수 표시 규칙:
+    //   - 숫자형이면 1자리 소수점 + "점" 단위 표시 (en 일 때는 단위 없음)
+    //   - null/undefined 면 "—" 로 표시 (.score-na 클래스)
+    // 총 참여도(participation) 는 두 점수의 평균. 한쪽만 있으면 그쪽 값 사용.
+    function fmtScore(v) {
+      if (v === null || v === undefined || isNaN(Number(v))) return '<span class="score-na">—</span>';
+      return Number(v).toFixed(1);
+    }
+    function calcParticipation(g, s) {
+      const gn = (g === null || g === undefined || isNaN(Number(g))) ? null : Number(g);
+      const sn = (s === null || s === undefined || isNaN(Number(s))) ? null : Number(s);
+      if (gn === null && sn === null) return null;
+      if (gn === null) return sn;
+      if (sn === null) return gn;
+      return (gn + sn) / 2;
+    }
+    function partCell(p) {
+      if (p === null) return '<td class="score-cell score-na">—</td>';
+      // 80 이상=녹색, 50~79=노랑, 그 미만=빨강
+      const cls = p >= 80 ? 'score-high' : (p >= 50 ? 'score-mid' : 'score-low');
+      return '<td class="score-cell ' + cls + '">' + p.toFixed(1) + '%</td>';
+    }
+    const gazeCell    = '<td class="score-cell">' + fmtScore(r.gaze_score) + '</td>';
+    const speakCell   = '<td class="score-cell">' + fmtScore(r.speaking_score) + '</td>';
+    const partValue   = calcParticipation(r.gaze_score, r.speaking_score);
+    const partCellHtml = partCell(partValue);
+
     return '<tr>'
       + '<td>' + roomCell + '</td>'
       + '<td>' + teacherCell + '</td>'
@@ -476,7 +525,10 @@ function renderRecordingsTable() {
       + '<td>' + dm + '</td>'
       + '<td>' + sz + '</td>'
       + '<td>' + usersCell + '</td>'
-      + '<td>' + statusBadge + '</td>'
+      + '<td>' + statusBadge + '</td>'   // 상태 (먼저 표시 — 오른쪽에 점수 3열이 붙음)
+      + gazeCell      // 시선 점수
+      + speakCell     // 말하기 점수
+      + partCellHtml  // 총 참여도(%)  ← 색상 배지로 시각화
       + '<td>' + storageBadge + '</td>'
       + '<td>' + playBtn + '</td>'
       + '</tr>';
