@@ -66,23 +66,6 @@ export default {
       return handleHealth();
     }
 
-    // 🔧 임시 진단 엔드포인트 — Phase 1a Basic Auth 디버깅용
-    // Auth 미작동 원인 좁히기: env.ADMIN_PASSWORD 가 실제 Worker 에 바인딩됐는지 확인
-    // 값은 노출하지 않고 존재 여부·길이만 반환. 진단 끝나면 다음 커밋에서 제거.
-    if (path === '/api/_debug/admin-env') {
-      const pw = env.ADMIN_PASSWORD;
-      return new Response(JSON.stringify({
-        hasAdminPassword: !!pw,
-        length: pw ? pw.length : 0,
-        failOpenThreshold: 4,
-        passesGate: !!pw && pw.length >= 4,
-        timestamp: new Date().toISOString()
-      }, null, 2), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }
-      });
-    }
-
     // TURN/STUN config endpoint
     if (path === '/api/turn-config') {
       return await handleTurnConfig(env);
