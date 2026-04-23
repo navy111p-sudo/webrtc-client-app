@@ -90,13 +90,10 @@
   </table>
 </div>
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="🚨 비상 이벤트" data-en="🚨 Emergency Events">🚨 비상 이벤트</div>
-  <table>
-    <thead><tr><th data-ko="이벤트 유형" data-en="Event Type">이벤트 유형</th><th data-ko="발생 횟수" data-en="Count">발생 횟수</th></tr></thead>
-    <tbody id="emergency-table"></tbody>
-  </table>
-</div>
+<!-- 🚨 비상 이벤트 카드 제거됨 (2026-04-24)
+     이유: 수업 UI 에 트리거(비상 버튼)가 아직 연결되지 않아 항상 "데이터 없음" 상태.
+     백엔드(/api/emergency + emergency_events 테이블)는 그대로 유지되어, 향후 수업
+     페이지에 버튼을 붙이는 시점에 이 카드 블록만 되살리면 즉시 동작함. -->
 
 <div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title" data-ko="🗑️ 보관기간 자동 파기" data-en="🗑️ Auto Retention Cleanup">🗑️ 보관기간 자동 파기 <button id="retention-run" style="float:right;padding:4px 10px;font-size:12px;" data-ko="지금 실행" data-en="Run Now">지금 실행</button></div>
@@ -244,7 +241,7 @@ async function load() {
   const totalSessions = data.connection?.total_sessions || 0;
   const totalDisconnects = data.connection?.total_disconnects || 0;
   const avgActivePct = (data.connection?.avg_active_pct || 0).toFixed(1);
-  const totalEmergency = (data.emergency || []).reduce((s,e) => s+e.c, 0);
+  // totalEmergency 제거 — 비상 이벤트 KPI 카드를 뗀 뒤부터 사용처 없음 (백엔드는 유지)
   const totalRewards = (data.rewards || []).reduce((s,e) => s+e.c, 0);
   const disconnectRate = totalSessions > 0 ? ((totalDisconnects/totalSessions)*100).toFixed(1) : '0';
 
@@ -253,7 +250,6 @@ async function load() {
     <div class="card"><div class="card-label">${L?'Total Sessions':'총 출석 세션'}</div><div class="card-value">${data.attendance.total}</div><div class="card-sub">${L?'Last '+days+' days':'최근 '+days+'일 누적'}</div></div>
     <div class="card"><div class="card-label">${L?'Avg Speaking Ratio':'평균 발화 비율'}</div><div class="card-value">${avgActivePct}%</div><div class="card-sub">${L?'Active / Total session':'활성 발화 / 총 세션시간'}</div></div>
     <div class="card"><div class="card-label">${L?'Reconnect Rate':'재연결 발생률'}</div><div class="card-value">${disconnectRate}%</div><div class="card-sub">${L?totalDisconnects+' / '+totalSessions+' sessions':totalDisconnects+'회 / '+totalSessions+'세션'}</div></div>
-    <div class="card"><div class="card-label">${L?'Emergency':'비상버튼 사용'}</div><div class="card-value">${totalEmergency}</div><div class="card-sub">${L?'Kakao + Emergency alerts':'카카오/긴급 알림 합산'}</div></div>
     <div class="card"><div class="card-label">${L?'Rewards':'보상 발급'}</div><div class="card-value">${totalRewards}</div><div class="card-sub">${L?'Stickers + Coupons':'스티커+쿠폰 합산'}</div></div>
   `;
 
@@ -292,11 +288,8 @@ async function load() {
         return `<tr><td>${s.username || s.user_id}</td><td>${fmtMs(s.active_ms)}</td><td>${fmtMs(s.session_ms)}</td><td><span class="badge ${pct>=30?'ok':'warn'}">${pct}%</span></td></tr>`;
       }).join('');
 
-  // 비상 이벤트
-  const emerg = data.emergency || [];
-  document.getElementById('emergency-table').innerHTML = emerg.length === 0
-    ? '<tr><td colspan="2" class="empty">'+(adminLang==='en'?'No data':'데이터 없음')+'</td></tr>'
-    : emerg.map(e => `<tr><td>${e.event_type}</td><td>${e.c}</td></tr>`).join('');
+  // 비상 이벤트 렌더 블록 제거됨 — #emergency-table DOM 이 없으므로 null 참조 방지.
+  //   백엔드 /api/dashboard 는 여전히 emergency 배열을 반환하지만, UI 에서 쓰지 않음.
 }
 
 // 통합 녹화 목록 상태 (필터링을 위해 전역 보관)
