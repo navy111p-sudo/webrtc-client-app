@@ -28,6 +28,10 @@ interface Env {
   // Cloudflare TURN 서비스 (선택사항 - 설정하면 동적 TURN 자격증명 생성)
   TURN_KEY_ID?: string;
   TURN_KEY_API_TOKEN?: string;
+  // 관리자 Basic Auth (wrangler secret put ADMIN_PASSWORD 으로 설정)
+  // - 설정되어 있으면 admin.html + 관리자 API 에 Basic Auth 요구
+  // - 설정 안되어 있으면 fail-open (경고 로그만 남기고 통과 — 초기 롤아웃 안전장치)
+  ADMIN_PASSWORD?: string;
 }
 
 export { SignalingRoom, VideoCallRoom };
@@ -44,9 +48,17 @@ export default {
         headers: {
           'Access-Control-Allow-Origin': '*',
           'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-          'Access-Control-Allow-Headers': 'Content-Type, X-Room-Id, X-Filename, X-Recording-Id, X-Duration-Ms, X-Size-Bytes'
+          'Access-Control-Allow-Headers': 'Content-Type, X-Room-Id, X-Filename, X-Recording-Id, X-Duration-Ms, X-Size-Bytes, Authorization'
         }
       });
+    }
+
+    // 🔒 관리자 Basic Auth 미들웨어 (admin.html + 관리자 전용 API 보호)
+    //   - ADMIN_PASSWORD 시크릿 설정 시에만 활성화 (fail-open)
+    //   - 학생 녹화 업로드·출석 POST 같은 일반 학생용 API 는 건드리지 않음
+    if (isAdminPath(path, request.method)) {
+      const authResp = checkAdminAuth(request, env);
+      if (authResp) return authResp;
     }
 
     // Health check endpoint
@@ -819,4 +831,99 @@ async function handleRecordingDelete(path: string, env: Env): Promise<Response> 
     console.error('[recording] delete error:', err);
     return recordingJson({ error: err?.message || 'Delete failed' }, 500);
   }
+}
+
+// ───────────────────────────────────────────────
+// 🔒 관리자 Basic Auth 미들웨어
+// ───────────────────────────────────────────────
+/**
+ * 관리자 보호 대상 경로 판별.
+ * 학생용 API(출석 POST, 녹화 업로드, 시선 점수 POST 등) 는 건드리지 않음.
+ * 학생 보상(POST /api/reward) 도 클라이언트 자동 호출이라 제외.
+ */
+function isAdminPath(path: string, method: string): boolean {
+  // admin.html 페이지 자체 + /admin, /admin/ 리다이렉트
+  if (path === '/admin' || path === '/admin/' || path === '/admin.html') return true;
+  // 대시보드·활성 방·방 상태 — 모두 관리자 전용
+  if (path === '/api/dashboard') return true;
+  if (path === '/api/active-rooms') return true;
+  if (path.startsWith('/api/room-status/')) return true;
+  // 보관기간 파기 — 관리자만
+  if (path.startsWith('/api/retention/')) return true;
+  // R2 연결 테스트 — 관리자만
+  if (path === '/api/recordings/test-r2') return true;
+  // 녹화 목록·다운로드·DB삭제·R2삭제 는 관리자만.
+  // 학생 클라이언트 자동 호출인 /start, /stop, /upload, /stream, /complete, /blob/upload 는 열어둠.
+  if (path === '/api/recordings' && method === 'GET') return true;
+  if (path === '/api/recordings/blob/list' && method === 'GET') return true;
+  if (path.startsWith('/api/recordings/blob/') && (method === 'GET' || method === 'DELETE')) return true;
+  // DELETE /api/recordings/{숫자ID} (Mango DB 레코드 삭제) — 관리자
+  // 단, /api/recordings/blob/* 는 위에서 이미 처리됐고, /start·/stop 은 POST 라 method 체크로 통과
+  if (method === 'DELETE' && /^\/api\/recordings\/\d+$/.test(path)) return true;
+  return false;
+}
+
+/**
+ * 상수시간 문자열 비교 (타이밍 공격 방어).
+ * 길이가 달라도 동일 순회로 맞춰서 빠른 리턴으로 비밀번호 길이가 노출되지 않도록 함.
+ */
+function timingSafeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
+/**
+ * Basic Auth 검사.
+ * - ADMIN_PASSWORD 미설정 → null (fail-open, 경고 1회 로그)
+ * - 유효한 인증 → null (통과)
+ * - 인증 실패 → 401 Response
+ *
+ * Username 은 'admin' 고정, Password 는 env.ADMIN_PASSWORD.
+ */
+function checkAdminAuth(request: Request, env: Env): Response | null {
+  const pw = env.ADMIN_PASSWORD;
+  if (!pw || pw.length < 4) {
+    // fail-open: 시크릿 미설정 상태에서는 통과시키되 경고만 기록
+    // (최초 배포 → 시크릿 설정 사이의 lockout 방지)
+    console.warn('[admin-auth] ADMIN_PASSWORD not configured — admin area unprotected');
+    return null;
+  }
+
+  const header = request.headers.get('Authorization') || '';
+  if (!header.startsWith('Basic ')) {
+    return unauthorized();
+  }
+
+  try {
+    const decoded = atob(header.slice('Basic '.length).trim());
+    const colon = decoded.indexOf(':');
+    if (colon < 0) return unauthorized();
+    const user = decoded.slice(0, colon);
+    const pass = decoded.slice(colon + 1);
+    const userOk = timingSafeEqual(user, 'admin');
+    const passOk = timingSafeEqual(pass, pw);
+    if (userOk && passOk) return null;
+    return unauthorized();
+  } catch {
+    return unauthorized();
+  }
+}
+
+function unauthorized(): Response {
+  const body =
+    '🔒 관리자 인증이 필요합니다.\n' +
+    'Username: admin\n' +
+    'Password: 운영자에게 문의하세요.\n';
+  return new Response(body, {
+    status: 401,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      'WWW-Authenticate': 'Basic realm="Mangoi Admin", charset="UTF-8"',
+      'Cache-Control': 'no-store'
+    }
+  });
 }
