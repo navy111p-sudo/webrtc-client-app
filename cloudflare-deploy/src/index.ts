@@ -153,8 +153,11 @@ export default {
     }
 
     // v3 명세서 신규 API (출석/보상/카카오/대시보드)
+    // ⚠ 새 API 경로를 api-mango.ts 에 추가했을 때는 반드시 이 게이트에도 등록할 것.
+    //    여기 목록에 없으면 index.html 로 fallthrough → CF Assets 가 POST 에 405 반환.
     if (path.startsWith('/api/attendance') ||
         path.startsWith('/api/speaking-time') ||
+        path.startsWith('/api/gaze-score') ||
         path.startsWith('/api/kakao-id') ||
         path.startsWith('/api/emergency') ||
         path.startsWith('/api/reward') ||
