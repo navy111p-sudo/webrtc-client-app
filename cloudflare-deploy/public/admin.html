@@ -389,7 +389,11 @@ async function loadRecordings() {
       // 학생별 참여도 점수 — API(/api/recordings) 가 D1 attendance 집계 결과로 채워줌.
       // gaze_score 는 시선 추적 데이터가 아직 없어 NULL 로 옴 → UI 에서 "—" 로 표시.
       gaze_score: r.gaze_score,         // 0~100 또는 null
-      speaking_score: r.speaking_score  // 0~100 또는 null (방의 평균 발화비율)
+      speaking_score: r.speaking_score, // 0~100 또는 null (방의 평균 발화비율)
+      // 진단 정보 — "—" 가 왜 비어있는지 툴팁으로 보여주기 위함
+      attendance_count:    r.attendance_count    || 0,
+      gaze_missing_count:  r.gaze_missing_count  || 0,
+      speaking_zero_count: r.speaking_zero_count || 0
     });
   }
 
@@ -495,9 +499,23 @@ function renderRecordingsTable() {
     //   - 숫자형이면 1자리 소수점 + "점" 단위 표시 (en 일 때는 단위 없음)
     //   - null/undefined 면 "—" 로 표시 (.score-na 클래스)
     // 총 참여도(participation) 는 두 점수의 평균. 한쪽만 있으면 그쪽 값 사용.
-    function fmtScore(v) {
-      if (v === null || v === undefined || isNaN(Number(v))) return '<span class="score-na">—</span>';
-      return Number(v).toFixed(1);
+    function fmtScore(v, tooltip) {
+      const t = tooltip ? ' title="' + String(tooltip).replace(/"/g, '&quot;') + '"' : '';
+      if (v === null || v === undefined || isNaN(Number(v))) {
+        return '<span class="score-na"' + t + '>—</span>';
+      }
+      return '<span' + t + '>' + Number(v).toFixed(1) + '</span>';
+    }
+    // 점수가 NULL 일 때 왜 비어있는지 한국어로 짧게 안내
+    function gazeNullReason(r) {
+      if (r.attendance_count === 0) return '이 녹화 시간대의 출석 데이터가 없어 집계 불가 (녹화 이전 세션이거나 학생이 아직 새 코드를 받지 못함)';
+      if (r.gaze_missing_count > 0) return '참여자 ' + r.gaze_missing_count + '명이 카메라 OFF 또는 얼굴 미인식 상태';
+      return '집계 대기 중';
+    }
+    function speakingNullReason(r) {
+      if (r.attendance_count === 0) return '이 녹화 시간대의 출석 데이터가 없어 집계 불가';
+      if (r.speaking_zero_count > 0) return '참여자 ' + r.speaking_zero_count + '명이 마이크 OFF 또는 무발화 (임계값 미만)';
+      return '집계 대기 중';
     }
     function calcParticipation(g, s) {
       const gn = (g === null || g === undefined || isNaN(Number(g))) ? null : Number(g);
@@ -513,8 +531,10 @@ function renderRecordingsTable() {
       const cls = p >= 80 ? 'score-high' : (p >= 50 ? 'score-mid' : 'score-low');
       return '<td class="score-cell ' + cls + '">' + p.toFixed(1) + '%</td>';
     }
-    const gazeCell    = '<td class="score-cell">' + fmtScore(r.gaze_score) + '</td>';
-    const speakCell   = '<td class="score-cell">' + fmtScore(r.speaking_score) + '</td>';
+    const gazeTooltip  = (r.gaze_score === null || r.gaze_score === undefined)     ? gazeNullReason(r)     : null;
+    const speakTooltip = (r.speaking_score === null || r.speaking_score === undefined) ? speakingNullReason(r) : null;
+    const gazeCell    = '<td class="score-cell">' + fmtScore(r.gaze_score, gazeTooltip) + '</td>';
+    const speakCell   = '<td class="score-cell">' + fmtScore(r.speaking_score, speakTooltip) + '</td>';
     const partValue   = calcParticipation(r.gaze_score, r.speaking_score);
     const partCellHtml = partCell(partValue);
 
@@ -616,69 +636,4 @@ function observeRoom(roomId) {
 
 // ── 녹화 재생 ──
 function playRecording(url, title) {
-  const modal = document.getElementById('playback-modal');
-  const video = document.getElementById('playback-video');
-  const titleEl = document.getElementById('playback-title');
-  titleEl.textContent = title || '녹화 재생';
-  video.src = url;
-  modal.style.display = 'flex';
-}
-function closePlayback() {
-  const modal = document.getElementById('playback-modal');
-  const video = document.getElementById('playback-video');
-  video.pause();
-  video.src = '';
-  modal.style.display = 'none';
-}
-
-async function testR2() {
-  const el = document.getElementById('test-r2-result');
-  el.textContent = adminLang==='en'?'Testing...':'테스트 중...';
-  el.style.color = '#94a3b8';
-  try {
-    const r = await fetch('/api/recordings/test-r2');
-    const d = await r.json();
-    if (d.ok) {
-      const recCount = (d.recordingFiles || []).length;
-      el.style.color = '#22c55e';
-      el.textContent = adminLang==='en'
-        ? '✅ R2 OK! Read/Write OK. Files: ' + recCount
-        : '✅ R2 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
-      if (recCount > 0) {
-        el.textContent += ' — ' + d.recordingFiles.map(f => f.key + ' (' + (f.size/1024).toFixed(0) + 'KB)').join(', ');
-      }
-    } else {
-      el.style.color = '#dc2626';
-      el.textContent = '❌ R2 ' + (adminLang==='en'?'Error: ':'에러: ') + (d.error || JSON.stringify(d));
-    }
-  } catch(e) {
-    el.style.color = '#dc2626';
-    el.textContent = '❌ ' + (adminLang==='en'?'Request failed: ':'요청 실패: ') + e.message;
-  }
-}
-
-document.getElementById('rooms-refresh').onclick = loadActiveRooms;
-document.getElementById('refresh').onclick = async function() {
-  const btn = this;
-  btn.disabled = true;
-  btn.textContent = adminLang==='en'?'⏳ Loading...':'⏳ 로딩...';
-  try {
-    await Promise.allSettled([
-      load(),
-      loadRecordings(),
-      loadRetention(),
-      loadActiveRooms()
-    ]);
-  } catch(e) { console.warn('refresh error:', e); }
-  btn.disabled = false;
-  btn.textContent = adminLang==='en'?'🔄 Refresh':'🔄 새로고침';
-};
-document.getElementById('period').onchange = load;
-// 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms()]);
-// 활성 방 목록 15초마다 자동 갱신
-setInterval(loadActiveRooms, 15000);
-</script>
-
-</body>
-</html>
+  const modal = document.getElementById('playb
