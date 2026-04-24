@@ -169,18 +169,26 @@
 //   - label: 사람이 읽는 표시명
 //   - body:  POST 시 보낼 body (JSON 문자열). 없으면 빈 문자열.
 const ENDPOINTS = [
-  { path: '/api/health',                  method: 'GET',  expect: '2xx',       label: 'Health',           body: null },
-  { path: '/api/dashboard',               method: 'GET',  expect: '2xx',       label: 'Dashboard',        body: null },
-  { path: '/api/active-rooms',            method: 'GET',  expect: '2xx',       label: 'Active Rooms',     body: null },
-  { path: '/api/recordings',              method: 'GET',  expect: '2xx',       label: 'Recordings List',  body: null },
-  { path: '/api/recordings/test-r2',      method: 'GET',  expect: '2xx',       label: 'R2 Test',          body: null },
-  { path: '/api/turn-config',             method: 'GET',  expect: '2xx',       label: 'TURN Config',      body: null },
-  { path: '/api/video-call/pdf-list',     method: 'GET',  expect: '2xx',       label: 'PDF List',         body: null },
-  // POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴)
-  { path: '/api/attendance',              method: 'POST', expect: '2xx-or-4xx', label: 'Attendance POST',  body: '{}' },
-  { path: '/api/gaze-score',              method: 'POST', expect: '2xx-or-4xx', label: 'Gaze Score POST',  body: '{}' },
-  { path: '/api/reward',                  method: 'POST', expect: '2xx-or-4xx', label: 'Reward POST',      body: '{}' },
-  { path: '/api/emergency',               method: 'POST', expect: '2xx-or-4xx', label: 'Emergency POST',   body: '{}' }
+  // --- GET 엔드포인트 (200 기대) ---
+  { path: '/api/health',                  method: 'GET',  expect: '2xx',        label: 'Health',            body: null },
+  { path: '/api/dashboard',               method: 'GET',  expect: '2xx',        label: 'Dashboard',         body: null },
+  { path: '/api/active-rooms',            method: 'GET',  expect: '2xx',        label: 'Active Rooms',      body: null },
+  { path: '/api/recordings',              method: 'GET',  expect: '2xx',        label: 'Recordings List',   body: null },
+  { path: '/api/recordings/test-r2',      method: 'GET',  expect: '2xx',        label: 'R2 Test',           body: null },
+  { path: '/api/turn-config',             method: 'GET',  expect: '2xx',        label: 'TURN Config',       body: null },
+  { path: '/api/video-call/pdf-list',     method: 'GET',  expect: '2xx',        label: 'PDF List',          body: null },
+  { path: '/api/kakao-id/teachers',       method: 'GET',  expect: '2xx',        label: 'KakaoID Teachers',  body: null },
+  // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
+  //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
+  { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}' },
+  { path: '/api/attendance/leave',        method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · leave',     body: '{}' },
+  { path: '/api/attendance/heartbeat',    method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · heartbeat', body: '{}' },
+  { path: '/api/speaking-time',           method: 'POST', expect: '2xx-or-4xx', label: 'Speaking Time',          body: '{}' },
+  { path: '/api/gaze-score',              method: 'POST', expect: '2xx-or-4xx', label: 'Gaze Score',             body: '{}' },
+  { path: '/api/kakao-id',                method: 'POST', expect: '2xx-or-4xx', label: 'KakaoID Register',       body: '{}' },
+  { path: '/api/reward',                  method: 'POST', expect: '2xx-or-4xx', label: 'Reward',                 body: '{}' },
+  { path: '/api/emergency',               method: 'POST', expect: '2xx-or-4xx', label: 'Emergency',              body: '{}' },
+  { path: '/api/consents',                method: 'POST', expect: '2xx-or-4xx', label: 'Consents',               body: '{}' }
 ];
 
 // ---------- classification ----------

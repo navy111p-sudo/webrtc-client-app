@@ -27,6 +27,26 @@ const today = (ts: number = Date.now()) => {
   return kst.toISOString().slice(0, 10);
 };
 
+/**
+ * 빈/잘못된 JSON body 를 안전하게 파싱.
+ * 🩺 셀프 진단 페이지가 빈 POST 로 self-ping 할 때 500 대신 400 이 나오도록 하는 공통 방어막.
+ *   - body 없음 / 비어있음 / JSON 아님 → null 반환 (호출자가 400 응답)
+ *   - 정상 JSON → 파싱된 객체
+ */
+async function parseJsonBody(request: Request): Promise<any | null> {
+  try {
+    const text = await request.text();
+    if (!text || !text.trim()) return null;
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+/** 필수 필드 누락 시 400 응답 생성 — 에러 메시지에 필드명 포함 (디버깅 편의) */
+const invalidBody = (required: string[]): Response =>
+  json({ ok: false, error: 'invalid_body', required }, 400);
+
 export async function handleMangoApi(
   request: Request,
   url: URL,
@@ -221,7 +241,10 @@ export async function handleMangoApi(
 
     // ===== 비상 이벤트 =====
     if (path === '/api/emergency' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.room_id || !b.user_id) {
+        return invalidBody(['room_id', 'user_id']);
+      }
       const now = Date.now();
       const res = await env.DB.prepare(
         `INSERT INTO emergency_events (room_id, user_id, target_user_id, event_type, triggered_at, meta)
@@ -232,7 +255,10 @@ export async function handleMangoApi(
 
     // ===== 보상 =====
     if (path === '/api/reward' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.teacher_id || !b.student_id || !b.type) {
+        return invalidBody(['teacher_id', 'student_id', 'type']);
+      }
       const now = Date.now();
       const date = today(now);
       const DAILY_LIMIT = 30; // 교사당 일일 발급 상한 (v3 §9)
