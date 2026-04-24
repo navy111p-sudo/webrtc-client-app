@@ -186,6 +186,7 @@ export default {
         path.startsWith('/api/reward') ||
         path.startsWith('/api/consents') ||
         path.startsWith('/api/recordings') ||
+        path.startsWith('/api/admin/student/') ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -211,6 +212,13 @@ export default {
     if (path === '/admin/health' || path === '/admin/health/') {
       const healthRequest = new Request(new URL('/admin/health.html', request.url).toString(), request);
       return env.ASSETS.fetch(healthRequest);
+    }
+
+    // 🎓 /admin/student — 학생별 드릴다운 페이지 (Phase 2)
+    //   쿼리: ?uid=<user_id>&days=30
+    if (path === '/admin/student' || path === '/admin/student/') {
+      const studentRequest = new Request(new URL('/admin/student.html' + url.search, request.url).toString(), request);
+      return env.ASSETS.fetch(studentRequest);
     }
 
     // Static assets (실제 파일 확장자가 있는 요청)
@@ -864,6 +872,9 @@ function isAdminPath(path: string, method: string): boolean {
   // 🩺 /admin/health 셀프 진단 페이지 + 그 전용 API (관리자만 접근)
   if (path === '/admin/health' || path === '/admin/health/' || path === '/admin/health.html') return true;
   if (path === '/api/admin/health-check') return true;
+  // 🎓 /admin/student 드릴다운 페이지 + 그 전용 API (관리자만 접근)
+  if (path === '/admin/student' || path === '/admin/student/' || path === '/admin/student.html') return true;
+  if (path.startsWith('/api/admin/student/')) return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;

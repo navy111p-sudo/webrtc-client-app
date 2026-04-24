@@ -128,11 +128,40 @@
        data-en="💡 D1 = recording metadata DB (room/teacher/time) · R2 = recording file storage (video .webm). Both must exist for a healthy recording.">
     💡 D1 = 녹화 메타데이터 DB (방 번호·교사·시간 등) · R2 = 녹화 파일 저장소 (동영상 .webm). 두 곳 모두 있어야 정상입니다.
   </div>
-  <div id="rec-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 16px 0;">
+  <!-- 🔎 녹화 검색 + 페이지네이션 (Phase 3) -->
+  <div id="rec-search-bar" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:12px 0 8px 0;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;">
+    <input id="rec-q" type="search" placeholder="방 ID / 교사 이름 또는 ID" data-ko-placeholder="방 ID / 교사 이름 또는 ID" data-en-placeholder="Room ID / Teacher name or ID" style="flex:2;min-width:200px;padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+    <input id="rec-date-from" type="date" title="시작 날짜" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+    <span style="color:#6b7280;font-size:12px;">~</span>
+    <input id="rec-date-to"   type="date" title="종료 날짜" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+    <select id="rec-status" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+      <option value="all"       data-ko="상태: 전체"    data-en="Status: all">상태: 전체</option>
+      <option value="ended"     data-ko="종료"           data-en="ended">종료</option>
+      <option value="recording" data-ko="녹화 중"        data-en="recording">녹화 중</option>
+      <option value="aborted"   data-ko="중단"           data-en="aborted">중단</option>
+      <option value="deleted"   data-ko="삭제됨"         data-en="deleted">삭제됨</option>
+    </select>
+    <select id="rec-pagesize" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+      <option value="25">25/쪽</option>
+      <option value="50" selected>50/쪽</option>
+      <option value="100">100/쪽</option>
+      <option value="200">200/쪽</option>
+    </select>
+    <button id="rec-apply"   class="primary" style="padding:6px 14px;font-size:13px;" data-ko="검색"   data-en="Search">검색</button>
+    <button id="rec-reset"              style="padding:6px 10px;font-size:13px;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;" data-ko="초기화" data-en="Reset">초기화</button>
+  </div>
+
+  <div id="rec-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px 0;align-items:center;">
     <button class="rec-filter active" data-filter="all" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#111827;color:#fff;font-size:12px;cursor:pointer;" data-ko="전체" data-en="All">전체</button>
     <button class="rec-filter" data-filter="both" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="D1+R2 (정상)" data-en="D1+R2 (healthy)">D1+R2 (정상)</button>
     <button class="rec-filter" data-filter="d1only" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="D1만 / 파일 누락" data-en="D1 only / file missing">D1만 / 파일 누락</button>
     <button class="rec-filter" data-filter="orphan" style="padding:4px 12px;border-radius:14px;border:1px solid #d1d5db;background:#fff;color:#111827;font-size:12px;cursor:pointer;" data-ko="R2만 / 메타 누락(고아)" data-en="R2 only / meta missing (orphan)">R2만 / 메타 누락(고아)</button>
+    <span style="flex:1;"></span>
+    <div id="rec-pagination" style="display:flex;gap:6px;align-items:center;font-size:12px;color:#6b7280;">
+      <span id="rec-page-info">—</span>
+      <button id="rec-prev" style="padding:4px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;" disabled>← 이전</button>
+      <button id="rec-next" style="padding:4px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;" disabled>다음 →</button>
+    </div>
   </div>
   <table>
     <thead>
@@ -286,7 +315,11 @@ async function load() {
     ? '<tr><td colspan="4" class="empty">'+(adminLang==='en'?'No data':'데이터 없음')+'</td></tr>'
     : speakers.map(s => {
         const pct = s.session_ms > 0 ? ((s.active_ms/s.session_ms)*100).toFixed(1) : '0';
-        return `<tr><td>${s.username || s.user_id}</td><td>${fmtMs(s.active_ms)}</td><td>${fmtMs(s.session_ms)}</td><td><span class="badge ${pct>=30?'ok':'warn'}">${pct}%</span></td></tr>`;
+        const displayName = (s.username || s.user_id || '').toString();
+        const safeName = displayName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const uidEnc = encodeURIComponent(s.user_id || '');
+        const nameCell = `<a href="/admin/student?uid=${uidEnc}" title="학생 드릴다운 열기" style="color:#0984e3;text-decoration:none;border-bottom:1px dotted #0984e3;">${safeName}</a>`;
+        return `<tr><td>${nameCell}</td><td>${fmtMs(s.active_ms)}</td><td>${fmtMs(s.session_ms)}</td><td><span class="badge ${pct>=30?'ok':'warn'}">${pct}%</span></td></tr>`;
       }).join('');
 
   // 비상 이벤트 렌더 블록 제거됨 — #emergency-table DOM 이 없으므로 null 참조 방지.
@@ -297,19 +330,48 @@ async function load() {
 var _unifiedRecRows = [];
 var _currentRecFilter = 'all';
 
+// 🔎 녹화 검색·페이지네이션 상태 (Phase 3)
+var _recQuery  = { q: '', date_from: '', date_to: '', status: 'all' };
+var _recOffset = 0;
+var _recLimit  = 50;
+var _recTotal  = 0;
+
+function _buildRecordingsURL() {
+  const p = new URLSearchParams();
+  if (_recQuery.q)         p.set('q',         _recQuery.q);
+  if (_recQuery.date_from) p.set('date_from', _recQuery.date_from);
+  if (_recQuery.date_to)   p.set('date_to',   _recQuery.date_to);
+  if (_recQuery.status && _recQuery.status !== 'all') p.set('status', _recQuery.status);
+  p.set('limit',  String(_recLimit));
+  p.set('offset', String(_recOffset));
+  return '/api/recordings?' + p.toString();
+}
+
 async function loadRecordings() {
-  // DB 녹화 목록 + R2 blob 목록을 동시에 가져와서 완전 통합
-  let recRes, blobRes;
+  // DB 녹화 목록(검색·페이징 적용) + R2 blob 목록(전체)
+  let recResp = null, recList = [], blobRes = { items: [] };
   try {
-    [recRes, blobRes] = await Promise.all([
-      fetch('/api/recordings').then(r => r.json()).catch(() => []),
+    const [rResp, bData] = await Promise.all([
+      fetch(_buildRecordingsURL(), { cache: 'no-store' }).catch(() => null),
       fetch('/api/recordings/blob/list').then(r => r.json()).catch(() => ({ items: [] }))
     ]);
+    recResp = rResp;
+    blobRes = bData;
+    if (recResp && recResp.ok) {
+      recList = await recResp.json().catch(() => []);
+      // 서버가 보낸 페이지네이션 메타 헤더 갱신
+      const t = parseInt(recResp.headers.get('X-Total-Count') || '', 10);
+      if (!isNaN(t)) _recTotal = t;
+      const o = parseInt(recResp.headers.get('X-Offset')      || '', 10);
+      if (!isNaN(o)) _recOffset = o;
+      const l = parseInt(recResp.headers.get('X-Limit')       || '', 10);
+      if (!isNaN(l)) _recLimit  = l;
+    }
   } catch (e) {
     console.warn('[admin] recordings API 에러:', e);
     return;
   }
-  const list = recRes || [];
+  const list = recList || [];
   const blobs = (blobRes.items || []).sort((a, b) => new Date(b.uploaded) - new Date(a.uploaded));
 
   // R2 blob을 key로 빠르게 조회할 수 있는 Map 구성
@@ -394,6 +456,21 @@ async function loadRecordings() {
   rows.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
   _unifiedRecRows = rows;
   renderRecordingsTable();
+  renderRecordingsPagination();
+}
+
+// 페이지네이션 UI 갱신 (페이지 정보·prev/next 활성화)
+function renderRecordingsPagination() {
+  const info = document.getElementById('rec-page-info');
+  const prev = document.getElementById('rec-prev');
+  const next = document.getElementById('rec-next');
+  if (!info || !prev || !next) return;
+
+  const start = _recTotal === 0 ? 0 : _recOffset + 1;
+  const end   = Math.min(_recOffset + _recLimit, _recTotal);
+  info.textContent = `${start}-${end} / 총 ${_recTotal}건`;
+  prev.disabled = _recOffset <= 0;
+  next.disabled = _recOffset + _recLimit >= _recTotal;
 }
 
 function renderRecordingsTable() {
@@ -539,6 +616,52 @@ document.addEventListener('click', function(ev) {
   btn.style.color = '#fff';
   renderRecordingsTable();
 });
+
+// 🔎 Phase 3: 녹화 검색·페이지네이션 바인딩
+(function bindRecSearch() {
+  const qEl        = document.getElementById('rec-q');
+  const dfEl       = document.getElementById('rec-date-from');
+  const dtEl       = document.getElementById('rec-date-to');
+  const statusEl   = document.getElementById('rec-status');
+  const pageSizeEl = document.getElementById('rec-pagesize');
+  const applyBtn   = document.getElementById('rec-apply');
+  const resetBtn   = document.getElementById('rec-reset');
+  const prevBtn    = document.getElementById('rec-prev');
+  const nextBtn    = document.getElementById('rec-next');
+
+  function applyCurrent() {
+    _recQuery.q         = (qEl && qEl.value || '').trim();
+    _recQuery.date_from = (dfEl && dfEl.value || '');
+    _recQuery.date_to   = (dtEl && dtEl.value || '');
+    _recQuery.status    = (statusEl && statusEl.value || 'all');
+    _recLimit  = parseInt((pageSizeEl && pageSizeEl.value) || '50', 10) || 50;
+    _recOffset = 0; // 검색 변경 시 첫 페이지로
+    loadRecordings();
+  }
+
+  if (applyBtn) applyBtn.addEventListener('click', applyCurrent);
+  if (resetBtn) resetBtn.addEventListener('click', () => {
+    if (qEl)        qEl.value = '';
+    if (dfEl)       dfEl.value = '';
+    if (dtEl)       dtEl.value = '';
+    if (statusEl)   statusEl.value = 'all';
+    if (pageSizeEl) pageSizeEl.value = '50';
+    applyCurrent();
+  });
+  // 엔터키로 검색
+  if (qEl) qEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') applyCurrent(); });
+
+  if (prevBtn) prevBtn.addEventListener('click', () => {
+    _recOffset = Math.max(0, _recOffset - _recLimit);
+    loadRecordings();
+  });
+  if (nextBtn) nextBtn.addEventListener('click', () => {
+    if (_recOffset + _recLimit < _recTotal) {
+      _recOffset += _recLimit;
+      loadRecordings();
+    }
+  });
+})();
 
 async function loadRetention() {
   try {

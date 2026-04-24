@@ -178,6 +178,7 @@ const ENDPOINTS = [
   { path: '/api/turn-config',             method: 'GET',  expect: '2xx',        label: 'TURN Config',       body: null },
   { path: '/api/video-call/pdf-list',     method: 'GET',  expect: '2xx',        label: 'PDF List',          body: null },
   { path: '/api/kakao-id/teachers',       method: 'GET',  expect: '2xx',        label: 'KakaoID Teachers',  body: null },
+  { path: '/api/admin/student/__probe__', method: 'GET',  expect: '2xx-or-4xx', label: 'Student Drilldown', body: null },
   // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
   //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
   { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}' },

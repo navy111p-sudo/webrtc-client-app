@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🎓 학생별 드릴다운 — Mangoi</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #263449;
+      --fg: #e2e8f0;
+      --fg-muted: #94a3b8;
+      --fg-dim: #64748b;
+      --border: #334155;
+      --accent: #f59e0b;
+      --green: #10b981;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --blue: #3b82f6;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      font-size: 14px;
+    }
+    header {
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 20px; font-weight: 700; }
+    header .spacer { flex: 1; }
+    header .muted { color: var(--fg-muted); font-size: 13px; }
+    header select, header a, header button {
+      background: var(--bg-card); color: var(--fg);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 12px; font-size: 13px; cursor: pointer;
+      text-decoration: none;
+    }
+    header a:hover, header button:hover { background: var(--bg-card-hover); }
+    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .section-title {
+      font-size: 12px; font-weight: 700; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 24px 0 12px 0;
+    }
+    .section-title:first-child { margin-top: 0; }
+    .profile-card {
+      padding: 20px 24px; border-radius: 10px; border: 1px solid var(--border);
+      background: linear-gradient(135deg, var(--bg-card) 0%, #2a3b5c 100%);
+      display: flex; align-items: center; gap: 20px; flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .profile-card .avatar {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: var(--accent); color: #1e293b;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 800;
+    }
+    .profile-card .info h2 { margin: 0; font-size: 22px; font-weight: 700; }
+    .profile-card .info .meta { color: var(--fg-muted); font-size: 13px; margin-top: 2px; }
+    .profile-card .period { margin-left: auto; color: var(--fg-muted); font-size: 13px; }
+    .kpi-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px; margin-bottom: 4px;
+    }
+    .kpi {
+      padding: 16px 20px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card);
+    }
+    .kpi .label { color: var(--fg-muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; }
+    .kpi .value { font-size: 26px; font-weight: 700; margin-top: 4px; }
+    .kpi .sub { color: var(--fg-dim); font-size: 12px; margin-top: 2px; }
+    .kpi.green  .value { color: var(--green); }
+    .kpi.yellow .value { color: var(--yellow); }
+    .kpi.red    .value { color: var(--red); }
+    .kpi.blue   .value { color: var(--blue); }
+    .chart-wrap {
+      padding: 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); height: 320px;
+    }
+    .table-wrap {
+      border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: #162032; color: var(--fg-muted);
+      font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px;
+      padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 10px 14px; border-bottom: 1px solid var(--border);
+      font-size: 13px; color: var(--fg);
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--bg-card-hover); }
+    .badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 600;
+    }
+    .badge.green  { background: rgba(16,185,129,0.15); color: var(--green); }
+    .badge.yellow { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .badge.red    { background: rgba(239,68,68,0.15); color: var(--red); }
+    .badge.gray   { background: rgba(100,116,139,0.15); color: var(--fg-muted); }
+    .empty {
+      padding: 40px; text-align: center; color: var(--fg-dim);
+    }
+    .error-box {
+      padding: 16px 20px; border-radius: 8px;
+      background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5; font-size: 14px;
+    }
+    .score-cell {
+      font-variant-numeric: tabular-nums;
+    }
+    .muted { color: var(--fg-muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🎓 학생별 드릴다운</h1>
+  <span class="muted" id="uid-display">—</span>
+  <div class="spacer"></div>
+  <label class="muted">기간 &nbsp;
+    <select id="period-select">
+      <option value="7">최근 7일</option>
+      <option value="30" selected>최근 30일</option>
+      <option value="90">최근 90일</option>
+      <option value="365">최근 1년</option>
+    </select>
+  </label>
+  <label class="muted">보기 &nbsp;
+    <select id="granularity-select">
+      <option value="day" selected>일자별</option>
+      <option value="week">주별</option>
+    </select>
+  </label>
+  <button id="refresh-btn">새로고침</button>
+  <a href="/admin.html">← 대시보드</a>
+  <a href="/admin/health">🩺 셀프 진단</a>
+</header>
+
+<main id="main">
+  <div class="empty" id="loading">로딩 중…</div>
+</main>
+
+<script>
+// ---------- util ----------
+function qs(name) {
+  return new URLSearchParams(location.search).get(name);
+}
+function fmtMs(ms) {
+  if (!ms || ms < 0) return '0초';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  if (h > 0) return `${h}시간 ${m}분`;
+  if (m > 0) return `${m}분 ${sec}초`;
+  return `${sec}초`;
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  const d = new Date(ts);
+  return d.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+function escapeHtml(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function scoreBadge(v) {
+  if (v == null || isNaN(v)) return '<span class="badge gray">—</span>';
+  const n = Math.round(v * 10) / 10;
+  const cls = n >= 70 ? 'green' : n >= 40 ? 'yellow' : 'red';
+  return `<span class="badge ${cls}">${n}</span>`;
+}
+function pctBadge(active, session) {
+  if (!session) return '<span class="badge gray">—</span>';
+  const p = (active / session * 100);
+  const n = Math.round(p * 10) / 10;
+  const cls = n >= 30 ? 'green' : n >= 10 ? 'yellow' : 'red';
+  return `<span class="badge ${cls}">${n}%</span>`;
+}
+
+// ---------- granularity helpers ----------
+// ISO 주의 시작(월요일)을 YYYY-MM-DD 로 반환
+function isoWeekStart(dateStr) {
+  if (!dateStr) return dateStr;
+  const d = new Date(dateStr + 'T00:00:00Z');
+  if (isNaN(d)) return dateStr;
+  const day = d.getUTCDay();                       // 0=일, 1=월, …, 6=토
+  const diff = (day === 0 ? -6 : 1 - day);         // 월요일로 맞춤
+  d.setUTCDate(d.getUTCDate() + diff);
+  return d.toISOString().slice(0, 10);
+}
+
+// by_day 배열(row: {date, session_count, total_session_ms, total_active_ms, avg_gaze_score})
+//   → 주 시작일 기준 bucketing. 주간 평균 시선 점수는 세션 수 가중 평균.
+function groupByWeek(byDay) {
+  const map = new Map();
+  for (const d of byDay || []) {
+    const wk = isoWeekStart(d.date);
+    if (!map.has(wk)) {
+      map.set(wk, {
+        date: wk, session_count: 0, total_session_ms: 0, total_active_ms: 0,
+        _gaze_weighted_sum: 0, _gaze_weight: 0
+      });
+    }
+    const g = map.get(wk);
+    g.session_count   += d.session_count || 0;
+    g.total_session_ms += d.total_session_ms || 0;
+    g.total_active_ms  += d.total_active_ms || 0;
+    if (d.avg_gaze_score != null && !Number.isNaN(d.avg_gaze_score)) {
+      const w = Math.max(1, d.session_count || 1);
+      g._gaze_weighted_sum += d.avg_gaze_score * w;
+      g._gaze_weight       += w;
+    }
+  }
+  const arr = Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  for (const g of arr) {
+    g.avg_gaze_score = g._gaze_weight > 0 ? (g._gaze_weighted_sum / g._gaze_weight) : null;
+    delete g._gaze_weighted_sum;
+    delete g._gaze_weight;
+  }
+  return arr;
+}
+
+// ---------- render ----------
+let chartRef = null;
+let lastData  = null;   // 최근 load() 결과 보관 — 토글 시 차트만 재렌더하려고
+
+function render(data) {
+  const main = document.getElementById('main');
+  const p = data.profile || {};
+  const s = data.summary || {};
+  const days = data.period_days;
+
+  // 프로필 헤더
+  const initial = (p.username || p.user_id || '?').toString().slice(0, 1);
+  const avgGaze = s.avg_gaze_score == null ? null : Math.round(s.avg_gaze_score * 10) / 10;
+  const activePct = s.total_session_ms > 0 ? (s.total_active_ms / s.total_session_ms * 100) : 0;
+  const activePctN = Math.round(activePct * 10) / 10;
+
+  document.getElementById('uid-display').textContent = `uid=${p.user_id}`;
+
+  main.innerHTML = `
+    <div class="profile-card">
+      <div class="avatar">${escapeHtml(initial)}</div>
+      <div class="info">
+        <h2>${escapeHtml(p.username || p.user_id)}</h2>
+        <div class="meta">
+          <span class="badge gray">${escapeHtml(p.role || 'student')}</span>
+          &nbsp;user_id: <code>${escapeHtml(p.user_id)}</code>
+          &nbsp;· 전체 세션 ${p.total_sessions_all_time || 0}건
+        </div>
+      </div>
+      <div class="period">
+        최초: ${fmtDate(p.first_seen)}<br>
+        최근: ${fmtDate(p.last_seen)}
+      </div>
+    </div>
+
+    <div class="section-title">📊 최근 ${days}일 요약</div>
+    <div class="kpi-grid">
+      <div class="kpi blue">
+        <div class="label">세션 수</div>
+        <div class="value">${s.session_count || 0}</div>
+        <div class="sub">완료·진행 포함</div>
+      </div>
+      <div class="kpi ${activePctN >= 30 ? 'green' : activePctN >= 10 ? 'yellow' : 'red'}">
+        <div class="label">활성 비율 (발화)</div>
+        <div class="value">${activePctN}%</div>
+        <div class="sub">${fmtMs(s.total_active_ms)} / ${fmtMs(s.total_session_ms)}</div>
+      </div>
+      <div class="kpi ${avgGaze == null ? '' : avgGaze >= 70 ? 'green' : avgGaze >= 40 ? 'yellow' : 'red'}">
+        <div class="label">시선 점수 평균</div>
+        <div class="value">${avgGaze == null ? '—' : avgGaze}</div>
+        <div class="sub">${s.gaze_score_count || 0}개 세션에서 기록</div>
+      </div>
+      <div class="kpi ${(s.disconnect_sum || 0) === 0 ? 'green' : (s.disconnect_sum || 0) < 5 ? 'yellow' : 'red'}">
+        <div class="label">연결 끊김</div>
+        <div class="value">${s.disconnect_sum || 0}</div>
+        <div class="sub">재연결 이벤트 합계</div>
+      </div>
+    </div>
+
+    <div class="section-title" id="chart-section-title">📈 일자별 추이</div>
+    <div class="chart-wrap"><canvas id="trend-chart"></canvas></div>
+
+    <div class="section-title">📝 세션 리스트 (최근순)</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>날짜</th>
+            <th>방 ID</th>
+            <th>시작 시간</th>
+            <th>세션 길이</th>
+            <th>활성 비율</th>
+            <th>시선 점수</th>
+            <th>끊김</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="session-body">
+          ${(data.sessions || []).length === 0
+            ? `<tr><td colspan="8" class="empty">이 기간에 세션이 없습니다.</td></tr>`
+            : data.sessions.map(row => `
+                <tr>
+                  <td class="muted">${escapeHtml(row.date || '—')}</td>
+                  <td><code>${escapeHtml(row.room_id || '—')}</code></td>
+                  <td>${fmtDate(row.joined_at)}</td>
+                  <td>${fmtMs(row.total_session_ms)}</td>
+                  <td>${pctBadge(row.total_active_ms, row.total_session_ms)}</td>
+                  <td class="score-cell">${scoreBadge(row.gaze_score)}</td>
+                  <td>${row.disconnect_count || 0}</td>
+                  <td><span class="badge ${row.status === 'ended' ? 'green' : row.status === 'left' ? 'gray' : 'yellow'}">${escapeHtml(row.status || '—')}</span></td>
+                </tr>
+              `).join('')
+          }
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // 차트 렌더 (granularity 셀렉터 값에 따라 일/주 중 선택)
+  renderChart(data);
+}
+
+function renderChart(data) {
+  if (!data) return;
+  const granularity = (document.getElementById('granularity-select') || { value: 'day' }).value;
+  const rows = granularity === 'week' ? groupByWeek(data.by_day || []) : (data.by_day || []);
+
+  const titleEl = document.getElementById('chart-section-title');
+  if (titleEl) titleEl.textContent = granularity === 'week' ? '📈 주별 추이' : '📈 일자별 추이';
+
+  const xAxisLabel = granularity === 'week' ? '주 시작일 (월요일)' : '날짜';
+  const sessionLabel = granularity === 'week' ? '주간 활성(발화) 시간 (분)' : '활성(발화) 시간 (분)';
+  const totalLabel   = granularity === 'week' ? '주간 세션 총 시간 (분)' : '세션 총 시간 (분)';
+  const gazeLabel    = granularity === 'week' ? '주간 시선 점수 (가중 평균)' : '시선 점수 평균';
+
+  const ctx = document.getElementById('trend-chart');
+  if (chartRef) chartRef.destroy();
+  chartRef = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: rows.map(d => d.date),
+      datasets: [
+        {
+          label: sessionLabel,
+          data: rows.map(d => Math.round((d.total_active_ms || 0) / 60000 * 10) / 10),
+          borderColor: '#10b981',
+          backgroundColor: 'rgba(16,185,129,0.15)',
+          yAxisID: 'y',
+          tension: 0.3
+        },
+        {
+          label: totalLabel,
+          data: rows.map(d => Math.round((d.total_session_ms || 0) / 60000 * 10) / 10),
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59,130,246,0.1)',
+          yAxisID: 'y',
+          tension: 0.3
+        },
+        {
+          label: gazeLabel,
+          data: rows.map(d => d.avg_gaze_score == null ? null : Math.round(d.avg_gaze_score * 10) / 10),
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.15)',
+          yAxisID: 'y1',
+          tension: 0.3,
+          spanGaps: true
+        }
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#e2e8f0' } } },
+      scales: {
+        x:  { ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, title: { display: true, text: xAxisLabel, color: '#94a3b8' } },
+        y:  { position: 'left',  ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, title: { display: true, text: '분', color: '#94a3b8' } },
+        y1: { position: 'right', ticks: { color: '#94a3b8' }, grid: { drawOnChartArea: false }, min: 0, max: 100, title: { display: true, text: '시선 점수', color: '#94a3b8' } }
+      }
+    }
+  });
+}
+
+function renderError(msg) {
+  document.getElementById('main').innerHTML = `<div class="error-box">${escapeHtml(msg)}</div>`;
+}
+
+async function load() {
+  const uid = qs('uid');
+  const days = document.getElementById('period-select').value;
+  if (!uid) {
+    renderError('❌ user_id 가 필요합니다. 예: /admin/student?uid=<학생 user_id>');
+    return;
+  }
+  document.getElementById('main').innerHTML = '<div class="empty">로딩 중…</div>';
+  try {
+    const r = await fetch(`/api/admin/student/${encodeURIComponent(uid)}?days=${days}`, { cache: 'no-store', credentials: 'include' });
+    if (!r.ok) {
+      const body = await r.text().catch(() => '');
+      renderError(`❌ 요청 실패: HTTP ${r.status}\n${body.slice(0, 500)}`);
+      return;
+    }
+    const data = await r.json();
+    if (!data.ok) {
+      renderError(`❌ ${data.error || 'unknown_error'} (user_id: ${data.user_id || uid})`);
+      return;
+    }
+    lastData = data;
+    render(data);
+  } catch (e) {
+    renderError(`❌ 네트워크 에러: ${e.message}`);
+  }
+}
+
+document.getElementById('refresh-btn').addEventListener('click', load);
+document.getElementById('period-select').addEventListener('change', load);
+// granularity 변경은 재페칭 없이 차트만 재렌더 (클라이언트 집계)
+document.getElementById('granularity-select').addEventListener('change', () => {
+  if (lastData) renderChart(lastData);
+});
+
+// 초기 로딩 시 쿼리스트링의 days 반영
+(() => {
+  const d = qs('days');
+  if (d) {
+    const sel = document.getElementById('period-select');
+    if ([...sel.options].some(o => o.value === d)) sel.value = d;
+  }
+})();
+load();
+</script>
+
+</body>
+</html>

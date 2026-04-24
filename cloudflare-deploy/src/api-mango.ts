@@ -58,7 +58,8 @@ export async function handleMangoApi(
   try {
     // ===== 출석 =====
     if (path === '/api/attendance/join' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.room_id || !b.user_id) return invalidBody(['room_id', 'user_id']);
       const now = Date.now();
       const date = today(now);
       const res = await env.DB.prepare(
@@ -69,7 +70,8 @@ export async function handleMangoApi(
     }
 
     if (path === '/api/attendance/leave' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.room_id || !b.user_id) return invalidBody(['room_id', 'user_id']);
       const now = Date.now();
       // 가장 최근 미종료 row 업데이트
       await env.DB.prepare(
@@ -97,7 +99,8 @@ export async function handleMangoApi(
     }
 
     if (path === '/api/attendance/heartbeat' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.room_id || !b.user_id) return invalidBody(['room_id', 'user_id']);
       // KV에 마지막 heartbeat 저장 (60초 TTL)
       const key = `hb:${b.room_id}:${b.user_id}`;
       await env.SESSION_STATE.put(key, String(Date.now()), { expirationTtl: 60 });
@@ -106,7 +109,8 @@ export async function handleMangoApi(
 
     // ===== 발화시간 =====
     if (path === '/api/speaking-time' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.room_id || !b.user_id) return invalidBody(['room_id', 'user_id']);
       const now = Date.now();
       await env.DB.prepare(
         `UPDATE attendance
@@ -209,7 +213,8 @@ export async function handleMangoApi(
 
     // ===== 카카오 ID =====
     if (path === '/api/kakao-id' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.user_id) return invalidBody(['user_id']);
       const now = Date.now();
       await env.DB.prepare(
         `INSERT INTO kakao_ids (user_id, role, username, kakao_id, phone, opted_in_at, updated_at)
@@ -332,6 +337,70 @@ export async function handleMangoApi(
       });
     }
 
+    // ===== 학생별 드릴다운 (Phase 2) =====
+    //   GET /api/admin/student/:user_id?days=30
+    //   - 프로필 (최초/마지막 접속, 전체 세션 수)
+    //   - 요약 (기간 내 집계)
+    //   - 일자별 by_day (차트용)
+    //   - 세션 리스트 (최근순)
+    if (path.startsWith('/api/admin/student/') && method === 'GET') {
+      const userId = decodeURIComponent(path.replace('/api/admin/student/', ''));
+      if (!userId) return invalidBody(['user_id(path)']);
+      const days = Math.max(1, Math.min(365, parseInt(url.searchParams.get('days') || '30', 10)));
+      const since = Date.now() - days * 24 * 3600 * 1000;
+
+      const [profileRow, summaryRow, byDayRows, sessionRows] = await Promise.all([
+        // 프로필: 기간 무관 전체 history
+        env.DB.prepare(
+          `SELECT user_id, COALESCE(MAX(username), user_id) AS username, COALESCE(MAX(role), 'student') AS role,
+                  MIN(joined_at) AS first_seen, MAX(joined_at) AS last_seen,
+                  COUNT(*) AS total_sessions_all_time
+           FROM attendance WHERE user_id = ?`
+        ).bind(userId).first(),
+        // 요약: 기간 내 집계
+        env.DB.prepare(
+          `SELECT COUNT(*) AS session_count,
+                  COALESCE(SUM(total_session_ms), 0) AS total_session_ms,
+                  COALESCE(SUM(total_active_ms), 0)  AS total_active_ms,
+                  COALESCE(SUM(disconnect_count), 0) AS disconnect_sum,
+                  AVG(CASE WHEN gaze_score IS NOT NULL THEN gaze_score END) AS avg_gaze_score,
+                  COUNT(CASE WHEN gaze_score IS NOT NULL THEN 1 END) AS gaze_score_count
+           FROM attendance WHERE user_id = ? AND joined_at >= ?`
+        ).bind(userId, since).first(),
+        // 일자별 (차트용)
+        env.DB.prepare(
+          `SELECT date,
+                  COUNT(*) AS session_count,
+                  COALESCE(SUM(total_session_ms), 0) AS total_session_ms,
+                  COALESCE(SUM(total_active_ms), 0)  AS total_active_ms,
+                  AVG(CASE WHEN gaze_score IS NOT NULL THEN gaze_score END) AS avg_gaze_score
+           FROM attendance WHERE user_id = ? AND joined_at >= ?
+           GROUP BY date ORDER BY date ASC`
+        ).bind(userId, since).all(),
+        // 세션 리스트 (최근순)
+        env.DB.prepare(
+          `SELECT id, room_id, joined_at, left_at, status, date,
+                  total_session_ms, total_active_ms, disconnect_count,
+                  gaze_score, gaze_samples, gaze_forward_samples
+           FROM attendance WHERE user_id = ? AND joined_at >= ?
+           ORDER BY joined_at DESC LIMIT 200`
+        ).bind(userId, since).all()
+      ]);
+
+      if (!profileRow || !(profileRow as any).user_id) {
+        return json({ ok: false, error: 'student_not_found', user_id: userId }, 404);
+      }
+
+      return json({
+        ok: true,
+        profile: profileRow,
+        period_days: days,
+        summary: summaryRow || {},
+        by_day: byDayRows.results || [],
+        sessions: sessionRows.results || []
+      });
+    }
+
     // ===== 녹화(Recording) =====
     if (path === '/api/recordings/start' && method === 'POST') {
       const b = await request.json() as any;
@@ -387,8 +456,47 @@ export async function handleMangoApi(
       //                   public/js/mango-gaze.js → /api/gaze-score 경로로 attendance 에 누적.
       //                   speaking_score 와 동일 시간 window 로 평균.
       // 가중평균/총참여도(participation_score) 계산은 프런트(JS)에서 수행하여 점수 정의 변경 시 배포 없이 조정 가능하게 함.
+      // --- 필터·페이지네이션 파라미터 (Phase 3) ----------------------
       const teacherId = url.searchParams.get('teacher_id');
-      const roomId = url.searchParams.get('room_id');
+      const roomId    = url.searchParams.get('room_id');
+      const qSearch   = (url.searchParams.get('q') || '').trim();           // 방ID / 교사명 / 교사ID LIKE
+      const dateFrom  = url.searchParams.get('date_from');                  // YYYY-MM-DD (KST 기준 00:00)
+      const dateTo    = url.searchParams.get('date_to');                    // YYYY-MM-DD (KST 기준 23:59:59)
+      const status    = url.searchParams.get('status');                     // ended | recording | aborted | deleted | all
+      const limit     = Math.max(1,  Math.min(200, parseInt(url.searchParams.get('limit')  || '50', 10)));
+      const offset    = Math.max(0,                parseInt(url.searchParams.get('offset') || '0',  10));
+
+      // WHERE 조립 (count + list 공용)
+      const whereParts: string[] = [];
+      const whereBinds: any[]    = [];
+      if (teacherId) { whereParts.push('r.teacher_id = ?'); whereBinds.push(teacherId); }
+      if (roomId)    { whereParts.push('r.room_id = ?');    whereBinds.push(roomId); }
+      if (qSearch) {
+        whereParts.push("(r.room_id LIKE ? OR COALESCE(r.teacher_name,'') LIKE ? OR COALESCE(r.teacher_id,'') LIKE ?)");
+        const p = `%${qSearch}%`;
+        whereBinds.push(p, p, p);
+      }
+      if (dateFrom) {
+        const ms = Date.parse(dateFrom + 'T00:00:00+09:00');
+        if (!isNaN(ms)) { whereParts.push('r.started_at >= ?'); whereBinds.push(ms); }
+      }
+      if (dateTo) {
+        const ms = Date.parse(dateTo + 'T23:59:59+09:00');
+        if (!isNaN(ms)) { whereParts.push('r.started_at <= ?'); whereBinds.push(ms); }
+      }
+      if (status && status !== 'all') {
+        whereParts.push('r.status = ?');
+        whereBinds.push(status);
+      }
+      const whereSQL = whereParts.length ? ('WHERE ' + whereParts.join(' AND ')) : 'WHERE 1=1';
+
+      // Total count (필터 적용된 상태에서의 전체 건수 — 페이지네이션 UI 에 사용)
+      const countStmt = env.DB.prepare(`SELECT COUNT(*) AS total FROM recordings r ${whereSQL}`);
+      const countRow  = whereBinds.length
+        ? await countStmt.bind(...whereBinds).first<{ total: number }>()
+        : await countStmt.first<{ total: number }>();
+      const total = countRow?.total || 0;
+
       let q = `SELECT r.id, r.room_id, r.teacher_id, r.teacher_name, r.filename, r.file_url,
                       r.size_bytes, r.duration_ms,
                       r.participant_names, r.consented_user_ids,
@@ -459,15 +567,24 @@ export async function handleMangoApi(
                                          r.started_at + 10800000) + 30000
                               )
                       ) AS speaking_zero_count
-               FROM recordings r
-               WHERE 1=1`;
-      const binds: any[] = [];
-      if (teacherId) { q += ' AND r.teacher_id = ?'; binds.push(teacherId); }
-      if (roomId)    { q += ' AND r.room_id = ?';    binds.push(roomId); }
-      q += ' ORDER BY r.started_at DESC LIMIT 100';
-      const stmt = env.DB.prepare(q);
-      const rs = binds.length ? await stmt.bind(...binds).all() : await stmt.all();
-      return json(rs.results || []);
+               FROM recordings r ${whereSQL}
+               ORDER BY r.started_at DESC LIMIT ? OFFSET ?`;
+      const listBinds = [...whereBinds, limit, offset];
+      const rs = await env.DB.prepare(q).bind(...listBinds).all();
+
+      // 응답 본문은 배열 그대로 유지 (하위 호환성). 페이지네이션 메타는 헤더로 전달.
+      return new Response(JSON.stringify(rs.results || []), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'X-Total-Count, X-Offset, X-Limit',
+          'X-Total-Count': String(total),
+          'X-Offset':      String(offset),
+          'X-Limit':       String(limit),
+          'Cache-Control': 'no-store'
+        }
+      });
     }
 
     if (path.startsWith('/api/recordings/') && method === 'DELETE') {
@@ -479,7 +596,8 @@ export async function handleMangoApi(
 
     // ===== 동의(Consent) =====
     if (path === '/api/consents' && method === 'POST') {
-      const b = await request.json() as any;
+      const b = await parseJsonBody(request);
+      if (!b || !b.user_id) return invalidBody(['user_id']);
       const now = Date.now();
       const ip = request.headers.get('cf-connecting-ip') || '';
       const ua = request.headers.get('user-agent') || '';
