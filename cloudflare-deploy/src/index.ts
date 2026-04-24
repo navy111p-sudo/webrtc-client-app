@@ -32,6 +32,10 @@ interface Env {
   // - 설정되어 있으면 admin.html + 관리자 API 에 Basic Auth 요구
   // - 설정 안되어 있으면 fail-open (경고 로그만 남기고 통과 — 초기 롤아웃 안전장치)
   ADMIN_PASSWORD?: string;
+  // 🩺 /admin/health 의 "마지막 배포" 타일에 사용할 빌드 식별자.
+  //   - wrangler.toml 의 [vars] / [env.production.vars] 에서 주입.
+  //   - fix-and-deploy.ps1 이 커밋 직전 자동으로 현재 시각+단축해시로 갱신.
+  BUILD_STAMP?: string;
 }
 
 export { SignalingRoom, VideoCallRoom };
@@ -64,6 +68,13 @@ export default {
     // Health check endpoint
     if (path === '/api/health') {
       return handleHealth();
+    }
+
+    // 🩺 /admin/health 페이지가 호출하는 서버측 자가진단 API
+    //   - D1/R2/KV 바인딩 실제 호출 + 시크릿 presence + BUILD_STAMP 리턴
+    //   - Basic Auth 미들웨어 뒤에 걸려 있음 (isAdminPath 참조)
+    if (path === '/api/admin/health-check') {
+      return handleHealthCheck(request, env);
     }
 
     // TURN/STUN config endpoint
@@ -194,6 +205,12 @@ export default {
     if (path === '/admin' || path === '/admin/') {
       const adminRequest = new Request(new URL('/admin.html', request.url).toString(), request);
       return env.ASSETS.fetch(adminRequest);
+    }
+
+    // 🩺 /admin/health 셀프 진단 페이지 — 별도 HTML 파일로 내부 포워딩
+    if (path === '/admin/health' || path === '/admin/health/') {
+      const healthRequest = new Request(new URL('/admin/health.html', request.url).toString(), request);
+      return env.ASSETS.fetch(healthRequest);
     }
 
     // Static assets (실제 파일 확장자가 있는 요청)
@@ -844,6 +861,9 @@ async function handleRecordingDelete(path: string, env: Env): Promise<Response> 
 function isAdminPath(path: string, method: string): boolean {
   // admin.html 페이지 자체 + /admin, /admin/ 리다이렉트
   if (path === '/admin' || path === '/admin/' || path === '/admin.html') return true;
+  // 🩺 /admin/health 셀프 진단 페이지 + 그 전용 API (관리자만 접근)
+  if (path === '/admin/health' || path === '/admin/health/' || path === '/admin/health.html') return true;
+  if (path === '/api/admin/health-check') return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;
@@ -923,6 +943,107 @@ function unauthorized(): Response {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
       'WWW-Authenticate': 'Basic realm="Mangoi Admin", charset="UTF-8"',
+      'Cache-Control': 'no-store'
+    }
+  });
+}
+
+/**
+ * 🩺 /admin/health 전용 셀프 진단 API.
+ *
+ * 목적: gaze-score 가 10초마다 405 를 뱉고 있어도 아무도 몰랐던 사고의 재발 방지.
+ *   - 바인딩(D1/R2/KV) 이 실제로 살아있는지 진짜 호출해서 확인.
+ *   - 시크릿(ADMIN_PASSWORD) 이 런타임에 바인딩됐는지 확인.
+ *   - BUILD_STAMP 를 돌려줘서 "지금 떠 있는 코드가 언제 배포된 것인지" 한눈에.
+ *
+ * 엔드포인트 자가 ping 은 클라이언트 JS(/admin/health.html) 가 수행 — 실제 배포된
+ * 라우트 동작을 브라우저 시점에서 정확히 반영하기 위함.
+ */
+async function handleHealthCheck(request: Request, env: Env): Promise<Response> {
+  const startedAt = Date.now();
+  const bindings: Record<string, any> = {};
+
+  // --- D1 ----------------------------------------------------------
+  try {
+    const t0 = Date.now();
+    const row: any = await env.DB.prepare('SELECT 1 AS ok').first();
+    bindings.d1 = {
+      status: row && row.ok === 1 ? 'ok' : 'warn',
+      latencyMs: Date.now() - t0,
+      detail: row ? `SELECT 1 → ${row.ok}` : 'no row'
+    };
+  } catch (e: any) {
+    bindings.d1 = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- R2 ----------------------------------------------------------
+  try {
+    if (!env.RECORDINGS) throw new Error('RECORDINGS binding missing');
+    const t0 = Date.now();
+    // head 는 존재 여부와 무관하게 버킷 연결만 검증 (null 이어도 정상)
+    await env.RECORDINGS.head('__health_probe_sentinel__');
+    bindings.r2 = { status: 'ok', latencyMs: Date.now() - t0 };
+  } catch (e: any) {
+    bindings.r2 = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- KV: PDF_STORE ----------------------------------------------
+  try {
+    const t0 = Date.now();
+    await env.PDF_STORE.list({ limit: 1 });
+    bindings.kv_pdf = { status: 'ok', latencyMs: Date.now() - t0 };
+  } catch (e: any) {
+    bindings.kv_pdf = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- KV: SESSION_STATE ------------------------------------------
+  try {
+    const t0 = Date.now();
+    await env.SESSION_STATE.list({ limit: 1 });
+    bindings.kv_session = { status: 'ok', latencyMs: Date.now() - t0 };
+  } catch (e: any) {
+    bindings.kv_session = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- Durable Objects binding presence only (호출은 실제 방 진입에서만) ---
+  bindings.do_signaling = { status: env.SIGNALING_ROOM ? 'ok' : 'error', configured: !!env.SIGNALING_ROOM };
+  bindings.do_video_call = { status: env.VIDEO_CALL_ROOM ? 'ok' : 'error', configured: !!env.VIDEO_CALL_ROOM };
+
+  // --- Secrets & vars ----------------------------------------------
+  bindings.admin_password = {
+    status: env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length >= 4 ? 'ok' : 'warn',
+    configured: !!env.ADMIN_PASSWORD,
+    length: env.ADMIN_PASSWORD ? env.ADMIN_PASSWORD.length : 0,
+    failOpenThreshold: 4
+  };
+  bindings.turn_key = {
+    status: env.TURN_KEY_API_TOKEN ? 'ok' : 'warn',
+    configured: !!env.TURN_KEY_API_TOKEN
+  };
+  bindings.livekit = {
+    status: env.LIVEKIT_API_SECRET ? 'ok' : 'warn',
+    configured: !!env.LIVEKIT_API_SECRET
+  };
+
+  // --- Build / deploy info ----------------------------------------
+  const cf = (request as any).cf || {};
+  const buildInfo = {
+    stamp: env.BUILD_STAMP || '(not set — wrangler.toml vars.BUILD_STAMP 미설정)',
+    workerNow: new Date().toISOString(),
+    cfColo: cf.colo || '(unknown)',
+    cfCountry: cf.country || '(unknown)'
+  };
+
+  return new Response(JSON.stringify({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    totalLatencyMs: Date.now() - startedAt,
+    buildInfo,
+    bindings
+  }, null, 2), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
       'Cache-Control': 'no-store'
     }
   });

@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🩺 Mangoi · 셀프 진단 (Self-Health)</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #263449;
+      --fg: #e2e8f0;
+      --fg-muted: #94a3b8;
+      --fg-dim: #64748b;
+      --border: #334155;
+      --accent: #f59e0b;
+      --green: #10b981;
+      --green-bg: rgba(16, 185, 129, 0.12);
+      --yellow: #f59e0b;
+      --yellow-bg: rgba(245, 158, 11, 0.12);
+      --red: #ef4444;
+      --red-bg: rgba(239, 68, 68, 0.12);
+      --gray: #64748b;
+      --gray-bg: rgba(100, 116, 139, 0.12);
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+      font-size: 14px;
+    }
+    header {
+      padding: 16px 24px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    header h1 { margin: 0; font-size: 20px; font-weight: 700; }
+    header .spacer { flex: 1; }
+    header .muted { color: var(--fg-muted); font-size: 13px; }
+    header a, header a:visited {
+      color: var(--accent); text-decoration: none; font-size: 13px;
+      padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px;
+    }
+    header a:hover { background: var(--bg-card); }
+    .controls { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+    .controls button {
+      padding: 6px 14px; border: 1px solid var(--border); border-radius: 6px;
+      background: var(--bg-card); color: var(--fg); cursor: pointer; font-size: 13px;
+    }
+    .controls button:hover { background: var(--bg-card-hover); }
+    .controls label { display: flex; align-items: center; gap: 6px; color: var(--fg-muted); cursor: pointer; }
+    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    .section-title {
+      font-size: 12px; font-weight: 700; color: var(--fg-muted);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin: 24px 0 12px 0;
+    }
+    .section-title:first-child { margin-top: 0; }
+    .grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 12px;
+    }
+    .tile {
+      padding: 14px 16px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--bg-card); display: flex; flex-direction: column; gap: 6px;
+      transition: background 0.15s;
+    }
+    .tile:hover { background: var(--bg-card-hover); }
+    .tile .head {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .tile .name { font-weight: 600; font-size: 14px; }
+    .tile .badge {
+      font-size: 18px; line-height: 1;
+    }
+    .tile .sub { color: var(--fg-muted); font-size: 12px; font-family: 'SF Mono', Monaco, Consolas, monospace; }
+    .tile .meta { color: var(--fg-dim); font-size: 11px; }
+    .tile.green { border-color: var(--green); background: var(--green-bg); }
+    .tile.yellow { border-color: var(--yellow); background: var(--yellow-bg); }
+    .tile.red { border-color: var(--red); background: var(--red-bg); }
+    .tile.gray { border-color: var(--gray); background: var(--gray-bg); }
+    .summary {
+      padding: 14px 20px; border-radius: 8px; background: var(--bg-card);
+      border: 1px solid var(--border); margin-bottom: 20px;
+      display: flex; align-items: center; gap: 24px; flex-wrap: wrap;
+    }
+    .summary .big { font-size: 28px; font-weight: 700; }
+    .summary .big.green { color: var(--green); }
+    .summary .big.yellow { color: var(--yellow); }
+    .summary .big.red { color: var(--red); }
+    .summary .label { color: var(--fg-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.8px; }
+    .summary .stat { display: flex; flex-direction: column; gap: 2px; }
+    .note {
+      padding: 10px 14px; border-radius: 6px;
+      background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);
+      color: var(--fg-muted); font-size: 12px; margin-bottom: 16px;
+    }
+    .error-detail {
+      color: var(--red); font-family: 'SF Mono', Monaco, Consolas, monospace; font-size: 11px;
+      word-break: break-all;
+    }
+    .spin {
+      display: inline-block; width: 12px; height: 12px; border: 2px solid var(--fg-muted);
+      border-top-color: transparent; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🩺 Mangoi · 셀프 진단</h1>
+  <span class="muted" id="last-update">최초 로딩 중…</span>
+  <div class="spacer"></div>
+  <div class="controls">
+    <label><input type="checkbox" id="auto-refresh" checked /> 10초마다 자동 새로고침</label>
+    <button id="refresh-btn">지금 새로고침</button>
+    <a href="/admin.html">← 대시보드</a>
+  </div>
+</header>
+
+<main>
+  <!-- 전체 요약 -->
+  <div class="summary" id="summary">
+    <div class="stat">
+      <div class="big gray" id="summary-icon">⏳</div>
+      <div class="label">전체 상태</div>
+    </div>
+    <div class="stat">
+      <div class="big" id="summary-green">—</div>
+      <div class="label">🟢 녹색</div>
+    </div>
+    <div class="stat">
+      <div class="big" id="summary-yellow">—</div>
+      <div class="label">🟡 노랑</div>
+    </div>
+    <div class="stat">
+      <div class="big" id="summary-red">—</div>
+      <div class="label">🔴 빨강</div>
+    </div>
+    <div class="stat">
+      <div class="big" style="font-size:16px; color: var(--fg-muted);" id="build-stamp">—</div>
+      <div class="label">마지막 배포</div>
+    </div>
+  </div>
+
+  <div class="note">
+    ⚠ <strong>이 페이지의 목적:</strong> <code>/api/gaze-score</code> 가 10초마다 405 를 뱉고 있어도 아무도 몰랐던
+    사고의 재발 방지. 신규 엔드포인트 추가 시 반드시 아래 <em>자가 ping</em> 목록에 경로를 등록하세요.
+  </div>
+
+  <!-- 서버 측 바인딩 -->
+  <div class="section-title">🔧 서버 바인딩 (실제 호출 검증)</div>
+  <div class="grid" id="bindings"></div>
+
+  <!-- 엔드포인트 자가 ping -->
+  <div class="section-title">📡 엔드포인트 자가 ping (브라우저 → Worker)</div>
+  <div class="grid" id="endpoints"></div>
+</main>
+
+<script>
+// ---------- 자가 ping 대상 ----------
+// 신규 엔드포인트 추가 시 여기에 반드시 등록.
+//   - method: 라우트가 기대하는 HTTP 메서드 (라우트 존재 검증)
+//   - expect:
+//       "2xx"      : 200~299 정상
+//       "2xx-or-4xx": 4xx 도 OK (인증 필요 / 빈 body 검증 거절 등 — 라우트는 살아있음)
+//       "4xx"      : 반드시 4xx 기대 (빈 POST → 400 정상)
+//   - label: 사람이 읽는 표시명
+//   - body:  POST 시 보낼 body (JSON 문자열). 없으면 빈 문자열.
+const ENDPOINTS = [
+  { path: '/api/health',                  method: 'GET',  expect: '2xx',       label: 'Health',           body: null },
+  { path: '/api/dashboard',               method: 'GET',  expect: '2xx',       label: 'Dashboard',        body: null },
+  { path: '/api/active-rooms',            method: 'GET',  expect: '2xx',       label: 'Active Rooms',     body: null },
+  { path: '/api/recordings',              method: 'GET',  expect: '2xx',       label: 'Recordings List',  body: null },
+  { path: '/api/recordings/test-r2',      method: 'GET',  expect: '2xx',       label: 'R2 Test',          body: null },
+  { path: '/api/turn-config',             method: 'GET',  expect: '2xx',       label: 'TURN Config',      body: null },
+  { path: '/api/video-call/pdf-list',     method: 'GET',  expect: '2xx',       label: 'PDF List',         body: null },
+  // POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴)
+  { path: '/api/attendance',              method: 'POST', expect: '2xx-or-4xx', label: 'Attendance POST',  body: '{}' },
+  { path: '/api/gaze-score',              method: 'POST', expect: '2xx-or-4xx', label: 'Gaze Score POST',  body: '{}' },
+  { path: '/api/reward',                  method: 'POST', expect: '2xx-or-4xx', label: 'Reward POST',      body: '{}' },
+  { path: '/api/emergency',               method: 'POST', expect: '2xx-or-4xx', label: 'Emergency POST',   body: '{}' }
+];
+
+// ---------- classification ----------
+function classify(status, expect, errored) {
+  if (errored) return { color: 'red', badge: '🔴', note: 'network error' };
+  // 405 = 라우트 존재 안 함 — 최우선 레드 (gaze-score 사고 재현 탐지)
+  if (status === 405) return { color: 'red', badge: '🔴', note: 'Method Not Allowed (라우트 누락?)' };
+  if (status >= 500)  return { color: 'red', badge: '🔴', note: 'server error' };
+  if (status === 404) return { color: 'yellow', badge: '🟡', note: 'Not Found (경로 확인)' };
+  if (expect === '2xx') {
+    if (status >= 200 && status < 300) return { color: 'green', badge: '🟢', note: 'ok' };
+    return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
+  }
+  if (expect === '2xx-or-4xx') {
+    if (status >= 200 && status < 500) return { color: 'green', badge: '🟢', note: 'route alive (' + status + ')' };
+    return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
+  }
+  if (expect === '4xx') {
+    if (status >= 400 && status < 500) return { color: 'green', badge: '🟢', note: 'validation ok' };
+    return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
+  }
+  return { color: 'yellow', badge: '🟡', note: 'status ' + status };
+}
+
+function classifyBinding(b) {
+  if (!b) return { color: 'gray', badge: '⚪' };
+  if (b.status === 'ok')    return { color: 'green',  badge: '🟢' };
+  if (b.status === 'warn')  return { color: 'yellow', badge: '🟡' };
+  if (b.status === 'error') return { color: 'red',    badge: '🔴' };
+  return { color: 'gray', badge: '⚪' };
+}
+
+// ---------- rendering ----------
+function tile(container, opts) {
+  const el = document.createElement('div');
+  el.className = 'tile ' + (opts.color || 'gray');
+  el.innerHTML = `
+    <div class="head">
+      <div class="name">${opts.name}</div>
+      <div class="badge">${opts.badge}</div>
+    </div>
+    ${opts.sub ? `<div class="sub">${opts.sub}</div>` : ''}
+    ${opts.meta ? `<div class="meta">${opts.meta}</div>` : ''}
+    ${opts.error ? `<div class="error-detail">${opts.error}</div>` : ''}
+  `;
+  container.appendChild(el);
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- fetchers ----------
+async function fetchHealthCheck() {
+  const t0 = performance.now();
+  try {
+    const r = await fetch('/api/admin/health-check', { cache: 'no-store', credentials: 'include' });
+    const ms = Math.round(performance.now() - t0);
+    if (!r.ok) return { ok: false, latencyMs: ms, status: r.status, error: 'HTTP ' + r.status };
+    const data = await r.json();
+    return { ok: true, latencyMs: ms, data };
+  } catch (e) {
+    return { ok: false, latencyMs: Math.round(performance.now() - t0), error: e.message };
+  }
+}
+
+async function pingOne(ep) {
+  const t0 = performance.now();
+  try {
+    const opts = { method: ep.method, cache: 'no-store', credentials: 'include' };
+    if (ep.body !== null) {
+      opts.headers = { 'Content-Type': 'application/json' };
+      opts.body = ep.body;
+    }
+    const r = await fetch(ep.path, opts);
+    return { ...ep, status: r.status, latencyMs: Math.round(performance.now() - t0), errored: false };
+  } catch (e) {
+    return { ...ep, status: 0, latencyMs: Math.round(performance.now() - t0), errored: true, error: e.message };
+  }
+}
+
+// ---------- main ----------
+let inFlight = false;
+
+async function refresh() {
+  if (inFlight) return;
+  inFlight = true;
+  document.getElementById('last-update').innerHTML = '<span class="spin"></span> 갱신 중…';
+
+  try {
+    // 병렬 실행
+    const [hc, pings] = await Promise.all([
+      fetchHealthCheck(),
+      Promise.all(ENDPOINTS.map(pingOne))
+    ]);
+
+    // 카운터
+    let green = 0, yellow = 0, red = 0;
+
+    // --- 서버 바인딩 ---
+    const bindingsEl = document.getElementById('bindings');
+    bindingsEl.innerHTML = '';
+
+    if (!hc.ok) {
+      tile(bindingsEl, {
+        name: '/api/admin/health-check',
+        badge: '🔴',
+        color: 'red',
+        sub: 'API 호출 자체 실패',
+        error: escapeHtml(hc.error || 'unknown')
+      });
+      red++;
+    } else {
+      const b = hc.data.bindings || {};
+      const list = [
+        ['D1 (mango-db)',        b.d1],
+        ['R2 (recordings)',      b.r2],
+        ['KV (PDF_STORE)',       b.kv_pdf],
+        ['KV (SESSION_STATE)',   b.kv_session],
+        ['DO (SignalingRoom)',   b.do_signaling],
+        ['DO (VideoCallRoom)',   b.do_video_call],
+        ['Secret · ADMIN_PW',    b.admin_password],
+        ['Secret · TURN_KEY',    b.turn_key],
+        ['Secret · LIVEKIT',     b.livekit]
+      ];
+      list.forEach(([name, item]) => {
+        const c = classifyBinding(item);
+        if (c.color === 'green') green++;
+        else if (c.color === 'yellow') yellow++;
+        else if (c.color === 'red') red++;
+        let sub = '';
+        let meta = '';
+        if (item) {
+          if ('latencyMs' in item) sub = item.latencyMs + ' ms';
+          if (item.configured !== undefined) meta += 'configured=' + item.configured;
+          if (item.length !== undefined && item.length > 0) meta += (meta ? ' · ' : '') + 'length=' + item.length;
+          if (item.detail) meta += (meta ? ' · ' : '') + item.detail;
+        }
+        tile(bindingsEl, {
+          name: name,
+          badge: c.badge,
+          color: c.color,
+          sub: sub,
+          meta: meta,
+          error: item && item.error ? escapeHtml(item.error) : null
+        });
+      });
+
+      // 빌드 스탬프
+      const stamp = (hc.data.buildInfo && hc.data.buildInfo.stamp) || '(unknown)';
+      document.getElementById('build-stamp').textContent = stamp;
+    }
+
+    // --- 엔드포인트 자가 ping ---
+    const endpointsEl = document.getElementById('endpoints');
+    endpointsEl.innerHTML = '';
+    pings.forEach(p => {
+      const c = classify(p.status, p.expect, p.errored);
+      if (c.color === 'green') green++;
+      else if (c.color === 'yellow') yellow++;
+      else if (c.color === 'red') red++;
+      tile(endpointsEl, {
+        name: p.label,
+        badge: c.badge,
+        color: c.color,
+        sub: `${p.method} ${p.path}`,
+        meta: `status=${p.status || 'ERR'} · ${p.latencyMs}ms · ${c.note}`,
+        error: p.error ? escapeHtml(p.error) : null
+      });
+    });
+
+    // --- 요약 ---
+    document.getElementById('summary-green').textContent = green;
+    document.getElementById('summary-yellow').textContent = yellow;
+    document.getElementById('summary-red').textContent = red;
+    const summaryGreen = document.getElementById('summary-green');
+    const summaryYellow = document.getElementById('summary-yellow');
+    const summaryRed = document.getElementById('summary-red');
+    summaryGreen.className = 'big green';
+    summaryYellow.className = 'big yellow';
+    summaryRed.className = 'big red';
+
+    const icon = document.getElementById('summary-icon');
+    if (red > 0) {
+      icon.textContent = '🔴';
+      icon.className = 'big red';
+    } else if (yellow > 0) {
+      icon.textContent = '🟡';
+      icon.className = 'big yellow';
+    } else {
+      icon.textContent = '🟢';
+      icon.className = 'big green';
+    }
+
+    const now = new Date();
+    document.getElementById('last-update').textContent =
+      '마지막 갱신: ' + now.toLocaleTimeString('ko-KR') + ' (total ' + (hc.ok ? hc.data.totalLatencyMs : '?') + 'ms)';
+
+  } catch (e) {
+    document.getElementById('last-update').textContent = '에러: ' + e.message;
+    console.error(e);
+  } finally {
+    inFlight = false;
+  }
+}
+
+// ---------- auto refresh ----------
+let timer = null;
+function startTimer() {
+  stopTimer();
+  timer = setInterval(() => {
+    if (document.getElementById('auto-refresh').checked && !document.hidden) {
+      refresh();
+    }
+  }, 10000);
+}
+function stopTimer() { if (timer) { clearInterval(timer); timer = null; } }
+
+document.getElementById('refresh-btn').addEventListener('click', refresh);
+document.getElementById('auto-refresh').addEventListener('change', (e) => {
+  if (e.target.checked) startTimer(); else stopTimer();
+});
+
+// 첫 호출 + 타이머 시작
+refresh();
+startTimer();
+</script>
+
+</body>
+</html>
