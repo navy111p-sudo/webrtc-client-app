@@ -191,7 +191,30 @@
     <button id="payroll-calc-btn"     class="primary" style="padding:5px 12px;font-size:13px;">🧮 불러오기</button>
     <button id="payroll-csv-btn"      style="padding:5px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 CSV (평가+급여)</button>
     <button id="payroll-finalize-btn" style="padding:5px 12px;font-size:13px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="payslips 테이블에 영구 저장 (취소 불가)">🔒 마감</button>
+    <button id="payroll-charts-btn"   style="padding:5px 12px;font-size:13px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="등급·급여 차트 토글">📊 그래프</button>
     <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;" title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
+  </div>
+
+  <!-- 📊 그래프 영역 (기본 숨김) -->
+  <div id="payroll-charts-wrap" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:12px;">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;">
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">💰 강사별 월급 (PHP)</div>
+        <div style="position:relative;height:340px;"><canvas id="chart-pr-salary"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">🏆 강사별 가중 평가 점수 (1~5)</div>
+        <div style="position:relative;height:340px;"><canvas id="chart-pr-weighted"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">🎯 등급 분포</div>
+        <div style="position:relative;height:280px;"><canvas id="chart-pr-grade"></canvas></div>
+      </div>
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">📡 5개 카테고리 평균 (레이더)</div>
+        <div style="position:relative;height:280px;"><canvas id="chart-pr-radar"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <!-- 데이터 히트맵 표 (헤더 클릭=1차 정렬, Shift+클릭=2/3차 추가) -->
@@ -1262,6 +1285,9 @@ async function calcPayrollAll() {
     const summary = `${d.year}-${String(d.month).padStart(2,'0')} · ${d.count}명 · 합계 PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)} · 최우수 ${gc['최우수']||0} · 매우우수 ${gc['매우 우수']||0} · 우수 ${gc['우수']||0} · 개선 ${gc['개선 요망']||0}`;
     document.getElementById('payroll-counts').textContent = summary;
     renderPayrollTable();
+    // 그래프 영역이 펼쳐진 상태면 자동 갱신
+    const cw = document.getElementById('payroll-charts-wrap');
+    if (cw && cw.style.display === 'block') renderPayrollCharts();
   } catch (e) {
     tb.innerHTML = '<tr><td colspan="14" class="empty">에러: ' + e.message + '</td></tr>';
   }
@@ -1397,6 +1423,174 @@ async function registerTeacher() {
   } catch (e) { alert('네트워크 에러: ' + e.message); }
 }
 
+// 📊 차트 인스턴스 (이전 차트 destroy 후 새로 그리려고 보관)
+let _prCharts = { salary: null, weighted: null, grade: null, radar: null };
+
+// 등급별 색상 — 막대/도넛 모두 동일하게
+function _gradeColor(g) {
+  return g === '최우수'    ? '#10b981'
+       : g === '매우 우수' ? '#3b82f6'
+       : g === '우수'      ? '#f59e0b'
+       : g === '개선 요망' ? '#ef4444'
+       : '#9ca3af';  // 미평가
+}
+
+function renderPayrollCharts() {
+  if (!_lastPayrollRows || _lastPayrollRows.length === 0) return;
+  if (typeof Chart === 'undefined') return;
+
+  // 정렬된 순서 (월급 내림차순) 로 차트 표시
+  const rows = _lastPayrollRows.slice().sort((a, b) => (b.monthly_salary_php || 0) - (a.monthly_salary_php || 0));
+  const labels = rows.map(r => r.teacher_name || `#${r.teacher_id}`);
+  const salaries = rows.map(r => Math.round(r.monthly_salary_php || 0));
+  const colors = rows.map(r => _gradeColor(r.grade));
+
+  // ── 1) 강사별 월급(PHP) 가로 막대 ──
+  if (_prCharts.salary) _prCharts.salary.destroy();
+  _prCharts.salary = new Chart(document.getElementById('chart-pr-salary'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '월급 (PHP)', data: salaries,
+        backgroundColor: colors, borderColor: colors, borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const r = rows[ctx.dataIndex];
+              return [
+                `월급: ${(r.monthly_salary_php||0).toLocaleString()} PHP`,
+                `≈ ₩${(r.monthly_salary_krw||0).toLocaleString()}`,
+                `등급: ${r.grade || '미평가'}`,
+                `수업수: ${r.class_count || 0} × 단가 ${(r.rate_per_10min_php||0).toFixed(2)}`
+              ];
+            }
+          }
+        }
+      },
+      scales: { x: { ticks: { callback: v => v.toLocaleString() } } }
+    }
+  });
+
+  // ── 2) 강사별 가중 점수 가로 막대 ──
+  // 가중점수 내림차순으로 정렬한 별도 배열
+  const wRows = _lastPayrollRows.slice()
+    .filter(r => r.weighted_total != null)
+    .sort((a, b) => (b.weighted_total || 0) - (a.weighted_total || 0));
+  const wLabels = wRows.map(r => r.teacher_name || `#${r.teacher_id}`);
+  const wData   = wRows.map(r => r.weighted_total);
+  const wColors = wRows.map(r => _gradeColor(r.grade));
+  if (_prCharts.weighted) _prCharts.weighted.destroy();
+  _prCharts.weighted = new Chart(document.getElementById('chart-pr-weighted'), {
+    type: 'bar',
+    data: {
+      labels: wLabels,
+      datasets: [{
+        label: '가중 점수', data: wData,
+        backgroundColor: wColors, borderColor: wColors, borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { min: 0, max: 5 } }
+    }
+  });
+
+  // ── 3) 등급 분포 도넛 ──
+  const gradeOrder = ['최우수', '매우 우수', '우수', '개선 요망', '미평가'];
+  const counts = gradeOrder.map(g => _lastPayrollRows.filter(r => (r.grade || '미평가') === g).length);
+  if (_prCharts.grade) _prCharts.grade.destroy();
+  _prCharts.grade = new Chart(document.getElementById('chart-pr-grade'), {
+    type: 'doughnut',
+    data: {
+      labels: gradeOrder,
+      datasets: [{
+        data: counts,
+        backgroundColor: gradeOrder.map(g => _gradeColor(g)),
+        borderWidth: 2, borderColor: '#fff'
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => `${ctx.label}: ${ctx.parsed}명`
+          }
+        }
+      }
+    }
+  });
+
+  // ── 4) 5개 카테고리 평균 레이더 ──
+  const cats = ['수업', '유지', '근태', '행정', '조직'];
+  const evalRows = _lastPayrollRows.filter(r => r.evaluation && r.weighted_total != null);
+  const avg = (key) => {
+    const vs = evalRows.map(r => r.evaluation[key]).filter(v => v != null && !isNaN(v));
+    return vs.length ? (vs.reduce((s, v) => s + v, 0) / vs.length) : 0;
+  };
+  const avgScores = [
+    avg('score_instruction'),
+    avg('score_retention'),
+    avg('score_punctuality'),
+    avg('score_admin'),
+    avg('score_contribution'),
+  ].map(v => Math.round(v * 100) / 100);
+  if (_prCharts.radar) _prCharts.radar.destroy();
+  _prCharts.radar = new Chart(document.getElementById('chart-pr-radar'), {
+    type: 'radar',
+    data: {
+      labels: cats.map((c, i) => {
+        const w = [25, 30, 20, 15, 10][i];
+        return `${c} (${w}%)`;
+      }),
+      datasets: [{
+        label: '강사 평균',
+        data: avgScores,
+        backgroundColor: 'rgba(14,165,233,0.20)',
+        borderColor: '#0ea5e9',
+        borderWidth: 2,
+        pointBackgroundColor: '#0ea5e9',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: {
+        r: { min: 0, max: 5, ticks: { stepSize: 1, font: { size: 10 } } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+function togglePayrollCharts() {
+  const el = document.getElementById('payroll-charts-wrap');
+  if (!el) return;
+  if (el.style.display === 'none' || !el.style.display) {
+    el.style.display = 'block';
+    // 데이터 있으면 즉시 그리고, 없으면 안내
+    if (_lastPayrollRows && _lastPayrollRows.length > 0) {
+      renderPayrollCharts();
+    } else {
+      // 그래도 표시는 하되 안내 문구
+      // (실제 렌더는 calcPayrollAll 호출 후)
+    }
+  } else {
+    el.style.display = 'none';
+  }
+}
+
 async function seedDemoTeachers() {
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
@@ -1420,6 +1614,7 @@ async function seedDemoTeachers() {
   if (e('payroll-calc-btn'))     e('payroll-calc-btn').addEventListener('click', calcPayrollAll);
   if (e('payroll-csv-btn'))      e('payroll-csv-btn').addEventListener('click', downloadPayrollCSV);
   if (e('payroll-finalize-btn')) e('payroll-finalize-btn').addEventListener('click', finalizePayroll);
+  if (e('payroll-charts-btn'))   e('payroll-charts-btn').addEventListener('click', togglePayrollCharts);
   if (e('payroll-seed-btn'))     e('payroll-seed-btn').addEventListener('click', seedDemoTeachers);
   if (e('t-new-btn'))            e('t-new-btn').addEventListener('click', registerTeacher);
   if (e('ev-cancel-btn'))        e('ev-cancel-btn').addEventListener('click', closeEvalModal);
