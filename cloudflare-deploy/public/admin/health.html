@@ -185,6 +185,11 @@ const ENDPOINTS = [
   // Phase 5: 알림 큐
   { path: '/api/admin/notifications?status=pending&limit=1', method: 'GET',  expect: '2xx',        label: 'Notif Queue (GET)', body: null },
   { path: '/api/admin/notifications/0',           method: 'PATCH', expect: '2xx-or-4xx', label: 'Notif PATCH', body: '{}' },
+  // Phase 6: CSV 내보내기
+  { path: '/api/admin/export/recordings.csv?date_to=1970-01-02', method: 'GET', expect: '2xx', label: 'Export Recordings CSV', body: null },
+  { path: '/api/admin/export/attendance.csv?date_to=1970-01-02', method: 'GET', expect: '2xx', label: 'Export Attendance CSV', body: null },
+  // Phase 7: 저장소·비용 통계
+  { path: '/api/admin/stats/storage', method: 'GET', expect: '2xx', label: 'Storage Stats', body: null },
   // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
   //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
   { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}' },

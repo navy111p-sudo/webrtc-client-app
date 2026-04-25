@@ -114,6 +114,40 @@
   <span id="test-r2-result" style="font-size:13px;color:#94a3b8;"></span>
 </div>
 
+<!-- 💰 Phase 7: 저장소·비용 통계 -->
+<div class="table-card" style="margin-bottom:24px;padding:14px 18px;">
+  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <span data-ko="💰 저장소·비용 통계 (실시간)" data-en="💰 Storage & Cost Stats">💰 저장소·비용 통계 (실시간)</span>
+    <button id="storage-refresh" style="padding:4px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+  </div>
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+       data-ko="💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요."
+       data-en="💡 D1/R2 usage is measured live. KV op counts are visible on Cloudflare dashboard.">
+    💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요.
+  </div>
+  <div id="storage-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;">
+    <div style="padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;text-align:center;color:#6b7280;font-size:13px;">로딩 중...</div>
+  </div>
+</div>
+
+<!-- 📥 Phase 6: 데이터 내보내기 (CSV) -->
+<div class="table-card" style="margin-bottom:24px;padding:14px 18px;">
+  <div class="chart-title" style="margin-bottom:8px;" data-ko="📥 데이터 내보내기 (CSV)" data-en="📥 Data Export (CSV)">📥 데이터 내보내기 (CSV)</div>
+  <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
+    출석 데이터를 기간 범위로 CSV 다운로드. 녹화 목록 CSV 는 위 검색 바의 [📥 CSV] 버튼을 사용하세요.
+  </div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+    <label style="font-size:13px;color:#374151;">기간 &nbsp;
+      <input id="export-att-from" type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+      &nbsp;~&nbsp;
+      <input id="export-att-to"   type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+    </label>
+    <input id="export-att-user"  type="text" placeholder="user_id (선택)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
+    <input id="export-att-room"  type="text" placeholder="room_id (선택)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
+    <button id="export-att-btn"  style="padding:6px 14px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 출석 CSV 받기</button>
+  </div>
+</div>
+
 <!-- 📣 Phase 5: 알림 큐 (운영 이벤트 자동 적재 + 상태 모니터링) -->
 <div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
@@ -187,6 +221,7 @@
     </select>
     <button id="rec-apply"   class="primary" style="padding:6px 14px;font-size:13px;" data-ko="검색"   data-en="Search">검색</button>
     <button id="rec-reset"              style="padding:6px 10px;font-size:13px;background:#fff;color:#111827;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;" data-ko="초기화" data-en="Reset">초기화</button>
+    <button id="rec-export-csv" title="현재 검색 조건으로 녹화 목록을 CSV 로 다운로드 (최대 10,000건)" style="padding:6px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;" data-ko="📥 CSV" data-en="📥 CSV">📥 CSV</button>
   </div>
 
   <div id="rec-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 8px 0;align-items:center;">
@@ -809,6 +844,98 @@ async function forceEndRoom(roomId) {
   }
 }
 
+// 💰 Phase 7: 저장소·비용 통계 로딩
+function _fmtBytes(b) {
+  if (!b || b < 0) return '0 B';
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  if (b < 1024*1024*1024) return (b/1024/1024).toFixed(1) + ' MB';
+  return (b/1024/1024/1024).toFixed(2) + ' GB';
+}
+function _fmtNum(n) { return (n || 0).toLocaleString(adminLang==='en'?'en-US':'ko-KR'); }
+
+async function loadStorageStats() {
+  const grid = document.getElementById('storage-grid');
+  if (!grid) return;
+  try {
+    const r = await fetch('/api/admin/stats/storage', { cache: 'no-store', credentials: 'include' });
+    const d = await r.json();
+    if (!d.ok) {
+      grid.innerHTML = '<div style="padding:14px;color:#dc2626;">로딩 실패: ' + (d.error || ('HTTP ' + r.status)) + '</div>';
+      return;
+    }
+    const cells = [];
+    function tile(label, value, sub, color) {
+      cells.push('<div style="padding:14px 16px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;">'
+        + '<div style="font-size:11px;color:#6b7280;letter-spacing:0.6px;text-transform:uppercase;">' + label + '</div>'
+        + '<div style="font-size:22px;font-weight:700;color:' + (color || '#111827') + ';margin-top:4px;">' + value + '</div>'
+        + (sub ? '<div style="font-size:11px;color:#9ca3af;margin-top:2px;">' + sub + '</div>' : '')
+        + '</div>');
+    }
+    const r1 = d.d1.recordings;
+    const a1 = d.d1.attendance;
+    tile('🎥 녹화 메타 (D1)',     _fmtNum(r1.count) + ' 건',  _fmtBytes(r1.total_size_bytes), '#3b82f6');
+    tile('📦 R2 객체 수',         _fmtNum(d.r2.object_count), d.r2.truncated ? '5,000+ truncated' : '실측', '#8b5cf6');
+    tile('📦 R2 총 용량',         _fmtBytes(d.r2.total_size_bytes), d.r2.configured ? '실측' : '바인딩 없음', '#8b5cf6');
+    tile('🧑‍🎓 출석 row',           _fmtNum(a1.count) + ' 건',  '활성 ' + Math.round((a1.total_active_ms||0)/60000) + '분 / 총 ' + Math.round((a1.total_session_ms||0)/60000) + '분', '#10b981');
+    tile('🚨 비상 이벤트',        _fmtNum(d.d1.emergency_events) + ' 건', '', '#ef4444');
+    tile('🎁 보상 발급',          _fmtNum(d.d1.rewards) + ' 건', '', '#f59e0b');
+    // 알림 큐 상태별 합계
+    const nq = d.d1.notification_queue_by_status || [];
+    const nqMap = {}; for (const row of nq) nqMap[row.status] = row.c;
+    tile('📣 알림 큐', _fmtNum((nqMap.pending||0) + (nqMap.sent||0) + (nqMap.failed||0) + (nqMap.discarded||0)) + ' 건',
+                       '대기 ' + (nqMap.pending||0) + ' / 발송 ' + (nqMap.sent||0) + ' / 실패 ' + (nqMap.failed||0), '#0ea5e9');
+    // 녹화 status 별
+    const rs = r1.by_status || [];
+    if (rs.length > 0) {
+      const txt = rs.map(x => x.status + ' ' + x.c).join(' · ');
+      tile('🎥 녹화 status 분포', _fmtNum(rs.reduce((s, x) => s + (x.c||0), 0)) + ' 건', txt, '#3b82f6');
+    }
+    grid.innerHTML = cells.join('');
+  } catch (e) {
+    grid.innerHTML = '<div style="padding:14px;color:#dc2626;">네트워크 에러: ' + e.message + '</div>';
+  }
+}
+
+// 저장소 통계 컨트롤
+(function bindStorageStats() {
+  const btn = document.getElementById('storage-refresh');
+  if (btn) btn.addEventListener('click', loadStorageStats);
+})();
+
+// 📥 Phase 6: CSV 다운로드 (window.location 으로 GET 다운로드 — Authorization 자동 첨부됨)
+function exportRecordingsCSV() {
+  const p = new URLSearchParams();
+  if (_recQuery.q)         p.set('q',         _recQuery.q);
+  if (_recQuery.date_from) p.set('date_from', _recQuery.date_from);
+  if (_recQuery.date_to)   p.set('date_to',   _recQuery.date_to);
+  if (_recQuery.status && _recQuery.status !== 'all') p.set('status', _recQuery.status);
+  const url = '/api/admin/export/recordings.csv' + (p.toString() ? '?' + p.toString() : '');
+  window.open(url, '_blank');
+}
+
+function exportAttendanceCSV() {
+  const p = new URLSearchParams();
+  const f = document.getElementById('export-att-from');
+  const t = document.getElementById('export-att-to');
+  const u = document.getElementById('export-att-user');
+  const r = document.getElementById('export-att-room');
+  if (f && f.value) p.set('date_from', f.value);
+  if (t && t.value) p.set('date_to',   t.value);
+  if (u && u.value.trim()) p.set('user_id', u.value.trim());
+  if (r && r.value.trim()) p.set('room_id', r.value.trim());
+  const url = '/api/admin/export/attendance.csv' + (p.toString() ? '?' + p.toString() : '');
+  window.open(url, '_blank');
+}
+
+// CSV 버튼 바인딩
+(function bindCsvExport() {
+  const recBtn = document.getElementById('rec-export-csv');
+  if (recBtn) recBtn.addEventListener('click', exportRecordingsCSV);
+  const attBtn = document.getElementById('export-att-btn');
+  if (attBtn) attBtn.addEventListener('click', exportAttendanceCSV);
+})();
+
 // 📣 Phase 5: 알림 큐 로딩 + 렌더 + 액션
 async function loadNotifications() {
   const _L = adminLang === 'en';
@@ -994,7 +1121,8 @@ document.getElementById('refresh').onclick = async function() {
       loadRecordings(),
       loadRetention(),
       loadActiveRooms(),
-      loadNotifications()
+      loadNotifications(),
+      loadStorageStats()
     ]);
   } catch(e) { console.warn('refresh error:', e); }
   btn.disabled = false;
@@ -1002,7 +1130,7 @@ document.getElementById('refresh').onclick = async function() {
 };
 document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications()]);
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats()]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>

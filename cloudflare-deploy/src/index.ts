@@ -191,6 +191,8 @@ export default {
         path === '/api/admin/notifications' ||
         path === '/api/admin/notifications/test' ||
         /^\/api\/admin\/notifications\/\d+$/.test(path) ||
+        path.startsWith('/api/admin/export/') ||
+        path.startsWith('/api/admin/stats/') ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -886,6 +888,10 @@ function isAdminPath(path: string, method: string): boolean {
   // 📣 알림 큐 (Phase 5) — 관리자 전용
   if (path === '/api/admin/notifications' || path === '/api/admin/notifications/test') return true;
   if (/^\/api\/admin\/notifications\/\d+$/.test(path)) return true;
+  // 📥 CSV 내보내기 (Phase 6) — 관리자 전용
+  if (path.startsWith('/api/admin/export/')) return true;
+  // 💰 저장소·비용 통계 (Phase 7) — 관리자 전용
+  if (path.startsWith('/api/admin/stats/')) return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;

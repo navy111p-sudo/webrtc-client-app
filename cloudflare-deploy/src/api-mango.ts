@@ -47,6 +47,38 @@ async function parseJsonBody(request: Request): Promise<any | null> {
 const invalidBody = (required: string[]): Response =>
   json({ ok: false, error: 'invalid_body', required }, 400);
 
+/**
+ * 📥 CSV 직렬화 (Phase 6)
+ *   - 행에 따옴표/콤마/개행 들어가면 RFC 4180 방식으로 escape
+ *   - 맨 앞에 UTF-8 BOM 붙여 Excel 한글 깨짐 방지
+ *   - columns 의 순서가 그대로 헤더·셀 매핑에 사용됨
+ */
+function toCSV(rows: any[], columns: { key: string; label?: string }[]): string {
+  const escape = (v: any): string => {
+    if (v === null || v === undefined) return '';
+    const s = typeof v === 'object' ? JSON.stringify(v) : String(v);
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const header = columns.map(c => escape(c.label || c.key)).join(',');
+  const body = rows.map(r => columns.map(c => escape(r[c.key])).join(',')).join('\n');
+  return '﻿' + header + '\n' + body + '\n';
+}
+
+/**
+ * CSV 응답 헬퍼 — 다운로드 헤더 포함.
+ */
+function csvResponse(filename: string, csv: string): Response {
+  return new Response(csv, {
+    status: 200,
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-store',
+      'Access-Control-Allow-Origin': '*'
+    }
+  });
+}
+
 // ========================================================================
 // 📣 알림 큐 (Phase 5) — Worker 는 적재만 하고, 발송은 외부 도구가 폴링.
 //   - 카카오톡 직접 발송은 후속 Phase (KAKAO_ACCESS_TOKEN 시크릿 도입) 에서.
@@ -503,6 +535,202 @@ export async function handleMangoApi(
         `UPDATE notification_queue SET status = ?, sent_at = ?, error = ? WHERE id = ?`
       ).bind(b.status, sentAt, b.error || null, id).run();
       return json({ ok: true, id, status: b.status, sent_at: sentAt });
+    }
+
+    // ===== 📥 CSV 내보내기 (Phase 6) =====
+    //   GET /api/admin/export/recordings.csv?q=&date_from=&date_to=&status=
+    //   GET /api/admin/export/attendance.csv?date_from=&date_to=&user_id=&room_id=
+    //   - 기존 /api/recordings 검색 파라미터 동일하게 받음
+    //   - LIMIT 10000 (실무 용도). 더 크면 페이징 필요하지만 일반 사례에선 충분.
+    if (method === 'GET' && path === '/api/admin/export/recordings.csv') {
+      const qSearch  = (url.searchParams.get('q') || '').trim();
+      const dateFrom = url.searchParams.get('date_from');
+      const dateTo   = url.searchParams.get('date_to');
+      const statusF  = url.searchParams.get('status');
+      const where: string[] = [];
+      const binds: any[] = [];
+      if (qSearch) {
+        where.push("(r.room_id LIKE ? OR COALESCE(r.teacher_name,'') LIKE ? OR COALESCE(r.teacher_id,'') LIKE ?)");
+        const p = `%${qSearch}%`;
+        binds.push(p, p, p);
+      }
+      if (dateFrom) {
+        const ms = Date.parse(dateFrom + 'T00:00:00+09:00');
+        if (!isNaN(ms)) { where.push('r.started_at >= ?'); binds.push(ms); }
+      }
+      if (dateTo) {
+        const ms = Date.parse(dateTo + 'T23:59:59+09:00');
+        if (!isNaN(ms)) { where.push('r.started_at <= ?'); binds.push(ms); }
+      }
+      if (statusF && statusF !== 'all') { where.push('r.status = ?'); binds.push(statusF); }
+      const whereSQL = where.length ? 'WHERE ' + where.join(' AND ') : '';
+      const sql = `SELECT r.id, r.room_id, r.teacher_id, r.teacher_name, r.started_at, r.ended_at,
+                          r.duration_ms, r.size_bytes, r.status, r.storage,
+                          r.participant_names, r.consented_user_ids
+                   FROM recordings r ${whereSQL}
+                   ORDER BY r.started_at DESC LIMIT 10000`;
+      const rs = binds.length
+        ? await env.DB.prepare(sql).bind(...binds).all()
+        : await env.DB.prepare(sql).all();
+      // ms epoch → ISO 문자열 변환 (CSV 가독성)
+      const rows = ((rs.results || []) as any[]).map(r => ({
+        ...r,
+        started_at_iso: r.started_at ? new Date(r.started_at).toISOString() : '',
+        ended_at_iso:   r.ended_at   ? new Date(r.ended_at).toISOString()   : '',
+        duration_sec:   r.duration_ms ? Math.round(r.duration_ms / 1000) : 0,
+        size_mb:        r.size_bytes  ? Math.round(r.size_bytes / 1024 / 1024 * 10) / 10 : 0
+      }));
+      const csv = toCSV(rows, [
+        { key: 'id',                label: 'id' },
+        { key: 'room_id',           label: 'room_id' },
+        { key: 'teacher_id',        label: 'teacher_id' },
+        { key: 'teacher_name',      label: 'teacher_name' },
+        { key: 'started_at_iso',    label: 'started_at' },
+        { key: 'ended_at_iso',      label: 'ended_at' },
+        { key: 'duration_sec',      label: 'duration_sec' },
+        { key: 'size_mb',           label: 'size_mb' },
+        { key: 'status',            label: 'status' },
+        { key: 'storage',           label: 'storage' },
+        { key: 'participant_names', label: 'participant_names' },
+        { key: 'consented_user_ids',label: 'consented_user_ids' }
+      ]);
+      const fname = 'recordings_' + new Date().toISOString().slice(0, 10) + '.csv';
+      return csvResponse(fname, csv);
+    }
+
+    if (method === 'GET' && path === '/api/admin/export/attendance.csv') {
+      const dateFrom = url.searchParams.get('date_from');
+      const dateTo   = url.searchParams.get('date_to');
+      const userId   = url.searchParams.get('user_id');
+      const roomId   = url.searchParams.get('room_id');
+      const where: string[] = [];
+      const binds: any[] = [];
+      if (dateFrom) {
+        const ms = Date.parse(dateFrom + 'T00:00:00+09:00');
+        if (!isNaN(ms)) { where.push('a.joined_at >= ?'); binds.push(ms); }
+      }
+      if (dateTo) {
+        const ms = Date.parse(dateTo + 'T23:59:59+09:00');
+        if (!isNaN(ms)) { where.push('a.joined_at <= ?'); binds.push(ms); }
+      }
+      if (userId) { where.push('a.user_id = ?'); binds.push(userId); }
+      if (roomId) { where.push('a.room_id = ?'); binds.push(roomId); }
+      const whereSQL = where.length ? 'WHERE ' + where.join(' AND ') : '';
+      const sql = `SELECT a.id, a.room_id, a.user_id, a.username, a.role,
+                          a.joined_at, a.left_at, a.status, a.date,
+                          a.total_session_ms, a.total_active_ms, a.disconnect_count,
+                          a.gaze_score, a.gaze_samples, a.gaze_forward_samples
+                   FROM attendance a ${whereSQL}
+                   ORDER BY a.joined_at DESC LIMIT 10000`;
+      const rs = binds.length
+        ? await env.DB.prepare(sql).bind(...binds).all()
+        : await env.DB.prepare(sql).all();
+      const rows = ((rs.results || []) as any[]).map(a => ({
+        ...a,
+        joined_at_iso: a.joined_at ? new Date(a.joined_at).toISOString() : '',
+        left_at_iso:   a.left_at   ? new Date(a.left_at).toISOString()   : '',
+        active_pct:    a.total_session_ms > 0 ? Math.round((a.total_active_ms / a.total_session_ms) * 1000) / 10 : 0,
+        session_min:   a.total_session_ms ? Math.round(a.total_session_ms / 60000 * 10) / 10 : 0,
+        active_min:    a.total_active_ms  ? Math.round(a.total_active_ms  / 60000 * 10) / 10 : 0
+      }));
+      const csv = toCSV(rows, [
+        { key: 'id',                   label: 'id' },
+        { key: 'date',                 label: 'date' },
+        { key: 'room_id',              label: 'room_id' },
+        { key: 'user_id',              label: 'user_id' },
+        { key: 'username',             label: 'username' },
+        { key: 'role',                 label: 'role' },
+        { key: 'joined_at_iso',        label: 'joined_at' },
+        { key: 'left_at_iso',          label: 'left_at' },
+        { key: 'status',               label: 'status' },
+        { key: 'session_min',          label: 'session_min' },
+        { key: 'active_min',           label: 'active_min' },
+        { key: 'active_pct',           label: 'active_pct' },
+        { key: 'disconnect_count',     label: 'disconnect_count' },
+        { key: 'gaze_score',           label: 'gaze_score' },
+        { key: 'gaze_samples',         label: 'gaze_samples' },
+        { key: 'gaze_forward_samples', label: 'gaze_forward_samples' }
+      ]);
+      const fname = 'attendance_' + new Date().toISOString().slice(0, 10) + '.csv';
+      return csvResponse(fname, csv);
+    }
+
+    // ===== 💰 저장소·비용 통계 (Phase 7) =====
+    //   GET /api/admin/stats/storage
+    //   - D1 테이블별 row 수 + 녹화 총 size_bytes
+    //   - R2 객체 수·총 size (list 페이지 최대 5장 = 5000 객체)
+    //   - KV 는 list() 가 일일 한도 소비라 측정 제외 (dashboard 안내)
+    if (method === 'GET' && path === '/api/admin/stats/storage') {
+      const started = Date.now();
+
+      // D1 비즈니스 메트릭 — 병렬 조회. notification_queue 는 미생성 환경에서 fail 가능 → catch
+      const safe = (p: Promise<any>) => p.catch(() => null);
+      const [recCount, recSize, recByStatus, attCount, attTotals, emergCount, rewardCount, notifByStatus] = await Promise.all([
+        safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM recordings`).first()),
+        safe(env.DB.prepare(`SELECT COALESCE(SUM(size_bytes), 0) AS total FROM recordings`).first()),
+        safe(env.DB.prepare(`SELECT status, COUNT(*) AS c FROM recordings GROUP BY status`).all()),
+        safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM attendance`).first()),
+        safe(env.DB.prepare(`SELECT COALESCE(SUM(total_session_ms), 0) AS total_session, COALESCE(SUM(total_active_ms), 0) AS total_active FROM attendance`).first()),
+        safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM emergency_events`).first()),
+        safe(env.DB.prepare(`SELECT COUNT(*) AS c FROM rewards`).first()),
+        safe(env.DB.prepare(`SELECT status, COUNT(*) AS c FROM notification_queue GROUP BY status`).all())
+      ]);
+
+      // R2 객체 카운트 (최대 5,000 개) — 더 크면 truncated=true 로 알림
+      let r2Count = 0;
+      let r2Size = 0;
+      let r2Truncated = false;
+      const envAny = env as any;
+      if (envAny.RECORDINGS) {
+        try {
+          let cursor: string | undefined = undefined;
+          const MAX_PAGES = 5;
+          for (let i = 0; i < MAX_PAGES; i++) {
+            const ls: any = await envAny.RECORDINGS.list({ limit: 1000, cursor });
+            for (const obj of (ls.objects || [])) {
+              r2Count++;
+              r2Size += obj.size || 0;
+            }
+            if (ls.truncated && ls.cursor) {
+              cursor = ls.cursor;
+              if (i === MAX_PAGES - 1) r2Truncated = true;
+            } else { break; }
+          }
+        } catch (e) {
+          // 측정 실패해도 D1 메트릭은 반환
+        }
+      }
+
+      return json({
+        ok: true,
+        timestamp: Date.now(),
+        latencyMs: Date.now() - started,
+        d1: {
+          recordings: {
+            count: (recCount as any)?.c || 0,
+            total_size_bytes: (recSize as any)?.total || 0,
+            by_status: (recByStatus as any)?.results || []
+          },
+          attendance: {
+            count: (attCount as any)?.c || 0,
+            total_session_ms: (attTotals as any)?.total_session || 0,
+            total_active_ms:  (attTotals as any)?.total_active  || 0
+          },
+          emergency_events: (emergCount as any)?.c || 0,
+          rewards: (rewardCount as any)?.c || 0,
+          notification_queue_by_status: (notifByStatus as any)?.results || []
+        },
+        r2: {
+          configured: !!envAny.RECORDINGS,
+          object_count: r2Count,
+          total_size_bytes: r2Size,
+          truncated: r2Truncated,
+          note: r2Truncated ? '5,000 객체 초과 — 정확한 사용량은 Cloudflare dashboard 에서 확인' : null
+        },
+        kv: {
+          note: 'KV 사용량(list/get/put 호출 수) 은 Cloudflare dashboard 에서 확인. list() 호출 자체가 일일 한도 소비라 셀프 측정 제외.'
+        }
+      });
     }
 
     // ===== 관리자 개입: 녹화 상태 변경 (Phase 4) =====
