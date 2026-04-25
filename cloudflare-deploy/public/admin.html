@@ -194,13 +194,16 @@
     <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;" title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
   </div>
 
-  <!-- 데이터 히트맵 표 (각 헤더 클릭으로 정렬: ▼ 내림 → ▲ 오름 → 해제) -->
+  <!-- 데이터 히트맵 표 (헤더 클릭=1차 정렬, Shift+클릭=2/3차 추가) -->
   <style>
-    .pr-th { cursor:pointer; user-select:none; position:relative; padding-right:18px; }
+    .pr-th { cursor:pointer; user-select:none; position:relative; padding-right:24px; }
     .pr-th:hover { background:#f3f4f6; }
-    .pr-th .pr-arrow { position:absolute; right:6px; font-size:10px; color:#9ca3af; }
-    .pr-th.pr-active .pr-arrow { color:#3b82f6; font-weight:700; }
+    .pr-th .pr-arrow { position:absolute; right:6px; font-size:10px; color:#9ca3af; font-weight:700; }
+    .pr-th.pr-active { background:#eff6ff; }
+    .pr-th.pr-active .pr-arrow { color:#1e40af; }
   </style>
+  <div id="payroll-sort-status" style="font-size:12px;margin:6px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"></div>
+  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">💡 헤더 클릭 = 1차 정렬 토글 · <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:3px;padding:1px 6px;font-size:10px;">Shift</kbd> + 클릭 = 2차/3차 정렬 추가</div>
   <div style="overflow-x:auto;">
     <table style="min-width:1100px;">
       <thead>
@@ -1084,14 +1087,24 @@ function heatCell(score) {
 
 function fmtNum(n) { return (n || 0).toLocaleString(adminLang==='en'?'en-US':'ko-KR'); }
 
-// 정렬 상태: key = 컬럼키 (또는 null), dir = 'desc' | 'asc'
-let _payrollSort = { key: null, dir: 'desc' };
+// 정렬 상태: 다중 키 지원. 배열 순서대로 1차, 2차, 3차... 적용
+//   각 항목 = { key: 'monthly_salary_php', dir: 'desc' }
+let _payrollSort = [];
 let _lastPayrollContext = { year: null, month: null };
 
 // 등급 정렬 우선순위 (높을수록 위)
 const _GRADE_RANK = { '최우수': 4, '매우 우수': 3, '우수': 2, '개선 요망': 1, '미평가': 0 };
 
-// row 에서 정렬 키의 값을 꺼내는 헬퍼 (evaluation 안에 있는 점수 5개도 평탄화)
+// 헤더 라벨 (정렬 상태 칩에 표시)
+const _SORT_LABELS = {
+  teacher_name: '교사', status: '근무', years: '연차',
+  score_instruction: '수업', score_retention: '유지', score_punctuality: '근태',
+  score_admin: '행정', score_contribution: '조직',
+  weighted_total: '가중점수', grade: '등급',
+  class_count: '수업수', rate_per_10min_php: '10분단가',
+  monthly_salary_php: '월급(PHP)', monthly_salary_krw: 'KRW',
+};
+
 function _payrollFieldValue(row, key) {
   if (!row) return null;
   if (['score_instruction','score_retention','score_punctuality','score_admin','score_contribution'].includes(key)) {
@@ -1101,10 +1114,9 @@ function _payrollFieldValue(row, key) {
   return row[key];
 }
 
-function _comparePayroll(a, b, key, dir) {
+function _comparePayrollSingle(a, b, key, dir) {
   const va = _payrollFieldValue(a, key);
   const vb = _payrollFieldValue(b, key);
-  // null/undefined 는 항상 끝으로
   const aNull = va == null || va === '' || (typeof va === 'number' && isNaN(va));
   const bNull = vb == null || vb === '' || (typeof vb === 'number' && isNaN(vb));
   if (aNull && bNull) return 0;
@@ -1116,24 +1128,58 @@ function _comparePayroll(a, b, key, dir) {
   return dir === 'asc' ? cmp : -cmp;
 }
 
+// 다중 키 비교 — 1차 비교에서 동률이면 2차, 그 다음 3차...
+function _comparePayrollMulti(a, b) {
+  for (const { key, dir } of _payrollSort) {
+    const cmp = _comparePayrollSingle(a, b, key, dir);
+    if (cmp !== 0) return cmp;
+  }
+  return 0;
+}
+
+function clearPayrollSort() {
+  _payrollSort = [];
+  renderPayrollTable();
+}
+
 function _updateSortArrows() {
   document.querySelectorAll('#payroll-thead .pr-th').forEach(th => {
     const arrow = th.querySelector('.pr-arrow');
     th.classList.remove('pr-active');
     if (arrow) arrow.textContent = '↕';
-    if (_payrollSort.key && th.getAttribute('data-sort-key') === _payrollSort.key) {
+    const key = th.getAttribute('data-sort-key');
+    const idx = _payrollSort.findIndex(s => s.key === key);
+    if (idx !== -1) {
       th.classList.add('pr-active');
-      if (arrow) arrow.textContent = _payrollSort.dir === 'asc' ? '▲' : '▼';
+      const sym = _payrollSort[idx].dir === 'asc' ? '▲' : '▼';
+      // 정렬 키가 둘 이상일 때만 우선순위 번호 표시
+      const priority = _payrollSort.length > 1 ? String(idx + 1) : '';
+      if (arrow) arrow.textContent = sym + priority;
     }
   });
+  // 정렬 상태 칩 + 모두 해제 버튼
+  const statusEl = document.getElementById('payroll-sort-status');
+  if (statusEl) {
+    if (_payrollSort.length === 0) {
+      statusEl.innerHTML = '';
+    } else {
+      const chips = _payrollSort.map((s, i) => {
+        const label = _SORT_LABELS[s.key] || s.key;
+        const arrow = s.dir === 'asc' ? '▲' : '▼';
+        return `<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-weight:600;">${i + 1}. ${label} ${arrow}</span>`;
+      }).join('');
+      statusEl.innerHTML = '<span style="color:#6b7280;">정렬:</span>' + chips
+        + '<button onclick="clearPayrollSort()" style="background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#6b7280;margin-left:4px;">✕ 모두 해제</button>';
+    }
+  }
 }
 
 function renderPayrollTable() {
   const tb = document.getElementById('payroll-table');
   if (!tb) return;
   const rows = _lastPayrollRows ? _lastPayrollRows.slice() : [];
-  if (_payrollSort.key) {
-    rows.sort((a, b) => _comparePayroll(a, b, _payrollSort.key, _payrollSort.dir));
+  if (_payrollSort.length > 0) {
+    rows.sort(_comparePayrollMulti);
   }
   if (rows.length === 0) {
     tb.innerHTML = '<tr><td colspan="14" class="empty">활성 강사가 없습니다. 위에서 강사를 먼저 등록하거나 🌱 시드 버튼을 사용하세요.</td></tr>';
@@ -1167,14 +1213,32 @@ function renderPayrollTable() {
   _updateSortArrows();
 }
 
-// 헤더 클릭 → 정렬 토글 (없음 → 내림 → 오름 → 없음)
-function onPayrollHeaderClick(key) {
-  if (_payrollSort.key !== key) {
-    _payrollSort = { key, dir: 'desc' };
-  } else if (_payrollSort.dir === 'desc') {
-    _payrollSort = { key, dir: 'asc' };
+// 헤더 클릭 → 정렬 토글
+//   일반 클릭     : 해당 키만 1차 정렬 (다른 키 모두 제거). 같은 키면 desc → asc → 해제 순환
+//   Shift + 클릭  : 보조 정렬 키 추가/토글. 같은 키 누르면 desc → asc → 그 키만 제거
+function onPayrollHeaderClick(key, shiftKey) {
+  const idx = _payrollSort.findIndex(s => s.key === key);
+  if (shiftKey) {
+    // 다중 정렬 — 기존 키 유지하면서 추가/토글
+    if (idx === -1) {
+      _payrollSort.push({ key, dir: 'desc' });
+    } else if (_payrollSort[idx].dir === 'desc') {
+      _payrollSort[idx].dir = 'asc';
+    } else {
+      _payrollSort.splice(idx, 1); // 그 키만 제거
+    }
   } else {
-    _payrollSort = { key: null, dir: 'desc' };
+    // 단일 정렬 — 다른 키는 모두 정리
+    if (_payrollSort.length === 1 && _payrollSort[0].key === key) {
+      // 이미 단일 정렬 상태 → 토글 사이클
+      if (_payrollSort[0].dir === 'desc') {
+        _payrollSort[0].dir = 'asc';
+      } else {
+        _payrollSort = [];
+      }
+    } else {
+      _payrollSort = [{ key, dir: 'desc' }];
+    }
   }
   renderPayrollTable();
 }
@@ -1360,13 +1424,13 @@ async function seedDemoTeachers() {
   if (e('t-new-btn'))            e('t-new-btn').addEventListener('click', registerTeacher);
   if (e('ev-cancel-btn'))        e('ev-cancel-btn').addEventListener('click', closeEvalModal);
   if (e('ev-save-btn'))          e('ev-save-btn').addEventListener('click', saveEvalAndClasses);
-  // 테이블 헤더 클릭 → 정렬 토글 (이벤트 위임)
+  // 테이블 헤더 클릭 → 정렬 토글 (Shift+클릭 = 다중 정렬)
   if (e('payroll-thead')) {
     e('payroll-thead').addEventListener('click', (ev) => {
       const th = ev.target.closest('.pr-th');
       if (!th) return;
       const key = th.getAttribute('data-sort-key');
-      if (key) onPayrollHeaderClick(key);
+      if (key) onPayrollHeaderClick(key, ev.shiftKey);
     });
   }
   // 모달 배경 클릭으로 닫기
