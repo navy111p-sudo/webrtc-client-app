@@ -337,6 +337,51 @@ export async function handleMangoApi(
       });
     }
 
+    // ===== 관리자 개입: 수업 강제 종료 (Phase 4) =====
+    //   POST /api/admin/room/:roomId/force-end
+    //     - 해당 room 의 VideoCallRoom DO 에 /force-end 를 위임
+    //     - DO 가 모든 연결에 force_end 브로드캐스트 + close
+    if (method === 'POST' && /^\/api\/admin\/room\/[^/]+\/force-end$/.test(path)) {
+      const m = path.match(/^\/api\/admin\/room\/([^/]+)\/force-end$/);
+      const roomId = m ? decodeURIComponent(m[1]) : '';
+      if (!roomId) return invalidBody(['room_id(path)']);
+      const envAny = env as any;
+      if (!envAny.VIDEO_CALL_ROOM) {
+        return json({ ok: false, error: 'VIDEO_CALL_ROOM binding missing' }, 500);
+      }
+      const doId = envAny.VIDEO_CALL_ROOM.idFromName(roomId);
+      const stub = envAny.VIDEO_CALL_ROOM.get(doId);
+      // body 로 reason 전달 가능 — 없으면 기본 문구
+      const b = await parseJsonBody(request);
+      const reason = (b && typeof b.reason === 'string' && b.reason.trim()) ? b.reason.trim() : '관리자가 수업을 종료했습니다.';
+      const resp = await stub.fetch('http://do/force-end?reason=' + encodeURIComponent(reason), { method: 'POST' });
+      const body = await resp.text();
+      return new Response(body, {
+        status: resp.status,
+        headers: {
+          'Content-Type': resp.headers.get('Content-Type') || 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      });
+    }
+
+    // ===== 관리자 개입: 녹화 상태 변경 (Phase 4) =====
+    //   PATCH /api/recordings/:id/status  body: { status: 'ended' | 'deleted' }
+    //     - 기존 DELETE /api/recordings/:id 는 deleted 로만 변경 가능 → 복원(ended) 을 이걸로 처리
+    if (method === 'PATCH' && /^\/api\/recordings\/\d+\/status$/.test(path)) {
+      const m = path.match(/^\/api\/recordings\/(\d+)\/status$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      if (!id) return invalidBody(['id(path)']);
+      const b = await parseJsonBody(request);
+      if (!b || !b.status) return invalidBody(['status']);
+      const allowed = new Set(['ended', 'deleted', 'aborted']);
+      if (!allowed.has(b.status)) {
+        return json({ ok: false, error: 'invalid_status', allowed: Array.from(allowed) }, 400);
+      }
+      await env.DB.prepare(`UPDATE recordings SET status = ? WHERE id = ?`).bind(b.status, id).run();
+      return json({ ok: true, id, status: b.status });
+    }
+
     // ===== 학생별 드릴다운 (Phase 2) =====
     //   GET /api/admin/student/:user_id?days=30
     //   - 프로필 (최초/마지막 접속, 전체 세션 수)

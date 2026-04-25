@@ -187,6 +187,7 @@ export default {
         path.startsWith('/api/consents') ||
         path.startsWith('/api/recordings') ||
         path.startsWith('/api/admin/student/') ||
+        path.startsWith('/api/admin/room/') ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -875,6 +876,10 @@ function isAdminPath(path: string, method: string): boolean {
   // 🎓 /admin/student 드릴다운 페이지 + 그 전용 API (관리자만 접근)
   if (path === '/admin/student' || path === '/admin/student/' || path === '/admin/student.html') return true;
   if (path.startsWith('/api/admin/student/')) return true;
+  // 🛑 관리자 개입 액션 (Phase 4) — 강제 종료 등 쓰기 작업
+  if (path.startsWith('/api/admin/room/')) return true;
+  // PATCH /api/recordings/{id}/status 도 관리자 전용 (복원·삭제 상태 변경)
+  if (method === 'PATCH' && /^\/api\/recordings\/\d+\/status$/.test(path)) return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;
@@ -999,9 +1004,12 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
   }
 
   // --- KV: PDF_STORE ----------------------------------------------
+  // ⚠ list() 는 일 1,000 무료 한도. 셀프 진단이 10초마다 호출 시 즉시 초과됨.
+  //    get('__probe__') 는 read 한도(일 100,000)로 넘어가므로 100배 여유.
+  //    없는 키는 null 반환(에러 아님), 실제 바인딩 연결 불량이면 throw.
   try {
     const t0 = Date.now();
-    await env.PDF_STORE.list({ limit: 1 });
+    await env.PDF_STORE.get('__health_probe__');
     bindings.kv_pdf = { status: 'ok', latencyMs: Date.now() - t0 };
   } catch (e: any) {
     bindings.kv_pdf = { status: 'error', error: String(e?.message || e) };
@@ -1010,7 +1018,7 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
   // --- KV: SESSION_STATE ------------------------------------------
   try {
     const t0 = Date.now();
-    await env.SESSION_STATE.list({ limit: 1 });
+    await env.SESSION_STATE.get('__health_probe__');
     bindings.kv_session = { status: 'ok', latencyMs: Date.now() - t0 };
   } catch (e: any) {
     bindings.kv_session = { status: 'error', error: String(e?.message || e) };

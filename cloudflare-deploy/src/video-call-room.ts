@@ -59,6 +59,25 @@ export class VideoCallRoom {
       );
     }
 
+    // 🛑 관리자 강제 종료 HTTP 핸들러 (Phase 4)
+    //   - 모든 연결에 { type: 'force_end', reason, by: 'admin' } 브로드캐스트
+    //   - 이후 우아하게 close(1000). 클라이언트는 이 메시지를 받고 방을 떠나면 됨.
+    if (url.pathname === '/force-end' && request.method === 'POST') {
+      const reason = url.searchParams.get('reason') || '관리자가 수업을 종료했습니다.';
+      const msg = JSON.stringify({ type: 'force_end', reason, by: 'admin', at: Date.now() });
+      let notified = 0;
+      for (const conn of this.connections.values()) {
+        try { conn.ws.send(msg); notified++; } catch {}
+      }
+      for (const conn of this.connections.values()) {
+        try { conn.ws.close(1000, 'admin force end'); } catch {}
+      }
+      return new Response(
+        JSON.stringify({ ok: true, roomId: this.roomId, notified, reason }),
+        { status: 200, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return new Response('Invalid request', { status: 400 });
   }
 

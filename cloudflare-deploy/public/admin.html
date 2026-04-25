@@ -104,7 +104,7 @@
 <div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title" data-ko="🔴 실시간 수업 현황" data-en="🔴 Live Classes">🔴 실시간 수업 현황 <button id="rooms-refresh" style="float:right;padding:4px 10px;font-size:12px;" data-ko="새로고침" data-en="Refresh">새로고침</button></div>
   <table>
-    <thead><tr><th data-ko="방 ID" data-en="Room ID">방 ID</th><th data-ko="참가자 수" data-en="Users">참가자 수</th><th data-ko="참가자" data-en="Participants">참가자</th><th>PDF</th><th data-ko="영상" data-en="Video">영상</th><th data-ko="관찰" data-en="Observe">관찰</th></tr></thead>
+    <thead><tr><th data-ko="방 ID" data-en="Room ID">방 ID</th><th data-ko="참가자 수" data-en="Users">참가자 수</th><th data-ko="참가자" data-en="Participants">참가자</th><th>PDF</th><th data-ko="영상" data-en="Video">영상</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
     <tbody id="active-rooms-table"><tr><td colspan="6" class="empty" data-ko="로딩 중..." data-en="Loading...">로딩 중...</td></tr></tbody>
   </table>
 </div>
@@ -405,6 +405,7 @@ async function loadRecordings() {
     const matchedBlob = matchedKey ? blobByKey.get(matchedKey) : null;
 
     rows.push({
+      id: r.id,         // D1 recordings.id — Phase 4 삭제/복원 PATCH 에 필요
       source,           // 'both' | 'd1only' | 'orphan'
       startedAt: r.started_at || 0,
       room_id: r.room_id,
@@ -532,6 +533,17 @@ function renderRecordingsTable() {
     } else {
       playBtn = '<span style="color:#94a3b8;font-size:11px;">'+(adminLang==='en'?'Pending upload':'업로드 대기')+'</span>';
     }
+
+    // 🗑️ Phase 4: 삭제/복원 버튼 (D1 id 가 있는 row 에만 — orphan 은 제외)
+    let actionBtn = '';
+    if (r.id) {
+      if (r.status === 'deleted') {
+        actionBtn = '<button onclick="setRecordingStatus(' + r.id + ', \'ended\')" title="' + (adminLang==='en'?'Restore this recording':'삭제된 녹화를 복원합니다') + '" style="background:#10b981;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;margin-left:4px;">↩ ' + (adminLang==='en'?'Restore':'복원') + '</button>';
+      } else if (r.status !== 'recording') {
+        actionBtn = '<button onclick="setRecordingStatus(' + r.id + ', \'deleted\')" title="' + (adminLang==='en'?'Soft-delete this recording (reversible)':'녹화를 삭제 처리합니다 (복원 가능)') + '" style="background:#dc2626;color:#fff;padding:3px 10px;border-radius:6px;font-size:11px;cursor:pointer;border:none;margin-left:4px;">🗑 ' + (adminLang==='en'?'Delete':'삭제') + '</button>';
+      }
+    }
+    playBtn = playBtn + actionBtn;
 
     const roomCell   = r.room_id || '-';
     const teacherCell = r.teacher || '-';
@@ -706,13 +718,17 @@ async function loadActiveRooms() {
     tb.innerHTML = rooms.map(room => {
       const userNames = (room.users || []).map(u => u.username).join(', ') || '-';
       const _L = adminLang==='en';
+      const roomIdJs = JSON.stringify(room.roomId);
       return `<tr>
         <td>${room.roomId}</td>
         <td>${room.userCount}${_L?'':' 명'}${room.observerCount > 0 ? ' <span style="color:#f59e0b;font-size:11px;">('+ (_L?'obs ':'관찰 ') + room.observerCount+')</span>' : ''}</td>
         <td>${userNames}</td>
         <td>${room.hasPdf ? '<span class="badge ok">'+(_L?'Sharing':'공유중')+'</span>' : '-'}</td>
         <td>${room.hasVideo ? '<span class="badge ok">'+(_L?'Sharing':'공유중')+'</span>' : '-'}</td>
-        <td><button onclick="observeRoom('${room.roomId}')" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;">🔍 ${_L?'Observe':'관찰'}</button></td>
+        <td style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button onclick="observeRoom(${roomIdJs})" style="background:#f59e0b;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;">🔍 ${_L?'Observe':'관찰'}</button>
+          <button onclick="forceEndRoom(${roomIdJs})" title="${_L?'Force end this class (disconnects all participants)':'이 수업을 강제 종료합니다 (모든 참가자 연결 해제)'}" style="background:#dc2626;color:#fff;padding:4px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;border:none;">🛑 ${_L?'Force End':'강제 종료'}</button>
+        </td>
       </tr>`;
     }).join('');
   } catch(e) {
@@ -724,6 +740,62 @@ function observeRoom(roomId) {
   // 메인 화상통화 페이지를 관찰자 모드로 열기
   const url = window.location.origin + '/?observe=' + encodeURIComponent(roomId);
   window.open(url, '_blank', 'width=1200,height=800');
+}
+
+// 🛑 관리자 강제 종료 (Phase 4)
+//   - 2단계 확인: confirm → 사유 입력(선택) → API 호출
+//   - API: POST /api/admin/room/:roomId/force-end  body: { reason? }
+async function forceEndRoom(roomId) {
+  const _L = adminLang==='en';
+  const confirmMsg = _L
+    ? `Force-end room "${roomId}"? All participants will be disconnected immediately.`
+    : `방 "${roomId}" 을 강제 종료하시겠습니까?\n모든 참가자 연결이 즉시 해제됩니다.`;
+  if (!confirm(confirmMsg)) return;
+  const reason = (prompt(_L ? 'Reason (optional, shown to participants):' : '종료 사유 (선택 — 참가자에게 표시됨):', '') || '').trim();
+  try {
+    const r = await fetch('/api/admin/room/' + encodeURIComponent(roomId) + '/force-end', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(reason ? { reason } : {})
+    });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok || body.ok === false) {
+      alert((_L ? 'Failed: ' : '실패: ') + (body.error || ('HTTP ' + r.status)));
+      return;
+    }
+    alert((_L ? `Ended. Notified ${body.notified || 0} participants.` : `강제 종료 완료. ${body.notified || 0}명에게 알림 전송.`));
+    loadActiveRooms();
+  } catch (e) {
+    alert((_L ? 'Network error: ' : '네트워크 에러: ') + e.message);
+  }
+}
+
+// 🗑️ 녹화 상태 변경 (Phase 4) — 삭제/복원 공용
+async function setRecordingStatus(id, nextStatus) {
+  const _L = adminLang==='en';
+  const label = nextStatus === 'deleted' ? (_L?'delete':'삭제')
+              : nextStatus === 'ended'   ? (_L?'restore':'복원')
+              : nextStatus;
+  const confirmMsg = _L ? `Change recording #${id} status to "${nextStatus}"?`
+                        : `녹화 #${id} 의 상태를 "${nextStatus}" (으)로 변경하시겠습니까?`;
+  if (!confirm(confirmMsg)) return;
+  try {
+    const r = await fetch('/api/recordings/' + encodeURIComponent(id) + '/status', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status: nextStatus })
+    });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok || body.ok === false) {
+      alert((_L ? 'Failed: ' : '실패: ') + (body.error || ('HTTP ' + r.status)));
+      return;
+    }
+    loadRecordings();
+  } catch (e) {
+    alert((_L ? 'Network error: ' : '네트워크 에러: ') + e.message);
+  }
 }
 
 // ── 녹화 재생 ──

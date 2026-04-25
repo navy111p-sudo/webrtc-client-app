@@ -179,6 +179,9 @@ const ENDPOINTS = [
   { path: '/api/video-call/pdf-list',     method: 'GET',  expect: '2xx',        label: 'PDF List',          body: null },
   { path: '/api/kakao-id/teachers',       method: 'GET',  expect: '2xx',        label: 'KakaoID Teachers',  body: null },
   { path: '/api/admin/student/__probe__', method: 'GET',  expect: '2xx-or-4xx', label: 'Student Drilldown', body: null },
+  // Phase 4: 관리자 개입 API (실제 수업은 건드리지 않도록 빈 body POST → 400 기대)
+  { path: '/api/admin/room/__probe__/force-end', method: 'POST',  expect: '2xx-or-4xx', label: 'Force-End Room', body: '{}' },
+  { path: '/api/recordings/0/status',            method: 'PATCH', expect: '2xx-or-4xx', label: 'Rec Status PATCH', body: '{}' },
   // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
   //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
   { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}' },
@@ -198,17 +201,19 @@ function classify(status, expect, errored) {
   // 405 = 라우트 존재 안 함 — 최우선 레드 (gaze-score 사고 재현 탐지)
   if (status === 405) return { color: 'red', badge: '🔴', note: 'Method Not Allowed (라우트 누락?)' };
   if (status >= 500)  return { color: 'red', badge: '🔴', note: 'server error' };
-  if (status === 404) return { color: 'yellow', badge: '🟡', note: 'Not Found (경로 확인)' };
-  if (expect === '2xx') {
-    if (status >= 200 && status < 300) return { color: 'green', badge: '🟢', note: 'ok' };
-    return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
-  }
+  // expect 기반 분류를 404 단정보다 먼저 처리 — "2xx-or-4xx" 는 4xx(404 포함) 도 OK.
   if (expect === '2xx-or-4xx') {
     if (status >= 200 && status < 500) return { color: 'green', badge: '🟢', note: 'route alive (' + status + ')' };
     return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
   }
   if (expect === '4xx') {
     if (status >= 400 && status < 500) return { color: 'green', badge: '🟢', note: 'validation ok' };
+    return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
+  }
+  // expect === '2xx' 는 404 를 진짜 문제로 봐야 함 → 이쪽 분기에서 404 yellow 로.
+  if (status === 404) return { color: 'yellow', badge: '🟡', note: 'Not Found (경로 확인)' };
+  if (expect === '2xx') {
+    if (status >= 200 && status < 300) return { color: 'green', badge: '🟢', note: 'ok' };
     return { color: 'yellow', badge: '🟡', note: 'unexpected ' + status };
   }
   return { color: 'yellow', badge: '🟡', note: 'status ' + status };
