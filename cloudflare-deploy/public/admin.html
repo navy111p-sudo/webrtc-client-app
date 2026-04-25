@@ -194,25 +194,31 @@
     <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;" title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
   </div>
 
-  <!-- 데이터 히트맵 표 -->
+  <!-- 데이터 히트맵 표 (각 헤더 클릭으로 정렬: ▼ 내림 → ▲ 오름 → 해제) -->
+  <style>
+    .pr-th { cursor:pointer; user-select:none; position:relative; padding-right:18px; }
+    .pr-th:hover { background:#f3f4f6; }
+    .pr-th .pr-arrow { position:absolute; right:6px; font-size:10px; color:#9ca3af; }
+    .pr-th.pr-active .pr-arrow { color:#3b82f6; font-weight:700; }
+  </style>
   <div style="overflow-x:auto;">
     <table style="min-width:1100px;">
       <thead>
-        <tr>
-          <th>교사</th>
-          <th>근무</th>
-          <th>연차</th>
-          <th>수업(25%)</th>
-          <th>유지(30%)</th>
-          <th>근태(20%)</th>
-          <th>행정(15%)</th>
-          <th>조직(10%)</th>
-          <th>가중점수</th>
-          <th>등급</th>
-          <th>총 수업수<br>(20분)</th>
-          <th>10분 단가</th>
-          <th>월급(PHP)</th>
-          <th>≈ KRW</th>
+        <tr id="payroll-thead">
+          <th class="pr-th" data-sort-key="teacher_name">교사<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="status">근무<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="years">연차<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_instruction">수업(25%)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_retention">유지(30%)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_punctuality">근태(20%)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_admin">행정(15%)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_contribution">조직(10%)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="weighted_total">가중점수<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="grade">등급<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="class_count">총 수업수<br>(20분)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="rate_per_10min_php">10분 단가<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="monthly_salary_php">월급(PHP)<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="monthly_salary_krw">≈ KRW<span class="pr-arrow">↕</span></th>
         </tr>
       </thead>
       <tbody id="payroll-table"><tr><td colspan="14" class="empty">[🧮 불러오기] 를 눌러 강사 목록과 점수를 표시하세요.</td></tr></tbody>
@@ -1078,6 +1084,101 @@ function heatCell(score) {
 
 function fmtNum(n) { return (n || 0).toLocaleString(adminLang==='en'?'en-US':'ko-KR'); }
 
+// 정렬 상태: key = 컬럼키 (또는 null), dir = 'desc' | 'asc'
+let _payrollSort = { key: null, dir: 'desc' };
+let _lastPayrollContext = { year: null, month: null };
+
+// 등급 정렬 우선순위 (높을수록 위)
+const _GRADE_RANK = { '최우수': 4, '매우 우수': 3, '우수': 2, '개선 요망': 1, '미평가': 0 };
+
+// row 에서 정렬 키의 값을 꺼내는 헬퍼 (evaluation 안에 있는 점수 5개도 평탄화)
+function _payrollFieldValue(row, key) {
+  if (!row) return null;
+  if (['score_instruction','score_retention','score_punctuality','score_admin','score_contribution'].includes(key)) {
+    return row.evaluation ? row.evaluation[key] : null;
+  }
+  if (key === 'grade') return _GRADE_RANK[row.grade] != null ? _GRADE_RANK[row.grade] : -1;
+  return row[key];
+}
+
+function _comparePayroll(a, b, key, dir) {
+  const va = _payrollFieldValue(a, key);
+  const vb = _payrollFieldValue(b, key);
+  // null/undefined 는 항상 끝으로
+  const aNull = va == null || va === '' || (typeof va === 'number' && isNaN(va));
+  const bNull = vb == null || vb === '' || (typeof vb === 'number' && isNaN(vb));
+  if (aNull && bNull) return 0;
+  if (aNull) return 1;
+  if (bNull) return -1;
+  let cmp;
+  if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+  else cmp = String(va).localeCompare(String(vb), 'ko');
+  return dir === 'asc' ? cmp : -cmp;
+}
+
+function _updateSortArrows() {
+  document.querySelectorAll('#payroll-thead .pr-th').forEach(th => {
+    const arrow = th.querySelector('.pr-arrow');
+    th.classList.remove('pr-active');
+    if (arrow) arrow.textContent = '↕';
+    if (_payrollSort.key && th.getAttribute('data-sort-key') === _payrollSort.key) {
+      th.classList.add('pr-active');
+      if (arrow) arrow.textContent = _payrollSort.dir === 'asc' ? '▲' : '▼';
+    }
+  });
+}
+
+function renderPayrollTable() {
+  const tb = document.getElementById('payroll-table');
+  if (!tb) return;
+  const rows = _lastPayrollRows ? _lastPayrollRows.slice() : [];
+  if (_payrollSort.key) {
+    rows.sort((a, b) => _comparePayroll(a, b, _payrollSort.key, _payrollSort.dir));
+  }
+  if (rows.length === 0) {
+    tb.innerHTML = '<tr><td colspan="14" class="empty">활성 강사가 없습니다. 위에서 강사를 먼저 등록하거나 🌱 시드 버튼을 사용하세요.</td></tr>';
+    _updateSortArrows();
+    return;
+  }
+  const year  = _lastPayrollContext.year;
+  const month = _lastPayrollContext.month;
+  tb.innerHTML = rows.map(p => {
+    const e = p.evaluation || {};
+    const gClass = gradeClass(p.grade);
+    const krw = p.monthly_salary_krw || 0;
+    const safeName = String(p.teacher_name || '').replace(/'/g, '&#39;');
+    return `<tr style="cursor:pointer;" onclick="openEvalModal(${p.teacher_id}, '${safeName}', ${year}, ${month})">
+      <td style="font-weight:700;">${safeName}</td>
+      <td><span style="font-size:11px;color:#6b7280;">${p.status === 'office' ? 'OFFICE' : (p.status === 'home' ? 'HOME' : '—')}</span></td>
+      <td>${p.years != null ? p.years + '년' : '—'}</td>
+      <td>${heatCell(e.score_instruction)}</td>
+      <td>${heatCell(e.score_retention)}</td>
+      <td>${heatCell(e.score_punctuality)}</td>
+      <td>${heatCell(e.score_admin)}</td>
+      <td>${heatCell(e.score_contribution)}</td>
+      <td style="text-align:right;font-weight:700;">${p.weighted_total != null ? p.weighted_total.toFixed(2) : '—'}</td>
+      <td><span class="${gClass}">${p.grade || '미평가'}</span></td>
+      <td style="text-align:right;">${fmtNum(p.class_count)}</td>
+      <td style="text-align:right;">${(p.rate_per_10min_php || 0).toFixed(2)}</td>
+      <td style="text-align:right;font-weight:700;color:#10b981;">${fmtNum(Math.round(p.monthly_salary_php))}</td>
+      <td style="text-align:right;color:#6b7280;">₩${fmtNum(krw)}</td>
+    </tr>`;
+  }).join('');
+  _updateSortArrows();
+}
+
+// 헤더 클릭 → 정렬 토글 (없음 → 내림 → 오름 → 없음)
+function onPayrollHeaderClick(key) {
+  if (_payrollSort.key !== key) {
+    _payrollSort = { key, dir: 'desc' };
+  } else if (_payrollSort.dir === 'desc') {
+    _payrollSort = { key, dir: 'asc' };
+  } else {
+    _payrollSort = { key: null, dir: 'desc' };
+  }
+  renderPayrollTable();
+}
+
 async function calcPayrollAll() {
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
@@ -1092,37 +1193,11 @@ async function calcPayrollAll() {
       return;
     }
     _lastPayrollRows = d.items || [];
+    _lastPayrollContext = { year: d.year, month: d.month };
     const gc = d.grade_counts || {};
     const summary = `${d.year}-${String(d.month).padStart(2,'0')} · ${d.count}명 · 합계 PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)} · 최우수 ${gc['최우수']||0} · 매우우수 ${gc['매우 우수']||0} · 우수 ${gc['우수']||0} · 개선 ${gc['개선 요망']||0}`;
     document.getElementById('payroll-counts').textContent = summary;
-
-    if (!d.items || d.items.length === 0) {
-      tb.innerHTML = '<tr><td colspan="14" class="empty">활성 강사가 없습니다. 위에서 강사를 먼저 등록하세요.</td></tr>';
-      return;
-    }
-
-    tb.innerHTML = d.items.map(p => {
-      const e = p.evaluation || {};
-      const gClass = gradeClass(p.grade);
-      const krw = p.monthly_salary_krw || 0;
-      const safeName = String(p.teacher_name || '').replace(/'/g, '&#39;');
-      return `<tr style="cursor:pointer;" onclick="openEvalModal(${p.teacher_id}, '${safeName}', ${year}, ${month})">
-        <td style="font-weight:700;">${safeName}</td>
-        <td><span style="font-size:11px;color:#6b7280;">${p.status === 'office' ? 'OFFICE' : (p.status === 'home' ? 'HOME' : '—')}</span></td>
-        <td>${p.years != null ? p.years + '년' : '—'}</td>
-        <td>${heatCell(e.score_instruction)}</td>
-        <td>${heatCell(e.score_retention)}</td>
-        <td>${heatCell(e.score_punctuality)}</td>
-        <td>${heatCell(e.score_admin)}</td>
-        <td>${heatCell(e.score_contribution)}</td>
-        <td style="text-align:right;font-weight:700;">${p.weighted_total != null ? p.weighted_total.toFixed(2) : '—'}</td>
-        <td><span class="${gClass}">${p.grade || '미평가'}</span></td>
-        <td style="text-align:right;">${fmtNum(p.class_count)}</td>
-        <td style="text-align:right;">${(p.rate_per_10min_php || 0).toFixed(2)}</td>
-        <td style="text-align:right;font-weight:700;color:#10b981;">${fmtNum(Math.round(p.monthly_salary_php))}</td>
-        <td style="text-align:right;color:#6b7280;">₩${fmtNum(krw)}</td>
-      </tr>`;
-    }).join('');
+    renderPayrollTable();
   } catch (e) {
     tb.innerHTML = '<tr><td colspan="14" class="empty">에러: ' + e.message + '</td></tr>';
   }
@@ -1285,6 +1360,15 @@ async function seedDemoTeachers() {
   if (e('t-new-btn'))            e('t-new-btn').addEventListener('click', registerTeacher);
   if (e('ev-cancel-btn'))        e('ev-cancel-btn').addEventListener('click', closeEvalModal);
   if (e('ev-save-btn'))          e('ev-save-btn').addEventListener('click', saveEvalAndClasses);
+  // 테이블 헤더 클릭 → 정렬 토글 (이벤트 위임)
+  if (e('payroll-thead')) {
+    e('payroll-thead').addEventListener('click', (ev) => {
+      const th = ev.target.closest('.pr-th');
+      if (!th) return;
+      const key = th.getAttribute('data-sort-key');
+      if (key) onPayrollHeaderClick(key);
+    });
+  }
   // 모달 배경 클릭으로 닫기
   if (e('eval-modal-bg')) e('eval-modal-bg').addEventListener('click', (ev) => {
     if (ev.target.id === 'eval-modal-bg') closeEvalModal();
