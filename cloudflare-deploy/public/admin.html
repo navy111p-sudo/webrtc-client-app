@@ -130,6 +130,146 @@
   </div>
 </div>
 
+<!-- 💼 Phase 8 v2: Mangoi 강사 급여·평가 (10분당 단가 모델 + 5카테고리 평가) -->
+<style>
+  /* 데이터 히트맵 스타일 — salary-heatmap.pages.dev 와 동일 */
+  .heat-cell { display:inline-block; min-width:42px; padding:4px 8px; border-radius:6px; color:#fff; font-weight:700; text-align:center; font-size:13px; cursor:pointer; }
+  .heat-cell[data-score="5"]  { background:#10b981; }
+  .heat-cell[data-score="4"]  { background:#3b82f6; }
+  .heat-cell[data-score="3"]  { background:#f59e0b; }
+  .heat-cell[data-score="2"]  { background:#ef4444; }
+  .heat-cell[data-score="1"]  { background:#7f1d1d; }
+  .heat-cell[data-score="-"]  { background:#9ca3af; color:#fff; }
+  .grade-badge { padding:3px 8px; border-radius:6px; font-size:11px; font-weight:700; }
+  .grade-최우수    { background:#d1fae5; color:#065f46; border:1px solid #10b981; }
+  .grade-매우우수  { background:#dbeafe; color:#1e40af; border:1px solid #3b82f6; }
+  .grade-우수     { background:#fef3c7; color:#92400e; border:1px solid #f59e0b; }
+  .grade-개선요망  { background:#fee2e2; color:#991b1b; border:1px solid #ef4444; }
+  .grade-미평가   { background:#f3f4f6; color:#6b7280; border:1px solid #9ca3af; }
+  /* 평가 모달 */
+  .eval-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999; display:none; align-items:center; justify-content:center; }
+  .eval-modal-bg.show { display:flex; }
+  .eval-modal { background:#fff; border-radius:10px; padding:20px 24px; max-width:680px; width:92%; max-height:88vh; overflow-y:auto; box-shadow:0 8px 40px rgba(0,0,0,0.3); }
+  .eval-modal h3 { margin:0 0 14px; font-size:18px; }
+  .eval-row { display:grid; grid-template-columns: 130px 1fr 70px; gap:8px; align-items:center; margin-bottom:8px; padding:8px 10px; background:#f9fafb; border-radius:6px; }
+  .eval-row label { font-size:13px; font-weight:600; color:#374151; }
+  .eval-row input[type=number] { padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; text-align:right; }
+  .eval-row .desc { font-size:11px; color:#6b7280; }
+</style>
+
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <span>💼 Mangoi 강사 급여·평가 대시보드</span>
+    <span style="font-size:12px;font-weight:400;color:#6b7280;" id="payroll-counts">—</span>
+  </div>
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;">
+    💡 <strong>월급</strong> = 총 수업수(20분) × 2 × 10분당 단가(PHP). <strong>평가</strong>는 5개 카테고리(수업25% · 재등록30% · 근태20% · 행정15% · 조직10%) 가중 평균.
+    행을 클릭하면 평가 폼이 열립니다. 마감(🔒)하면 payslips 에 영구 보존됩니다.
+  </div>
+
+  <!-- 신규 강사 등록 -->
+  <details style="margin-bottom:12px;">
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 강사 신규 등록</summary>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;">
+      <input id="t-new-name"   placeholder="이름 (필수)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
+      <select id="t-new-status" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
+        <option value="office">OFFICE 근무</option>
+        <option value="home">HOME 근무</option>
+      </select>
+      <input id="t-new-years"  type="number" placeholder="연차"        style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:80px;" />
+      <input id="t-new-rate"   type="number" step="0.01" placeholder="10분당 단가 (PHP)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:170px;" />
+      <button id="t-new-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+    </div>
+  </details>
+
+  <!-- 월 선택 + 액션 -->
+  <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+    <label style="font-size:13px;color:#374151;">정산 월 &nbsp;
+      <input id="payroll-year"  type="number" value="2026" min="2024" max="2030" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:80px;" />
+      <input id="payroll-month" type="number" value="4"    min="1"    max="12"   style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:60px;" />
+    </label>
+    <button id="payroll-calc-btn"     class="primary" style="padding:5px 12px;font-size:13px;">🧮 불러오기</button>
+    <button id="payroll-csv-btn"      style="padding:5px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 CSV (평가+급여)</button>
+    <button id="payroll-finalize-btn" style="padding:5px 12px;font-size:13px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="payslips 테이블에 영구 저장 (취소 불가)">🔒 마감</button>
+  </div>
+
+  <!-- 데이터 히트맵 표 -->
+  <div style="overflow-x:auto;">
+    <table style="min-width:1100px;">
+      <thead>
+        <tr>
+          <th>교사</th>
+          <th>근무</th>
+          <th>연차</th>
+          <th>수업(25%)</th>
+          <th>유지(30%)</th>
+          <th>근태(20%)</th>
+          <th>행정(15%)</th>
+          <th>조직(10%)</th>
+          <th>가중점수</th>
+          <th>등급</th>
+          <th>총 수업수<br>(20분)</th>
+          <th>10분 단가</th>
+          <th>월급(PHP)</th>
+          <th>≈ KRW</th>
+        </tr>
+      </thead>
+      <tbody id="payroll-table"><tr><td colspan="14" class="empty">[🧮 불러오기] 를 눌러 강사 목록과 점수를 표시하세요.</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 평가 폼 모달 -->
+<div class="eval-modal-bg" id="eval-modal-bg">
+  <div class="eval-modal">
+    <h3 id="eval-modal-title">📋 평가 입력</h3>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;">1.0 ~ 5.0 점수 입력 (소수 0.5 단위 권장). 5개 모두 채워야 등급이 자동 산출됩니다.</div>
+
+    <div class="eval-row">
+      <label>수업 우수성 (25%)</label>
+      <span class="desc">수업 준비·학생 참여·다양한 교수법·피드백 품질</span>
+      <input type="number" id="ev-instruction" min="1" max="5" step="0.5" />
+    </div>
+    <div class="eval-row">
+      <label>학생 재등록 유지 (30%)</label>
+      <span class="desc">90% 이상=5점 / 80~89%=4점 / 70~79%=3점 / &lt;70%=2점 이하</span>
+      <input type="number" id="ev-retention" min="1" max="5" step="0.5" />
+    </div>
+    <div class="eval-row">
+      <label>근태/시간엄수 (20%)</label>
+      <span class="desc">월 1회 이하 지각/결석=5점 / 2~3회=3점 / 5회+=1~2점</span>
+      <input type="number" id="ev-punctuality" min="1" max="5" step="0.5" />
+    </div>
+    <div class="eval-row">
+      <label>행정/업무 (15%)</label>
+      <span class="desc">보고서 적시·정확성·학생 성장 관찰 인사이트 포함도</span>
+      <input type="number" id="ev-admin" min="1" max="5" step="0.5" />
+    </div>
+    <div class="eval-row">
+      <label>조직 기여도 (10%)</label>
+      <span class="desc">피크 시간대·긴급 대체 수업 협조도</span>
+      <input type="number" id="ev-contribution" min="1" max="5" step="0.5" />
+    </div>
+
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:600;color:#374151;">📌 종합 코멘트 (선택)</div>
+    <textarea id="ev-strengths" placeholder="강점 / 성취" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-bottom:6px;"></textarea>
+    <textarea id="ev-improvements" placeholder="개선 영역" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea>
+
+    <div style="margin-top:14px;padding:10px;background:#f0f9ff;border:1px solid #93c5fd;border-radius:6px;font-size:13px;">
+      가중 합계: <strong id="ev-weighted-preview" style="color:#1e40af;">—</strong>
+      &nbsp;&nbsp;예상 등급: <strong id="ev-grade-preview" style="color:#1e40af;">—</strong>
+    </div>
+
+    <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">
+      <button id="ev-cancel-btn" style="padding:8px 16px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;">취소</button>
+      <div style="display:flex;gap:8px;">
+        <input id="ev-class-count" type="number" min="0" placeholder="총 수업수 (20분)" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
+        <button id="ev-save-btn" class="primary" style="padding:8px 16px;">💾 평가·수업수 저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- 📥 Phase 6: 데이터 내보내기 (CSV) -->
 <div class="table-card" style="margin-bottom:24px;padding:14px 18px;">
   <div class="chart-title" style="margin-bottom:8px;" data-ko="📥 데이터 내보내기 (CSV)" data-en="📥 Data Export (CSV)">📥 데이터 내보내기 (CSV)</div>
@@ -903,6 +1043,239 @@ async function loadStorageStats() {
   if (btn) btn.addEventListener('click', loadStorageStats);
 })();
 
+// 💼 Phase 8 v2: Mangoi 강사 급여·평가 (10분단가 + 5카테고리 평가)
+const EVAL_WEIGHTS_FRONT = { instruction: 0.25, retention: 0.30, punctuality: 0.20, admin: 0.15, contribution: 0.10 };
+let _payrollSettings = { php_to_krw: 24.34 };
+let _lastPayrollRows = [];
+
+async function loadPayrollRates() {
+  try {
+    const r = await fetch('/api/admin/payroll/rates', { cache: 'no-store', credentials: 'include' });
+    const d = await r.json();
+    if (d.ok) _payrollSettings = d;
+  } catch (e) { /* silent */ }
+}
+
+function frontClassifyGrade(w) {
+  if (w == null || isNaN(w)) return '미평가';
+  if (w >= 4.75) return '최우수';
+  if (w >= 4.50) return '매우 우수';
+  if (w >= 3.50) return '우수';
+  return '개선 요망';
+}
+
+function gradeClass(g) {
+  return 'grade-badge grade-' + (g || '미평가').replace(/\s+/g, '');
+}
+
+function heatCell(score) {
+  if (score == null || isNaN(score)) return '<span class="heat-cell" data-score="-">—</span>';
+  const rounded = Math.round(score);
+  const display = (Math.round(score * 10) / 10).toFixed(1);
+  return `<span class="heat-cell" data-score="${rounded}">${display}</span>`;
+}
+
+function fmtNum(n) { return (n || 0).toLocaleString(adminLang==='en'?'en-US':'ko-KR'); }
+
+async function calcPayrollAll() {
+  const year  = parseInt(document.getElementById('payroll-year').value, 10);
+  const month = parseInt(document.getElementById('payroll-month').value, 10);
+  if (!year || !month) { alert('연도/월을 입력하세요'); return; }
+  const tb = document.getElementById('payroll-table');
+  tb.innerHTML = '<tr><td colspan="14" class="empty">불러오는 중...</td></tr>';
+  try {
+    const r = await fetch(`/api/admin/payroll/all?year=${year}&month=${month}`, { cache: 'no-store', credentials: 'include' });
+    const d = await r.json();
+    if (!d.ok) {
+      tb.innerHTML = '<tr><td colspan="14" class="empty">실패: ' + (d.error || ('HTTP ' + r.status)) + '</td></tr>';
+      return;
+    }
+    _lastPayrollRows = d.items || [];
+    const gc = d.grade_counts || {};
+    const summary = `${d.year}-${String(d.month).padStart(2,'0')} · ${d.count}명 · 합계 PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)} · 최우수 ${gc['최우수']||0} · 매우우수 ${gc['매우 우수']||0} · 우수 ${gc['우수']||0} · 개선 ${gc['개선 요망']||0}`;
+    document.getElementById('payroll-counts').textContent = summary;
+
+    if (!d.items || d.items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="14" class="empty">활성 강사가 없습니다. 위에서 강사를 먼저 등록하세요.</td></tr>';
+      return;
+    }
+
+    tb.innerHTML = d.items.map(p => {
+      const e = p.evaluation || {};
+      const gClass = gradeClass(p.grade);
+      const krw = p.monthly_salary_krw || 0;
+      const safeName = String(p.teacher_name || '').replace(/'/g, '&#39;');
+      return `<tr style="cursor:pointer;" onclick="openEvalModal(${p.teacher_id}, '${safeName}', ${year}, ${month})">
+        <td style="font-weight:700;">${safeName}</td>
+        <td><span style="font-size:11px;color:#6b7280;">${p.status === 'office' ? 'OFFICE' : (p.status === 'home' ? 'HOME' : '—')}</span></td>
+        <td>${p.years != null ? p.years + '년' : '—'}</td>
+        <td>${heatCell(e.score_instruction)}</td>
+        <td>${heatCell(e.score_retention)}</td>
+        <td>${heatCell(e.score_punctuality)}</td>
+        <td>${heatCell(e.score_admin)}</td>
+        <td>${heatCell(e.score_contribution)}</td>
+        <td style="text-align:right;font-weight:700;">${p.weighted_total != null ? p.weighted_total.toFixed(2) : '—'}</td>
+        <td><span class="${gClass}">${p.grade || '미평가'}</span></td>
+        <td style="text-align:right;">${fmtNum(p.class_count)}</td>
+        <td style="text-align:right;">${(p.rate_per_10min_php || 0).toFixed(2)}</td>
+        <td style="text-align:right;font-weight:700;color:#10b981;">${fmtNum(Math.round(p.monthly_salary_php))}</td>
+        <td style="text-align:right;color:#6b7280;">₩${fmtNum(krw)}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tb.innerHTML = '<tr><td colspan="14" class="empty">에러: ' + e.message + '</td></tr>';
+  }
+}
+
+// ── 평가 모달 ──
+function openEvalModal(teacherId, teacherName, year, month) {
+  // 기존 데이터 채우기
+  const row = (_lastPayrollRows || []).find(r => r.teacher_id === teacherId) || {};
+  const e = row.evaluation || {};
+  document.getElementById('eval-modal-title').textContent = `📋 ${teacherName} — ${year}-${String(month).padStart(2,'0')} 평가`;
+  document.getElementById('ev-instruction').value  = e.score_instruction  ?? '';
+  document.getElementById('ev-retention').value    = e.score_retention    ?? '';
+  document.getElementById('ev-punctuality').value  = e.score_punctuality  ?? '';
+  document.getElementById('ev-admin').value        = e.score_admin        ?? '';
+  document.getElementById('ev-contribution').value = e.score_contribution ?? '';
+  document.getElementById('ev-strengths').value    = e.strengths    ?? '';
+  document.getElementById('ev-improvements').value = e.improvements ?? '';
+  document.getElementById('ev-class-count').value  = row.class_count ?? 0;
+  // 모달에 컨텍스트 보관
+  const bg = document.getElementById('eval-modal-bg');
+  bg.dataset.teacherId = teacherId;
+  bg.dataset.year      = year;
+  bg.dataset.month     = month;
+  bg.classList.add('show');
+  updateEvalPreview();
+}
+function closeEvalModal() {
+  document.getElementById('eval-modal-bg').classList.remove('show');
+}
+function updateEvalPreview() {
+  const v = id => parseFloat(document.getElementById(id).value);
+  const i = v('ev-instruction'), r = v('ev-retention'), p = v('ev-punctuality'),
+        a = v('ev-admin'), c = v('ev-contribution');
+  if ([i, r, p, a, c].some(x => isNaN(x))) {
+    document.getElementById('ev-weighted-preview').textContent = '—';
+    document.getElementById('ev-grade-preview').textContent = '—';
+    return;
+  }
+  const w = i*EVAL_WEIGHTS_FRONT.instruction + r*EVAL_WEIGHTS_FRONT.retention
+          + p*EVAL_WEIGHTS_FRONT.punctuality + a*EVAL_WEIGHTS_FRONT.admin
+          + c*EVAL_WEIGHTS_FRONT.contribution;
+  document.getElementById('ev-weighted-preview').textContent = w.toFixed(2);
+  document.getElementById('ev-grade-preview').textContent = frontClassifyGrade(w);
+}
+async function saveEvalAndClasses() {
+  const bg = document.getElementById('eval-modal-bg');
+  const teacherId = parseInt(bg.dataset.teacherId, 10);
+  const year      = parseInt(bg.dataset.year, 10);
+  const month     = parseInt(bg.dataset.month, 10);
+  const v = id => {
+    const x = document.getElementById(id).value;
+    return x === '' ? null : parseFloat(x);
+  };
+  const evalBody = {
+    teacher_id: teacherId, year, month,
+    score_instruction:  v('ev-instruction'),
+    score_retention:    v('ev-retention'),
+    score_punctuality:  v('ev-punctuality'),
+    score_admin:        v('ev-admin'),
+    score_contribution: v('ev-contribution'),
+    strengths:          document.getElementById('ev-strengths').value || null,
+    improvements:       document.getElementById('ev-improvements').value || null,
+    evaluator:          'admin',
+  };
+  const classCount = parseInt(document.getElementById('ev-class-count').value, 10);
+  try {
+    // 평가 저장
+    const r1 = await fetch('/api/admin/teacher-evaluation', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(evalBody)
+    });
+    const d1 = await r1.json().catch(() => ({}));
+    if (!r1.ok || d1.ok === false) { alert('평가 저장 실패: ' + (d1.error || ('HTTP ' + r1.status))); return; }
+    // 수업수 저장 (값이 있으면)
+    if (!isNaN(classCount) && classCount >= 0) {
+      const r2 = await fetch('/api/admin/teacher-classes', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ teacher_id: teacherId, year, month, class_count: classCount })
+      });
+      const d2 = await r2.json().catch(() => ({}));
+      if (!r2.ok || d2.ok === false) { alert('수업수 저장 실패: ' + (d2.error || ('HTTP ' + r2.status))); return; }
+    }
+    closeEvalModal();
+    calcPayrollAll();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
+function downloadPayrollCSV() {
+  const year  = parseInt(document.getElementById('payroll-year').value, 10);
+  const month = parseInt(document.getElementById('payroll-month').value, 10);
+  if (!year || !month) { alert('연도/월을 입력하세요'); return; }
+  window.open(`/api/admin/export/payroll.csv?year=${year}&month=${month}`, '_blank');
+}
+
+async function finalizePayroll() {
+  const year  = parseInt(document.getElementById('payroll-year').value, 10);
+  const month = parseInt(document.getElementById('payroll-month').value, 10);
+  if (!year || !month) return;
+  if (!confirm(`${year}-${String(month).padStart(2,'0')} 급여를 마감하시겠습니까?\npayslips 테이블에 영구 저장되며 동일 월 재마감은 차단됩니다.`)) return;
+  try {
+    const r = await fetch('/api/admin/payroll/finalize', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ year, month, finalized_by: 'admin' })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) { alert('마감 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+    alert(`마감 완료. ${d.saved}명 저장 · ${d.skipped}명 스킵(이미 마감)\n합계 PHP ${(d.total_php||0).toLocaleString()}`);
+    if (typeof loadNotifications === 'function') loadNotifications();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
+async function registerTeacher() {
+  const name   = (document.getElementById('t-new-name').value || '').trim();
+  const status = document.getElementById('t-new-status').value;
+  const years  = parseInt(document.getElementById('t-new-years').value, 10);
+  const rate   = parseFloat(document.getElementById('t-new-rate').value);
+  if (!name) { alert('이름은 필수입니다'); return; }
+  if (isNaN(rate) || rate < 0) { alert('10분당 단가(PHP)는 0 이상이어야 합니다'); return; }
+  try {
+    const r = await fetch('/api/admin/teachers', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ name, status, years: isNaN(years) ? null : years, rate_per_10min_php: rate })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) { alert('등록 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+    ['t-new-name', 't-new-years', 't-new-rate'].forEach(id => document.getElementById(id).value = '');
+    calcPayrollAll();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
+// 컨트롤 바인딩
+(function bindPayrollV2() {
+  const e = id => document.getElementById(id);
+  if (e('payroll-calc-btn'))     e('payroll-calc-btn').addEventListener('click', calcPayrollAll);
+  if (e('payroll-csv-btn'))      e('payroll-csv-btn').addEventListener('click', downloadPayrollCSV);
+  if (e('payroll-finalize-btn')) e('payroll-finalize-btn').addEventListener('click', finalizePayroll);
+  if (e('t-new-btn'))            e('t-new-btn').addEventListener('click', registerTeacher);
+  if (e('ev-cancel-btn'))        e('ev-cancel-btn').addEventListener('click', closeEvalModal);
+  if (e('ev-save-btn'))          e('ev-save-btn').addEventListener('click', saveEvalAndClasses);
+  // 모달 배경 클릭으로 닫기
+  if (e('eval-modal-bg')) e('eval-modal-bg').addEventListener('click', (ev) => {
+    if (ev.target.id === 'eval-modal-bg') closeEvalModal();
+  });
+  // 평가 점수 입력 시 미리보기 갱신
+  ['ev-instruction', 'ev-retention', 'ev-punctuality', 'ev-admin', 'ev-contribution'].forEach(id => {
+    if (e(id)) e(id).addEventListener('input', updateEvalPreview);
+  });
+})();
+
 // 📥 Phase 6: CSV 다운로드 (window.location 으로 GET 다운로드 — Authorization 자동 첨부됨)
 function exportRecordingsCSV() {
   const p = new URLSearchParams();
@@ -1130,7 +1503,7 @@ document.getElementById('refresh').onclick = async function() {
 };
 document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats()]);
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats(), loadPayrollRates()]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>

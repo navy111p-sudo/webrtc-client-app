@@ -250,6 +250,17 @@ const ENDPOINTS = [
   // Phase 7: 저장소·비용 통계
   { path: '/api/admin/stats/storage', method: 'GET', expect: '2xx', label: 'Storage Stats', body: null,
     desc: '저장소 사용량 실시간 측정 (Phase 7). D1 row 수·R2 객체 수와 총 byte. KV 는 list 한도 이슈로 측정 제외.' },
+  // Phase 8 v2: 강사 급여·평가 (10분 단가 모델)
+  { path: '/api/admin/payroll/rates', method: 'GET', expect: '2xx', label: 'Payroll Settings', body: null,
+    desc: '시스템 설정 (환율 PHP↔KRW, 5개 카테고리 가중치, 4등급 임계값). UI 가 참조.' },
+  { path: '/api/admin/teachers',      method: 'GET', expect: '2xx', label: 'Teachers',      body: null,
+    desc: '강사 목록. status(office|home), years, rate_per_10min_php 포함.' },
+  { path: '/api/admin/payroll/all?year=2026&month=4', method: 'GET', expect: '2xx', label: 'Payroll Calc All', body: null,
+    desc: '활성 강사 전원의 월 급여+평가 통합 (수업수×2×10분단가 + 가중점수 + 등급). KRW 환산 포함.' },
+  { path: '/api/admin/teacher-classes', method: 'PUT',  expect: '2xx-or-4xx', label: 'Teacher Classes PUT', body: '{}',
+    desc: '월별 수업 수(20분 단위) upsert. 빈 body 면 400 (route alive 검증용).' },
+  { path: '/api/admin/teacher-evaluation', method: 'PUT', expect: '2xx-or-4xx', label: 'Teacher Eval PUT', body: '{}',
+    desc: '월별 평가 5점수 + 코멘트 upsert. weighted_total / grade 자동 산출.' },
   // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
   //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
   { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}',

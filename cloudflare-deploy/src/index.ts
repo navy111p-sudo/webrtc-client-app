@@ -193,6 +193,15 @@ export default {
         /^\/api\/admin\/notifications\/\d+$/.test(path) ||
         path.startsWith('/api/admin/export/') ||
         path.startsWith('/api/admin/stats/') ||
+        path === '/api/admin/teachers' ||
+        /^\/api\/admin\/teachers\/\d+$/.test(path) ||
+        path === '/api/admin/teacher-hours' ||
+        path === '/api/admin/teacher-classes' ||
+        path === '/api/admin/teacher-evaluation' ||
+        path.startsWith('/api/admin/payroll/') ||
+        path === '/api/admin/payroll/all' ||
+        path === '/api/admin/payroll/rates' ||
+        path === '/api/admin/payroll/finalize' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -892,6 +901,12 @@ function isAdminPath(path: string, method: string): boolean {
   if (path.startsWith('/api/admin/export/')) return true;
   // 💰 저장소·비용 통계 (Phase 7) — 관리자 전용
   if (path.startsWith('/api/admin/stats/')) return true;
+  // 💼 강사 급여·평가 (Phase 8) — 관리자 전용
+  if (path === '/api/admin/teachers' || /^\/api\/admin\/teachers\/\d+$/.test(path)) return true;
+  if (path === '/api/admin/teacher-hours') return true;          // (deprecated, 호환성)
+  if (path === '/api/admin/teacher-classes') return true;
+  if (path === '/api/admin/teacher-evaluation') return true;
+  if (path.startsWith('/api/admin/payroll/')) return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;

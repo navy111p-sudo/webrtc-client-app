@@ -64,6 +64,220 @@ function toCSV(rows: any[], columns: { key: string; label?: string }[]): string 
   return '﻿' + header + '\n' + body + '\n';
 }
 
+// ========================================================================
+// 💼 Payroll (Phase 8) — Mangoi 강사 급여·평가 시스템
+//   - 모델: salary-heatmap.pages.dev 와 동일
+//   - 월급 = 총 수업수(20분 단위) × 2 × 10분당 단가(PHP)
+//   - 평가 = 5개 카테고리 가중 평균 → 4등급 자동 분류
+//   - 근무 형태: 'office' | 'home' (rank 폐기, 호환성 위해 컬럼만 유지)
+//   - 환율: 1 PHP = 24.34 KRW (트리맵·요약용)
+// ========================================================================
+
+/** 환율 — KRW 표시용 (트리맵 등). 정기적 갱신 필요 시 wrangler vars 로 빼낼 것. */
+const PAYROLL_PHP_TO_KRW = 24.34;
+
+/** 평가 카테고리 가중치 (합계 1.0). */
+const EVAL_WEIGHTS = {
+  instruction:  0.25,  // 수업 우수성 (Instructional Excellence)
+  retention:    0.30,  // 학생 재등록 유지율
+  punctuality:  0.20,  // 성실성 / 시간엄수
+  admin:        0.15,  // 행정 / 업무 성실도
+  contribution: 0.10,  // 조직 기여도
+};
+
+/** 등급 임계값 + 라벨. */
+function classifyEvalGrade(weighted: number): string {
+  if (weighted == null || isNaN(weighted)) return '미평가';
+  if (weighted >= 4.75) return '최우수';
+  if (weighted >= 4.50) return '매우 우수';
+  if (weighted >= 3.50) return '우수';
+  return '개선 요망';
+}
+
+const VALID_TEACHER_STATUS = ['office', 'home'] as const;
+
+let _payrollSchemaReady = false;
+async function ensurePayrollSchema(env: { DB: D1Database }): Promise<void> {
+  if (_payrollSchemaReady) return;
+  // teachers — 기존 호환 + 신규 컬럼
+  await env.DB.exec([
+    `CREATE TABLE IF NOT EXISTS teachers (`,
+    `  id INTEGER PRIMARY KEY AUTOINCREMENT,`,
+    `  user_id TEXT,`,
+    `  name TEXT NOT NULL,`,
+    `  center_id INTEGER,`,
+    `  rank TEXT,`,                                    // deprecated, NOT NULL 해제 (있으면 NULL 허용)
+    `  hourly_rate_php INTEGER,`,                      // deprecated, 새 모델은 rate_per_10min_php 사용
+    `  status TEXT,`,                                   // 'office' | 'home'
+    `  years INTEGER,`,                                 // 근속 연수
+    `  rate_per_10min_php REAL,`,                       // 10분당 단가 (강사별)
+    `  active INTEGER DEFAULT 1,`,
+    `  created_at INTEGER NOT NULL,`,
+    `  updated_at INTEGER NOT NULL`,
+    `);`
+  ].join(' '));
+  await env.DB.exec(`CREATE INDEX IF NOT EXISTS idx_teachers_active ON teachers(active);`);
+  // 기존 DB 에 컬럼 누락 시 ALTER 로 추가 (이미 있으면 SQLite 가 throw → 흡수)
+  for (const ddl of [
+    `ALTER TABLE teachers ADD COLUMN status TEXT;`,
+    `ALTER TABLE teachers ADD COLUMN years INTEGER;`,
+    `ALTER TABLE teachers ADD COLUMN rate_per_10min_php REAL;`,
+  ]) {
+    try { await env.DB.exec(ddl); } catch { /* duplicate column — 정상 */ }
+  }
+
+  // 월별 수업 수 (20분 단위)
+  await env.DB.exec([
+    `CREATE TABLE IF NOT EXISTS teacher_monthly_classes (`,
+    `  id INTEGER PRIMARY KEY AUTOINCREMENT,`,
+    `  teacher_id INTEGER NOT NULL,`,
+    `  year INTEGER NOT NULL,`,
+    `  month INTEGER NOT NULL,`,
+    `  class_count INTEGER NOT NULL DEFAULT 0,`,
+    `  notes TEXT,`,
+    `  updated_at INTEGER NOT NULL,`,
+    `  UNIQUE(teacher_id, year, month)`,
+    `);`
+  ].join(' '));
+  await env.DB.exec(`CREATE INDEX IF NOT EXISTS idx_tmc_year_month ON teacher_monthly_classes(year, month);`);
+
+  // 월별 평가 (5개 카테고리 점수 + 가중 합계 + 등급)
+  await env.DB.exec([
+    `CREATE TABLE IF NOT EXISTS teacher_evaluations (`,
+    `  id INTEGER PRIMARY KEY AUTOINCREMENT,`,
+    `  teacher_id INTEGER NOT NULL,`,
+    `  year INTEGER NOT NULL,`,
+    `  month INTEGER NOT NULL,`,
+    `  score_instruction REAL,`,
+    `  score_retention REAL,`,
+    `  score_punctuality REAL,`,
+    `  score_admin REAL,`,
+    `  score_contribution REAL,`,
+    `  weighted_total REAL,`,
+    `  grade TEXT,`,
+    `  strengths TEXT,`,
+    `  improvements TEXT,`,
+    `  evaluator TEXT,`,
+    `  evaluated_at INTEGER,`,
+    `  UNIQUE(teacher_id, year, month)`,
+    `);`
+  ].join(' '));
+  await env.DB.exec(`CREATE INDEX IF NOT EXISTS idx_te_year_month ON teacher_evaluations(year, month);`);
+
+  // payslips — 마감용 (새 모델 컬럼)
+  await env.DB.exec([
+    `CREATE TABLE IF NOT EXISTS payslips (`,
+    `  id INTEGER PRIMARY KEY AUTOINCREMENT,`,
+    `  teacher_id INTEGER NOT NULL,`,
+    `  year INTEGER NOT NULL,`,
+    `  month INTEGER NOT NULL,`,
+    `  status TEXT,`,
+    `  class_count INTEGER,`,
+    `  rate_per_10min_php REAL,`,
+    `  monthly_salary_php REAL,`,
+    `  weighted_total REAL,`,
+    `  grade TEXT,`,
+    `  finalized_at INTEGER NOT NULL,`,
+    `  finalized_by TEXT,`,
+    `  UNIQUE(teacher_id, year, month)`,
+    `);`
+  ].join(' '));
+  // 기존 payslips 테이블에 새 컬럼 추가 (재배포 호환)
+  for (const ddl of [
+    `ALTER TABLE payslips ADD COLUMN status TEXT;`,
+    `ALTER TABLE payslips ADD COLUMN class_count INTEGER;`,
+    `ALTER TABLE payslips ADD COLUMN rate_per_10min_php REAL;`,
+    `ALTER TABLE payslips ADD COLUMN monthly_salary_php REAL;`,
+    `ALTER TABLE payslips ADD COLUMN weighted_total REAL;`,
+    `ALTER TABLE payslips ADD COLUMN grade TEXT;`,
+  ]) {
+    try { await env.DB.exec(ddl); } catch { /* duplicate column — 정상 */ }
+  }
+
+  _payrollSchemaReady = true;
+}
+
+/** 평가 점수 5개 → 가중 합계 (없으면 null). */
+function calcWeightedTotal(e: {
+  score_instruction?: number | null,
+  score_retention?: number | null,
+  score_punctuality?: number | null,
+  score_admin?: number | null,
+  score_contribution?: number | null,
+} | null): number | null {
+  if (!e) return null;
+  const i = e.score_instruction, r = e.score_retention, p = e.score_punctuality,
+        a = e.score_admin, c = e.score_contribution;
+  // 5개 모두 있어야 합산
+  if ([i, r, p, a, c].some(v => v == null || isNaN(Number(v)))) return null;
+  const total = Number(i) * EVAL_WEIGHTS.instruction
+              + Number(r) * EVAL_WEIGHTS.retention
+              + Number(p) * EVAL_WEIGHTS.punctuality
+              + Number(a) * EVAL_WEIGHTS.admin
+              + Number(c) * EVAL_WEIGHTS.contribution;
+  return Math.round(total * 100) / 100;
+}
+
+/**
+ * 한 강사의 월 급여·평가 통합 계산.
+ *   월급 = class_count × 2 × rate_per_10min_php
+ *   평가 = teacher_evaluations 의 5개 점수 → 가중 합계 → 등급
+ */
+async function calcPayrollOne(env: { DB: D1Database }, teacherId: number, year: number, month: number): Promise<any> {
+  const t: any = await env.DB.prepare(
+    `SELECT id, name, status, years, rate_per_10min_php, hourly_rate_php, rank, center_id, active
+     FROM teachers WHERE id = ?`
+  ).bind(teacherId).first();
+  if (!t) return { ok: false, error: 'teacher_not_found', teacher_id: teacherId };
+
+  const cl: any = await env.DB.prepare(
+    `SELECT class_count, notes FROM teacher_monthly_classes
+     WHERE teacher_id = ? AND year = ? AND month = ?`
+  ).bind(teacherId, year, month).first();
+  const classCount = cl ? Number(cl.class_count) : 0;
+
+  const ev: any = await env.DB.prepare(
+    `SELECT score_instruction, score_retention, score_punctuality, score_admin, score_contribution,
+            weighted_total, grade, strengths, improvements, evaluator, evaluated_at
+     FROM teacher_evaluations WHERE teacher_id = ? AND year = ? AND month = ?`
+  ).bind(teacherId, year, month).first();
+
+  const rate = Number(t.rate_per_10min_php || 0);
+  const monthlySalary = Math.round(classCount * 2 * rate * 100) / 100;
+  const weighted = ev ? (ev.weighted_total != null ? Number(ev.weighted_total) : calcWeightedTotal(ev)) : null;
+  const grade = weighted != null ? classifyEvalGrade(weighted) : '미평가';
+
+  return {
+    ok: true,
+    teacher_id: t.id,
+    teacher_name: t.name,
+    status: t.status || null,
+    years: t.years != null ? Number(t.years) : null,
+    rate_per_10min_php: rate,
+    year, month,
+    class_count: classCount,
+    monthly_salary_php: monthlySalary,
+    monthly_salary_krw: Math.round(monthlySalary * PAYROLL_PHP_TO_KRW),
+    php_to_krw: PAYROLL_PHP_TO_KRW,
+    evaluation: ev ? {
+      score_instruction:  ev.score_instruction,
+      score_retention:    ev.score_retention,
+      score_punctuality:  ev.score_punctuality,
+      score_admin:        ev.score_admin,
+      score_contribution: ev.score_contribution,
+      weighted_total:     weighted,
+      grade,
+      strengths:          ev.strengths,
+      improvements:       ev.improvements,
+      evaluator:          ev.evaluator,
+      evaluated_at:       ev.evaluated_at,
+    } : null,
+    weighted_total: weighted,
+    grade,
+    currency: 'PHP'
+  };
+}
+
 /**
  * CSV 응답 헬퍼 — 다운로드 헤더 포함.
  */
@@ -731,6 +945,282 @@ export async function handleMangoApi(
           note: 'KV 사용량(list/get/put 호출 수) 은 Cloudflare dashboard 에서 확인. list() 호출 자체가 일일 한도 소비라 셀프 측정 제외.'
         }
       });
+    }
+
+    // ===== 💼 강사 급여·평가 (Phase 8 v2: 10분단가 + 5카테고리 평가) =====
+
+    // 시스템 설정 조회 (UI 안내용 — 환율, 가중치, 등급 임계값)
+    if (method === 'GET' && path === '/api/admin/payroll/rates') {
+      return json({
+        ok: true,
+        currency: 'PHP',
+        php_to_krw: PAYROLL_PHP_TO_KRW,
+        valid_status: VALID_TEACHER_STATUS,
+        eval_weights: EVAL_WEIGHTS,
+        grade_thresholds: [
+          { grade: '최우수',    min: 4.75, max: 5.00 },
+          { grade: '매우 우수', min: 4.50, max: 4.74 },
+          { grade: '우수',      min: 3.50, max: 4.49 },
+          { grade: '개선 요망', min: 1.00, max: 3.49 },
+        ]
+      });
+    }
+
+    // 강사 목록
+    if (method === 'GET' && path === '/api/admin/teachers') {
+      await ensurePayrollSchema(env);
+      const includeInactive = url.searchParams.get('include_inactive') === '1';
+      const sql = includeInactive
+        ? `SELECT * FROM teachers ORDER BY active DESC, name ASC`
+        : `SELECT * FROM teachers WHERE active = 1 ORDER BY name ASC`;
+      const rs = await env.DB.prepare(sql).all();
+      return json({ ok: true, items: rs.results || [] });
+    }
+
+    // 강사 등록 (새 모델: name + status + years + rate_per_10min_php)
+    if (method === 'POST' && path === '/api/admin/teachers') {
+      await ensurePayrollSchema(env);
+      const b = await parseJsonBody(request);
+      if (!b || !b.name || !b.status || b.rate_per_10min_php == null) {
+        return invalidBody(['name', 'status', 'rate_per_10min_php']);
+      }
+      if (!VALID_TEACHER_STATUS.includes(b.status)) {
+        return json({ ok: false, error: 'invalid_status', allowed: VALID_TEACHER_STATUS }, 400);
+      }
+      const rate = Number(b.rate_per_10min_php);
+      if (isNaN(rate) || rate < 0) return json({ ok: false, error: 'invalid_rate' }, 400);
+      const now = Date.now();
+      const res = await env.DB.prepare(
+        `INSERT INTO teachers (user_id, name, center_id, status, years, rate_per_10min_php, active, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?, ?)`
+      ).bind(
+        b.user_id || null, b.name, b.center_id || null,
+        b.status, b.years != null ? Number(b.years) : null, rate,
+        now, now
+      ).run();
+      return json({ ok: true, id: res.meta.last_row_id });
+    }
+
+    // 강사 수정 (부분 업데이트 — 모든 필드 선택적)
+    if (method === 'PATCH' && /^\/api\/admin\/teachers\/\d+$/.test(path)) {
+      await ensurePayrollSchema(env);
+      const m = path.match(/^\/api\/admin\/teachers\/(\d+)$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      if (!id) return invalidBody(['id(path)']);
+      const b = await parseJsonBody(request);
+      if (!b) return invalidBody(['<any field>']);
+      if (b.status && !VALID_TEACHER_STATUS.includes(b.status)) {
+        return json({ ok: false, error: 'invalid_status', allowed: VALID_TEACHER_STATUS }, 400);
+      }
+      const sets: string[] = [];
+      const binds: any[] = [];
+      if (b.name !== undefined)               { sets.push('name = ?');               binds.push(b.name); }
+      if (b.status !== undefined)             { sets.push('status = ?');             binds.push(b.status); }
+      if (b.years !== undefined)              { sets.push('years = ?');              binds.push(b.years); }
+      if (b.rate_per_10min_php !== undefined) { sets.push('rate_per_10min_php = ?'); binds.push(b.rate_per_10min_php); }
+      if (b.center_id !== undefined)          { sets.push('center_id = ?');          binds.push(b.center_id); }
+      if (b.active !== undefined)             { sets.push('active = ?');             binds.push(b.active ? 1 : 0); }
+      if (sets.length === 0) return json({ ok: false, error: 'nothing_to_update' }, 400);
+      sets.push('updated_at = ?'); binds.push(Date.now());
+      binds.push(id);
+      await env.DB.prepare(`UPDATE teachers SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+      return json({ ok: true, id });
+    }
+
+    // 월별 수업 수 입력 (20분 단위 수업 횟수)
+    if (method === 'PUT' && path === '/api/admin/teacher-classes') {
+      await ensurePayrollSchema(env);
+      const b = await parseJsonBody(request);
+      if (!b || !b.teacher_id || !b.year || !b.month || b.class_count == null) {
+        return invalidBody(['teacher_id', 'year', 'month', 'class_count']);
+      }
+      const now = Date.now();
+      await env.DB.prepare(
+        `INSERT INTO teacher_monthly_classes (teacher_id, year, month, class_count, notes, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(teacher_id, year, month) DO UPDATE SET
+           class_count = excluded.class_count, notes = excluded.notes, updated_at = excluded.updated_at`
+      ).bind(b.teacher_id, b.year, b.month, Math.max(0, parseInt(b.class_count, 10) || 0), b.notes || null, now).run();
+      return json({ ok: true });
+    }
+
+    // 월별 평가 입력 (5개 카테고리 점수 + 코멘트)
+    if (method === 'PUT' && path === '/api/admin/teacher-evaluation') {
+      await ensurePayrollSchema(env);
+      const b = await parseJsonBody(request);
+      if (!b || !b.teacher_id || !b.year || !b.month) return invalidBody(['teacher_id', 'year', 'month']);
+      // 점수 범위 검증 (1~5, 빈 칸 허용)
+      const fields = ['score_instruction', 'score_retention', 'score_punctuality', 'score_admin', 'score_contribution'] as const;
+      const vals: Record<string, number | null> = {};
+      for (const f of fields) {
+        if (b[f] == null || b[f] === '') { vals[f] = null; continue; }
+        const v = Number(b[f]);
+        if (isNaN(v) || v < 1 || v > 5) return json({ ok: false, error: 'invalid_score', field: f, allowed: '1.0~5.0' }, 400);
+        vals[f] = Math.round(v * 10) / 10;
+      }
+      const weighted = calcWeightedTotal(vals as any);
+      const grade = weighted != null ? classifyEvalGrade(weighted) : null;
+      const now = Date.now();
+      await env.DB.prepare(
+        `INSERT INTO teacher_evaluations
+           (teacher_id, year, month, score_instruction, score_retention, score_punctuality,
+            score_admin, score_contribution, weighted_total, grade,
+            strengths, improvements, evaluator, evaluated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(teacher_id, year, month) DO UPDATE SET
+           score_instruction  = excluded.score_instruction,
+           score_retention    = excluded.score_retention,
+           score_punctuality  = excluded.score_punctuality,
+           score_admin        = excluded.score_admin,
+           score_contribution = excluded.score_contribution,
+           weighted_total     = excluded.weighted_total,
+           grade              = excluded.grade,
+           strengths          = excluded.strengths,
+           improvements       = excluded.improvements,
+           evaluator          = excluded.evaluator,
+           evaluated_at       = excluded.evaluated_at`
+      ).bind(
+        b.teacher_id, b.year, b.month,
+        vals.score_instruction, vals.score_retention, vals.score_punctuality,
+        vals.score_admin, vals.score_contribution, weighted, grade,
+        b.strengths || null, b.improvements || null, b.evaluator || 'admin', now
+      ).run();
+      return json({ ok: true, weighted_total: weighted, grade });
+    }
+
+    // 개별 강사 월별 통합 조회 (계산 + 평가)
+    if (method === 'GET' && /^\/api\/admin\/payroll\/\d+$/.test(path)) {
+      await ensurePayrollSchema(env);
+      const m = path.match(/^\/api\/admin\/payroll\/(\d+)$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      const year  = parseInt(url.searchParams.get('year')  || '0', 10);
+      const month = parseInt(url.searchParams.get('month') || '0', 10);
+      if (!id || !year || !month) return invalidBody(['teacher_id(path)', 'year', 'month']);
+      const result = await calcPayrollOne(env, id, year, month);
+      return json(result, result.ok ? 200 : 404);
+    }
+
+    // 일괄 — 활성 강사 전원 (월별 dashboard 용)
+    if (method === 'GET' && path === '/api/admin/payroll/all') {
+      await ensurePayrollSchema(env);
+      const year  = parseInt(url.searchParams.get('year')  || '0', 10);
+      const month = parseInt(url.searchParams.get('month') || '0', 10);
+      if (!year || !month) return invalidBody(['year', 'month']);
+      const rs = await env.DB.prepare(`SELECT id FROM teachers WHERE active = 1 ORDER BY name ASC`).all();
+      const items: any[] = [];
+      let totalPhp = 0;
+      for (const t of (rs.results || []) as any[]) {
+        const r = await calcPayrollOne(env, t.id, year, month);
+        if (r.ok) { items.push(r); totalPhp += r.monthly_salary_php || 0; }
+      }
+      const totalKrw = Math.round(totalPhp * PAYROLL_PHP_TO_KRW);
+      // 등급 분포 카운트
+      const gradeCounts: Record<string, number> = {};
+      for (const it of items) {
+        const g = it.grade || '미평가';
+        gradeCounts[g] = (gradeCounts[g] || 0) + 1;
+      }
+      return json({
+        ok: true, year, month, count: items.length,
+        total_salary_php: Math.round(totalPhp * 100) / 100,
+        total_salary_krw: totalKrw,
+        php_to_krw: PAYROLL_PHP_TO_KRW,
+        grade_counts: gradeCounts,
+        currency: 'PHP', items
+      });
+    }
+
+    // 마감 (payslips 잠금)
+    if (method === 'POST' && path === '/api/admin/payroll/finalize') {
+      await ensurePayrollSchema(env);
+      const b = await parseJsonBody(request);
+      if (!b || !b.year || !b.month) return invalidBody(['year', 'month']);
+      const finalizedBy = (b.finalized_by || 'admin').toString().slice(0, 64);
+      const now = Date.now();
+      const rs = await env.DB.prepare(`SELECT id FROM teachers WHERE active = 1`).all();
+      let saved = 0, skipped = 0, totalPhp = 0;
+      for (const t of (rs.results || []) as any[]) {
+        const r = await calcPayrollOne(env, t.id, b.year, b.month);
+        if (!r.ok) continue;
+        try {
+          await env.DB.prepare(
+            `INSERT INTO payslips (teacher_id, year, month, status, class_count, rate_per_10min_php,
+                                    monthly_salary_php, weighted_total, grade, finalized_at, finalized_by)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            r.teacher_id, r.year, r.month, r.status, r.class_count, r.rate_per_10min_php,
+            r.monthly_salary_php, r.weighted_total, r.grade, now, finalizedBy
+          ).run();
+          saved++;
+          totalPhp += r.monthly_salary_php || 0;
+        } catch (e) { skipped++; }
+      }
+      await enqueueNotification(env, {
+        type: 'payroll_finalized',
+        title: `💼 ${b.year}-${String(b.month).padStart(2,'0')} 급여 마감`,
+        body: `강사 ${saved}명 정산 완료 (skipped ${skipped}). 합계 PHP ${Math.round(totalPhp).toLocaleString()} ≈ KRW ${Math.round(totalPhp * PAYROLL_PHP_TO_KRW).toLocaleString()}.`,
+        meta: { year: b.year, month: b.month, saved, skipped, total_php: totalPhp, php_to_krw: PAYROLL_PHP_TO_KRW, finalized_by: finalizedBy, finalized_at: now }
+      });
+      return json({ ok: true, year: b.year, month: b.month, saved, skipped, total_php: Math.round(totalPhp), finalized_by: finalizedBy });
+    }
+
+    // CSV — Mangoi 평가 + 급여 통합 (회계 + 평가팀 공용)
+    if (method === 'GET' && path === '/api/admin/export/payroll.csv') {
+      await ensurePayrollSchema(env);
+      const year  = parseInt(url.searchParams.get('year')  || '0', 10);
+      const month = parseInt(url.searchParams.get('month') || '0', 10);
+      if (!year || !month) return invalidBody(['year', 'month']);
+      const rs = await env.DB.prepare(`SELECT id FROM teachers WHERE active = 1 ORDER BY name ASC`).all();
+      const rows: any[] = [];
+      for (const t of (rs.results || []) as any[]) {
+        const r = await calcPayrollOne(env, t.id, year, month);
+        if (!r.ok) continue;
+        const e = r.evaluation || {};
+        rows.push({
+          teacher_id:         r.teacher_id,
+          teacher_name:       r.teacher_name,
+          status:             r.status,
+          years:              r.years,
+          year:               r.year,
+          month:              r.month,
+          class_count:        r.class_count,
+          rate_per_10min_php: r.rate_per_10min_php,
+          monthly_salary_php: r.monthly_salary_php,
+          monthly_salary_krw: r.monthly_salary_krw,
+          score_instruction:  e.score_instruction,
+          score_retention:    e.score_retention,
+          score_punctuality:  e.score_punctuality,
+          score_admin:        e.score_admin,
+          score_contribution: e.score_contribution,
+          weighted_total:     r.weighted_total,
+          grade:              r.grade,
+          strengths:          e.strengths,
+          improvements:       e.improvements,
+        });
+      }
+      const csv = toCSV(rows, [
+        { key: 'teacher_id',         label: 'teacher_id' },
+        { key: 'teacher_name',       label: 'teacher_name' },
+        { key: 'status',             label: 'status' },
+        { key: 'years',              label: 'years' },
+        { key: 'year',               label: 'year' },
+        { key: 'month',              label: 'month' },
+        { key: 'class_count',        label: 'class_count_20min' },
+        { key: 'rate_per_10min_php', label: 'rate_per_10min_php' },
+        { key: 'monthly_salary_php', label: 'monthly_salary_php' },
+        { key: 'monthly_salary_krw', label: 'monthly_salary_krw' },
+        { key: 'score_instruction',  label: 'inst_25%' },
+        { key: 'score_retention',    label: 'ret_30%' },
+        { key: 'score_punctuality',  label: 'punct_20%' },
+        { key: 'score_admin',        label: 'admin_15%' },
+        { key: 'score_contribution', label: 'contrib_10%' },
+        { key: 'weighted_total',     label: 'weighted_total' },
+        { key: 'grade',              label: 'grade' },
+        { key: 'strengths',          label: 'strengths' },
+        { key: 'improvements',       label: 'improvements' },
+      ]);
+      const fname = `mangoi_payroll_${year}-${String(month).padStart(2,'0')}.csv`;
+      return csvResponse(fname, csv);
     }
 
     // ===== 관리자 개입: 녹화 상태 변경 (Phase 4) =====
