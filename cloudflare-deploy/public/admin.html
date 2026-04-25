@@ -113,6 +113,44 @@
   <button id="test-r2-btn" onclick="testR2()" style="background:#3b82f6;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;margin-right:8px;" data-ko="🔧 R2 저장소 테스트" data-en="🔧 R2 Storage Test">🔧 R2 저장소 테스트</button>
   <span id="test-r2-result" style="font-size:13px;color:#94a3b8;"></span>
 </div>
+
+<!-- 📣 Phase 5: 알림 큐 (운영 이벤트 자동 적재 + 상태 모니터링) -->
+<div class="table-card" style="margin-bottom:24px;">
+  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+    <span data-ko="📣 알림 큐 (운영 이벤트)" data-en="📣 Notification Queue">📣 알림 큐 (운영 이벤트)</span>
+    <span style="font-size:12px;font-weight:400;color:#6b7280;" id="notif-counts">—</span>
+  </div>
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+       data-ko="💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다."
+       data-en="💡 Operational events are auto-enqueued. External tool pulls pending items, sends to KakaoTalk, then marks as 'sent'.">
+    💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다.
+  </div>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px 0;align-items:center;">
+    <select id="notif-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+      <option value="pending" selected>pending (대기)</option>
+      <option value="sent">sent (발송됨)</option>
+      <option value="failed">failed (실패)</option>
+      <option value="discarded">discarded (폐기)</option>
+      <option value="all">전체</option>
+    </select>
+    <button id="notif-refresh"  style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+    <button id="notif-test-btn" style="padding:5px 12px;font-size:12px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,0.1);color:#92400e;cursor:pointer;" data-ko="🧪 테스트 알림" data-en="🧪 Test Notify">🧪 테스트 알림</button>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th data-ko="시각" data-en="Time">시각</th>
+        <th data-ko="유형" data-en="Type">유형</th>
+        <th data-ko="제목" data-en="Title">제목</th>
+        <th data-ko="내용" data-en="Body">내용</th>
+        <th data-ko="채널" data-en="Channel">채널</th>
+        <th data-ko="상태" data-en="Status">상태</th>
+        <th data-ko="액션" data-en="Actions">액션</th>
+      </tr>
+    </thead>
+    <tbody id="notif-table"><tr><td colspan="7" class="empty">로딩 중...</td></tr></tbody>
+  </table>
+</div>
 <!-- 🎯 집중도 분석 위젯 제거됨 (2026-04-24)
      이유: 녹화 목록 테이블에 이미 시선 점수 / 말하기 점수 / 참여도 컬럼이
      존재하므로 focus-integrator.pages.dev iframe 임베드는 중복. 사용자가
@@ -771,6 +809,110 @@ async function forceEndRoom(roomId) {
   }
 }
 
+// 📣 Phase 5: 알림 큐 로딩 + 렌더 + 액션
+async function loadNotifications() {
+  const _L = adminLang === 'en';
+  const filter = (document.getElementById('notif-status-filter') || { value: 'pending' }).value;
+  try {
+    const r = await fetch('/api/admin/notifications?status=' + encodeURIComponent(filter) + '&limit=50', { cache: 'no-store', credentials: 'include' });
+    const data = await r.json();
+    if (!data.ok) {
+      document.getElementById('notif-table').innerHTML = '<tr><td colspan="7" class="empty">' + (_L?'Load failed: ':'로딩 실패: ') + (data.error || ('HTTP ' + r.status)) + '</td></tr>';
+      return;
+    }
+    const items = data.items || [];
+    const counts = data.counts || {};
+    const totalAll = (counts.pending||0) + (counts.sent||0) + (counts.failed||0) + (counts.discarded||0);
+    document.getElementById('notif-counts').textContent =
+      '대기 ' + (counts.pending || 0) + ' · 발송 ' + (counts.sent || 0)
+      + ' · 실패 ' + (counts.failed || 0) + ' · 폐기 ' + (counts.discarded || 0)
+      + ' · 합계 ' + totalAll;
+    const tb = document.getElementById('notif-table');
+    if (items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="7" class="empty">' + (_L?'No items':'항목 없음') + '</td></tr>';
+      return;
+    }
+    tb.innerHTML = items.map(it => {
+      const t = it.created_at ? new Date(it.created_at).toLocaleString(_L?'en-US':'ko-KR') : '-';
+      const sentT = it.sent_at ? new Date(it.sent_at).toLocaleString(_L?'en-US':'ko-KR') : '';
+      const statusBadge = it.status === 'sent'      ? '<span class="badge ok">sent</span>'
+                       : it.status === 'pending'   ? '<span class="badge warn">pending</span>'
+                       : it.status === 'failed'    ? '<span class="badge" style="background:#fef2f2;color:#b91c1c;">failed</span>'
+                       : '<span class="badge" style="background:#f3f4f6;color:#6b7280;">' + it.status + '</span>';
+      const safeTitle = String(it.title || '').replace(/[<>]/g, '');
+      const safeBody  = String(it.body  || '').replace(/[<>]/g, '');
+      let actions = '';
+      if (it.status === 'pending') {
+        actions = '<button onclick="setNotifStatus(' + it.id + ', \'sent\')" title="발송 완료로 표시" style="background:#10b981;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:none;margin-right:4px;">✓ ' + (_L?'sent':'발송') + '</button>'
+                + '<button onclick="setNotifStatus(' + it.id + ', \'discarded\')" title="폐기 처리" style="background:#6b7280;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:none;">🗑</button>';
+      } else if (it.status === 'failed') {
+        actions = '<button onclick="setNotifStatus(' + it.id + ', \'pending\')" title="다시 대기 상태로" style="background:#f59e0b;color:#fff;padding:3px 8px;border-radius:4px;font-size:11px;cursor:pointer;border:none;">↻ ' + (_L?'retry':'재시도') + '</button>';
+      }
+      return '<tr>'
+        + '<td style="white-space:nowrap;">' + t + (sentT ? '<br><span style="color:#10b981;font-size:11px;">→ ' + sentT + '</span>' : '') + '</td>'
+        + '<td><code style="font-size:11px;">' + (it.type || '-') + '</code></td>'
+        + '<td>' + safeTitle + '</td>'
+        + '<td style="color:#6b7280;font-size:12px;">' + safeBody + '</td>'
+        + '<td><code style="font-size:11px;">' + (it.channel || '-') + '</code></td>'
+        + '<td>' + statusBadge + '</td>'
+        + '<td>' + actions + '</td>'
+        + '</tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('notif-table').innerHTML = '<tr><td colspan="7" class="empty">' + (_L?'Network error: ':'네트워크 에러: ') + e.message + '</td></tr>';
+  }
+}
+
+async function setNotifStatus(id, status) {
+  try {
+    const r = await fetch('/api/admin/notifications/' + id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ status })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || data.ok === false) {
+      alert('실패: ' + (data.error || ('HTTP ' + r.status)));
+      return;
+    }
+    loadNotifications();
+  } catch (e) {
+    alert('네트워크 에러: ' + e.message);
+  }
+}
+
+async function sendTestNotification() {
+  const title = prompt('테스트 알림 제목 (선택):', '🧪 테스트') || '🧪 테스트 알림';
+  const body  = prompt('테스트 알림 내용 (선택):', '알림 큐 동작 검증') || '알림 큐 동작 검증';
+  try {
+    const r = await fetch('/api/admin/notifications/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ title, body })
+    });
+    const data = await r.json().catch(() => ({}));
+    if (!r.ok || data.ok === false) {
+      alert('실패: ' + (data.error || ('HTTP ' + r.status)));
+      return;
+    }
+    loadNotifications();
+  } catch (e) {
+    alert('네트워크 에러: ' + e.message);
+  }
+}
+
+// 알림 큐 컨트롤 바인딩
+(function bindNotif() {
+  const refreshBtn = document.getElementById('notif-refresh');
+  const testBtn    = document.getElementById('notif-test-btn');
+  const filterEl   = document.getElementById('notif-status-filter');
+  if (refreshBtn) refreshBtn.addEventListener('click', loadNotifications);
+  if (testBtn)    testBtn.addEventListener('click', sendTestNotification);
+  if (filterEl)   filterEl.addEventListener('change', loadNotifications);
+})();
+
 // 🗑️ 녹화 상태 변경 (Phase 4) — 삭제/복원 공용
 async function setRecordingStatus(id, nextStatus) {
   const _L = adminLang==='en';
@@ -851,7 +993,8 @@ document.getElementById('refresh').onclick = async function() {
       load(),
       loadRecordings(),
       loadRetention(),
-      loadActiveRooms()
+      loadActiveRooms(),
+      loadNotifications()
     ]);
   } catch(e) { console.warn('refresh error:', e); }
   btn.disabled = false;
@@ -859,7 +1002,7 @@ document.getElementById('refresh').onclick = async function() {
 };
 document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms()]);
+Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications()]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>

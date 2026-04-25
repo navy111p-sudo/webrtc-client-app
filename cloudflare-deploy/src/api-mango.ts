@@ -47,6 +47,63 @@ async function parseJsonBody(request: Request): Promise<any | null> {
 const invalidBody = (required: string[]): Response =>
   json({ ok: false, error: 'invalid_body', required }, 400);
 
+// ========================================================================
+// 📣 알림 큐 (Phase 5) — Worker 는 적재만 하고, 발송은 외부 도구가 폴링.
+//   - 카카오톡 직접 발송은 후속 Phase (KAKAO_ACCESS_TOKEN 시크릿 도입) 에서.
+//   - 큐 모델은 다채널 확장 가능 (slack/email/discord 등).
+// ========================================================================
+let _notifSchemaReady = false;
+async function ensureNotifSchema(env: { DB: D1Database }): Promise<void> {
+  if (_notifSchemaReady) return;
+  // exec() 는 multi-statement DDL 용. IF NOT EXISTS 로 멱등.
+  await env.DB.exec([
+    `CREATE TABLE IF NOT EXISTS notification_queue (`,
+    `  id INTEGER PRIMARY KEY AUTOINCREMENT,`,
+    `  type TEXT NOT NULL,`,
+    `  title TEXT,`,
+    `  body TEXT,`,
+    `  meta TEXT,`,
+    `  channel TEXT DEFAULT 'kakao_memo',`,
+    `  status TEXT DEFAULT 'pending',`,
+    `  created_at INTEGER NOT NULL,`,
+    `  sent_at INTEGER,`,
+    `  error TEXT`,
+    `);`
+  ].join(' '));
+  await env.DB.exec(
+    `CREATE INDEX IF NOT EXISTS idx_notif_status_created ON notification_queue(status, created_at);`
+  );
+  _notifSchemaReady = true;
+}
+
+/**
+ * 운영 이벤트를 알림 큐에 적재.
+ *   - 적재 자체가 실패해도 호출 측 핵심 동작(출석 INSERT 등)을 막지 않도록
+ *     try/catch 로 감싸서 console.warn 만 남기고 무시.
+ */
+async function enqueueNotification(
+  env: { DB: D1Database },
+  evt: { type: string; title: string; body: string; meta?: any; channel?: string }
+): Promise<void> {
+  try {
+    await ensureNotifSchema(env);
+    const now = Date.now();
+    await env.DB.prepare(
+      `INSERT INTO notification_queue (type, title, body, meta, channel, status, created_at)
+       VALUES (?, ?, ?, ?, ?, 'pending', ?)`
+    ).bind(
+      evt.type,
+      evt.title,
+      evt.body,
+      evt.meta ? JSON.stringify(evt.meta) : null,
+      evt.channel || 'kakao_memo',
+      now
+    ).run();
+  } catch (e: any) {
+    console.warn('[notify] enqueue 실패 (무시하고 계속):', e?.message || e);
+  }
+}
+
 export async function handleMangoApi(
   request: Request,
   url: URL,
@@ -62,10 +119,23 @@ export async function handleMangoApi(
       if (!b || !b.room_id || !b.user_id) return invalidBody(['room_id', 'user_id']);
       const now = Date.now();
       const date = today(now);
+      // 📣 오늘 처음 보는 (room_id, date) 조합이면 "수업 시작" 알림 큐에 적재
+      //    INSERT 와 별개 트랜잭션 — 알림 실패가 출석 기록을 막지 않도록.
+      const existing = await env.DB.prepare(
+        `SELECT 1 FROM attendance WHERE room_id = ? AND date = ? LIMIT 1`
+      ).bind(b.room_id, date).first();
       const res = await env.DB.prepare(
         `INSERT INTO attendance (room_id, user_id, username, role, joined_at, status, date)
          VALUES (?, ?, ?, ?, ?, 'present', ?)`
       ).bind(b.room_id, b.user_id, b.username || null, b.role || 'student', now, date).run();
+      if (!existing) {
+        await enqueueNotification(env, {
+          type: 'class_start',
+          title: `🎬 수업 시작 — 방 ${b.room_id}`,
+          body: `${b.username || b.user_id} 님 입장 (${b.role || 'student'})`,
+          meta: { room_id: b.room_id, user_id: b.user_id, role: b.role || 'student', joined_at: now }
+        });
+      }
       return json({ ok: true, attendance_id: res.meta.last_row_id, joined_at: now });
     }
 
@@ -255,6 +325,13 @@ export async function handleMangoApi(
         `INSERT INTO emergency_events (room_id, user_id, target_user_id, event_type, triggered_at, meta)
          VALUES (?, ?, ?, ?, ?, ?)`
       ).bind(b.room_id, b.user_id, b.target_user_id || null, b.event_type || 'kakao_button', now, JSON.stringify(b.meta || {})).run();
+      // 📣 비상 이벤트는 항상 즉시 알림
+      await enqueueNotification(env, {
+        type: 'emergency',
+        title: `🚨 비상 이벤트 — 방 ${b.room_id}`,
+        body: `${b.user_id} 가 ${b.event_type || 'kakao_button'} 트리거 (대상: ${b.target_user_id || '전체'})`,
+        meta: { room_id: b.room_id, user_id: b.user_id, target_user_id: b.target_user_id || null, event_type: b.event_type || 'kakao_button', triggered_at: now, emergency_id: res.meta.last_row_id }
+      });
       return json({ ok: true, id: res.meta.last_row_id });
     }
 
@@ -356,6 +433,14 @@ export async function handleMangoApi(
       const reason = (b && typeof b.reason === 'string' && b.reason.trim()) ? b.reason.trim() : '관리자가 수업을 종료했습니다.';
       const resp = await stub.fetch('http://do/force-end?reason=' + encodeURIComponent(reason), { method: 'POST' });
       const body = await resp.text();
+      // 📣 강제 종료는 운영 액션 — 알림 큐 적재
+      let parsed: any = null; try { parsed = JSON.parse(body); } catch {}
+      await enqueueNotification(env, {
+        type: 'class_force_end',
+        title: `🛑 수업 강제 종료 — 방 ${roomId}`,
+        body: `사유: ${reason} · 알림 ${parsed?.notified ?? '?'}명`,
+        meta: { room_id: roomId, reason, notified: parsed?.notified ?? null, ended_at: Date.now() }
+      });
       return new Response(body, {
         status: resp.status,
         headers: {
@@ -363,6 +448,61 @@ export async function handleMangoApi(
           'Access-Control-Allow-Origin': '*'
         }
       });
+    }
+
+    // ===== 📣 알림 큐 (Phase 5) =====
+    //   GET   /api/admin/notifications?status=pending&limit=50
+    //   POST  /api/admin/notifications/test     (관리자가 임의 메시지 큐에 적재 — 검증용)
+    //   PATCH /api/admin/notifications/:id      body: { status: 'sent'|'failed'|'discarded', error?: string }
+    if (path === '/api/admin/notifications' && method === 'GET') {
+      await ensureNotifSchema(env);
+      const wantStatus = url.searchParams.get('status') || 'pending';
+      const lim = Math.max(1, Math.min(500, parseInt(url.searchParams.get('limit') || '50', 10)));
+      let rs;
+      if (wantStatus === 'all') {
+        rs = await env.DB.prepare(
+          `SELECT id, type, title, body, meta, channel, status, created_at, sent_at, error
+           FROM notification_queue ORDER BY created_at DESC LIMIT ?`
+        ).bind(lim).all();
+      } else {
+        rs = await env.DB.prepare(
+          `SELECT id, type, title, body, meta, channel, status, created_at, sent_at, error
+           FROM notification_queue WHERE status = ? ORDER BY created_at DESC LIMIT ?`
+        ).bind(wantStatus, lim).all();
+      }
+      // 카운트 (status 별 합계)
+      const countRs = await env.DB.prepare(
+        `SELECT status, COUNT(*) AS c FROM notification_queue GROUP BY status`
+      ).all();
+      const counts: any = {};
+      for (const row of (countRs.results || []) as any[]) counts[row.status] = row.c;
+      return json({ ok: true, items: rs.results || [], counts });
+    }
+
+    if (path === '/api/admin/notifications/test' && method === 'POST') {
+      const b = await parseJsonBody(request);
+      const title = (b && b.title) || '🧪 테스트 알림';
+      const body  = (b && b.body)  || '알림 큐 동작 검증용 메시지입니다.';
+      await enqueueNotification(env, { type: 'manual', title, body, meta: { issued_by: 'admin', at: Date.now() } });
+      return json({ ok: true, enqueued: { title, body } });
+    }
+
+    if (method === 'PATCH' && /^\/api\/admin\/notifications\/\d+$/.test(path)) {
+      await ensureNotifSchema(env);
+      const m = path.match(/^\/api\/admin\/notifications\/(\d+)$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      if (!id) return invalidBody(['id(path)']);
+      const b = await parseJsonBody(request);
+      if (!b || !b.status) return invalidBody(['status']);
+      const allowed = new Set(['sent', 'failed', 'discarded', 'pending']);
+      if (!allowed.has(b.status)) {
+        return json({ ok: false, error: 'invalid_status', allowed: Array.from(allowed) }, 400);
+      }
+      const sentAt = b.status === 'sent' ? Date.now() : null;
+      await env.DB.prepare(
+        `UPDATE notification_queue SET status = ?, sent_at = ?, error = ? WHERE id = ?`
+      ).bind(b.status, sentAt, b.error || null, id).run();
+      return json({ ok: true, id, status: b.status, sent_at: sentAt });
     }
 
     // ===== 관리자 개입: 녹화 상태 변경 (Phase 4) =====

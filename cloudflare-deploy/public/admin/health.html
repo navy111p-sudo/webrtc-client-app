@@ -182,6 +182,9 @@ const ENDPOINTS = [
   // Phase 4: 관리자 개입 API (실제 수업은 건드리지 않도록 빈 body POST → 400 기대)
   { path: '/api/admin/room/__probe__/force-end', method: 'POST',  expect: '2xx-or-4xx', label: 'Force-End Room', body: '{}' },
   { path: '/api/recordings/0/status',            method: 'PATCH', expect: '2xx-or-4xx', label: 'Rec Status PATCH', body: '{}' },
+  // Phase 5: 알림 큐
+  { path: '/api/admin/notifications?status=pending&limit=1', method: 'GET',  expect: '2xx',        label: 'Notif Queue (GET)', body: null },
+  { path: '/api/admin/notifications/0',           method: 'PATCH', expect: '2xx-or-4xx', label: 'Notif PATCH', body: '{}' },
   // --- POST 엔드포인트 — 빈 body 로 라우트 존재만 검증 (400 기대, 405 면 🔴) ---
   //   ⚠ 실제 라우트 경로 그대로. /api/attendance 플레인은 라우트가 없고, /join·/leave·/heartbeat 이 실체.
   { path: '/api/attendance/join',         method: 'POST', expect: '2xx-or-4xx', label: 'Attendance · join',      body: '{}' },
