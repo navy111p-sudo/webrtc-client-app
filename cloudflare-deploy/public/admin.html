@@ -159,59 +159,71 @@
 
 <div class="table-card" style="margin-bottom:24px;">
   <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-    <span>💼 Mangoi 강사 급여·평가 대시보드</span>
+    <span data-ko="💼 Mangoi 강사 급여·평가 대시보드" data-en="💼 Mangoi Teacher Payroll & Evaluation">💼 Mangoi 강사 급여·평가 대시보드</span>
     <span style="font-size:12px;font-weight:400;color:#6b7280;" id="payroll-counts">—</span>
   </div>
-  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;">
-    💡 <strong>월급</strong> = 총 수업수(20분) × 2 × 10분당 단가(PHP). <strong>평가</strong>는 5개 카테고리(수업25% · 재등록30% · 근태20% · 행정15% · 조직10%) 가중 평균.
-    행을 클릭하면 평가 폼이 열립니다. 마감(🔒)하면 payslips 에 영구 보존됩니다.
+  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+       data-ko="💡 월급 = 총 수업수(20분) × 2 × 10분당 단가(PHP). 평가는 5개 카테고리(수업25% · 재등록30% · 근태20% · 행정15% · 조직10%) 가중 평균. 행을 클릭하면 평가 폼이 열립니다. 마감(🔒)하면 payslips 에 영구 보존됩니다."
+       data-en="💡 Salary = total classes (20-min) × 2 × rate per 10 min (PHP). Evaluation = weighted avg of 5 categories (Inst 25% · Ret 30% · Punct 20% · Admin 15% · Contrib 10%). Click a row to open the evaluation form. Lock (🔒) writes to payslips permanently.">
+    💡 월급 = 총 수업수(20분) × 2 × 10분당 단가(PHP). 평가는 5개 카테고리(수업25% · 재등록30% · 근태20% · 행정15% · 조직10%) 가중 평균. 행을 클릭하면 평가 폼이 열립니다. 마감(🔒)하면 payslips 에 영구 보존됩니다.
   </div>
 
   <!-- 신규 강사 등록 -->
   <details style="margin-bottom:12px;">
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 강사 신규 등록</summary>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 강사 신규 등록" data-en="＋ Add New Teacher">＋ 강사 신규 등록</summary>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;">
-      <input id="t-new-name"   placeholder="이름 (필수)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
+      <input id="t-new-name"   placeholder="이름 (필수)" data-ko-placeholder="이름 (필수)" data-en-placeholder="Name (required)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
       <select id="t-new-status" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;">
-        <option value="office">OFFICE 근무</option>
-        <option value="home">HOME 근무</option>
+        <option value="office" data-ko="OFFICE 근무" data-en="OFFICE">OFFICE 근무</option>
+        <option value="home"   data-ko="HOME 근무"   data-en="HOME">HOME 근무</option>
       </select>
-      <input id="t-new-years"  type="number" placeholder="연차"        style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:80px;" />
-      <input id="t-new-rate"   type="number" step="0.01" placeholder="10분당 단가 (PHP)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:170px;" />
-      <button id="t-new-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+      <input id="t-new-years"  type="number" placeholder="연차"               data-ko-placeholder="연차"             data-en-placeholder="Years"                style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:80px;" />
+      <input id="t-new-rate"   type="number" step="0.01" placeholder="10분당 단가 (PHP)" data-ko-placeholder="10분당 단가 (PHP)" data-en-placeholder="Rate per 10 min (PHP)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:170px;" />
+      <button id="t-new-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
     </div>
   </details>
 
   <!-- 월 선택 + 액션 -->
   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
-    <label style="font-size:13px;color:#374151;">정산 월 &nbsp;
+    <label style="font-size:13px;color:#374151;display:flex;align-items:center;gap:4px;">
+      <span data-ko="정산 월" data-en="Period">정산 월</span>&nbsp;
       <input id="payroll-year"  type="number" value="2026" min="2024" max="2030" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:80px;" />
       <input id="payroll-month" type="number" value="4"    min="1"    max="12"   style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:60px;" />
     </label>
-    <button id="payroll-calc-btn"     class="primary" style="padding:5px 12px;font-size:13px;">🧮 불러오기</button>
-    <button id="payroll-csv-btn"      style="padding:5px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 CSV (평가+급여)</button>
-    <button id="payroll-finalize-btn" style="padding:5px 12px;font-size:13px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="payslips 테이블에 영구 저장 (취소 불가)">🔒 마감</button>
-    <button id="payroll-charts-btn"   style="padding:5px 12px;font-size:13px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="등급·급여 차트 토글">📊 그래프</button>
-    <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;" title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
+    <button id="payroll-calc-btn"     class="primary" style="padding:5px 12px;font-size:13px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+    <button id="payroll-csv-btn"      style="padding:5px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;" data-ko="📥 CSV (평가+급여)" data-en="📥 CSV (Eval+Pay)">📥 CSV (평가+급여)</button>
+    <button id="payroll-finalize-btn" style="padding:5px 12px;font-size:13px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;"
+            data-ko="🔒 마감" data-en="🔒 Close"
+            data-ko-title="payslips 테이블에 영구 저장 (취소 불가)" data-en-title="Permanently save to payslips (irreversible)"
+            title="payslips 테이블에 영구 저장 (취소 불가)">🔒 마감</button>
+    <button id="payroll-charts-btn"   style="padding:5px 12px;font-size:13px;background:#0ea5e9;color:#fff;border:none;border-radius:6px;cursor:pointer;"
+            data-ko="📊 그래프" data-en="📊 Charts"
+            data-ko-title="등급·급여 차트 토글" data-en-title="Toggle grade/salary charts"
+            title="등급·급여 차트 토글">📊 그래프</button>
+    <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;"
+            data-ko="🌱 데모 21명 시드" data-en="🌱 Seed 21 Demo"
+            data-ko-title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)"
+            data-en-title="Register all 21 teachers from salary-heatmap.pages.dev at once (updates if exists)"
+            title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
   </div>
 
   <!-- 📊 그래프 영역 (기본 숨김) -->
   <div id="payroll-charts-wrap" style="display:none;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:12px;">
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(420px,1fr));gap:14px;">
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
-        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">💰 강사별 월급 (PHP)</div>
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;" data-ko="💰 강사별 월급 (PHP)" data-en="💰 Salary by Teacher (PHP)">💰 강사별 월급 (PHP)</div>
         <div style="position:relative;height:340px;"><canvas id="chart-pr-salary"></canvas></div>
       </div>
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
-        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">🏆 강사별 가중 평가 점수 (1~5)</div>
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;" data-ko="🏆 강사별 가중 평가 점수 (1~5)" data-en="🏆 Weighted Score by Teacher (1~5)">🏆 강사별 가중 평가 점수 (1~5)</div>
         <div style="position:relative;height:340px;"><canvas id="chart-pr-weighted"></canvas></div>
       </div>
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
-        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">🎯 등급 분포</div>
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;" data-ko="🎯 등급 분포" data-en="🎯 Grade Distribution">🎯 등급 분포</div>
         <div style="position:relative;height:280px;"><canvas id="chart-pr-grade"></canvas></div>
       </div>
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;">
-        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;">📡 5개 카테고리 평균 (레이더)</div>
+        <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:6px;" data-ko="📡 5개 카테고리 평균 (레이더)" data-en="📡 5-Category Average (Radar)">📡 5개 카테고리 평균 (레이더)</div>
         <div style="position:relative;height:280px;"><canvas id="chart-pr-radar"></canvas></div>
       </div>
     </div>
@@ -226,25 +238,27 @@
     .pr-th.pr-active .pr-arrow { color:#1e40af; }
   </style>
   <div id="payroll-sort-status" style="font-size:12px;margin:6px 0;display:flex;flex-wrap:wrap;gap:4px;align-items:center;"></div>
-  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;">💡 헤더 클릭 = 1차 정렬 토글 · <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:3px;padding:1px 6px;font-size:10px;">Shift</kbd> + 클릭 = 2차/3차 정렬 추가</div>
+  <div style="font-size:11px;color:#9ca3af;margin-bottom:6px;"
+       data-ko-html='💡 헤더 클릭 = 1차 정렬 토글 · <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:3px;padding:1px 6px;font-size:10px;">Shift</kbd> + 클릭 = 2차/3차 정렬 추가'
+       data-en-html='💡 Click = primary sort · <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:3px;padding:1px 6px;font-size:10px;">Shift</kbd> + Click = add 2nd/3rd sort'>💡 헤더 클릭 = 1차 정렬 토글 · <kbd style="background:#f3f4f6;border:1px solid #d1d5db;border-radius:3px;padding:1px 6px;font-size:10px;">Shift</kbd> + 클릭 = 2차/3차 정렬 추가</div>
   <div style="overflow-x:auto;">
     <table style="min-width:1100px;">
       <thead>
         <tr id="payroll-thead">
-          <th class="pr-th" data-sort-key="teacher_name">교사<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="status">근무<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="years">연차<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="score_instruction">수업(25%)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="score_retention">유지(30%)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="score_punctuality">근태(20%)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="score_admin">행정(15%)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="score_contribution">조직(10%)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="weighted_total">가중점수<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="grade">등급<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="class_count">총 수업수<br>(20분)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="rate_per_10min_php">10분 단가<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="monthly_salary_php">월급(PHP)<span class="pr-arrow">↕</span></th>
-          <th class="pr-th" data-sort-key="monthly_salary_krw">≈ KRW<span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="teacher_name"><span data-ko="교사" data-en="Teacher">교사</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="status"><span data-ko="근무" data-en="Status">근무</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="years"><span data-ko="연차" data-en="Years">연차</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_instruction"><span data-ko="수업(25%)" data-en="Inst (25%)">수업(25%)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_retention"><span data-ko="유지(30%)" data-en="Ret (30%)">유지(30%)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_punctuality"><span data-ko="근태(20%)" data-en="Punct (20%)">근태(20%)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_admin"><span data-ko="행정(15%)" data-en="Admin (15%)">행정(15%)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="score_contribution"><span data-ko="조직(10%)" data-en="Contrib (10%)">조직(10%)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="weighted_total"><span data-ko="가중점수" data-en="Weighted">가중점수</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="grade"><span data-ko="등급" data-en="Grade">등급</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="class_count"><span data-ko-html="총 수업수<br>(20분)" data-en-html="Classes<br>(20-min)">총 수업수<br>(20분)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="rate_per_10min_php"><span data-ko="10분 단가" data-en="Rate/10m">10분 단가</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="monthly_salary_php"><span data-ko="월급(PHP)" data-en="Salary (PHP)">월급(PHP)</span><span class="pr-arrow">↕</span></th>
+          <th class="pr-th" data-sort-key="monthly_salary_krw"><span data-ko="≈ KRW" data-en="≈ KRW">≈ KRW</span><span class="pr-arrow">↕</span></th>
         </tr>
       </thead>
       <tbody id="payroll-table"><tr><td colspan="14" class="empty">[🧮 불러오기] 를 눌러 강사 목록과 점수를 표시하세요.</td></tr></tbody>
@@ -256,48 +270,59 @@
 <div class="eval-modal-bg" id="eval-modal-bg">
   <div class="eval-modal">
     <h3 id="eval-modal-title">📋 평가 입력</h3>
-    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;">1.0 ~ 5.0 점수 입력 (소수 0.5 단위 권장). 5개 모두 채워야 등급이 자동 산출됩니다.</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:12px;"
+         data-ko="1.0 ~ 5.0 점수 입력 (소수 0.5 단위 권장). 5개 모두 채워야 등급이 자동 산출됩니다."
+         data-en="Enter scores 1.0–5.0 (0.5 step recommended). All 5 categories required for auto grade.">1.0 ~ 5.0 점수 입력 (소수 0.5 단위 권장). 5개 모두 채워야 등급이 자동 산출됩니다.</div>
 
     <div class="eval-row">
-      <label>수업 우수성 (25%)</label>
-      <span class="desc">수업 준비·학생 참여·다양한 교수법·피드백 품질</span>
+      <label data-ko="수업 우수성 (25%)" data-en="Instructional Excellence (25%)">수업 우수성 (25%)</label>
+      <span class="desc" data-ko="수업 준비·학생 참여·다양한 교수법·피드백 품질" data-en="Lesson prep, student engagement, diverse teaching, feedback">수업 준비·학생 참여·다양한 교수법·피드백 품질</span>
       <input type="number" id="ev-instruction" min="1" max="5" step="0.5" />
     </div>
     <div class="eval-row">
-      <label>학생 재등록 유지 (30%)</label>
-      <span class="desc">90% 이상=5점 / 80~89%=4점 / 70~79%=3점 / &lt;70%=2점 이하</span>
+      <label data-ko="학생 재등록 유지 (30%)" data-en="Student Retention (30%)">학생 재등록 유지 (30%)</label>
+      <span class="desc"
+            data-ko="90% 이상=5점 / 80~89%=4점 / 70~79%=3점 / <70%=2점 이하"
+            data-en="≥90%=5 / 80–89%=4 / 70–79%=3 / <70%=2 or below">90% 이상=5점 / 80~89%=4점 / 70~79%=3점 / &lt;70%=2점 이하</span>
       <input type="number" id="ev-retention" min="1" max="5" step="0.5" />
     </div>
     <div class="eval-row">
-      <label>근태/시간엄수 (20%)</label>
-      <span class="desc">월 1회 이하 지각/결석=5점 / 2~3회=3점 / 5회+=1~2점</span>
+      <label data-ko="근태/시간엄수 (20%)" data-en="Reliability & Punctuality (20%)">근태/시간엄수 (20%)</label>
+      <span class="desc"
+            data-ko="월 1회 이하 지각/결석=5점 / 2~3회=3점 / 5회+=1~2점"
+            data-en="≤1 late/absent/mo=5 / 2–3=3 / 5+=1–2">월 1회 이하 지각/결석=5점 / 2~3회=3점 / 5회+=1~2점</span>
       <input type="number" id="ev-punctuality" min="1" max="5" step="0.5" />
     </div>
     <div class="eval-row">
-      <label>행정/업무 (15%)</label>
-      <span class="desc">보고서 적시·정확성·학생 성장 관찰 인사이트 포함도</span>
+      <label data-ko="행정/업무 (15%)" data-en="Admin Diligence (15%)">행정/업무 (15%)</label>
+      <span class="desc"
+            data-ko="보고서 적시·정확성·학생 성장 관찰 인사이트 포함도"
+            data-en="Reports: timeliness, accuracy, student-growth insight">보고서 적시·정확성·학생 성장 관찰 인사이트 포함도</span>
       <input type="number" id="ev-admin" min="1" max="5" step="0.5" />
     </div>
     <div class="eval-row">
-      <label>조직 기여도 (10%)</label>
-      <span class="desc">피크 시간대·긴급 대체 수업 협조도</span>
+      <label data-ko="조직 기여도 (10%)" data-en="Organizational Contribution (10%)">조직 기여도 (10%)</label>
+      <span class="desc"
+            data-ko="피크 시간대·긴급 대체 수업 협조도"
+            data-en="Peak-hour & substitute class cooperation">피크 시간대·긴급 대체 수업 협조도</span>
       <input type="number" id="ev-contribution" min="1" max="5" step="0.5" />
     </div>
 
-    <div style="margin:14px 0 6px;font-size:13px;font-weight:600;color:#374151;">📌 종합 코멘트 (선택)</div>
-    <textarea id="ev-strengths" placeholder="강점 / 성취" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-bottom:6px;"></textarea>
-    <textarea id="ev-improvements" placeholder="개선 영역" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea>
+    <div style="margin:14px 0 6px;font-size:13px;font-weight:600;color:#374151;"
+         data-ko="📌 종합 코멘트 (선택)" data-en="📌 Overall Comments (Optional)">📌 종합 코멘트 (선택)</div>
+    <textarea id="ev-strengths"    placeholder="강점 / 성취" data-ko-placeholder="강점 / 성취"   data-en-placeholder="Strengths / Achievements" rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-bottom:6px;"></textarea>
+    <textarea id="ev-improvements" placeholder="개선 영역" data-ko-placeholder="개선 영역"     data-en-placeholder="Areas for Improvement"     rows="2" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;"></textarea>
 
     <div style="margin-top:14px;padding:10px;background:#f0f9ff;border:1px solid #93c5fd;border-radius:6px;font-size:13px;">
-      가중 합계: <strong id="ev-weighted-preview" style="color:#1e40af;">—</strong>
-      &nbsp;&nbsp;예상 등급: <strong id="ev-grade-preview" style="color:#1e40af;">—</strong>
+      <span data-ko="가중 합계:" data-en="Weighted total:">가중 합계:</span> <strong id="ev-weighted-preview" style="color:#1e40af;">—</strong>
+      &nbsp;&nbsp;<span data-ko="예상 등급:" data-en="Expected grade:">예상 등급:</span> <strong id="ev-grade-preview" style="color:#1e40af;">—</strong>
     </div>
 
     <div style="display:flex;gap:8px;justify-content:space-between;margin-top:16px;">
-      <button id="ev-cancel-btn" style="padding:8px 16px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;">취소</button>
+      <button id="ev-cancel-btn" style="padding:8px 16px;background:#fff;color:#374151;border:1px solid #d1d5db;border-radius:6px;cursor:pointer;" data-ko="취소" data-en="Cancel">취소</button>
       <div style="display:flex;gap:8px;">
-        <input id="ev-class-count" type="number" min="0" placeholder="총 수업수 (20분)" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
-        <button id="ev-save-btn" class="primary" style="padding:8px 16px;">💾 평가·수업수 저장</button>
+        <input id="ev-class-count" type="number" min="0" placeholder="총 수업수 (20분)" data-ko-placeholder="총 수업수 (20분)" data-en-placeholder="Total classes (20-min)" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
+        <button id="ev-save-btn" class="primary" style="padding:8px 16px;" data-ko="💾 평가·수업수 저장" data-en="💾 Save Eval & Classes">💾 평가·수업수 저장</button>
       </div>
     </div>
   </div>
@@ -451,16 +476,39 @@ function toggleAdminLang() {
   var newLabel = (adminLang === 'ko') ? 'EN' : 'KO';
   var lbl = document.getElementById('admin-lang-label');
   if (lbl) lbl.textContent = newLabel;
-  // Universal data-ko/data-en
+  // textContent
   document.querySelectorAll('[data-ko]').forEach(function(el){
     var txt = el.getAttribute('data-' + adminLang);
     if (txt !== null) el.textContent = txt;
+  });
+  // placeholder
+  document.querySelectorAll('[data-ko-placeholder]').forEach(function(el){
+    var txt = el.getAttribute('data-' + adminLang + '-placeholder');
+    if (txt !== null) el.placeholder = txt;
+  });
+  // title (tooltip)
+  document.querySelectorAll('[data-ko-title]').forEach(function(el){
+    var txt = el.getAttribute('data-' + adminLang + '-title');
+    if (txt !== null) el.title = txt;
+  });
+  // innerHTML (HTML 포함 마크업용 — kbd 등)
+  document.querySelectorAll('[data-ko-html]').forEach(function(el){
+    var txt = el.getAttribute('data-' + adminLang + '-html');
+    if (txt !== null) el.innerHTML = txt;
   });
   // Re-render dynamic content
   load();
   loadRecordings();
   loadRetention();
   loadActiveRooms();
+  // Phase 8 v2 동적 갱신
+  if (typeof renderPayrollTable === 'function' && _lastPayrollRows && _lastPayrollRows.length > 0) renderPayrollTable();
+  if (typeof refreshPayrollSummary === 'function') refreshPayrollSummary();
+  if (typeof _updateSortArrows === 'function') _updateSortArrows();
+  if (typeof renderPayrollCharts === 'function') {
+    var cw = document.getElementById('payroll-charts-wrap');
+    if (cw && cw.style.display === 'block' && _lastPayrollRows && _lastPayrollRows.length > 0) renderPayrollCharts();
+  }
 }
 
 function fmtMs(ms) {
@@ -1118,8 +1166,8 @@ let _lastPayrollContext = { year: null, month: null };
 // 등급 정렬 우선순위 (높을수록 위)
 const _GRADE_RANK = { '최우수': 4, '매우 우수': 3, '우수': 2, '개선 요망': 1, '미평가': 0 };
 
-// 헤더 라벨 (정렬 상태 칩에 표시)
-const _SORT_LABELS = {
+// 헤더 라벨 (정렬 상태 칩에 표시 — 한/영)
+const _SORT_LABELS_KO = {
   teacher_name: '교사', status: '근무', years: '연차',
   score_instruction: '수업', score_retention: '유지', score_punctuality: '근태',
   score_admin: '행정', score_contribution: '조직',
@@ -1127,6 +1175,18 @@ const _SORT_LABELS = {
   class_count: '수업수', rate_per_10min_php: '10분단가',
   monthly_salary_php: '월급(PHP)', monthly_salary_krw: 'KRW',
 };
+const _SORT_LABELS_EN = {
+  teacher_name: 'Teacher', status: 'Status', years: 'Years',
+  score_instruction: 'Inst', score_retention: 'Ret', score_punctuality: 'Punct',
+  score_admin: 'Admin', score_contribution: 'Contrib',
+  weighted_total: 'Weighted', grade: 'Grade',
+  class_count: 'Classes', rate_per_10min_php: 'Rate/10m',
+  monthly_salary_php: 'Salary(PHP)', monthly_salary_krw: 'KRW',
+};
+
+// 등급 한↔영
+const _GRADE_EN = { '최우수': 'Outstanding', '매우 우수': 'V.Satisfactory', '우수': 'Satisfactory', '개선 요망': 'Needs Improvement', '미평가': 'Unrated' };
+function _gradeText(g) { return adminLang === 'en' ? (_GRADE_EN[g] || g || 'Unrated') : (g || '미평가'); }
 
 function _payrollFieldValue(row, key) {
   if (!row) return null;
@@ -1186,13 +1246,16 @@ function _updateSortArrows() {
     if (_payrollSort.length === 0) {
       statusEl.innerHTML = '';
     } else {
+      const labels = adminLang === 'en' ? _SORT_LABELS_EN : _SORT_LABELS_KO;
       const chips = _payrollSort.map((s, i) => {
-        const label = _SORT_LABELS[s.key] || s.key;
+        const label = labels[s.key] || s.key;
         const arrow = s.dir === 'asc' ? '▲' : '▼';
         return `<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:4px;font-weight:600;">${i + 1}. ${label} ${arrow}</span>`;
       }).join('');
-      statusEl.innerHTML = '<span style="color:#6b7280;">정렬:</span>' + chips
-        + '<button onclick="clearPayrollSort()" style="background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#6b7280;margin-left:4px;">✕ 모두 해제</button>';
+      const sortLabel  = adminLang === 'en' ? 'Sort:' : '정렬:';
+      const clearLabel = adminLang === 'en' ? '✕ Clear all' : '✕ 모두 해제';
+      statusEl.innerHTML = '<span style="color:#6b7280;">' + sortLabel + '</span>' + chips
+        + '<button onclick="clearPayrollSort()" style="background:#fff;border:1px solid #d1d5db;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;color:#6b7280;margin-left:4px;">' + clearLabel + '</button>';
     }
   }
 }
@@ -1204,13 +1267,16 @@ function renderPayrollTable() {
   if (_payrollSort.length > 0) {
     rows.sort(_comparePayrollMulti);
   }
+  const _L = adminLang === 'en';
   if (rows.length === 0) {
-    tb.innerHTML = '<tr><td colspan="14" class="empty">활성 강사가 없습니다. 위에서 강사를 먼저 등록하거나 🌱 시드 버튼을 사용하세요.</td></tr>';
+    const empty = _L ? 'No active teachers. Add one above or click 🌱 Seed.' : '활성 강사가 없습니다. 위에서 강사를 먼저 등록하거나 🌱 시드 버튼을 사용하세요.';
+    tb.innerHTML = '<tr><td colspan="14" class="empty">' + empty + '</td></tr>';
     _updateSortArrows();
     return;
   }
   const year  = _lastPayrollContext.year;
   const month = _lastPayrollContext.month;
+  const yearsSuffix = _L ? 'y' : '년';
   tb.innerHTML = rows.map(p => {
     const e = p.evaluation || {};
     const gClass = gradeClass(p.grade);
@@ -1219,14 +1285,14 @@ function renderPayrollTable() {
     return `<tr style="cursor:pointer;" onclick="openEvalModal(${p.teacher_id}, '${safeName}', ${year}, ${month})">
       <td style="font-weight:700;">${safeName}</td>
       <td><span style="font-size:11px;color:#6b7280;">${p.status === 'office' ? 'OFFICE' : (p.status === 'home' ? 'HOME' : '—')}</span></td>
-      <td>${p.years != null ? p.years + '년' : '—'}</td>
+      <td>${p.years != null ? (p.years + yearsSuffix) : '—'}</td>
       <td>${heatCell(e.score_instruction)}</td>
       <td>${heatCell(e.score_retention)}</td>
       <td>${heatCell(e.score_punctuality)}</td>
       <td>${heatCell(e.score_admin)}</td>
       <td>${heatCell(e.score_contribution)}</td>
       <td style="text-align:right;font-weight:700;">${p.weighted_total != null ? p.weighted_total.toFixed(2) : '—'}</td>
-      <td><span class="${gClass}">${p.grade || '미평가'}</span></td>
+      <td><span class="${gClass}">${_gradeText(p.grade)}</span></td>
       <td style="text-align:right;">${fmtNum(p.class_count)}</td>
       <td style="text-align:right;">${(p.rate_per_10min_php || 0).toFixed(2)}</td>
       <td style="text-align:right;font-weight:700;color:#10b981;">${fmtNum(Math.round(p.monthly_salary_php))}</td>
@@ -1234,6 +1300,23 @@ function renderPayrollTable() {
     </tr>`;
   }).join('');
   _updateSortArrows();
+}
+
+// 상단 카운터 (월·인원·합계·등급분포) 라벨도 한/영 — 마지막 d 데이터를 보관해 재사용
+let _lastPayrollSummary = null;
+function refreshPayrollSummary() {
+  const d = _lastPayrollSummary;
+  const el = document.getElementById('payroll-counts');
+  if (!el || !d) return;
+  const _L = adminLang === 'en';
+  const gc = d.grade_counts || {};
+  const ym = `${d.year}-${String(d.month).padStart(2,'0')}`;
+  const peopleLabel = _L ? `${d.count} teachers` : `${d.count}명`;
+  const totalLabel  = _L ? `Total PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)}` : `합계 PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)}`;
+  const gradeLabel  = _L
+    ? `Outstanding ${gc['최우수']||0} · V.Satisf ${gc['매우 우수']||0} · Satisf ${gc['우수']||0} · Needs Imp ${gc['개선 요망']||0}`
+    : `최우수 ${gc['최우수']||0} · 매우우수 ${gc['매우 우수']||0} · 우수 ${gc['우수']||0} · 개선 ${gc['개선 요망']||0}`;
+  el.textContent = `${ym} · ${peopleLabel} · ${totalLabel} · ${gradeLabel}`;
 }
 
 // 헤더 클릭 → 정렬 토글
@@ -1267,29 +1350,29 @@ function onPayrollHeaderClick(key, shiftKey) {
 }
 
 async function calcPayrollAll() {
+  const _L = adminLang === 'en';
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
-  if (!year || !month) { alert('연도/월을 입력하세요'); return; }
+  if (!year || !month) { alert(_L ? 'Enter year/month' : '연도/월을 입력하세요'); return; }
   const tb = document.getElementById('payroll-table');
-  tb.innerHTML = '<tr><td colspan="14" class="empty">불러오는 중...</td></tr>';
+  tb.innerHTML = '<tr><td colspan="14" class="empty">' + (_L ? 'Loading...' : '불러오는 중...') + '</td></tr>';
   try {
     const r = await fetch(`/api/admin/payroll/all?year=${year}&month=${month}`, { cache: 'no-store', credentials: 'include' });
     const d = await r.json();
     if (!d.ok) {
-      tb.innerHTML = '<tr><td colspan="14" class="empty">실패: ' + (d.error || ('HTTP ' + r.status)) + '</td></tr>';
+      tb.innerHTML = '<tr><td colspan="14" class="empty">' + (_L ? 'Failed: ' : '실패: ') + (d.error || ('HTTP ' + r.status)) + '</td></tr>';
       return;
     }
     _lastPayrollRows = d.items || [];
     _lastPayrollContext = { year: d.year, month: d.month };
-    const gc = d.grade_counts || {};
-    const summary = `${d.year}-${String(d.month).padStart(2,'0')} · ${d.count}명 · 합계 PHP ${fmtNum(d.total_salary_php)} ≈ ₩${fmtNum(d.total_salary_krw)} · 최우수 ${gc['최우수']||0} · 매우우수 ${gc['매우 우수']||0} · 우수 ${gc['우수']||0} · 개선 ${gc['개선 요망']||0}`;
-    document.getElementById('payroll-counts').textContent = summary;
+    _lastPayrollSummary = d;
+    refreshPayrollSummary();
     renderPayrollTable();
     // 그래프 영역이 펼쳐진 상태면 자동 갱신
     const cw = document.getElementById('payroll-charts-wrap');
     if (cw && cw.style.display === 'block') renderPayrollCharts();
   } catch (e) {
-    tb.innerHTML = '<tr><td colspan="14" class="empty">에러: ' + e.message + '</td></tr>';
+    tb.innerHTML = '<tr><td colspan="14" class="empty">' + (_L ? 'Error: ' : '에러: ') + e.message + '</td></tr>';
   }
 }
 
@@ -1298,7 +1381,10 @@ function openEvalModal(teacherId, teacherName, year, month) {
   // 기존 데이터 채우기
   const row = (_lastPayrollRows || []).find(r => r.teacher_id === teacherId) || {};
   const e = row.evaluation || {};
-  document.getElementById('eval-modal-title').textContent = `📋 ${teacherName} — ${year}-${String(month).padStart(2,'0')} 평가`;
+  const _L = adminLang === 'en';
+  document.getElementById('eval-modal-title').textContent = _L
+    ? `📋 ${teacherName} — ${year}-${String(month).padStart(2,'0')} Evaluation`
+    : `📋 ${teacherName} — ${year}-${String(month).padStart(2,'0')} 평가`;
   document.getElementById('ev-instruction').value  = e.score_instruction  ?? '';
   document.getElementById('ev-retention').value    = e.score_retention    ?? '';
   document.getElementById('ev-punctuality').value  = e.score_punctuality  ?? '';
@@ -1334,6 +1420,7 @@ function updateEvalPreview() {
   document.getElementById('ev-grade-preview').textContent = frontClassifyGrade(w);
 }
 async function saveEvalAndClasses() {
+  const _L = adminLang === 'en';
   const bg = document.getElementById('eval-modal-bg');
   const teacherId = parseInt(bg.dataset.teacherId, 10);
   const year      = parseInt(bg.dataset.year, 10);
@@ -1355,7 +1442,6 @@ async function saveEvalAndClasses() {
   };
   const classCount = parseInt(document.getElementById('ev-class-count').value, 10);
   try {
-    // 평가 저장
     const r1 = await fetch('/api/admin/teacher-evaluation', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -1363,8 +1449,7 @@ async function saveEvalAndClasses() {
       body: JSON.stringify(evalBody)
     });
     const d1 = await r1.json().catch(() => ({}));
-    if (!r1.ok || d1.ok === false) { alert('평가 저장 실패: ' + (d1.error || ('HTTP ' + r1.status))); return; }
-    // 수업수 저장 (값이 있으면)
+    if (!r1.ok || d1.ok === false) { alert((_L ? 'Eval save failed: ' : '평가 저장 실패: ') + (d1.error || ('HTTP ' + r1.status))); return; }
     if (!isNaN(classCount) && classCount >= 0) {
       const r2 = await fetch('/api/admin/teacher-classes', {
         method: 'PUT',
@@ -1373,54 +1458,63 @@ async function saveEvalAndClasses() {
         body: JSON.stringify({ teacher_id: teacherId, year, month, class_count: classCount })
       });
       const d2 = await r2.json().catch(() => ({}));
-      if (!r2.ok || d2.ok === false) { alert('수업수 저장 실패: ' + (d2.error || ('HTTP ' + r2.status))); return; }
+      if (!r2.ok || d2.ok === false) { alert((_L ? 'Class count save failed: ' : '수업수 저장 실패: ') + (d2.error || ('HTTP ' + r2.status))); return; }
     }
     closeEvalModal();
     calcPayrollAll();
-  } catch (e) { alert('네트워크 에러: ' + e.message); }
+  } catch (e) { alert((adminLang === 'en' ? 'Network error: ' : '네트워크 에러: ') + e.message); }
 }
 
 function downloadPayrollCSV() {
+  const _L = adminLang === 'en';
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
-  if (!year || !month) { alert('연도/월을 입력하세요'); return; }
+  if (!year || !month) { alert(_L ? 'Enter year/month' : '연도/월을 입력하세요'); return; }
   window.open(`/api/admin/export/payroll.csv?year=${year}&month=${month}`, '_blank');
 }
 
 async function finalizePayroll() {
+  const _L = adminLang === 'en';
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
   if (!year || !month) return;
-  if (!confirm(`${year}-${String(month).padStart(2,'0')} 급여를 마감하시겠습니까?\npayslips 테이블에 영구 저장되며 동일 월 재마감은 차단됩니다.`)) return;
+  const ym = `${year}-${String(month).padStart(2,'0')}`;
+  const msg = _L
+    ? `Close payroll for ${ym}?\nPermanently saved to payslips. Re-closing the same month is blocked.`
+    : `${ym} 급여를 마감하시겠습니까?\npayslips 테이블에 영구 저장되며 동일 월 재마감은 차단됩니다.`;
+  if (!confirm(msg)) return;
   try {
     const r = await fetch('/api/admin/payroll/finalize', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ year, month, finalized_by: 'admin' })
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false) { alert('마감 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
-    alert(`마감 완료. ${d.saved}명 저장 · ${d.skipped}명 스킵(이미 마감)\n합계 PHP ${(d.total_php||0).toLocaleString()}`);
+    if (!r.ok || d.ok === false) { alert((_L ? 'Close failed: ' : '마감 실패: ') + (d.error || ('HTTP ' + r.status))); return; }
+    alert(_L
+      ? `Closed. Saved ${d.saved} · Skipped ${d.skipped} (already closed)\nTotal PHP ${(d.total_php||0).toLocaleString()}`
+      : `마감 완료. ${d.saved}명 저장 · ${d.skipped}명 스킵(이미 마감)\n합계 PHP ${(d.total_php||0).toLocaleString()}`);
     if (typeof loadNotifications === 'function') loadNotifications();
-  } catch (e) { alert('네트워크 에러: ' + e.message); }
+  } catch (e) { alert((_L ? 'Network error: ' : '네트워크 에러: ') + e.message); }
 }
 
 async function registerTeacher() {
+  const _L = adminLang === 'en';
   const name   = (document.getElementById('t-new-name').value || '').trim();
   const status = document.getElementById('t-new-status').value;
   const years  = parseInt(document.getElementById('t-new-years').value, 10);
   const rate   = parseFloat(document.getElementById('t-new-rate').value);
-  if (!name) { alert('이름은 필수입니다'); return; }
-  if (isNaN(rate) || rate < 0) { alert('10분당 단가(PHP)는 0 이상이어야 합니다'); return; }
+  if (!name) { alert(_L ? 'Name is required' : '이름은 필수입니다'); return; }
+  if (isNaN(rate) || rate < 0) { alert(_L ? 'Rate per 10 min (PHP) must be ≥ 0' : '10분당 단가(PHP)는 0 이상이어야 합니다'); return; }
   try {
     const r = await fetch('/api/admin/teachers', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ name, status, years: isNaN(years) ? null : years, rate_per_10min_php: rate })
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false) { alert('등록 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+    if (!r.ok || d.ok === false) { alert((_L ? 'Register failed: ' : '등록 실패: ') + (d.error || ('HTTP ' + r.status))); return; }
     ['t-new-name', 't-new-years', 't-new-rate'].forEach(id => document.getElementById(id).value = '');
     calcPayrollAll();
-  } catch (e) { alert('네트워크 에러: ' + e.message); }
+  } catch (e) { alert((_L ? 'Network error: ' : '네트워크 에러: ') + e.message); }
 }
 
 // 📊 차트 인스턴스 (이전 차트 destroy 후 새로 그리려고 보관)
@@ -1438,6 +1532,7 @@ function _gradeColor(g) {
 function renderPayrollCharts() {
   if (!_lastPayrollRows || _lastPayrollRows.length === 0) return;
   if (typeof Chart === 'undefined') return;
+  const _L = adminLang === 'en';
 
   // 정렬된 순서 (월급 내림차순) 로 차트 표시
   const rows = _lastPayrollRows.slice().sort((a, b) => (b.monthly_salary_php || 0) - (a.monthly_salary_php || 0));
@@ -1452,7 +1547,7 @@ function renderPayrollCharts() {
     data: {
       labels,
       datasets: [{
-        label: '월급 (PHP)', data: salaries,
+        label: _L ? 'Salary (PHP)' : '월급 (PHP)', data: salaries,
         backgroundColor: colors, borderColor: colors, borderWidth: 1
       }]
     },
@@ -1465,10 +1560,15 @@ function renderPayrollCharts() {
           callbacks: {
             label: (ctx) => {
               const r = rows[ctx.dataIndex];
-              return [
+              return _L ? [
+                `Salary: ${(r.monthly_salary_php||0).toLocaleString()} PHP`,
+                `≈ ₩${(r.monthly_salary_krw||0).toLocaleString()}`,
+                `Grade: ${_gradeText(r.grade)}`,
+                `Classes: ${r.class_count || 0} × Rate ${(r.rate_per_10min_php||0).toFixed(2)}`
+              ] : [
                 `월급: ${(r.monthly_salary_php||0).toLocaleString()} PHP`,
                 `≈ ₩${(r.monthly_salary_krw||0).toLocaleString()}`,
-                `등급: ${r.grade || '미평가'}`,
+                `등급: ${_gradeText(r.grade)}`,
                 `수업수: ${r.class_count || 0} × 단가 ${(r.rate_per_10min_php||0).toFixed(2)}`
               ];
             }
@@ -1480,7 +1580,6 @@ function renderPayrollCharts() {
   });
 
   // ── 2) 강사별 가중 점수 가로 막대 ──
-  // 가중점수 내림차순으로 정렬한 별도 배열
   const wRows = _lastPayrollRows.slice()
     .filter(r => r.weighted_total != null)
     .sort((a, b) => (b.weighted_total || 0) - (a.weighted_total || 0));
@@ -1493,7 +1592,7 @@ function renderPayrollCharts() {
     data: {
       labels: wLabels,
       datasets: [{
-        label: '가중 점수', data: wData,
+        label: _L ? 'Weighted Score' : '가중 점수', data: wData,
         backgroundColor: wColors, borderColor: wColors, borderWidth: 1
       }]
     },
@@ -1507,12 +1606,13 @@ function renderPayrollCharts() {
 
   // ── 3) 등급 분포 도넛 ──
   const gradeOrder = ['최우수', '매우 우수', '우수', '개선 요망', '미평가'];
+  const gradeLabels = gradeOrder.map(g => _gradeText(g));
   const counts = gradeOrder.map(g => _lastPayrollRows.filter(r => (r.grade || '미평가') === g).length);
   if (_prCharts.grade) _prCharts.grade.destroy();
   _prCharts.grade = new Chart(document.getElementById('chart-pr-grade'), {
     type: 'doughnut',
     data: {
-      labels: gradeOrder,
+      labels: gradeLabels,
       datasets: [{
         data: counts,
         backgroundColor: gradeOrder.map(g => _gradeColor(g)),
@@ -1525,7 +1625,7 @@ function renderPayrollCharts() {
         legend: { position: 'bottom', labels: { font: { size: 11 } } },
         tooltip: {
           callbacks: {
-            label: (ctx) => `${ctx.label}: ${ctx.parsed}명`
+            label: (ctx) => `${ctx.label}: ${ctx.parsed}` + (_L ? '' : '명')
           }
         }
       }
@@ -1533,7 +1633,7 @@ function renderPayrollCharts() {
   });
 
   // ── 4) 5개 카테고리 평균 레이더 ──
-  const cats = ['수업', '유지', '근태', '행정', '조직'];
+  const cats = _L ? ['Inst', 'Ret', 'Punct', 'Admin', 'Contrib'] : ['수업', '유지', '근태', '행정', '조직'];
   const evalRows = _lastPayrollRows.filter(r => r.evaluation && r.weighted_total != null);
   const avg = (key) => {
     const vs = evalRows.map(r => r.evaluation[key]).filter(v => v != null && !isNaN(v));
@@ -1555,7 +1655,7 @@ function renderPayrollCharts() {
         return `${c} (${w}%)`;
       }),
       datasets: [{
-        label: '강사 평균',
+        label: _L ? 'Teacher Avg' : '강사 평균',
         data: avgScores,
         backgroundColor: 'rgba(14,165,233,0.20)',
         borderColor: '#0ea5e9',
@@ -1592,20 +1692,27 @@ function togglePayrollCharts() {
 }
 
 async function seedDemoTeachers() {
+  const _L = adminLang === 'en';
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
   const month = parseInt(document.getElementById('payroll-month').value, 10);
-  if (!year || !month) { alert('연도/월을 먼저 입력하세요'); return; }
-  if (!confirm(`${year}-${String(month).padStart(2,'0')} 기준으로\nsalary-heatmap.pages.dev 의 21명 강사를\n한 번에 등록(또는 업데이트)할까요?\n\n· 이름이 겹치면 단가·연차만 업데이트\n· 평가 5점수 + 수업수도 함께 입력됨`)) return;
+  if (!year || !month) { alert(_L ? 'Enter year/month first' : '연도/월을 먼저 입력하세요'); return; }
+  const ym = `${year}-${String(month).padStart(2,'0')}`;
+  const confirmMsg = _L
+    ? `Seed all 21 teachers from salary-heatmap.pages.dev for ${ym}?\n\n· Existing names will be updated (rate/years)\n· Evaluation 5 scores + class count also inserted`
+    : `${ym} 기준으로\nsalary-heatmap.pages.dev 의 21명 강사를\n한 번에 등록(또는 업데이트)할까요?\n\n· 이름이 겹치면 단가·연차만 업데이트\n· 평가 5점수 + 수업수도 함께 입력됨`;
+  if (!confirm(confirmMsg)) return;
   try {
     const r = await fetch('/api/admin/payroll/seed-demo', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ year, month })
     });
     const d = await r.json().catch(() => ({}));
-    if (!r.ok || d.ok === false) { alert('시드 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
-    alert(`시드 완료!\n신규 ${d.created}명 · 업데이트 ${d.updated}명 · 평가 ${d.evaluations}건 · 수업수 ${d.class_records}건`);
+    if (!r.ok || d.ok === false) { alert((_L ? 'Seed failed: ' : '시드 실패: ') + (d.error || ('HTTP ' + r.status))); return; }
+    alert(_L
+      ? `Seed complete!\nNew ${d.created} · Updated ${d.updated} · Evals ${d.evaluations} · Class records ${d.class_records}`
+      : `시드 완료!\n신규 ${d.created}명 · 업데이트 ${d.updated}명 · 평가 ${d.evaluations}건 · 수업수 ${d.class_records}건`);
     calcPayrollAll();
-  } catch (e) { alert('네트워크 에러: ' + e.message); }
+  } catch (e) { alert((_L ? 'Network error: ' : '네트워크 에러: ') + e.message); }
 }
 
 // 컨트롤 바인딩
