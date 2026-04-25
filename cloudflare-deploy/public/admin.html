@@ -191,6 +191,7 @@
     <button id="payroll-calc-btn"     class="primary" style="padding:5px 12px;font-size:13px;">🧮 불러오기</button>
     <button id="payroll-csv-btn"      style="padding:5px 12px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 CSV (평가+급여)</button>
     <button id="payroll-finalize-btn" style="padding:5px 12px;font-size:13px;background:#dc2626;color:#fff;border:none;border-radius:6px;cursor:pointer;" title="payslips 테이블에 영구 저장 (취소 불가)">🔒 마감</button>
+    <button id="payroll-seed-btn"     style="padding:5px 12px;font-size:13px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;margin-left:auto;" title="salary-heatmap.pages.dev 의 21명 강사를 한 번에 등록 (이미 있으면 업데이트)">🌱 데모 21명 시드</button>
   </div>
 
   <!-- 데이터 히트맵 표 -->
@@ -1257,12 +1258,30 @@ async function registerTeacher() {
   } catch (e) { alert('네트워크 에러: ' + e.message); }
 }
 
+async function seedDemoTeachers() {
+  const year  = parseInt(document.getElementById('payroll-year').value, 10);
+  const month = parseInt(document.getElementById('payroll-month').value, 10);
+  if (!year || !month) { alert('연도/월을 먼저 입력하세요'); return; }
+  if (!confirm(`${year}-${String(month).padStart(2,'0')} 기준으로\nsalary-heatmap.pages.dev 의 21명 강사를\n한 번에 등록(또는 업데이트)할까요?\n\n· 이름이 겹치면 단가·연차만 업데이트\n· 평가 5점수 + 수업수도 함께 입력됨`)) return;
+  try {
+    const r = await fetch('/api/admin/payroll/seed-demo', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ year, month })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || d.ok === false) { alert('시드 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+    alert(`시드 완료!\n신규 ${d.created}명 · 업데이트 ${d.updated}명 · 평가 ${d.evaluations}건 · 수업수 ${d.class_records}건`);
+    calcPayrollAll();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
 // 컨트롤 바인딩
 (function bindPayrollV2() {
   const e = id => document.getElementById(id);
   if (e('payroll-calc-btn'))     e('payroll-calc-btn').addEventListener('click', calcPayrollAll);
   if (e('payroll-csv-btn'))      e('payroll-csv-btn').addEventListener('click', downloadPayrollCSV);
   if (e('payroll-finalize-btn')) e('payroll-finalize-btn').addEventListener('click', finalizePayroll);
+  if (e('payroll-seed-btn'))     e('payroll-seed-btn').addEventListener('click', seedDemoTeachers);
   if (e('t-new-btn'))            e('t-new-btn').addEventListener('click', registerTeacher);
   if (e('ev-cancel-btn'))        e('ev-cancel-btn').addEventListener('click', closeEvalModal);
   if (e('ev-save-btn'))          e('ev-save-btn').addEventListener('click', saveEvalAndClasses);

@@ -1164,6 +1164,94 @@ export async function handleMangoApi(
       return json({ ok: true, year: b.year, month: b.month, saved, skipped, total_php: Math.round(totalPhp), finalized_by: finalizedBy });
     }
 
+    // 🌱 데모 데이터 시드 — salary-heatmap.pages.dev 의 21명 강사를 한번에 등록
+    //   (강사 등록 + 평가 5점수 + 수업수). 이미 같은 이름이 있으면 skip.
+    //   POST /api/admin/payroll/seed-demo  body: { year, month }
+    if (method === 'POST' && path === '/api/admin/payroll/seed-demo') {
+      await ensurePayrollSchema(env);
+      const b = await parseJsonBody(request);
+      const year  = (b && b.year)  ? Number(b.year)  : new Date().getFullYear();
+      const month = (b && b.month) ? Number(b.month) : (new Date().getMonth() + 1);
+      // [name, status, years, rate_per_10min_php, classes, inst, ret, punct, admin, contrib]
+      const SEED: any[] = [
+        ['KES',      'office', 5, 29.58,  51, 5, 5, 4, 4, 5],
+        ['BELLE',    'home',   1, 35.00, 104, 4, 5, 5, 5, 5],
+        ['HT FARRAH','office', 5, 50.32, 157, 5, 4, 5, 5, 5],
+        ['RICA',     'office', 5, 32.86, 134, 5, 5, 4, 5, 5],
+        ['CINDY',    'office', 2, 34.09, 307, 5, 4, 5, 5, 5],
+        ['JANE',     'office', 5, 28.57, 235, 5, 4, 5, 5, 5],
+        ['ANA',      'office', 2, 30.00, 215, 5, 4, 5, 5, 5],
+        ['KAYE',     'office', 1, 28.47, 333, 5, 4, 5, 5, 5],
+        ['ZEE',      'office', 5, 29.33, 175, 4, 4, 5, 5, 5],
+        ['HT NESS',  'home',   5, 30.00, 241, 5, 4, 5, 5, 5],
+        ['MARIANE',  'home',   1, 25.79, 127, 5, 4, 5, 5, 5],
+        ['JINETTE',  'home',   2, 25.52, 169, 5, 4, 5, 5, 5],
+        ['JENNY',    'home',   2, 25.00,  34, 5, 5, 5, 4, 5],
+        ['SID',      'office', 1, 29.59, 206, 5, 3, 4, 4, 5],
+        ['CHAINE',   'office', 5, 25.82, 213, 5, 4, 5, 5, 5],
+        ['KRYSTEL',  'office', 1, 25.06, 193, 4, 4, 5, 5, 4],
+        ['SHAS',     'office', 1, 28.41, 222, 5, 4, 5, 5, 5],
+        ['LEN',      'home',   1, 25.06, 165, 4, 4, 3, 2, 3],
+        ['WIN',      'office', 1, 28.46, 148, 5, 4, 3, 1, 5],
+        ['JED',      'home',   1, 25.00,  58, 5, 5, 1, 4, 2],
+        ['FAYE',     'home',   5, 28.67, 141, 3, 5, 1, 3, 1],
+      ];
+      const now = Date.now();
+      let created = 0, updated = 0, evals = 0, classes = 0;
+      for (const row of SEED) {
+        const [name, status, years, rate, classCount, inst, ret, punct, adminScore, contrib] = row;
+        // 이미 있는지 확인 (이름 기준)
+        const existing: any = await env.DB.prepare(`SELECT id FROM teachers WHERE name = ? LIMIT 1`).bind(name).first();
+        let teacherId: number;
+        if (existing && existing.id) {
+          teacherId = existing.id;
+          await env.DB.prepare(
+            `UPDATE teachers SET status = ?, years = ?, rate_per_10min_php = ?, active = 1, updated_at = ? WHERE id = ?`
+          ).bind(status, years, rate, now, teacherId).run();
+          updated++;
+        } else {
+          const r = await env.DB.prepare(
+            `INSERT INTO teachers (name, status, years, rate_per_10min_php, active, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 1, ?, ?)`
+          ).bind(name, status, years, rate, now, now).run();
+          teacherId = Number(r.meta.last_row_id);
+          created++;
+        }
+        // 평가 upsert
+        const weighted = calcWeightedTotal({
+          score_instruction: inst, score_retention: ret, score_punctuality: punct,
+          score_admin: adminScore, score_contribution: contrib
+        });
+        const grade = weighted != null ? classifyEvalGrade(weighted) : null;
+        await env.DB.prepare(
+          `INSERT INTO teacher_evaluations (teacher_id, year, month, score_instruction, score_retention, score_punctuality,
+                                             score_admin, score_contribution, weighted_total, grade,
+                                             evaluator, evaluated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(teacher_id, year, month) DO UPDATE SET
+             score_instruction = excluded.score_instruction,
+             score_retention = excluded.score_retention,
+             score_punctuality = excluded.score_punctuality,
+             score_admin = excluded.score_admin,
+             score_contribution = excluded.score_contribution,
+             weighted_total = excluded.weighted_total,
+             grade = excluded.grade,
+             evaluator = excluded.evaluator,
+             evaluated_at = excluded.evaluated_at`
+        ).bind(teacherId, year, month, inst, ret, punct, adminScore, contrib, weighted, grade, 'seed-demo', now).run();
+        evals++;
+        // 수업수 upsert
+        await env.DB.prepare(
+          `INSERT INTO teacher_monthly_classes (teacher_id, year, month, class_count, notes, updated_at)
+           VALUES (?, ?, ?, ?, 'seed-demo', ?)
+           ON CONFLICT(teacher_id, year, month) DO UPDATE SET
+             class_count = excluded.class_count, updated_at = excluded.updated_at`
+        ).bind(teacherId, year, month, classCount, now).run();
+        classes++;
+      }
+      return json({ ok: true, year, month, total: SEED.length, created, updated, evaluations: evals, class_records: classes });
+    }
+
     // CSV — Mangoi 평가 + 급여 통합 (회계 + 평가팀 공용)
     if (method === 'GET' && path === '/api/admin/export/payroll.csv') {
       await ensurePayrollSchema(env);

@@ -202,6 +202,7 @@ export default {
         path === '/api/admin/payroll/all' ||
         path === '/api/admin/payroll/rates' ||
         path === '/api/admin/payroll/finalize' ||
+        path === '/api/admin/payroll/seed-demo' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
