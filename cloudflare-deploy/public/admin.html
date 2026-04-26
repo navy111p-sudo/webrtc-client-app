@@ -145,6 +145,13 @@
       <div class="menu-search-dropdown" id="menu-search-dropdown"></div>
     </div>
 
+    <!-- 📋 전체 펼치기/접기 컨트롤 (검색창 바로 아래 가운데) -->
+    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:0 auto 20px;max-width:600px;flex-wrap:wrap;">
+      <span style="font-size:13px;color:#6b7280;font-weight:600;" data-ko="📋 메뉴판" data-en="📋 Menu">📋 메뉴판</span>
+      <button onclick="toggleAllMenuCards(true)"  style="padding:6px 14px;font-size:12px;border:1px solid #3b82f6;border-radius:20px;background:#fff;color:#1e40af;cursor:pointer;font-weight:600;" data-ko="↧ 모두 펼치기" data-en="↧ Expand all">↧ 모두 펼치기</button>
+      <button onclick="toggleAllMenuCards(false)" style="padding:6px 14px;font-size:12px;border:1px solid #d1d5db;border-radius:20px;background:#fff;color:#374151;cursor:pointer;font-weight:600;" data-ko="↥ 모두 접기"   data-en="↥ Collapse all">↥ 모두 접기</button>
+    </div>
+
 <div class="grid" id="kpi"></div>
 
 <details class="table-card menu-card">
@@ -398,13 +405,6 @@
   .menu-card .menu-form select,
   .menu-card .menu-form textarea { padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px; }
 </style>
-
-<!-- 전체 펼치기/접기 컨트롤 -->
-<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
-  <span style="font-size:13px;color:#6b7280;font-weight:600;" data-ko="📋 메뉴판" data-en="📋 Menu">📋 메뉴판</span>
-  <button onclick="toggleAllMenuCards(true)"  style="padding:4px 10px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#374151;" data-ko="↧ 모두 펼치기" data-en="↧ Expand all">↧ 모두 펼치기</button>
-  <button onclick="toggleAllMenuCards(false)" style="padding:4px 10px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#374151;" data-ko="↥ 모두 접기"   data-en="↥ Collapse all">↥ 모두 접기</button>
-</div>
 
 <!-- 가맹점 관리 -->
 <details class="table-card menu-card">
