@@ -1311,6 +1311,126 @@ export async function handleMangoApi(
       return csvResponse(fname, csv);
     }
 
+    // ===== 👨‍🎓 학생 ERP 풀 레코드 (Phase 10) =====
+    //   별도 students 테이블에 ERP 컬럼 (결제타입·종료일·조직 다단계·전화번호 등) 보관
+    //   GET  /api/admin/students/erp-list
+    //   POST /api/admin/students/erp           (단건 등록)
+    //   POST /api/admin/students/erp-seed      (22명 데모 일괄 시드)
+    if (path === '/api/admin/students/erp-list' && method === 'GET') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT,
+        username TEXT NOT NULL,
+        login_id TEXT,
+        payment_type TEXT,
+        end_date TEXT,
+        signup_date TEXT,
+        classes_per_week INTEGER,
+        points INTEGER DEFAULT 0,
+        student_phone TEXT,
+        parent_phone TEXT,
+        teacher_phone TEXT,
+        shop_name TEXT,
+        hq_name TEXT,
+        branch1_name TEXT,
+        branch2_name TEXT,
+        franchise TEXT,
+        status TEXT DEFAULT '정상',
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL
+      );`);
+      const lim = Math.max(1, Math.min(2000, parseInt(url.searchParams.get('limit') || '500', 10)));
+      const rs = await env.DB.prepare(
+        `SELECT * FROM students_erp ORDER BY id DESC LIMIT ?`
+      ).bind(lim).all();
+      return json({ ok: true, items: rs.results || [] });
+    }
+
+    if (path === '/api/admin/students/erp' && method === 'POST') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT, username TEXT NOT NULL, login_id TEXT,
+        payment_type TEXT, end_date TEXT, signup_date TEXT,
+        classes_per_week INTEGER, points INTEGER DEFAULT 0,
+        student_phone TEXT, parent_phone TEXT, teacher_phone TEXT,
+        shop_name TEXT, hq_name TEXT, branch1_name TEXT, branch2_name TEXT,
+        franchise TEXT, status TEXT DEFAULT '정상',
+        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+      );`);
+      const b = await parseJsonBody(request);
+      if (!b || !b.username) return invalidBody(['username']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO students_erp (student_id, username, login_id, payment_type, end_date, signup_date,
+                                    classes_per_week, points, student_phone, parent_phone, teacher_phone,
+                                    shop_name, hq_name, branch1_name, branch2_name, franchise, status, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        b.student_id || null, b.username, b.login_id || null,
+        b.payment_type || 'B2C 결제', b.end_date || null, b.signup_date || null,
+        b.classes_per_week != null ? Number(b.classes_per_week) : null,
+        b.points != null ? Number(b.points) : 0,
+        b.student_phone || null, b.parent_phone || null, b.teacher_phone || null,
+        b.shop_name || null, b.hq_name || null, b.branch1_name || null, b.branch2_name || null,
+        b.franchise || null, b.status || '정상', now, now
+      ).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // 22명 데모 시드 (스크린샷 데이터 기반)
+    if (path === '/api/admin/students/erp-seed' && method === 'POST') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        student_id TEXT, username TEXT NOT NULL, login_id TEXT,
+        payment_type TEXT, end_date TEXT, signup_date TEXT,
+        classes_per_week INTEGER, points INTEGER DEFAULT 0,
+        student_phone TEXT, parent_phone TEXT, teacher_phone TEXT,
+        shop_name TEXT, hq_name TEXT, branch1_name TEXT, branch2_name TEXT,
+        franchise TEXT, status TEXT DEFAULT '정상',
+        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
+      );`);
+      // [student_id, username, login_id, pay, end_date, signup, classes, points, stu_ph, par_ph, t_ph, shop, hq, b1, b2, fran]
+      const SEED = [
+        ['28220','구도아','SLPSSO_gda0226',     'B2C 결제', null,         '2026-04-23', null, 0,  '010-7588-1544', null, null, '청주SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28219','이태린','SLPSSO_slp13813',    'B2C 결제', null,         '2026-04-23', null, 0,  '010-4640-2555', null, null, '세종slp',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28218','권시연','wwes021',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28217','조유진','wwes023',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28216','정기태','wwes026',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28215','박서윤','wwes031',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28214','김나은','wwes036',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28213','유준민','wwes010',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28212','양서우','wwes012',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28211','손태헌','wwes019',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
+        ['28210','김세형','SLPSSO_ksh0424',     'B2C 결제', null,         '2026-04-22', null, 0,  '010-3523-3573', null, null, '동작SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28209','김이룸','SLPSSO_yirumlove',   'B2C 결제', null,         '2026-04-22', null, 0,  '010-9872-1388', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28208','양승희','ah388',              'B2C 결제', '미설정',     '2026-04-22', 1,    0,  '010-6272-4060', '010-6272-4060', '010--', 'N 안산 SLP 가정망고', '에듀비전 본사','망고아이','망고아이 지사 (기본)','에듀비전'],
+        ['28207','김서우','Luna119',            'B2C 결제', null,         '2026-04-21', null, 10, '010-9229-6963', null, null, '고래영어교습소',  '에듀비전 본사','망고아이','율곡교육(광주2지사)','에듀비전'],
+        ['28206','이은우','SLPSSO_Eunwoo521',   'B2C 결제', null,         '2026-04-21', null, 0,  '010-5711-5864', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28205','박지훈','SLPSSO_jihoon0808',  'B2C 결제', null,         '2026-04-21', null, 0,  '010-5182-3359', null, null, '평택SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28204','박서윤','unisj415',           'B2C 결제', '2026-06-03', '2026-04-20', 1,    0,  '010-5395-3456', null, null, 'N PDI 상주캠퍼스','에듀비전 본사','망고파이','pdi본사','에듀비전'],
+        ['28203','김재이','SLPSSO_jaykim0709',  'B2C 결제', null,         '2026-04-19', null, 0,  '010-9590-0722', null, null, '북인천SLP',       '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28202','마서윤','SLPSSO_elly0528elly','B2C 결제', null,         '2026-04-19', null, 0,  '010-9537-9766', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28201','이도하','SLPSSO_doha19',      'B2C 결제', null,         '2026-04-17', null, 0,  '010-3805-0224', null, null, '강서SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28200','하서연','SLPSSO_daisy0702',   'B2C 결제', null,         '2026-04-17', null, 0,  '010-4849-4562', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['28199','조유찬','SLPSSO_spurxxx2',    'B2C 결제', null,         '2026-04-16', null, 0,  '010-2082-5104', null, null, '영등포SLP',       '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+      ];
+      const now = Date.now();
+      let created = 0, skipped = 0;
+      for (const row of SEED) {
+        const [sid, name, lid, pay, end_dt, signup, cw, pts, sp, pp, tp, shop, hq, b1, b2, fr] = row;
+        const exists: any = await env.DB.prepare(`SELECT id FROM students_erp WHERE student_id = ? LIMIT 1`).bind(sid).first();
+        if (exists && exists.id) { skipped++; continue; }
+        await env.DB.prepare(
+          `INSERT INTO students_erp (student_id, username, login_id, payment_type, end_date, signup_date,
+                                      classes_per_week, points, student_phone, parent_phone, teacher_phone,
+                                      shop_name, hq_name, branch1_name, branch2_name, franchise, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '정상', ?, ?)`
+        ).bind(sid, name, lid, pay, end_dt, signup, cw, pts, sp, pp, tp, shop, hq, b1, b2, fr, now, now).run();
+        created++;
+      }
+      return json({ ok: true, total: SEED.length, created, skipped });
+    }
+
     // ===== 👨‍🎓 학생 목록 (Phase 9 학생관리 메뉴 — 학생 목록) =====
     //   GET /api/admin/students/list?limit=200
     //   attendance 테이블에서 distinct user_id + 최근 활동 집계

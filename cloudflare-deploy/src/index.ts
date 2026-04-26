@@ -212,6 +212,9 @@ export default {
         /^\/api\/admin\/community-posts\/\d+$/.test(path) ||
         path === '/api/admin/textbooks' ||
         path === '/api/admin/students/list' ||
+        path === '/api/admin/students/erp-list' ||
+        path === '/api/admin/students/erp' ||
+        path === '/api/admin/students/erp-seed' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -933,6 +936,7 @@ function isAdminPath(path: string, method: string): boolean {
   if (path === '/api/admin/community-posts' || /^\/api\/admin\/community-posts\/\d+$/.test(path)) return true;
   if (path === '/api/admin/textbooks') return true;
   if (path === '/api/admin/students/list') return true;
+  if (path === '/api/admin/students/erp-list' || path === '/api/admin/students/erp' || path === '/api/admin/students/erp-seed') return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;

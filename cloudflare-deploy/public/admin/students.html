@@ -97,18 +97,30 @@
     .erp-table tbody tr:hover { background:#fefce8; }
     .erp-table .center { text-align:center; }
     .erp-table .right  { text-align:right; }
-    .erp-table .student-name { color:#0ea5e9; font-weight:700; cursor:pointer; }
-    .erp-table .student-name:hover { text-decoration:underline; }
+    .erp-table .student-name { color:#0f172a; font-weight:700; }
+    .erp-table .login-id {
+      color:#0ea5e9; font-weight:600; cursor:pointer;
+      display:inline-flex; align-items:center; gap:3px;
+    }
+    .erp-table .login-id:hover { text-decoration:underline; }
+    .erp-table .login-id .dollar { color:#10b981; font-size:10px; }
+    .erp-table .login-id .grip { color:#cbd5e1; font-size:10px; cursor:grab; }
     .erp-table .pay-type {
-      color:#dc2626; font-weight:600;
-      cursor:pointer;
+      color:#dc2626; font-weight:700; cursor:pointer;
     }
     .erp-table .icon-btn {
-      display:inline-block; width:18px; height:18px; line-height:18px;
-      text-align:center; color:#64748b; cursor:pointer;
+      display:inline-block; width:20px; height:20px; line-height:20px;
+      text-align:center; color:#64748b; cursor:pointer; font-size:14px;
     }
-    .erp-table .point-cell { color:#3b82f6; font-weight:600; }
+    .erp-table .icon-btn:hover { color:#0ea5e9; }
+    .erp-table .point-cell {
+      color:#3b82f6; font-weight:700; cursor:pointer;
+      display:inline-flex; align-items:center; gap:3px;
+    }
+    .erp-table .point-cell .dollar { color:#10b981; font-size:10px; }
+    .erp-table .msg-flag { color:#dc2626; font-size:13px; cursor:pointer; }
     .erp-table .status-ok { color:#16a34a; font-weight:600; }
+    .erp-table .pdi-mark { color:#ec4899; font-weight:700; }
     .empty-row td { text-align:center; padding:40px; color:#94a3b8; font-size:13px; }
 
     /* 페이지네이션 */
@@ -201,6 +213,7 @@
       <input id="f-referral" type="text" placeholder="추천인아이디" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:160px;" />
       <button class="erp-btn-search" onclick="loadStudents()">검색</button>
       <input id="f-phone" type="tel" placeholder="학생/부모님 전화번호" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:200px;" />
+      <button onclick="seedDemoStudents()" style="margin-left:auto;padding:6px 14px;font-size:11px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">🌱 데모 22명 시드</button>
     </div>
 
     <!-- 22 컬럼 테이블 -->
@@ -274,65 +287,70 @@ function fmtDate(ts) {
   return d.toISOString().slice(0, 10);
 }
 
-// === 데이터 fetch ===
+// === 데이터 fetch (Phase 10-②: students_erp 테이블 사용) ===
 async function loadStudents() {
   const tb = document.getElementById('students-tbody');
   tb.innerHTML = '<tr class="empty-row"><td colspan="23">불러오는 중...</td></tr>';
   try {
-    // 학생 목록 + 가맹점 + 센터를 함께 가져와 join 흉내
-    const [stuR, frR, ctR, enR] = await Promise.allSettled([
-      fetch('/api/admin/students/list?limit=1000', {credentials:'include'}).then(r => r.json()),
-      fetch('/api/admin/franchises', {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
-      fetch('/api/admin/centers',    {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
-      fetch('/api/admin/enrollments?limit=1000', {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
-    ]);
-
-    if (stuR.status !== 'fulfilled' || !stuR.value.ok) {
+    const r = await fetch('/api/admin/students/erp-list?limit=2000', {credentials:'include'});
+    const d = await r.json();
+    if (!d.ok) {
       tb.innerHTML = '<tr class="empty-row"><td colspan="23">로딩 실패</td></tr>';
       return;
     }
-    const students = stuR.value.items || [];
-    const enrollments = (enR.value && enR.value.items) || [];
-
-    // student_user_id 로 enrollments 매핑
-    const enrollmentMap = {};
-    enrollments.forEach(e => { if (e.student_user_id) enrollmentMap[e.student_user_id] = e; });
-
-    _students = students.map((s, i) => {
-      const en = enrollmentMap[s.user_id];
-      return {
-        no: i + 1,
-        student_id: s.user_id,
-        username: s.username || s.user_id,
-        first_seen: s.first_seen,
-        last_seen: s.last_seen,
-        sessions: s.sessions || 0,
-        // 수강신청에서 가져옴 (있으면)
-        package: en ? en.package : '-',
-        ended_at: en ? en.ended_at : null,
-        status: en ? en.status : 'normal',
-        monthly_fee_krw: en ? en.monthly_fee_krw : null,
-        // 나머지는 우리 DB 에 없는 필드 — placeholder
-      };
-    });
+    _students = (d.items || []).map(s => ({
+      id: s.id,
+      student_id: s.student_id,
+      username: s.username,
+      login_id: s.login_id,
+      payment_type: s.payment_type || '-',
+      end_date: s.end_date,
+      signup_date: s.signup_date,
+      classes_per_week: s.classes_per_week,
+      points: s.points || 0,
+      student_phone: s.student_phone,
+      parent_phone: s.parent_phone,
+      teacher_phone: s.teacher_phone,
+      shop_name: s.shop_name,
+      hq_name: s.hq_name,
+      branch1_name: s.branch1_name,
+      branch2_name: s.branch2_name,
+      franchise: s.franchise,
+      status: s.status || '정상'
+    }));
+    if (_students.length === 0) {
+      tb.innerHTML = '<tr class="empty-row"><td colspan="23">학생 데이터 없음 — 우측 [🌱 데모 22명 시드] 버튼을 눌러보세요</td></tr>';
+      return;
+    }
     applyFilters();
   } catch (e) {
     tb.innerHTML = '<tr class="empty-row"><td colspan="23">에러: ' + e.message + '</td></tr>';
   }
 }
 
+async function seedDemoStudents() {
+  if (!confirm('스크린샷 기반 22명 학생을 일괄 시드할까요?\n이미 같은 student_id 가 있으면 skip 됩니다.')) return;
+  try {
+    const r = await fetch('/api/admin/students/erp-seed', {method:'POST', credentials:'include'});
+    const d = await r.json();
+    if (!r.ok || !d.ok) { alert('시드 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+    alert(`시드 완료!\n신규 ${d.created}명 · skip ${d.skipped}명 (총 ${d.total})`);
+    loadStudents();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
 function applyFilters() {
   const kw = (document.getElementById('f-keyword').value || '').toLowerCase().trim();
   const phone = (document.getElementById('f-phone').value || '').trim();
-  const referral = (document.getElementById('f-referral').value || '').trim();
   const statusF = document.querySelector('input[name="f-status"]:checked').value;
 
   _filtered = _students.filter(s => {
     if (kw) {
-      const blob = (s.username + ' ' + s.student_id).toLowerCase();
+      const blob = ((s.username || '') + ' ' + (s.login_id || '') + ' ' + (s.student_id || '')).toLowerCase();
       if (!blob.includes(kw)) return false;
     }
-    if (statusF === 'active' && (s.status === 'cancelled' || s.status === 'expired')) return false;
+    if (phone && !((s.student_phone || '').includes(phone) || (s.parent_phone || '').includes(phone))) return false;
+    if (statusF === 'active' && s.status !== '정상') return false;
     return true;
   });
   _page = 0;
@@ -355,33 +373,36 @@ function renderPage() {
   }
 
   const rows = _filtered.slice(start, end);
-  tb.innerHTML = rows.map((s, idx) => {
-    const no = total - (start + idx);  // 역순 번호
-    const linkUid = encodeURIComponent(s.student_id || '');
+  tb.innerHTML = rows.map((s) => {
+    const no = s.student_id || '';
+    const linkLid = encodeURIComponent(s.login_id || '');
+    const drillUid = encodeURIComponent(s.student_id || s.login_id || '');
+    const isPdi = (s.shop_name || '').includes('PDI') || (s.shop_name || '').startsWith('N PDI');
+    const shopHtml = isPdi ? `<span class="pdi-mark">N</span> ${escHtml((s.shop_name || '').replace(/^N\s/, ''))}` : escHtml(s.shop_name || '-');
     return `<tr>
       <td class="center"><input type="checkbox" /></td>
-      <td class="center">${no}</td>
-      <td><span class="student-name" onclick="window.open('/admin/student?uid=${linkUid}', '_blank')">${escHtml(s.username)}</span></td>
-      <td>${escHtml(s.student_id)}</td>
-      <td><span class="pay-type">B2C 결제</span></td>
-      <td class="center">${fmtDate(s.ended_at)}</td>
+      <td class="center" style="color:#64748b;">${escHtml(no)}</td>
+      <td><span class="student-name">${escHtml(s.username || '-')}</span></td>
+      <td><span class="login-id" onclick="window.open('/admin/student?uid=${drillUid}', '_blank')">${escHtml(s.login_id || '-')}<span class="dollar">$</span><span class="grip">⫶</span></span></td>
+      <td><span class="pay-type">${escHtml(s.payment_type || '-')}</span></td>
+      <td class="center" style="color:${s.end_date === '미설정' ? '#dc2626' : '#475569'};">${escHtml(s.end_date || '-')}</td>
       <td class="center"><span class="icon-btn" title="요약">👤</span></td>
       <td class="center"><span class="icon-btn" title="스케줄">📅</span></td>
-      <td class="center">${fmtDate(s.first_seen)}</td>
-      <td class="right">${s.sessions || '-'}</td>
-      <td class="center"><span class="icon-btn" title="상담">💬</span></td>
-      <td class="right point-cell">0 P</td>
-      <td class="center"><span class="icon-btn" title="메시지">✉️</span></td>
-      <td class="center"><span class="icon-btn" title="스케줄요청">📋</span></td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>망고아이 본사</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td class="center status-ok">정상</td>
+      <td class="center">${escHtml(s.signup_date || '-')}</td>
+      <td class="right">${s.classes_per_week != null ? s.classes_per_week : '-'}</td>
+      <td class="center"><span class="icon-btn" title="상담">👤</span></td>
+      <td class="right"><span class="point-cell">${s.points || 0} P<span class="dollar">$</span></span></td>
+      <td class="center"><span class="msg-flag" title="메시지">🚩</span></td>
+      <td class="center"><span class="icon-btn" title="수강신청·스케줄요청">📋</span></td>
+      <td>${escHtml(s.student_phone || '-')}</td>
+      <td>${escHtml(s.parent_phone || '-')}</td>
+      <td>${escHtml(s.teacher_phone || '-')}</td>
+      <td>${shopHtml}</td>
+      <td>${escHtml(s.hq_name || '-')}</td>
+      <td>${escHtml(s.branch1_name || '-')}</td>
+      <td>${escHtml(s.branch2_name || '-')}</td>
+      <td>${escHtml(s.franchise || '-')}</td>
+      <td class="center status-ok">${escHtml(s.status || '정상')}</td>
     </tr>`;
   }).join('');
 }
