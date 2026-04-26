@@ -508,70 +508,78 @@
 </div>
 
 <!-- 📥 Phase 6: 데이터 내보내기 (CSV) -->
-<div class="table-card" style="margin-bottom:24px;padding:14px 18px;">
-  <div class="chart-title" style="margin-bottom:8px;" data-ko="📥 데이터 내보내기 (CSV)" data-en="📥 Data Export (CSV)">📥 데이터 내보내기 (CSV)</div>
-  <div style="font-size:12px;color:#6b7280;margin-bottom:10px;">
-    출석 데이터를 기간 범위로 CSV 다운로드. 녹화 목록 CSV 는 위 검색 바의 [📥 CSV] 버튼을 사용하세요.
+<details class="table-card menu-card">
+  <summary><span data-ko="📥 데이터 내보내기 (CSV)" data-en="📥 Data Export (CSV)">📥 데이터 내보내기 (CSV)</span></summary>
+  <div class="menu-body">
+    <div style="font-size:12px;color:#6b7280;margin-bottom:10px;"
+         data-ko="출석 데이터를 기간 범위로 CSV 다운로드. 녹화 목록 CSV 는 위 검색 바의 [📥 CSV] 버튼을 사용하세요."
+         data-en="Download attendance data as CSV by date range. For recordings CSV, use the [📥 CSV] button in the recordings search bar.">
+      출석 데이터를 기간 범위로 CSV 다운로드. 녹화 목록 CSV 는 위 검색 바의 [📥 CSV] 버튼을 사용하세요.
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+      <label style="font-size:13px;color:#374151;">
+        <span data-ko="기간" data-en="Period">기간</span>&nbsp;
+        <input id="export-att-from" type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+        &nbsp;~&nbsp;
+        <input id="export-att-to"   type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
+      </label>
+      <input id="export-att-user"  type="text" placeholder="user_id (선택)" data-ko-placeholder="user_id (선택)" data-en-placeholder="user_id (optional)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
+      <input id="export-att-room"  type="text" placeholder="room_id (선택)" data-ko-placeholder="room_id (선택)" data-en-placeholder="room_id (optional)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
+      <button id="export-att-btn"  style="padding:6px 14px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;" data-ko="📥 출석 CSV 받기" data-en="📥 Download Attendance CSV">📥 출석 CSV 받기</button>
+    </div>
   </div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-    <label style="font-size:13px;color:#374151;">기간 &nbsp;
-      <input id="export-att-from" type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
-      &nbsp;~&nbsp;
-      <input id="export-att-to"   type="date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;" />
-    </label>
-    <input id="export-att-user"  type="text" placeholder="user_id (선택)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:160px;" />
-    <input id="export-att-room"  type="text" placeholder="room_id (선택)" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;width:140px;" />
-    <button id="export-att-btn"  style="padding:6px 14px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;">📥 출석 CSV 받기</button>
-  </div>
-</div>
+</details>
 
 <!-- 📣 Phase 5: 알림 큐 (운영 이벤트 자동 적재 + 상태 모니터링) -->
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+<details class="table-card menu-card">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="📣 알림 큐 (운영 이벤트)" data-en="📣 Notification Queue">📣 알림 큐 (운영 이벤트)</span>
-    <span style="font-size:12px;font-weight:400;color:#6b7280;" id="notif-counts">—</span>
+    <span style="font-size:12px;font-weight:400;color:#6b7280;margin-right:32px;" id="notif-counts">—</span>
+  </summary>
+  <div class="menu-body">
+    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+         data-ko="💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다."
+         data-en="💡 Operational events are auto-enqueued. External tool pulls pending items, sends to KakaoTalk, then marks as 'sent'.">
+      💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다.
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px 0;align-items:center;">
+      <select id="notif-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+        <option value="pending" selected>pending (대기)</option>
+        <option value="sent">sent (발송됨)</option>
+        <option value="failed">failed (실패)</option>
+        <option value="discarded">discarded (폐기)</option>
+        <option value="all" data-ko="전체" data-en="All">전체</option>
+      </select>
+      <button id="notif-refresh"  style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+      <button id="notif-test-btn" style="padding:5px 12px;font-size:12px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,0.1);color:#92400e;cursor:pointer;" data-ko="🧪 테스트 알림" data-en="🧪 Test Notify">🧪 테스트 알림</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th data-ko="시각" data-en="Time">시각</th>
+          <th data-ko="유형" data-en="Type">유형</th>
+          <th data-ko="제목" data-en="Title">제목</th>
+          <th data-ko="내용" data-en="Body">내용</th>
+          <th data-ko="채널" data-en="Channel">채널</th>
+          <th data-ko="상태" data-en="Status">상태</th>
+          <th data-ko="액션" data-en="Actions">액션</th>
+        </tr>
+      </thead>
+      <tbody id="notif-table"><tr><td colspan="7" class="empty">로딩 중...</td></tr></tbody>
+    </table>
   </div>
-  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
-       data-ko="💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다."
-       data-en="💡 Operational events are auto-enqueued. External tool pulls pending items, sends to KakaoTalk, then marks as 'sent'.">
-    💡 수업 시작 / 비상 / 강제 종료 같은 운영 이벤트가 자동 적재됩니다. 외부 도구가 pending 항목을 가져가 카카오톡으로 전송한 뒤 'sent' 로 표시합니다.
-  </div>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px 0;align-items:center;">
-    <select id="notif-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
-      <option value="pending" selected>pending (대기)</option>
-      <option value="sent">sent (발송됨)</option>
-      <option value="failed">failed (실패)</option>
-      <option value="discarded">discarded (폐기)</option>
-      <option value="all">전체</option>
-    </select>
-    <button id="notif-refresh"  style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
-    <button id="notif-test-btn" style="padding:5px 12px;font-size:12px;border:1px solid #f59e0b;border-radius:6px;background:rgba(245,158,11,0.1);color:#92400e;cursor:pointer;" data-ko="🧪 테스트 알림" data-en="🧪 Test Notify">🧪 테스트 알림</button>
-  </div>
-  <table>
-    <thead>
-      <tr>
-        <th data-ko="시각" data-en="Time">시각</th>
-        <th data-ko="유형" data-en="Type">유형</th>
-        <th data-ko="제목" data-en="Title">제목</th>
-        <th data-ko="내용" data-en="Body">내용</th>
-        <th data-ko="채널" data-en="Channel">채널</th>
-        <th data-ko="상태" data-en="Status">상태</th>
-        <th data-ko="액션" data-en="Actions">액션</th>
-      </tr>
-    </thead>
-    <tbody id="notif-table"><tr><td colspan="7" class="empty">로딩 중...</td></tr></tbody>
-  </table>
-</div>
+</details>
 <!-- 🎯 집중도 분석 위젯 제거됨 (2026-04-24)
      이유: 녹화 목록 테이블에 이미 시선 점수 / 말하기 점수 / 참여도 컬럼이
      존재하므로 focus-integrator.pages.dev iframe 임베드는 중복. 사용자가
      "다시 이걸 볼 필요 없음" 요청으로 삭제. 필요하면 git 히스토리에서 복원. -->
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+<details class="table-card menu-card">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="🎥 녹화 목록 (D1 메타 + R2 파일 통합)" data-en="🎥 Recordings (D1 meta + R2 files unified)">🎥 녹화 목록 (D1 메타 + R2 파일 통합)</span>
-    <span id="rec-counts" style="font-size:12px;font-weight:400;color:#6b7280;"></span>
-  </div>
+    <span id="rec-counts" style="font-size:12px;font-weight:400;color:#6b7280;margin-right:32px;"></span>
+  </summary>
+  <div class="menu-body">
   <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
        data-ko="💡 D1 = 녹화 메타데이터 DB (방 번호·교사·시간 등) · R2 = 녹화 파일 저장소 (동영상 .webm). 두 곳 모두 있어야 정상입니다."
        data-en="💡 D1 = recording metadata DB (room/teacher/time) · R2 = recording file storage (video .webm). Both must exist for a healthy recording.">
@@ -633,7 +641,8 @@
     </thead>
     <tbody id="recordings-table"></tbody>
   </table>
-</div>
+  </div>
+</details>
 
 <!-- 녹화 재생 모달 -->
 <div id="playback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
