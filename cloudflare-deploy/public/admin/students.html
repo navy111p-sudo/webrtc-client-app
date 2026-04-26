@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>👨‍🎓 학생 목록 — Mangoi 관리</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; background:#f1f5f9; font-family:'Pretendard',-apple-system,'Segoe UI','Apple SD Gothic Neo',sans-serif; font-size:13px; color:#1e293b; }
+    a { color:inherit; text-decoration:none; }
+
+    /* === 상단 헤더 === */
+    .top-header {
+      height:48px; background:#fff; border-bottom:1px solid #e2e8f0;
+      display:flex; align-items:center; gap:18px; padding:0 18px;
+      position:sticky; top:0; z-index:100;
+    }
+    .top-clock { font-size:11px; color:#64748b; line-height:1.4; }
+    .top-clock div { white-space:nowrap; }
+    .top-search {
+      flex:1; max-width:380px; margin-left:auto;
+    }
+    .top-search input {
+      width:100%; padding:6px 12px; font-size:12px;
+      border:1px solid #cbd5e1; border-radius:6px; background:#f8fafc;
+    }
+    .top-icons { display:flex; gap:8px; align-items:center; color:#64748b; }
+    .top-icons span { padding:6px; cursor:pointer; }
+    .top-user {
+      display:flex; align-items:center; gap:8px;
+      background:#f59e0b; color:#fff; padding:6px 12px; border-radius:20px;
+      font-weight:700; font-size:12px;
+    }
+
+    /* === 레이아웃 === */
+    .erp-layout { display:grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 48px); }
+
+    /* === 사이드바 === */
+    .erp-sidebar { background:#fff; border-right:1px solid #e2e8f0; padding:8px 0; }
+    .erp-sidebar a, .erp-sidebar .erp-group {
+      display:flex; align-items:center; gap:8px;
+      padding:9px 16px; font-size:13px; color:#475569; cursor:pointer;
+      border-left:3px solid transparent;
+    }
+    .erp-sidebar a:hover { background:#f8fafc; color:#0f172a; }
+    .erp-sidebar a.active {
+      background:#fef3c7; color:#92400e; font-weight:700;
+      border-left-color:#f59e0b;
+    }
+    .erp-sidebar .erp-group {
+      font-weight:700; color:#0f172a; cursor:default;
+      border-bottom:1px solid #f1f5f9;
+    }
+    .erp-sidebar .erp-sub a { padding-left:32px; font-size:12px; }
+    .erp-sidebar .erp-sub a.active { background:#fef9c3; color:#713f12; }
+
+    /* === 메인 === */
+    .erp-main { padding:20px 24px; overflow-x:auto; }
+    .erp-main h1 { margin:0 0 14px; font-size:20px; font-weight:700; color:#0f172a; }
+
+    /* 필터 */
+    .erp-filter-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:12px; }
+    @media (max-width:1280px) { .erp-filter-grid { grid-template-columns:repeat(3,1fr); } }
+    .erp-filter-grid select, .erp-filter-grid input {
+      width:100%; padding:8px 10px; font-size:12px;
+      border:1px solid #cbd5e1; border-radius:6px; background:#fff;
+    }
+    .erp-filter-row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+    .erp-radio-group { display:flex; gap:6px; }
+    .erp-radio-group label {
+      padding:6px 14px; font-size:12px; cursor:pointer;
+      border:1px solid #cbd5e1; border-radius:4px; background:#fff;
+    }
+    .erp-radio-group input[type=radio] { display:none; }
+    .erp-radio-group input[type=radio]:checked + span {}
+    .erp-radio-group label:has(input:checked) { background:#3b82f6; color:#fff; border-color:#3b82f6; font-weight:600; }
+    .erp-btn-search {
+      padding:8px 22px; background:#3b82f6; color:#fff; border:none; border-radius:6px;
+      font-size:12px; font-weight:700; cursor:pointer;
+    }
+    .erp-btn-search:hover { background:#2563eb; }
+
+    /* 테이블 */
+    .erp-table-wrap {
+      background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+      overflow-x:auto;
+    }
+    .erp-table { width:100%; border-collapse:collapse; font-size:11px; min-width:1800px; }
+    .erp-table th, .erp-table td {
+      padding:8px 10px; border-bottom:1px solid #f1f5f9;
+      white-space:nowrap; vertical-align:middle;
+    }
+    .erp-table th {
+      background:#f8fafc; color:#475569; font-weight:600; font-size:11px;
+      position:sticky; top:0;
+    }
+    .erp-table tbody tr:hover { background:#fefce8; }
+    .erp-table .center { text-align:center; }
+    .erp-table .right  { text-align:right; }
+    .erp-table .student-name { color:#0ea5e9; font-weight:700; cursor:pointer; }
+    .erp-table .student-name:hover { text-decoration:underline; }
+    .erp-table .pay-type {
+      color:#dc2626; font-weight:600;
+      cursor:pointer;
+    }
+    .erp-table .icon-btn {
+      display:inline-block; width:18px; height:18px; line-height:18px;
+      text-align:center; color:#64748b; cursor:pointer;
+    }
+    .erp-table .point-cell { color:#3b82f6; font-weight:600; }
+    .erp-table .status-ok { color:#16a34a; font-weight:600; }
+    .empty-row td { text-align:center; padding:40px; color:#94a3b8; font-size:13px; }
+
+    /* 페이지네이션 */
+    .erp-pagination {
+      display:flex; gap:6px; align-items:center; justify-content:center;
+      padding:14px 0; font-size:12px; color:#64748b;
+    }
+    .erp-pagination button {
+      padding:5px 10px; border:1px solid #cbd5e1; border-radius:4px;
+      background:#fff; cursor:pointer; font-size:11px;
+    }
+    .erp-pagination button:disabled { opacity:0.4; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+
+<div class="top-header">
+  <a href="/admin.html" title="대시보드로 돌아가기" style="font-size:18px;">←</a>
+  <a href="/admin.html" style="display:flex;align-items:center;gap:8px;">
+    <img src="/img/Mangoi_Character.jpg" alt="Mangoi" style="width:28px;height:28px;border-radius:50%;object-fit:cover;border:2px solid #f59e0b;" />
+    <span style="font-weight:700;color:#0f172a;font-size:14px;">Mangoi 관리</span>
+  </a>
+  <div class="top-clock">
+    <div>🇰🇷 KR TIME : <span id="kr-time">--:--:--</span></div>
+    <div>🇵🇭 PH TIME : <span id="ph-time">--:--:--</span></div>
+  </div>
+  <div class="top-search">
+    <input type="search" placeholder="🔍 메뉴 및 강사명 검색" />
+  </div>
+  <div class="top-icons">
+    <span title="알림">🔔</span>
+    <span title="설정">⚙️</span>
+  </div>
+  <div class="top-user">👤 정우영1</div>
+</div>
+
+<div class="erp-layout">
+
+  <!-- 좌측 사이드바 -->
+  <aside class="erp-sidebar">
+    <a href="/admin.html">📊 Dashboard</a>
+    <a href="/admin.html#menu-가맹점">🏬 가맹점 관리</a>
+    <a href="/admin.html#menu-교육센터">🏫 교육센터</a>
+    <div class="erp-group">👨‍🎓 학생관리 ▼</div>
+    <div class="erp-sub">
+      <a href="/admin/students" class="active">학생 목록</a>
+      <a href="#expiry">종료일자확인</a>
+      <a href="#extension-detail">수강 연장(상세보기)</a>
+      <a href="#extension">수강 연장</a>
+      <a href="#class-status">수업현황</a>
+      <a href="#daily-report">일별평가서</a>
+      <a href="#attendance">출결 현황</a>
+      <a href="#streak">연속결석</a>
+      <a href="#consultation">상담 내역</a>
+      <a href="#chat">톡짹톡</a>
+    </div>
+    <a href="/admin.html#menu-레벨">📝 레벨테스트</a>
+    <a href="/admin.html#menu-수강신청">📚 수강신청관리</a>
+    <a href="/admin.html#menu-녹화">🎥 수업 관리</a>
+    <a href="/admin.html#menu-커뮤니티">📢 커뮤니티</a>
+    <a href="/admin.html#menu-자료실">📁 자료실</a>
+    <a href="/admin.html#menu-교재">📖 교재콘텐츠관리</a>
+    <a href="/admin.html#menu-정산">💹 정산통계관리</a>
+    <a href="#groupware">🧰 그룹웨어/마이몰</a>
+    <a href="/admin.html#menu-성과평가">🏆 성과평가 시스템</a>
+    <a href="/admin.html#menu-Mangoi">💰 회계/급여 관리</a>
+    <a href="#ops">⚙️ 운영관리</a>
+    <a href="#schedule">📅 스케줄 관리</a>
+  </aside>
+
+  <!-- 메인 -->
+  <main class="erp-main">
+    <h1>학생관리</h1>
+
+    <!-- 5개 select 필터 -->
+    <div class="erp-filter-grid">
+      <select id="f-hq"><option value="">본사 선택</option></select>
+      <select id="f-branch1"><option value="">대표지사선택</option></select>
+      <select id="f-branch2"><option value="">지사선택</option></select>
+      <select id="f-shop"><option value="">대리점 선택</option></select>
+      <input id="f-keyword" type="search" placeholder="학생명 또는 아이디 (Enter 눌러서 검색)" />
+    </div>
+
+    <!-- 라디오 + 추천인아이디 + 검색 + 전화번호 -->
+    <div class="erp-filter-row">
+      <div class="erp-radio-group">
+        <label><input type="radio" name="f-status" value="active" checked /><span>정상</span></label>
+        <label><input type="radio" name="f-status" value="all" /><span>전체</span></label>
+      </div>
+      <input id="f-referral" type="text" placeholder="추천인아이디" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:160px;" />
+      <button class="erp-btn-search" onclick="loadStudents()">검색</button>
+      <input id="f-phone" type="tel" placeholder="학생/부모님 전화번호" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:200px;" />
+    </div>
+
+    <!-- 22 컬럼 테이블 -->
+    <div class="erp-table-wrap">
+      <table class="erp-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="check-all" /></th>
+            <th>No</th>
+            <th>학생명</th>
+            <th>아이디</th>
+            <th>결제타입</th>
+            <th>수강 종료일</th>
+            <th>요약</th>
+            <th>스케줄</th>
+            <th>가입일</th>
+            <th>수업회수(주)</th>
+            <th>상담</th>
+            <th>포인트</th>
+            <th>메시지</th>
+            <th>수강신청<br>(스케줄요청)</th>
+            <th>학생 번호</th>
+            <th>부모님 번호</th>
+            <th>관리교사번호</th>
+            <th>대리점명</th>
+            <th>본사명</th>
+            <th>대표지사명</th>
+            <th>지사명</th>
+            <th>프랜차이즈</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="students-tbody">
+          <tr class="empty-row"><td colspan="23">검색 버튼을 눌러 학생 목록을 불러오세요</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="erp-pagination">
+      <button id="page-prev" onclick="goPage(-1)">‹ 이전</button>
+      <span id="page-info">— / —</span>
+      <button id="page-next" onclick="goPage(1)">다음 ›</button>
+    </div>
+  </main>
+</div>
+
+<script>
+// === 시계 (KST + PHT) ===
+function tickClocks() {
+  const now = new Date();
+  const fmt = (d) => d.toTimeString().slice(0, 8);
+  const kst = new Date(now.getTime() + (9 * 60 - now.getTimezoneOffset()) * 60000);
+  const pht = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
+  document.getElementById('kr-time').textContent = fmt(kst);
+  document.getElementById('ph-time').textContent = fmt(pht);
+}
+tickClocks(); setInterval(tickClocks, 1000);
+
+// === 상태 ===
+let _students = [];
+let _filtered = [];
+let _page = 0;
+const PAGE_SIZE = 50;
+
+function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function fmtDate(ts) {
+  if (!ts) return '-';
+  const d = new Date(Number(ts));
+  if (isNaN(d)) return '-';
+  return d.toISOString().slice(0, 10);
+}
+
+// === 데이터 fetch ===
+async function loadStudents() {
+  const tb = document.getElementById('students-tbody');
+  tb.innerHTML = '<tr class="empty-row"><td colspan="23">불러오는 중...</td></tr>';
+  try {
+    // 학생 목록 + 가맹점 + 센터를 함께 가져와 join 흉내
+    const [stuR, frR, ctR, enR] = await Promise.allSettled([
+      fetch('/api/admin/students/list?limit=1000', {credentials:'include'}).then(r => r.json()),
+      fetch('/api/admin/franchises', {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
+      fetch('/api/admin/centers',    {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
+      fetch('/api/admin/enrollments?limit=1000', {credentials:'include'}).then(r => r.json()).catch(()=>({items:[]})),
+    ]);
+
+    if (stuR.status !== 'fulfilled' || !stuR.value.ok) {
+      tb.innerHTML = '<tr class="empty-row"><td colspan="23">로딩 실패</td></tr>';
+      return;
+    }
+    const students = stuR.value.items || [];
+    const enrollments = (enR.value && enR.value.items) || [];
+
+    // student_user_id 로 enrollments 매핑
+    const enrollmentMap = {};
+    enrollments.forEach(e => { if (e.student_user_id) enrollmentMap[e.student_user_id] = e; });
+
+    _students = students.map((s, i) => {
+      const en = enrollmentMap[s.user_id];
+      return {
+        no: i + 1,
+        student_id: s.user_id,
+        username: s.username || s.user_id,
+        first_seen: s.first_seen,
+        last_seen: s.last_seen,
+        sessions: s.sessions || 0,
+        // 수강신청에서 가져옴 (있으면)
+        package: en ? en.package : '-',
+        ended_at: en ? en.ended_at : null,
+        status: en ? en.status : 'normal',
+        monthly_fee_krw: en ? en.monthly_fee_krw : null,
+        // 나머지는 우리 DB 에 없는 필드 — placeholder
+      };
+    });
+    applyFilters();
+  } catch (e) {
+    tb.innerHTML = '<tr class="empty-row"><td colspan="23">에러: ' + e.message + '</td></tr>';
+  }
+}
+
+function applyFilters() {
+  const kw = (document.getElementById('f-keyword').value || '').toLowerCase().trim();
+  const phone = (document.getElementById('f-phone').value || '').trim();
+  const referral = (document.getElementById('f-referral').value || '').trim();
+  const statusF = document.querySelector('input[name="f-status"]:checked').value;
+
+  _filtered = _students.filter(s => {
+    if (kw) {
+      const blob = (s.username + ' ' + s.student_id).toLowerCase();
+      if (!blob.includes(kw)) return false;
+    }
+    if (statusF === 'active' && (s.status === 'cancelled' || s.status === 'expired')) return false;
+    return true;
+  });
+  _page = 0;
+  renderPage();
+}
+
+function renderPage() {
+  const tb = document.getElementById('students-tbody');
+  const total = _filtered.length;
+  const start = _page * PAGE_SIZE;
+  const end = Math.min(start + PAGE_SIZE, total);
+
+  document.getElementById('page-info').textContent = total === 0 ? '0 / 0' : `${start + 1}-${end} / ${total}`;
+  document.getElementById('page-prev').disabled = _page === 0;
+  document.getElementById('page-next').disabled = end >= total;
+
+  if (total === 0) {
+    tb.innerHTML = '<tr class="empty-row"><td colspan="23">결과 없음</td></tr>';
+    return;
+  }
+
+  const rows = _filtered.slice(start, end);
+  tb.innerHTML = rows.map((s, idx) => {
+    const no = total - (start + idx);  // 역순 번호
+    const linkUid = encodeURIComponent(s.student_id || '');
+    return `<tr>
+      <td class="center"><input type="checkbox" /></td>
+      <td class="center">${no}</td>
+      <td><span class="student-name" onclick="window.open('/admin/student?uid=${linkUid}', '_blank')">${escHtml(s.username)}</span></td>
+      <td>${escHtml(s.student_id)}</td>
+      <td><span class="pay-type">B2C 결제</span></td>
+      <td class="center">${fmtDate(s.ended_at)}</td>
+      <td class="center"><span class="icon-btn" title="요약">👤</span></td>
+      <td class="center"><span class="icon-btn" title="스케줄">📅</span></td>
+      <td class="center">${fmtDate(s.first_seen)}</td>
+      <td class="right">${s.sessions || '-'}</td>
+      <td class="center"><span class="icon-btn" title="상담">💬</span></td>
+      <td class="right point-cell">0 P</td>
+      <td class="center"><span class="icon-btn" title="메시지">✉️</span></td>
+      <td class="center"><span class="icon-btn" title="스케줄요청">📋</span></td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td>망고아이 본사</td>
+      <td>-</td>
+      <td>-</td>
+      <td>-</td>
+      <td class="center status-ok">정상</td>
+    </tr>`;
+  }).join('');
+}
+
+function goPage(delta) {
+  const total = _filtered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  _page = Math.max(0, Math.min(maxPage, _page + delta));
+  renderPage();
+}
+
+// 키워드 Enter
+document.getElementById('f-keyword').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); loadStudents(); }
+});
+// 라디오 변경
+document.querySelectorAll('input[name="f-status"]').forEach(r => r.addEventListener('change', applyFilters));
+
+// 모두 선택 체크박스
+document.getElementById('check-all').addEventListener('change', e => {
+  document.querySelectorAll('#students-tbody input[type=checkbox]').forEach(cb => cb.checked = e.target.checked);
+});
+
+// 첫 로드
+loadStudents();
+</script>
+
+</body>
+</html>

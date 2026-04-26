@@ -246,6 +246,12 @@ export default {
       return env.ASSETS.fetch(studentRequest);
     }
 
+    // 👨‍🎓 /admin/students — 학생 목록 ERP 풀페이지 (Phase 10)
+    if (path === '/admin/students' || path === '/admin/students/') {
+      const r = new Request(new URL('/admin/students.html' + url.search, request.url).toString(), request);
+      return env.ASSETS.fetch(r);
+    }
+
     // Static assets (실제 파일 확장자가 있는 요청)
     if (path.match(/\.\w+$/)) {
       const assetResp = await env.ASSETS.fetch(request);
@@ -900,6 +906,8 @@ function isAdminPath(path: string, method: string): boolean {
   // 🎓 /admin/student 드릴다운 페이지 + 그 전용 API (관리자만 접근)
   if (path === '/admin/student' || path === '/admin/student/' || path === '/admin/student.html') return true;
   if (path.startsWith('/api/admin/student/')) return true;
+  // 👨‍🎓 /admin/students ERP 풀페이지 (Phase 10)
+  if (path === '/admin/students' || path === '/admin/students/' || path === '/admin/students.html') return true;
   // 🛑 관리자 개입 액션 (Phase 4) — 강제 종료 등 쓰기 작업
   if (path.startsWith('/api/admin/room/')) return true;
   // PATCH /api/recordings/{id}/status 도 관리자 전용 (복원·삭제 상태 변경)
