@@ -179,9 +179,9 @@
     <!-- 구글식 검색창 -->
     <div class="menu-search-wrap">
       <input id="menu-search" class="menu-search-input" type="search" autocomplete="off"
-             placeholder="🔍 메뉴 검색 — 글자나 키워드 입력"
-             data-ko-placeholder="🔍 메뉴 검색 — 글자나 키워드 입력"
-             data-en-placeholder="🔍 Search menus — type any keyword" />
+             placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+             data-ko-placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+             data-en-placeholder="🔍 Search anything — students, teachers, franchises, menus" />
       <button class="menu-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
       <div class="menu-search-dropdown" id="menu-search-dropdown"></div>
     </div>
@@ -2689,9 +2689,10 @@ Promise.allSettled([
 setInterval(loadActiveRooms, 15000);
 
 // ============================================================================
-// 🔍 메뉴 검색 + 좌측 사이드바
+// 🔍 통합 검색 (메뉴 + 학생·교사·가맹점·센터·수강·교재 등 모든 데이터)
 // ============================================================================
-let _menuIndex = []; // [{el, ko, en, idx}]
+let _menuIndex = [];          // [{el, ko, en, idx}]
+let _globalSearchIndex = [];  // [{ kind, kindLabel, label, sub, action }]
 
 function buildMenuIndex() {
   _menuIndex = [];
@@ -2704,6 +2705,87 @@ function buildMenuIndex() {
     _menuIndex.push({ el: d, id: d.id, ko, en, idx });
   });
   renderSidebar();
+  // 메뉴를 통합 색인의 1순위로 추가
+  _globalSearchIndex = _menuIndex.map(m => ({
+    kind: 'menu',
+    kindLabelKo: '📋 메뉴',
+    kindLabelEn: '📋 Menu',
+    label: m.ko,
+    labelEn: m.en,
+    sub: '',
+    action: () => jumpToMenu(m.id)
+  }));
+}
+
+// ── 모든 데이터 통합 색인 ──────────────────────────────────────────
+async function buildGlobalIndex() {
+  // 메뉴는 buildMenuIndex 가 이미 추가. 다른 카테고리만 fetch.
+  const sources = [
+    { url: '/api/admin/students/list?limit=500', kindKo: '👨‍🎓 학생',     kindEn: '👨‍🎓 Student',    items: 'items',
+      label: s => s.username || s.user_id,
+      sub:   s => s.user_id || '',
+      action: s => window.open('/admin/student?uid=' + encodeURIComponent(s.user_id || ''), '_blank') },
+    { url: '/api/admin/teachers',         kindKo: '🧑‍🏫 교사',     kindEn: '🧑‍🏫 Teacher',     items: 'items',
+      label: t => t.name,
+      sub:   t => `${t.status || '—'} · ${t.years != null ? t.years + 'y' : ''} · rate ${t.rate_per_10min_php || '—'}`,
+      action: () => jumpToMenuByLabelMatch('Mangoi') },
+    { url: '/api/admin/franchises',       kindKo: '🏬 가맹점',     kindEn: '🏬 Franchise',    items: 'items',
+      label: f => f.name,
+      sub:   f => f.owner_name || '',
+      action: () => jumpToMenuByLabelMatch('가맹점') },
+    { url: '/api/admin/centers',          kindKo: '🏫 교육센터',   kindEn: '🏫 Center',       items: 'items',
+      label: c => c.name,
+      sub:   c => c.country || '',
+      action: () => jumpToMenuByLabelMatch('교육센터') },
+    { url: '/api/admin/enrollments?limit=500', kindKo: '📚 수강신청', kindEn: '📚 Enrollment', items: 'items',
+      label: e => e.student_name,
+      sub:   e => `${e.package} · ${e.status}`,
+      action: () => jumpToMenuByLabelMatch('수강신청') },
+    { url: '/api/admin/level-tests?limit=500', kindKo: '📝 레벨테스트', kindEn: '📝 Level Test', items: 'items',
+      label: l => l.student_name,
+      sub:   l => `${l.level || '—'} · ${l.score != null ? l.score : '—'}`,
+      action: () => jumpToMenuByLabelMatch('레벨') },
+    { url: '/api/admin/community-posts',  kindKo: '📢 공지',       kindEn: '📢 Post',         items: 'items',
+      label: p => p.title,
+      sub:   p => p.author || '',
+      action: () => jumpToMenuByLabelMatch('커뮤니티') },
+    { url: '/api/admin/textbooks',        kindKo: '📖 교재',       kindEn: '📖 Textbook',     items: 'items',
+      label: t => t.title,
+      sub:   t => `${t.level || '—'} · ${t.publisher || ''}`,
+      action: () => jumpToMenuByLabelMatch('교재') },
+    { url: '/api/recordings?limit=200',   kindKo: '🎥 녹화',       kindEn: '🎥 Recording',    items: '__array__',
+      label: r => `Room ${r.room_id} · ${r.teacher_name || r.teacher_id || ''}`,
+      sub:   r => r.started_at ? new Date(r.started_at).toLocaleDateString(adminLang==='en'?'en-US':'ko-KR') : '',
+      action: () => jumpToMenuByLabelMatch('녹화') }
+  ];
+
+  await Promise.allSettled(sources.map(async src => {
+    try {
+      const r = await fetch(src.url, { cache: 'no-store', credentials: 'include' });
+      if (!r.ok) return;
+      const data = await r.json();
+      const list = src.items === '__array__' ? (Array.isArray(data) ? data : []) : (data[src.items] || []);
+      list.forEach(item => {
+        const lbl = src.label(item);
+        if (!lbl) return;
+        _globalSearchIndex.push({
+          kind: src.kindKo,
+          kindLabelKo: src.kindKo,
+          kindLabelEn: src.kindEn,
+          label: String(lbl),
+          labelEn: String(lbl),  // 데이터 원본은 한 가지 (영문 별도 없음)
+          sub: src.sub(item) || '',
+          action: () => src.action(item)
+        });
+      });
+    } catch {}
+  }));
+}
+
+// 메뉴 라벨에 부분 일치하는 첫 카드로 점프
+function jumpToMenuByLabelMatch(needle) {
+  const m = _menuIndex.find(x => (x.ko || '').includes(needle) || (x.en || '').toLowerCase().includes(needle.toLowerCase()));
+  if (m) jumpToMenu(m.id);
 }
 
 function renderSidebar() {
@@ -2741,47 +2823,55 @@ function _highlight(text, q) {
   return _escSb(text.slice(0, pos)) + '<mark>' + _escSb(text.slice(pos, pos + q.length)) + '</mark>' + _escSb(text.slice(pos + q.length));
 }
 
-function searchMenusFor(q) {
+// 통합 검색 — 메뉴 + 학생 + 교사 + 가맹점 + ... 모든 데이터
+function searchAllFor(q) {
   const ql = q.toLowerCase().trim();
   if (!ql) return [];
-  // ko 또는 en 에 포함된 메뉴 모두 (substring)
-  const hits = _menuIndex.filter(m =>
-    (m.ko || '').toLowerCase().includes(ql) ||
-    (m.en || '').toLowerCase().includes(ql)
+  const hits = _globalSearchIndex.filter(it =>
+    (it.label    || '').toLowerCase().includes(ql) ||
+    (it.labelEn  || '').toLowerCase().includes(ql) ||
+    (it.sub      || '').toLowerCase().includes(ql)
   );
-  // 정확 매칭 우선 (앞쪽 위치)
+  // 정렬: (1) 메뉴 최우선  (2) 매칭 위치 앞쪽  (3) 짧은 이름
   return hits.sort((a, b) => {
+    if (a.kind === 'menu' && b.kind !== 'menu') return -1;
+    if (a.kind !== 'menu' && b.kind === 'menu') return 1;
     const ai = Math.min(
-      (a.ko.toLowerCase().indexOf(ql) + 1) || 999,
-      (a.en.toLowerCase().indexOf(ql) + 1) || 999
+      (a.label.toLowerCase().indexOf(ql) + 1) || 999,
+      (a.labelEn.toLowerCase().indexOf(ql) + 1) || 999
     );
     const bi = Math.min(
-      (b.ko.toLowerCase().indexOf(ql) + 1) || 999,
-      (b.en.toLowerCase().indexOf(ql) + 1) || 999
+      (b.label.toLowerCase().indexOf(ql) + 1) || 999,
+      (b.labelEn.toLowerCase().indexOf(ql) + 1) || 999
     );
-    return ai - bi;
-  });
+    if (ai !== bi) return ai - bi;
+    return (a.label || '').length - (b.label || '').length;
+  }).slice(0, 30);  // 자동완성에 너무 많이 안 보이도록 30개 제한
 }
 
 let _searchActiveIdx = -1;
+let _searchCurrentHits = [];
 function renderSearchDropdown(q) {
   const dd = document.getElementById('menu-search-dropdown');
   if (!dd) return;
-  if (!q) { dd.classList.remove('show'); dd.innerHTML = ''; _searchActiveIdx = -1; return; }
-  const hits = searchMenusFor(q);
+  if (!q) { dd.classList.remove('show'); dd.innerHTML = ''; _searchActiveIdx = -1; _searchCurrentHits = []; return; }
+  const hits = searchAllFor(q);
+  _searchCurrentHits = hits;
   if (hits.length === 0) {
-    dd.innerHTML = '<div class="menu-search-empty">' + (adminLang==='en'?'No matching menu':'일치하는 메뉴 없음') + '</div>';
+    dd.innerHTML = '<div class="menu-search-empty">' + (adminLang==='en'?'No matches found':'일치 결과 없음') + '</div>';
     dd.classList.add('show');
     _searchActiveIdx = -1;
     return;
   }
   const useEn = (typeof adminLang !== 'undefined' && adminLang === 'en');
   dd.innerHTML = hits.map((h, i) => {
-    const label = useEn ? h.en : h.ko;
-    const sub   = useEn ? h.ko : h.en;
-    return `<div class="menu-search-item${i===0?' active':''}" data-menu-id="${h.id}" data-idx="${i}">
-      <span style="flex:1;">${_highlight(label, q)}</span>
-      <span style="font-size:11px;color:#9ca3af;">${_escSb(sub)}</span>
+    const kindLbl = useEn ? h.kindLabelEn : h.kindLabelKo;
+    const lbl = h.label || '';
+    const sub = h.sub || '';
+    return `<div class="menu-search-item${i===0?' active':''}" data-idx="${i}">
+      <span style="display:inline-block;min-width:90px;font-size:10px;font-weight:700;color:#6b7280;background:#f3f4f6;padding:2px 6px;border-radius:10px;text-align:center;">${_escSb(kindLbl)}</span>
+      <span style="flex:1;">${_highlight(lbl, q)}</span>
+      ${sub ? `<span style="font-size:11px;color:#9ca3af;">${_escSb(sub)}</span>` : ''}
     </div>`;
   }).join('');
   dd.classList.add('show');
@@ -2816,9 +2906,10 @@ function renderSearchDropdown(q) {
       const cur = items[_searchActiveIdx]; if (cur) cur.scrollIntoView({block:'nearest'});
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const cur = items[_searchActiveIdx >= 0 ? _searchActiveIdx : 0];
-      if (cur) {
-        jumpToMenu(cur.dataset.menuId);
+      const idx = _searchActiveIdx >= 0 ? _searchActiveIdx : 0;
+      const hit = _searchCurrentHits[idx];
+      if (hit && typeof hit.action === 'function') {
+        hit.action();
         dd.classList.remove('show');
         input.blur();
       }
@@ -2830,9 +2921,13 @@ function renderSearchDropdown(q) {
   dd.addEventListener('click', (ev) => {
     const item = ev.target.closest('.menu-search-item');
     if (!item) return;
-    jumpToMenu(item.dataset.menuId);
-    dd.classList.remove('show');
-    input.value = '';
+    const idx = parseInt(item.dataset.idx, 10);
+    const hit = _searchCurrentHits[idx];
+    if (hit && typeof hit.action === 'function') {
+      hit.action();
+      dd.classList.remove('show');
+      input.value = '';
+    }
   });
   // 외부 클릭 시 닫기
   document.addEventListener('click', (ev) => {
@@ -2856,8 +2951,19 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
   jumpToMenu(a.dataset.menuId);
 });
 
-// 페이지 로드 시 메뉴 인덱스 빌드
+// 페이지 로드 시 메뉴 인덱스 빌드 + 통합 색인 비동기로 빌드
 buildMenuIndex();
+// 통합 색인은 데이터 fetch 가 시간 걸리므로 background 로 빌드. 빌드 중에도 메뉴는 검색 가능.
+setTimeout(() => {
+  buildGlobalIndex().then(() => {
+    console.log('[search] global index built:', _globalSearchIndex.length, 'items');
+  });
+}, 800);
+// 색인 재빌드용 헬퍼 (등록·삭제 후 호출하면 됨)
+window.rebuildGlobalSearchIndex = function() {
+  buildMenuIndex();
+  return buildGlobalIndex();
+};
 
 // 한/영 토글 시 사이드바도 갱신 — toggleAdminLang 의 끝에 호출되도록 hook
 (function hookLangToggle() {
@@ -2866,6 +2972,8 @@ buildMenuIndex();
   window.toggleAdminLang = function() {
     original.apply(this, arguments);
     if (typeof renderSidebar === 'function') renderSidebar();
+    // 메뉴 인덱스도 다시 빌드해서 통합 색인의 메뉴 라벨이 최신 언어로 갱신되게
+    if (typeof buildMenuIndex === 'function') buildMenuIndex();
   };
 })();
 </script>
