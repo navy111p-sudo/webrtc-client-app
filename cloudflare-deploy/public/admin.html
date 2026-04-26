@@ -43,6 +43,62 @@
   /* 데이터 없음(시선 점수 등) 표시 */
   .score-na   { color:#9ca3af; }
   @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
+
+  /* === 사이드바 + 메인 레이아웃 === */
+  .admin-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  .admin-sidebar {
+    position: sticky; top: 20px; align-self: start;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 10px;
+    max-height: calc(100vh - 40px); overflow-y: auto; box-shadow:0 1px 3px rgba(0,0,0,0.05);
+  }
+  .admin-sidebar h4 { margin:6px 8px 10px; font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; }
+  .admin-sidebar a {
+    display:block; padding:7px 10px; font-size:13px; color:#374151;
+    text-decoration:none; border-radius:6px; cursor:pointer;
+    transition: background 0.12s;
+  }
+  .admin-sidebar a:hover { background:#eff6ff; color:#1e40af; }
+  .admin-sidebar a.active { background:#3b82f6; color:#fff; font-weight:600; }
+  /* 좁은 화면에서는 사이드바 숨김 */
+  @media (max-width: 900px) {
+    .admin-layout { grid-template-columns: 1fr; }
+    .admin-sidebar { display:none; }
+  }
+
+  /* === 검색창 === */
+  .menu-search-wrap {
+    position: relative; max-width: 600px; margin: 0 auto 24px;
+  }
+  .menu-search-input {
+    width:100%; padding:12px 44px 12px 44px; font-size:15px;
+    border:1px solid #d1d5db; border-radius:24px; outline:none;
+    background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'/%3E%3C/svg%3E") no-repeat 16px center;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  .menu-search-input:focus { border-color:#3b82f6; box-shadow:0 1px 12px rgba(59,130,246,0.25); }
+  .menu-search-clear {
+    position:absolute; right:14px; top:50%; transform:translateY(-50%);
+    background:transparent; border:none; cursor:pointer; font-size:18px; color:#9ca3af; padding:4px 8px;
+    display:none;
+  }
+  .menu-search-input:not(:placeholder-shown) ~ .menu-search-clear { display:block; }
+  .menu-search-dropdown {
+    position:absolute; left:0; right:0; top:100%; margin-top:6px;
+    background:#fff; border:1px solid #e5e7eb; border-radius:12px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:200;
+    max-height: 360px; overflow-y: auto;
+    display:none;
+  }
+  .menu-search-dropdown.show { display:block; }
+  .menu-search-item {
+    padding:10px 16px; cursor:pointer; font-size:14px; color:#374151;
+    display:flex; align-items:center; gap:8px; border-bottom:1px solid #f3f4f6;
+  }
+  .menu-search-item:last-child { border-bottom:none; }
+  .menu-search-item:hover, .menu-search-item.active { background:#eff6ff; color:#1e40af; }
+  .menu-search-item mark { background:#fef08a; color:#854d0e; padding:0 2px; border-radius:2px; font-weight:600; }
+  .menu-search-empty { padding:14px 16px; color:#9ca3af; font-size:13px; text-align:center; }
 </style>
 </head>
 <body>
@@ -69,6 +125,25 @@
     </button>
   </div>
 </div>
+
+<div class="admin-layout">
+  <!-- 좌측 사이드바 — JS 로 자동 채워짐 -->
+  <aside class="admin-sidebar" id="admin-sidebar">
+    <h4 data-ko="📋 메뉴" data-en="📋 Menu">📋 메뉴</h4>
+    <div id="admin-sidebar-list"></div>
+  </aside>
+
+  <!-- 메인 영역 -->
+  <div>
+    <!-- 구글식 검색창 -->
+    <div class="menu-search-wrap">
+      <input id="menu-search" class="menu-search-input" type="search" autocomplete="off"
+             placeholder="🔍 메뉴 검색 — 글자나 키워드 입력"
+             data-ko-placeholder="🔍 메뉴 검색 — 글자나 키워드 입력"
+             data-en-placeholder="🔍 Search menus — type any keyword" />
+      <button class="menu-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
+      <div class="menu-search-dropdown" id="menu-search-dropdown"></div>
+    </div>
 
 <div class="grid" id="kpi"></div>
 
@@ -113,7 +188,7 @@
   </div>
 </details>
 
-<details class="table-card menu-card" open>
+<details class="table-card menu-card">
   <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="🔴 실시간 수업 현황" data-en="🔴 Live Classes">🔴 실시간 수업 현황</span>
     <button id="rooms-refresh" style="padding:4px 10px;font-size:12px;margin-right:32px;" data-ko="새로고침" data-en="Refresh" onclick="event.stopPropagation()">새로고침</button>
@@ -2386,7 +2461,191 @@ Promise.allSettled([
 ]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
+
+// ============================================================================
+// 🔍 메뉴 검색 + 좌측 사이드바
+// ============================================================================
+let _menuIndex = []; // [{el, ko, en, idx}]
+
+function buildMenuIndex() {
+  _menuIndex = [];
+  document.querySelectorAll('details.menu-card').forEach((d, idx) => {
+    const span = d.querySelector('summary span');
+    if (!span) return;
+    const ko = span.getAttribute('data-ko') || span.textContent.trim();
+    const en = span.getAttribute('data-en') || ko;
+    if (!d.id) d.id = 'menu-' + idx; // anchor 용 id 부여
+    _menuIndex.push({ el: d, id: d.id, ko, en, idx });
+  });
+  renderSidebar();
+}
+
+function renderSidebar() {
+  const list = document.getElementById('admin-sidebar-list');
+  if (!list) return;
+  const useEn = (typeof adminLang !== 'undefined' && adminLang === 'en');
+  list.innerHTML = _menuIndex.map(m => {
+    const label = useEn ? m.en : m.ko;
+    return `<a href="#${m.id}" data-menu-id="${m.id}">${_escSb(label)}</a>`;
+  }).join('');
+}
+function _escSb(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function jumpToMenu(id, opts) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.open = true;
+  el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // 시각적 강조 — 잠깐 노란 테두리
+  el.style.transition = 'box-shadow 0.4s';
+  el.style.boxShadow = '0 0 0 3px #fde047';
+  setTimeout(() => { el.style.boxShadow = ''; }, 1200);
+  // 사이드바 active 표시
+  document.querySelectorAll('#admin-sidebar-list a').forEach(a => {
+    a.classList.toggle('active', a.dataset.menuId === id);
+  });
+}
+
+// ── 검색 (자동완성 드롭다운) ──────────────────────────────────────────
+function _highlight(text, q) {
+  if (!q) return _escSb(text);
+  const lower = text.toLowerCase();
+  const pos = lower.indexOf(q.toLowerCase());
+  if (pos < 0) return _escSb(text);
+  return _escSb(text.slice(0, pos)) + '<mark>' + _escSb(text.slice(pos, pos + q.length)) + '</mark>' + _escSb(text.slice(pos + q.length));
+}
+
+function searchMenusFor(q) {
+  const ql = q.toLowerCase().trim();
+  if (!ql) return [];
+  // ko 또는 en 에 포함된 메뉴 모두 (substring)
+  const hits = _menuIndex.filter(m =>
+    (m.ko || '').toLowerCase().includes(ql) ||
+    (m.en || '').toLowerCase().includes(ql)
+  );
+  // 정확 매칭 우선 (앞쪽 위치)
+  return hits.sort((a, b) => {
+    const ai = Math.min(
+      (a.ko.toLowerCase().indexOf(ql) + 1) || 999,
+      (a.en.toLowerCase().indexOf(ql) + 1) || 999
+    );
+    const bi = Math.min(
+      (b.ko.toLowerCase().indexOf(ql) + 1) || 999,
+      (b.en.toLowerCase().indexOf(ql) + 1) || 999
+    );
+    return ai - bi;
+  });
+}
+
+let _searchActiveIdx = -1;
+function renderSearchDropdown(q) {
+  const dd = document.getElementById('menu-search-dropdown');
+  if (!dd) return;
+  if (!q) { dd.classList.remove('show'); dd.innerHTML = ''; _searchActiveIdx = -1; return; }
+  const hits = searchMenusFor(q);
+  if (hits.length === 0) {
+    dd.innerHTML = '<div class="menu-search-empty">' + (adminLang==='en'?'No matching menu':'일치하는 메뉴 없음') + '</div>';
+    dd.classList.add('show');
+    _searchActiveIdx = -1;
+    return;
+  }
+  const useEn = (typeof adminLang !== 'undefined' && adminLang === 'en');
+  dd.innerHTML = hits.map((h, i) => {
+    const label = useEn ? h.en : h.ko;
+    const sub   = useEn ? h.ko : h.en;
+    return `<div class="menu-search-item${i===0?' active':''}" data-menu-id="${h.id}" data-idx="${i}">
+      <span style="flex:1;">${_highlight(label, q)}</span>
+      <span style="font-size:11px;color:#9ca3af;">${_escSb(sub)}</span>
+    </div>`;
+  }).join('');
+  dd.classList.add('show');
+  _searchActiveIdx = 0;
+}
+
+(function bindMenuSearch(){
+  const input = document.getElementById('menu-search');
+  const clear = document.getElementById('menu-search-clear');
+  const dd    = document.getElementById('menu-search-dropdown');
+  if (!input || !dd) return;
+
+  let timer;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => renderSearchDropdown(input.value), 80);
+  });
+  input.addEventListener('focus', () => {
+    if (input.value.trim()) renderSearchDropdown(input.value);
+  });
+  input.addEventListener('keydown', (e) => {
+    const items = dd.querySelectorAll('.menu-search-item');
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      _searchActiveIdx = Math.min(items.length - 1, _searchActiveIdx + 1);
+      items.forEach((el, i) => el.classList.toggle('active', i === _searchActiveIdx));
+      const cur = items[_searchActiveIdx]; if (cur) cur.scrollIntoView({block:'nearest'});
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      _searchActiveIdx = Math.max(0, _searchActiveIdx - 1);
+      items.forEach((el, i) => el.classList.toggle('active', i === _searchActiveIdx));
+      const cur = items[_searchActiveIdx]; if (cur) cur.scrollIntoView({block:'nearest'});
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      const cur = items[_searchActiveIdx >= 0 ? _searchActiveIdx : 0];
+      if (cur) {
+        jumpToMenu(cur.dataset.menuId);
+        dd.classList.remove('show');
+        input.blur();
+      }
+    } else if (e.key === 'Escape') {
+      dd.classList.remove('show'); input.blur();
+    }
+  });
+  // 드롭다운 항목 클릭
+  dd.addEventListener('click', (ev) => {
+    const item = ev.target.closest('.menu-search-item');
+    if (!item) return;
+    jumpToMenu(item.dataset.menuId);
+    dd.classList.remove('show');
+    input.value = '';
+  });
+  // 외부 클릭 시 닫기
+  document.addEventListener('click', (ev) => {
+    if (!input.contains(ev.target) && !dd.contains(ev.target)) {
+      dd.classList.remove('show');
+    }
+  });
+  // 지우기 버튼
+  if (clear) clear.addEventListener('click', () => {
+    input.value = '';
+    dd.classList.remove('show');
+    input.focus();
+  });
+})();
+
+// 사이드바 클릭 → 메뉴 점프 (이벤트 위임)
+document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) => {
+  const a = ev.target.closest('a[data-menu-id]');
+  if (!a) return;
+  ev.preventDefault();
+  jumpToMenu(a.dataset.menuId);
+});
+
+// 페이지 로드 시 메뉴 인덱스 빌드
+buildMenuIndex();
+
+// 한/영 토글 시 사이드바도 갱신 — toggleAdminLang 의 끝에 호출되도록 hook
+(function hookLangToggle() {
+  const original = window.toggleAdminLang;
+  if (typeof original !== 'function') return;
+  window.toggleAdminLang = function() {
+    original.apply(this, arguments);
+    if (typeof renderSidebar === 'function') renderSidebar();
+  };
+})();
 </script>
+
+</div>
+</div>
 
 </body>
 </html>
