@@ -1311,6 +1311,27 @@ export async function handleMangoApi(
       return csvResponse(fname, csv);
     }
 
+    // ===== 👨‍🎓 학생 목록 (Phase 9 학생관리 메뉴 — 학생 목록) =====
+    //   GET /api/admin/students/list?limit=200
+    //   attendance 테이블에서 distinct user_id + 최근 활동 집계
+    if (method === 'GET' && path === '/api/admin/students/list') {
+      const lim = Math.max(1, Math.min(1000, parseInt(url.searchParams.get('limit') || '200', 10)));
+      const rs = await env.DB.prepare(
+        `SELECT user_id,
+                MAX(username) AS username,
+                MAX(role)     AS role,
+                MIN(joined_at) AS first_seen,
+                MAX(joined_at) AS last_seen,
+                COUNT(*)       AS sessions
+         FROM attendance
+         WHERE user_id IS NOT NULL AND user_id != ''
+         GROUP BY user_id
+         ORDER BY MAX(joined_at) DESC
+         LIMIT ?`
+      ).bind(lim).all();
+      return json({ ok: true, items: rs.results || [] });
+    }
+
     // ========================================================================
     // 🏢 Phase 9 — 메뉴 6개 (가맹점·교육센터·레벨테스트·수강신청·커뮤니티·교재)
     //   각 테이블은 cold start 시 IF NOT EXISTS 자동 생성. 별도 마이그레이션 불필요.

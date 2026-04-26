@@ -99,6 +99,47 @@
   .menu-search-item:hover, .menu-search-item.active { background:#eff6ff; color:#1e40af; }
   .menu-search-item mark { background:#fef08a; color:#854d0e; padding:0 2px; border-radius:2px; font-weight:600; }
   .menu-search-empty { padding:14px 16px; color:#9ca3af; font-size:13px; text-align:center; }
+
+  /* === 하위(nested) 메뉴 토글 — 학생관리 같은 상위 카드 안의 sub-item === */
+  .sub-menu { display:flex; flex-direction:column; gap:0; padding-left:8px; border-left:3px solid #e5e7eb; margin:8px 0; }
+  details.sub-item {
+    border-bottom: 1px solid #f3f4f6;
+    background: #fff;
+  }
+  details.sub-item:last-child { border-bottom: none; }
+  details.sub-item > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    padding: 9px 14px 9px 32px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    position: relative;
+    transition: background 0.12s;
+  }
+  details.sub-item > summary::-webkit-details-marker { display: none; }
+  details.sub-item > summary:hover { background: #eff6ff; color:#1e40af; }
+  details.sub-item[open] > summary { background:#dbeafe; color:#1e40af; font-weight:600; }
+  details.sub-item > summary::before {
+    content: '▶';
+    position: absolute;
+    left: 12px; top: 50%; transform: translateY(-50%);
+    font-size: 9px; color:#9ca3af;
+    transition: transform 0.15s;
+  }
+  details.sub-item[open] > summary::before { transform: translateY(-50%) rotate(90deg); color:#3b82f6; }
+  details.sub-item > .sub-body { padding: 12px 16px; background:#f9fafb; }
+  .placeholder-empty {
+    padding: 16px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 12px;
+    background: #fff;
+    border-radius: 6px;
+    border: 1px dashed #d1d5db;
+    line-height: 1.6;
+  }
 </style>
 </head>
 <body>
@@ -257,6 +298,136 @@
   .eval-row input[type=number] { padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; text-align:right; }
   .eval-row .desc { font-size:11px; color:#6b7280; }
 </style>
+
+<!-- 👨‍🎓 학생관리 (상위 메뉴 + 10개 하위 토글) -->
+<details class="table-card menu-card">
+  <summary><span data-ko="👨‍🎓 학생관리" data-en="👨‍🎓 Student Management">👨‍🎓 학생관리</span></summary>
+  <div class="menu-body">
+    <div class="sub-menu">
+
+      <details class="sub-item">
+        <summary data-ko="학생 목록" data-en="Student List">학생 목록</summary>
+        <div class="sub-body">
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <button id="sm-load-students" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <span style="font-size:11px;color:#6b7280;" id="sm-students-count"></span>
+          </div>
+          <table>
+            <thead><tr>
+              <th data-ko="user_id" data-en="user_id">user_id</th>
+              <th data-ko="이름" data-en="Name">이름</th>
+              <th data-ko="세션 수" data-en="Sessions">세션 수</th>
+              <th data-ko="최초 방문" data-en="First Seen">최초 방문</th>
+              <th data-ko="최근 방문" data-en="Last Seen">최근 방문</th>
+              <th data-ko="드릴다운" data-en="Drilldown">드릴다운</th>
+            </tr></thead>
+            <tbody id="sm-students-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
+          </table>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="종료일자 확인" data-en="Expiry Check">종료일자 확인</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 enrollments 의 ended_at 기준 만료 임박 학생 목록 — 30일 이내 만료 예정 자동 노출 (다음 사이클 연결)"
+               data-en="🚧 Students with enrollments expiring within 30 days — pending data wiring">
+            🚧 enrollments 의 ended_at 기준 만료 임박 학생 목록 — 30일 이내 만료 예정 자동 노출 (다음 사이클 연결)
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="수강 연장 (상세보기)" data-en="Extension (Detail)">수강 연장 (상세보기)</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 학생별 현재 수강 패키지·연장 내역 상세. enrollments 테이블 row 별 expand."
+               data-en="🚧 Per-student current package + extension history (enrollments table detail)">
+            🚧 학생별 현재 수강 패키지·연장 내역 상세. enrollments 테이블 row 별 expand.
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="수강 연장" data-en="Extension">수강 연장</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 빠른 연장 처리 폼 — 학생 선택 → 추가 개월 입력 → enrollments PATCH"
+               data-en="🚧 Quick extension form — pick student, add months, PATCH enrollments">
+            🚧 빠른 연장 처리 폼 — 학생 선택 → 추가 개월 입력 → enrollments PATCH
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="수업 현황" data-en="Class Status">수업 현황</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 학생별 최근 수업 (attendance 최근 50건) — 시선·발화 점수 + 녹화 링크"
+               data-en="🚧 Recent classes per student (last 50 attendance rows) — gaze/speak scores + recording links">
+            🚧 학생별 최근 수업 (attendance 최근 50건) — 시선·발화 점수 + 녹화 링크
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="일별 보고서" data-en="Daily Report">일별 보고서</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 일자별 출석·발화·시선 점수 종합 리포트 (학생별 또는 전체). 기존 dashboard 와 일부 중복."
+               data-en="🚧 Daily attendance/speech/gaze score report (per student or all)">
+            🚧 일자별 출석·발화·시선 점수 종합 리포트 (학생별 또는 전체). 기존 dashboard 와 일부 중복.
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="출결 현황" data-en="Attendance Summary">출결 현황</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 학생별 월간 출석 횟수 + 결석 일수. attendance 테이블의 status 컬럼 집계."
+               data-en="🚧 Monthly attendance/absence count per student (attendance.status aggregation)">
+            🚧 학생별 월간 출석 횟수 + 결석 일수. attendance 테이블의 status 컬럼 집계.
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="연속 출석" data-en="Streak">연속 출석</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 학생별 연속 출석일 (streak) 계산. attendance.date 의 연속 구간 분석."
+               data-en="🚧 Per-student attendance streak — consecutive date ranges from attendance.date">
+            🚧 학생별 연속 출석일 (streak) 계산. attendance.date 의 연속 구간 분석.
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="상담 내역" data-en="Consultation History">상담 내역</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 신규 테이블 student_consultations 필요 — 상담 일자·상담사·요약·후속 조치"
+               data-en="🚧 New table student_consultations needed — date, counselor, summary, follow-up">
+            🚧 신규 테이블 student_consultations 필요 — 상담 일자·상담사·요약·후속 조치
+          </div>
+        </div>
+      </details>
+
+      <details class="sub-item">
+        <summary data-ko="톡짹톡 (학부모 톡)" data-en="Parent Chat">톡짹톡 (학부모 톡)</summary>
+        <div class="sub-body">
+          <div class="placeholder-empty"
+               data-ko="🚧 학부모-운영자 메시징 — 카카오톡 채널 또는 자체 채팅 (notification_queue 와 연계 가능)"
+               data-en="🚧 Parent–admin messaging — KakaoTalk channel or in-house chat (notification_queue link)">
+            🚧 학부모-운영자 메시징 — 카카오톡 채널 또는 자체 채팅 (notification_queue 와 연계 가능)
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</details>
 
 <details class="table-card menu-card">
   <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
@@ -2160,6 +2331,61 @@ async function addTextbook() {
 function toggleAllMenuCards(open) {
   document.querySelectorAll('details.menu-card').forEach(d => { d.open = !!open; });
 }
+
+// 👨‍🎓 학생 목록 (학생관리 → 학생 목록)
+async function loadStudentList() {
+  const _L = adminLang === 'en';
+  const tb = document.getElementById('sm-students-tbody');
+  const cnt = document.getElementById('sm-students-count');
+  if (!tb) return;
+  tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Loading...':'불러오는 중...') + '</td></tr>';
+  try {
+    const r = await fetch('/api/admin/students/list?limit=200', { cache: 'no-store', credentials: 'include' });
+    const d = await r.json();
+    if (!d.ok || !d.items) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Load failed':'로딩 실패') + '</td></tr>';
+      return;
+    }
+    if (cnt) cnt.textContent = (_L ? d.items.length + ' students' : d.items.length + '명');
+    if (d.items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'No students yet':'아직 학생 데이터 없음') + '</td></tr>';
+      return;
+    }
+    tb.innerHTML = d.items.map(s => {
+      const uid = String(s.user_id || '');
+      const uidEnc = encodeURIComponent(uid);
+      const safeUid  = _esc(uid);
+      const safeName = _esc(s.username || uid);
+      const role = s.role ? _esc(s.role) : '';
+      return `<tr>
+        <td><code style="font-size:11px;">${safeUid}</code></td>
+        <td><b>${safeName}</b>${role ? ' <span style="font-size:10px;color:#9ca3af;">'+role+'</span>' : ''}</td>
+        <td style="text-align:right;">${(s.sessions||0).toLocaleString()}</td>
+        <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.first_seen)}</td>
+        <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.last_seen)}</td>
+        <td><a href="/admin/student?uid=${uidEnc}" target="_blank" style="padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;">🎓 ${_L?'Drill':'드릴다운'}</a></td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Network error: ':'네트워크 에러: ') + e.message + '</td></tr>';
+  }
+}
+
+// 학생 목록 로드 버튼 + 첫 펼침 시 자동 로드
+(function bindStudentList(){
+  const btn = document.getElementById('sm-load-students');
+  if (btn) btn.addEventListener('click', loadStudentList);
+  // 학생 목록 sub-item 이 펼쳐질 때 첫 1회 자동 로드 (lazy)
+  let loaded = false;
+  document.querySelectorAll('details.sub-item').forEach(d => {
+    const sumSpan = d.querySelector('summary');
+    if (sumSpan && (sumSpan.textContent.trim().startsWith('학생 목록') || sumSpan.textContent.trim().startsWith('Student List'))) {
+      d.addEventListener('toggle', () => {
+        if (d.open && !loaded) { loaded = true; loadStudentList(); }
+      });
+    }
+  });
+})();
 
 // 6개 메뉴 컨트롤 일괄 바인딩
 (function bindPhase9Menus(){

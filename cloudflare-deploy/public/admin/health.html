@@ -264,6 +264,7 @@ const ENDPOINTS = [
   { path: '/api/admin/enrollments',      method: 'GET', expect: '2xx', label: 'Enrollments',    body: null, desc: '수강신청 목록 (status 필터 가능, Phase 9).' },
   { path: '/api/admin/community-posts',  method: 'GET', expect: '2xx', label: 'Community',      body: null, desc: '공지·게시판 목록 (Phase 9).' },
   { path: '/api/admin/textbooks',        method: 'GET', expect: '2xx', label: 'Textbooks',      body: null, desc: '교재 콘텐츠 목록 (Phase 9).' },
+  { path: '/api/admin/students/list',    method: 'GET', expect: '2xx', label: 'Student List',   body: null, desc: '학생 목록 (attendance distinct user_id 집계, Phase 9 학생관리).' },
   { path: '/api/admin/teacher-classes', method: 'PUT',  expect: '2xx-or-4xx', label: 'Teacher Classes PUT', body: '{}',
     desc: '월별 수업 수(20분 단위) upsert. 빈 body 면 400 (route alive 검증용).' },
   { path: '/api/admin/teacher-evaluation', method: 'PUT', expect: '2xx-or-4xx', label: 'Teacher Eval PUT', body: '{}',
