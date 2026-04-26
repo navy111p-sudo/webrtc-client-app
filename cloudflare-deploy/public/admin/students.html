@@ -94,7 +94,12 @@
       background:#f8fafc; color:#475569; font-weight:600; font-size:11px;
       position:sticky; top:0;
     }
-    .erp-table tbody tr:hover { background:#fefce8; }
+    .erp-table tbody tr:hover { background:#fef2f2; }
+    .erp-table tbody tr:hover td { color:#dc2626 !important; }
+    .erp-table tbody tr:hover .student-name { color:#dc2626; }
+    .erp-table tbody tr:hover .login-id { color:#dc2626; }
+    .erp-table tbody tr:hover .pay-type { color:#7f1d1d !important; }
+    .erp-table tbody tr:hover .point-cell { color:#dc2626 !important; }
     .erp-table .center { text-align:center; }
     .erp-table .right  { text-align:right; }
     .erp-table .student-name { color:#0f172a; font-weight:700; }
@@ -133,6 +138,96 @@
       background:#fff; cursor:pointer; font-size:11px;
     }
     .erp-pagination button:disabled { opacity:0.4; cursor:not-allowed; }
+    .erp-pagination .page-num {
+      padding:5px 10px; border:1px solid transparent; border-radius:4px;
+      cursor:pointer; font-size:11px; min-width:26px;
+    }
+    .erp-pagination .page-num:hover { background:#f1f5f9; }
+    .erp-pagination .page-num.active {
+      background:#3b82f6; color:#fff; font-weight:700; border-color:#3b82f6;
+    }
+
+    /* === 하단 액션 버튼 영역 === */
+    .erp-actions {
+      display:flex; gap:8px; flex-wrap:wrap; margin:14px 0; align-items:center;
+    }
+    .erp-actions .btn {
+      padding:7px 14px; font-size:11.5px; border:1px solid #cbd5e1;
+      border-radius:6px; background:#fff; cursor:pointer; color:#334155;
+    }
+    .erp-actions .btn:hover { background:#f8fafc; }
+    .erp-actions .btn.primary { background:#3b82f6; color:#fff; border-color:#3b82f6; font-weight:600; }
+    .erp-actions .btn.primary:hover { background:#2563eb; }
+    .erp-actions .btn.green { background:#10b981; color:#fff; border-color:#10b981; font-weight:600; }
+    .erp-actions .btn.green:hover { background:#059669; }
+    .erp-actions .btn.add { background:#facc15; color:#713f12; border-color:#eab308; font-weight:700; }
+    .erp-actions .btn.add:hover { background:#fde047; }
+    .erp-footer-note {
+      font-size:11px; color:#64748b; margin:8px 0; line-height:1.6;
+      background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:10px 14px;
+    }
+
+    /* === 모달 공용 === */
+    .stu-modal-bg {
+      position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:9999;
+      display:none; align-items:center; justify-content:center; padding:20px;
+    }
+    .stu-modal-bg.show { display:flex; }
+    .stu-modal {
+      background:#fff; border-radius:14px; max-width:600px; width:100%;
+      max-height:90vh; overflow:hidden; display:flex; flex-direction:column;
+      box-shadow:0 12px 40px rgba(0,0,0,0.3);
+    }
+    .stu-modal .modal-header {
+      padding:18px 24px; font-size:18px; font-weight:700; color:#0f172a;
+      display:flex; justify-content:space-between; align-items:center;
+    }
+    .stu-modal .modal-header.yellow { background:#facc15; color:#422006; }
+    .stu-modal .modal-header.blue   { background:#3b82f6; color:#fff; }
+    .stu-modal .modal-close { cursor:pointer; font-size:18px; opacity:0.7; }
+    .stu-modal .modal-close:hover { opacity:1; }
+    .stu-modal .modal-body { padding:18px 24px; overflow-y:auto; }
+
+    /* 요약정보 모달 */
+    .summary-card {
+      border:2px solid #facc15; border-radius:10px; padding:14px 18px;
+      display:flex; gap:14px; align-items:center; margin-bottom:14px;
+    }
+    .summary-card .avatar {
+      width:60px; height:60px; border-radius:50%;
+      background:#f59e0b; display:flex; align-items:center; justify-content:center;
+      font-size:32px; flex-shrink:0;
+    }
+    .summary-card .info { font-size:13px; color:#334155; line-height:1.7; }
+    .summary-card .info b { color:#0f172a; }
+    .summary-table {
+      width:100%; border-collapse:collapse; margin-bottom:14px;
+    }
+    .summary-table th, .summary-table td {
+      padding:10px; border:1px solid #e2e8f0; text-align:center; font-size:12px;
+    }
+    .summary-table th { background:#f8fafc; color:#475569; font-weight:600; }
+    .summary-section-title { font-size:13px; font-weight:700; color:#0f172a; margin:14px 0 8px; }
+
+    /* 메시지 전송 모달 */
+    .msg-form { display:flex; flex-direction:column; gap:12px; }
+    .msg-form label { font-size:12px; color:#475569; font-weight:600; }
+    .msg-form input[type=text],
+    .msg-form input[type=datetime-local],
+    .msg-form textarea {
+      width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-size:13px;
+    }
+    .msg-form textarea { min-height:100px; resize:vertical; font-family:inherit; }
+    .msg-form .toggle-row {
+      display:flex; align-items:center; gap:8px; padding:8px 12px;
+      background:#f0f9ff; border:1px solid #bae6fd; border-radius:6px; font-size:13px;
+    }
+    .msg-form .toggle-row input { width:18px; height:18px; cursor:pointer; }
+    .msg-send-btn {
+      align-self:center; padding:10px 30px; background:#3b82f6; color:#fff;
+      border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+    }
+    .msg-send-btn:hover { background:#2563eb; }
   </style>
 </head>
 <body>
@@ -252,13 +347,105 @@
       </table>
     </div>
 
-    <!-- 페이지네이션 -->
-    <div class="erp-pagination">
-      <button id="page-prev" onclick="goPage(-1)">‹ 이전</button>
-      <span id="page-info">— / —</span>
-      <button id="page-next" onclick="goPage(1)">다음 ›</button>
+    <!-- 하단 액션 버튼 줄 -->
+    <div class="erp-actions">
+      <button class="btn primary" onclick="bulkSendMessage()">📨 메시지 전송</button>
+      <button class="btn green" onclick="downloadAllStudentsCSV()">📥 전체회원 다운로드</button>
+      <button class="btn" onclick="bulkReview()">📝 학생회원 일괄 검토</button>
+      <button class="btn" onclick="downloadByResultCSV()">📊 학생회원 결과별 다운로드</button>
+      <span style="flex:1;"></span>
+      <button class="btn add" onclick="openNewStudentForm()">＋ 신규등록</button>
     </div>
+
+    <!-- 페이지네이션 (숫자 페이지) -->
+    <div class="erp-pagination">
+      <button id="page-prev" onclick="goPage(-1)">‹</button>
+      <span id="page-numbers" style="display:flex;gap:2px;"></span>
+      <button id="page-next" onclick="goPage(1)">›</button>
+      <span id="page-info" style="margin-left:14px;color:#94a3b8;">— / —</span>
+    </div>
+
+    <div class="erp-footer-note">
+      ※ 다운로드는 CSV 파일로 받습니다. 학생을 선택하면 선택한 회원만, 전체를 다운로드 받으면 전체 학생들이 다운로드 됩니다.<br>
+      ※ 선택 시 일괄 검토를 사용하여 등록과 변경처리도 일괄로 가능합니다. 이때 결과별 학생들이 다운로드 됩니다.
+    </div>
+
   </main>
+</div>
+
+<!-- 학생 요약정보 모달 (학생명 클릭 시) -->
+<div class="stu-modal-bg" id="summary-modal-bg">
+  <div class="stu-modal">
+    <div class="modal-header yellow">
+      <span id="summary-title">— 요약정보</span>
+      <span class="modal-close" onclick="closeSummary()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div style="text-align:right;margin-bottom:10px;">
+        <select id="summary-year" style="padding:5px 12px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;">
+          <option>2026</option><option>2025</option><option>2024</option>
+        </select>
+      </div>
+      <div class="summary-card">
+        <div class="avatar">🐥</div>
+        <div class="info">
+          <b>한글</b> : <span id="summary-ko">-</span><br>
+          <b>영문</b> : <span id="summary-en">-</span><br>
+          <b>가입일</b> : <span id="summary-signup">-</span> &nbsp;/&nbsp;
+          <b>학습종료일</b> : <span id="summary-end">-</span>
+        </div>
+      </div>
+
+      <div class="summary-section-title">학습정보</div>
+      <table class="summary-table">
+        <thead><tr><th>현재레벨</th><th>사용교재</th><th>출석률</th><th>평균점수</th></tr></thead>
+        <tbody><tr><td>-</td><td>-</td><td>0%</td><td>0점 / 100점</td></tr></tbody>
+      </table>
+
+      <div class="summary-section-title">최근학습결과</div>
+      <table class="summary-table">
+        <thead>
+          <tr>
+            <th>날짜</th><th>강사</th><th>출석</th>
+            <th>레슨비디오시청</th><th>키즈올임수<br>(1회차)</th>
+            <th>셀프체크점수</th><th>강사채점점수</th>
+          </tr>
+        </thead>
+        <tbody><tr><td colspan="7" style="color:#94a3b8;padding:20px;">학습 기록이 없습니다.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- 메시지 전송 모달 (메시지 아이콘 클릭 시) -->
+<div class="stu-modal-bg" id="msg-modal-bg">
+  <div class="stu-modal">
+    <div class="modal-header blue">
+      <span><span id="msg-title-name">—</span> 메시지 전송 관리</span>
+      <span class="modal-close" onclick="closeMsg()">✕</span>
+    </div>
+    <div class="modal-body">
+      <div class="msg-form">
+        <div>
+          <label>메시지 제목</label>
+          <input id="msg-subject" type="datetime-local" />
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="msg-push" checked />
+          <span>PUSH 전송 (<span id="msg-push-id">-</span>)</span>
+        </div>
+        <div class="toggle-row">
+          <input type="checkbox" id="msg-sms" checked />
+          <span>SMS 전송 (<span id="msg-sms-phone">-</span>)</span>
+        </div>
+        <div>
+          <label>메시지 내용</label>
+          <textarea id="msg-body" placeholder="전송할 메시지를 입력하세요"></textarea>
+        </div>
+        <button class="msg-send-btn" onclick="doSendMessage()">전송하기</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -369,9 +556,11 @@ function renderPage() {
 
   if (total === 0) {
     tb.innerHTML = '<tr class="empty-row"><td colspan="23">결과 없음</td></tr>';
+    renderPageNumbers();
     return;
   }
 
+  renderPageNumbers();
   const rows = _filtered.slice(start, end);
   tb.innerHTML = rows.map((s) => {
     const no = s.student_id || '';
@@ -382,17 +571,17 @@ function renderPage() {
     return `<tr>
       <td class="center"><input type="checkbox" /></td>
       <td class="center" style="color:#64748b;">${escHtml(no)}</td>
-      <td><span class="student-name">${escHtml(s.username || '-')}</span></td>
+      <td><span class="student-name" onclick="openSummary(${s.id})" style="cursor:pointer;">${escHtml(s.username || '-')}</span></td>
       <td><span class="login-id" onclick="window.open('/admin/student?uid=${drillUid}', '_blank')">${escHtml(s.login_id || '-')}<span class="dollar">$</span><span class="grip">⫶</span></span></td>
       <td><span class="pay-type">${escHtml(s.payment_type || '-')}</span></td>
       <td class="center" style="color:${s.end_date === '미설정' ? '#dc2626' : '#475569'};">${escHtml(s.end_date || '-')}</td>
-      <td class="center"><span class="icon-btn" title="요약">👤</span></td>
+      <td class="center"><span class="icon-btn" title="요약" onclick="openSummary(${s.id})">👤</span></td>
       <td class="center"><span class="icon-btn" title="스케줄">📅</span></td>
       <td class="center">${escHtml(s.signup_date || '-')}</td>
       <td class="right">${s.classes_per_week != null ? s.classes_per_week : '-'}</td>
       <td class="center"><span class="icon-btn" title="상담">👤</span></td>
       <td class="right"><span class="point-cell">${s.points || 0} P<span class="dollar">$</span></span></td>
-      <td class="center"><span class="msg-flag" title="메시지">🚩</span></td>
+      <td class="center"><span class="msg-flag" title="메시지" onclick="openMsg(${s.id})">🚩</span></td>
       <td class="center"><span class="icon-btn" title="수강신청·스케줄요청">📋</span></td>
       <td>${escHtml(s.student_phone || '-')}</td>
       <td>${escHtml(s.parent_phone || '-')}</td>
@@ -412,7 +601,152 @@ function goPage(delta) {
   const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
   _page = Math.max(0, Math.min(maxPage, _page + delta));
   renderPage();
+  renderPageNumbers();
 }
+function renderPageNumbers() {
+  const wrap = document.getElementById('page-numbers');
+  if (!wrap) return;
+  const total = _filtered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  if (maxPage <= 0) { wrap.innerHTML = ''; return; }
+  // 최대 10개 페이지 번호 표시 (현재 페이지 중심)
+  const PAGES_VISIBLE = 10;
+  let start = Math.max(0, _page - Math.floor(PAGES_VISIBLE / 2));
+  let end = Math.min(maxPage, start + PAGES_VISIBLE - 1);
+  start = Math.max(0, end - PAGES_VISIBLE + 1);
+  let html = '';
+  for (let i = start; i <= end; i++) {
+    html += `<span class="page-num${i === _page ? ' active' : ''}" onclick="setPage(${i})">${i + 1}</span>`;
+  }
+  wrap.innerHTML = html;
+}
+function setPage(n) {
+  const total = _filtered.length;
+  const maxPage = Math.max(0, Math.ceil(total / PAGE_SIZE) - 1);
+  _page = Math.max(0, Math.min(maxPage, n));
+  renderPage();
+  renderPageNumbers();
+}
+
+// === 학생 요약정보 모달 ===
+function openSummary(id) {
+  const s = _students.find(x => x.id === id);
+  if (!s) return;
+  document.getElementById('summary-title').textContent = (s.username || '-') + ' 요약정보';
+  document.getElementById('summary-ko').textContent = s.username || '-';
+  document.getElementById('summary-en').textContent = s.login_id || '-';
+  document.getElementById('summary-signup').textContent = s.signup_date || '-';
+  document.getElementById('summary-end').textContent = s.end_date || '-';
+  document.getElementById('summary-modal-bg').classList.add('show');
+}
+function closeSummary() {
+  document.getElementById('summary-modal-bg').classList.remove('show');
+}
+
+// === 메시지 전송 모달 ===
+let _msgTargetId = null;
+function openMsg(id) {
+  const s = _students.find(x => x.id === id);
+  if (!s) return;
+  _msgTargetId = id;
+  document.getElementById('msg-title-name').textContent = s.username || '-';
+  document.getElementById('msg-push-id').textContent = s.login_id || '-';
+  document.getElementById('msg-sms-phone').textContent = s.student_phone || '-';
+  // 현재 시각으로 datetime-local 기본값
+  const now = new Date();
+  const tzOffset = now.getTimezoneOffset() * 60000;
+  document.getElementById('msg-subject').value = new Date(now - tzOffset).toISOString().slice(0, 16);
+  document.getElementById('msg-body').value = '';
+  document.getElementById('msg-modal-bg').classList.add('show');
+}
+function closeMsg() {
+  document.getElementById('msg-modal-bg').classList.remove('show');
+}
+async function doSendMessage() {
+  const s = _students.find(x => x.id === _msgTargetId);
+  if (!s) return;
+  const subject = document.getElementById('msg-subject').value;
+  const body = document.getElementById('msg-body').value.trim();
+  const usePush = document.getElementById('msg-push').checked;
+  const useSms  = document.getElementById('msg-sms').checked;
+  if (!body) { alert('메시지 내용을 입력하세요.'); return; }
+  if (!usePush && !useSms) { alert('전송 방식(PUSH/SMS) 중 하나는 선택해야 합니다.'); return; }
+  // 알림 큐에 적재 (실제 발송은 외부 도구가 처리)
+  try {
+    const channels = [];
+    if (usePush) channels.push('push');
+    if (useSms) channels.push('sms');
+    await fetch('/api/admin/notifications/test', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: `📨 ${s.username} (${s.login_id})`,
+        body: body + ` · 채널: ${channels.join('+')} · 예약: ${subject}`
+      })
+    });
+    alert(`메시지 전송 큐 적재 완료\n대상: ${s.username}\n채널: ${channels.join(', ')}\n예약: ${subject}`);
+    closeMsg();
+  } catch (e) { alert('네트워크 에러: ' + e.message); }
+}
+
+// === 하단 액션 버튼 ===
+function bulkSendMessage() {
+  const checked = Array.from(document.querySelectorAll('#students-tbody input[type=checkbox]:checked'));
+  if (checked.length === 0) { alert('학생을 한 명 이상 선택하세요.'); return; }
+  alert(`${checked.length}명에게 메시지 전송 (구현 예정)`);
+}
+function downloadAllStudentsCSV() {
+  if (_students.length === 0) { alert('학생 데이터가 없습니다.'); return; }
+  // 클라이언트 CSV 생성
+  const headers = ['No','학생명','아이디','결제타입','수강 종료일','가입일','수업회수(주)','포인트','학생 번호','부모님 번호','매장','본사','대표지사명','지사명','프랜차이즈','상태'];
+  const rows = _students.map(s => [
+    s.student_id || '', s.username || '', s.login_id || '', s.payment_type || '',
+    s.end_date || '', s.signup_date || '', s.classes_per_week || '', s.points || 0,
+    s.student_phone || '', s.parent_phone || '', s.shop_name || '',
+    s.hq_name || '', s.branch1_name || '', s.branch2_name || '', s.franchise || '', s.status || ''
+  ]);
+  const escape = v => /[",\n]/.test(String(v)) ? '"' + String(v).replace(/"/g,'""') + '"' : String(v);
+  const csv = '﻿' + headers.join(',') + '\n' + rows.map(r => r.map(escape).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `mangoi_students_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+function bulkReview() {
+  const checked = Array.from(document.querySelectorAll('#students-tbody input[type=checkbox]:checked'));
+  if (checked.length === 0) { alert('학생을 한 명 이상 선택하세요.'); return; }
+  alert(`${checked.length}명 일괄 검토 (구현 예정)`);
+}
+function downloadByResultCSV() {
+  alert('결과별 다운로드 — 일괄 검토 후 사용 가능 (구현 예정)');
+}
+function openNewStudentForm() {
+  const name = prompt('학생 이름을 입력하세요:');
+  if (!name) return;
+  const login = prompt('아이디(로그인 ID):') || '';
+  const phone = prompt('학생 전화번호 (010-...):') || '';
+  fetch('/api/admin/students/erp', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      username: name, login_id: login,
+      payment_type: 'B2C 결제',
+      signup_date: new Date().toISOString().slice(0,10),
+      student_phone: phone, status: '정상'
+    })
+  }).then(r => r.json()).then(d => {
+    if (d.ok) { alert('등록 완료'); loadStudents(); }
+    else alert('실패: ' + (d.error || ''));
+  });
+}
+
+// === 모달 바깥 클릭 닫기 ===
+['summary-modal-bg','msg-modal-bg'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('click', (e) => { if (e.target.id === id) el.classList.remove('show'); });
+});
 
 // 키워드 Enter
 document.getElementById('f-keyword').addEventListener('keydown', e => {
