@@ -266,137 +266,184 @@
   </div>
 </div>
 
-<!-- 🏢 Phase 9: 6개 메뉴 카드 (가맹점·교육센터·레벨테스트·수강신청·커뮤니티·교재) -->
+<!-- 🏢 Phase 9: 6개 메뉴 카드 (클릭 토글 메뉴 — 닫힘 상태로 시작) -->
 <style>
-  .menu-card { margin-bottom: 24px; }
+  .menu-card { margin-bottom: 12px; padding: 0 !important; transition: box-shadow 0.2s; }
+  .menu-card[open] { box-shadow: 0 4px 14px rgba(0,0,0,0.06); }
+  .menu-card > summary {
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    padding: 14px 18px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    position: relative;
+    border-radius: 8px;
+    transition: background 0.15s;
+  }
+  .menu-card > summary::-webkit-details-marker { display: none; }
+  .menu-card > summary:hover { background: #f9fafb; }
+  .menu-card[open] > summary { background: #eff6ff; border-bottom: 1px solid #e5e7eb; border-radius: 8px 8px 0 0; }
+  .menu-card > summary::after {
+    content: '▶';
+    position: absolute;
+    right: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 12px;
+    color: #6b7280;
+    transition: transform 0.2s;
+  }
+  .menu-card[open] > summary::after { transform: translateY(-50%) rotate(90deg); color: #3b82f6; }
+  .menu-card .menu-body { padding: 14px 18px; }
   .menu-card .menu-form { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px; }
   .menu-card .menu-form input,
   .menu-card .menu-form select,
   .menu-card .menu-form textarea { padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px; }
 </style>
 
-<!-- 가맹점 관리 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="🏬 가맹점 관리" data-en="🏬 Franchises">🏬 가맹점 관리</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 가맹점 신규 등록" data-en="＋ Add Franchise">＋ 가맹점 신규 등록</summary>
-    <div class="menu-form">
-      <input id="fr-name"   placeholder="가맹점 이름 (필수)" data-ko-placeholder="가맹점 이름 (필수)" data-en-placeholder="Franchise name (required)" style="width:180px;" />
-      <input id="fr-owner"  placeholder="대표자"           data-ko-placeholder="대표자"           data-en-placeholder="Owner" style="width:120px;" />
-      <input id="fr-phone"  placeholder="전화번호"          data-ko-placeholder="전화번호"          data-en-placeholder="Phone" style="width:140px;" />
-      <input id="fr-address" placeholder="주소"             data-ko-placeholder="주소"             data-en-placeholder="Address" style="width:240px;" />
-      <input id="fr-opened" type="date" />
-      <button id="fr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-    </div>
-  </details>
-  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="대표" data-en="Owner">대표</th><th data-ko="전화" data-en="Phone">전화</th><th data-ko="주소" data-en="Address">주소</th><th data-ko="개업일" data-en="Opened">개업일</th></tr></thead>
-    <tbody id="franchises-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+<!-- 전체 펼치기/접기 컨트롤 -->
+<div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+  <span style="font-size:13px;color:#6b7280;font-weight:600;" data-ko="📋 메뉴판" data-en="📋 Menu">📋 메뉴판</span>
+  <button onclick="toggleAllMenuCards(true)"  style="padding:4px 10px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#374151;" data-ko="↧ 모두 펼치기" data-en="↧ Expand all">↧ 모두 펼치기</button>
+  <button onclick="toggleAllMenuCards(false)" style="padding:4px 10px;font-size:11px;border:1px solid #d1d5db;border-radius:4px;background:#fff;cursor:pointer;color:#374151;" data-ko="↥ 모두 접기"   data-en="↥ Collapse all">↥ 모두 접기</button>
 </div>
+
+<!-- 가맹점 관리 -->
+<details class="table-card menu-card">
+  <summary><span data-ko="🏬 가맹점 관리" data-en="🏬 Franchises">🏬 가맹점 관리</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 가맹점 신규 등록" data-en="＋ Add Franchise">＋ 가맹점 신규 등록</summary>
+      <div class="menu-form">
+        <input id="fr-name"   placeholder="가맹점 이름 (필수)" data-ko-placeholder="가맹점 이름 (필수)" data-en-placeholder="Franchise name (required)" style="width:180px;" />
+        <input id="fr-owner"  placeholder="대표자"           data-ko-placeholder="대표자"           data-en-placeholder="Owner" style="width:120px;" />
+        <input id="fr-phone"  placeholder="전화번호"          data-ko-placeholder="전화번호"          data-en-placeholder="Phone" style="width:140px;" />
+        <input id="fr-address" placeholder="주소"             data-ko-placeholder="주소"             data-en-placeholder="Address" style="width:240px;" />
+        <input id="fr-opened" type="date" />
+        <button id="fr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+      </div>
+    </details>
+    <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="대표" data-en="Owner">대표</th><th data-ko="전화" data-en="Phone">전화</th><th data-ko="주소" data-en="Address">주소</th><th data-ko="개업일" data-en="Opened">개업일</th></tr></thead>
+      <tbody id="franchises-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+  </div>
+</details>
 
 <!-- 교육센터 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="🏫 교육센터" data-en="🏫 Education Centers">🏫 교육센터</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 센터 신규 등록" data-en="＋ Add Center">＋ 센터 신규 등록</summary>
-    <div class="menu-form">
-      <select id="ct-franchise" style="width:180px;"><option value="" data-ko="가맹점 선택…" data-en="Select franchise…">가맹점 선택…</option></select>
-      <input id="ct-name"     placeholder="센터 이름 (필수)" data-ko-placeholder="센터 이름 (필수)" data-en-placeholder="Center name (required)" style="width:180px;" />
-      <input id="ct-country"  placeholder="국가 (예: PH)"   data-ko-placeholder="국가 (예: PH)"   data-en-placeholder="Country (e.g. PH)" style="width:110px;" />
-      <input id="ct-manager"  placeholder="매니저"          data-ko-placeholder="매니저"          data-en-placeholder="Manager" style="width:120px;" />
-      <input id="ct-address"  placeholder="주소"            data-ko-placeholder="주소"            data-en-placeholder="Address" style="width:240px;" />
-      <button id="ct-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-    </div>
-  </details>
-  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="가맹점" data-en="Franchise">가맹점</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="국가" data-en="Country">국가</th><th data-ko="매니저" data-en="Manager">매니저</th><th data-ko="주소" data-en="Address">주소</th></tr></thead>
-    <tbody id="centers-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
-</div>
+<details class="table-card menu-card">
+  <summary><span data-ko="🏫 교육센터" data-en="🏫 Education Centers">🏫 교육센터</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 센터 신규 등록" data-en="＋ Add Center">＋ 센터 신규 등록</summary>
+      <div class="menu-form">
+        <select id="ct-franchise" style="width:180px;"><option value="" data-ko="가맹점 선택…" data-en="Select franchise…">가맹점 선택…</option></select>
+        <input id="ct-name"     placeholder="센터 이름 (필수)" data-ko-placeholder="센터 이름 (필수)" data-en-placeholder="Center name (required)" style="width:180px;" />
+        <input id="ct-country"  placeholder="국가 (예: PH)"   data-ko-placeholder="국가 (예: PH)"   data-en-placeholder="Country (e.g. PH)" style="width:110px;" />
+        <input id="ct-manager"  placeholder="매니저"          data-ko-placeholder="매니저"          data-en-placeholder="Manager" style="width:120px;" />
+        <input id="ct-address"  placeholder="주소"            data-ko-placeholder="주소"            data-en-placeholder="Address" style="width:240px;" />
+        <button id="ct-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+      </div>
+    </details>
+    <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="가맹점" data-en="Franchise">가맹점</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="국가" data-en="Country">국가</th><th data-ko="매니저" data-en="Manager">매니저</th><th data-ko="주소" data-en="Address">주소</th></tr></thead>
+      <tbody id="centers-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+  </div>
+</details>
 
 <!-- 레벨 테스트 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="📝 레벨 테스트" data-en="📝 Level Tests">📝 레벨 테스트</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 결과 입력" data-en="＋ Add Result">＋ 결과 입력</summary>
-    <div class="menu-form">
-      <input id="lt-name"   placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
-      <input id="lt-uid"    placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
-      <select id="lt-level" style="width:90px;">
-        <option value="">level…</option>
-        <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
-      </select>
-      <input id="lt-score"  type="number" step="0.1" placeholder="점수 (0~100)" data-ko-placeholder="점수 (0~100)" data-en-placeholder="Score (0–100)" style="width:130px;" />
-      <input id="lt-date"   type="date" />
-      <button id="lt-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-    </div>
-  </details>
-  <table style="margin-top:10px;"><thead><tr><th data-ko="응시일" data-en="Date">응시일</th><th data-ko="학생" data-en="Student">학생</th><th>UID</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="점수" data-en="Score">점수</th></tr></thead>
-    <tbody id="level-tests-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
-</div>
+<details class="table-card menu-card">
+  <summary><span data-ko="📝 레벨 테스트" data-en="📝 Level Tests">📝 레벨 테스트</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 결과 입력" data-en="＋ Add Result">＋ 결과 입력</summary>
+      <div class="menu-form">
+        <input id="lt-name"   placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
+        <input id="lt-uid"    placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
+        <select id="lt-level" style="width:90px;">
+          <option value="">level…</option>
+          <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+        </select>
+        <input id="lt-score"  type="number" step="0.1" placeholder="점수 (0~100)" data-ko-placeholder="점수 (0~100)" data-en-placeholder="Score (0–100)" style="width:130px;" />
+        <input id="lt-date"   type="date" />
+        <button id="lt-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+      </div>
+    </details>
+    <table style="margin-top:10px;"><thead><tr><th data-ko="응시일" data-en="Date">응시일</th><th data-ko="학생" data-en="Student">학생</th><th>UID</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="점수" data-en="Score">점수</th></tr></thead>
+      <tbody id="level-tests-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
+  </div>
+</details>
 
 <!-- 수강신청 관리 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="📚 수강신청 관리" data-en="📚 Enrollments">📚 수강신청 관리</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 수강신청 등록" data-en="＋ Add Enrollment">＋ 수강신청 등록</summary>
-    <div class="menu-form">
-      <input id="en-name"    placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
-      <input id="en-uid"     placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
-      <input id="en-package" placeholder="상품/패키지 (필수)" data-ko-placeholder="상품/패키지 (필수)" data-en-placeholder="Package (required)" style="width:180px;" />
-      <input id="en-fee"     type="number" placeholder="월 수강료 (KRW)" data-ko-placeholder="월 수강료 (KRW)" data-en-placeholder="Monthly fee (KRW)" style="width:160px;" />
-      <input id="en-start"   type="date" />
-      <button id="en-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+<details class="table-card menu-card">
+  <summary><span data-ko="📚 수강신청 관리" data-en="📚 Enrollments">📚 수강신청 관리</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 수강신청 등록" data-en="＋ Add Enrollment">＋ 수강신청 등록</summary>
+      <div class="menu-form">
+        <input id="en-name"    placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
+        <input id="en-uid"     placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
+        <input id="en-package" placeholder="상품/패키지 (필수)" data-ko-placeholder="상품/패키지 (필수)" data-en-placeholder="Package (required)" style="width:180px;" />
+        <input id="en-fee"     type="number" placeholder="월 수강료 (KRW)" data-ko-placeholder="월 수강료 (KRW)" data-en-placeholder="Monthly fee (KRW)" style="width:160px;" />
+        <input id="en-start"   type="date" />
+        <button id="en-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+      </div>
+    </details>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
+      <select id="en-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+        <option value="" data-ko="전체" data-en="All">전체</option>
+        <option value="pending">pending</option><option value="confirmed">confirmed</option><option value="active">active</option>
+        <option value="cancelled">cancelled</option><option value="expired">expired</option>
+      </select>
+      <button id="en-refresh-btn" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
     </div>
-  </details>
-  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
-    <select id="en-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
-      <option value="" data-ko="전체" data-en="All">전체</option>
-      <option value="pending">pending</option><option value="confirmed">confirmed</option><option value="active">active</option>
-      <option value="cancelled">cancelled</option><option value="expired">expired</option>
-    </select>
-    <button id="en-refresh-btn" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+    <table><thead><tr><th data-ko="신청일" data-en="Created">신청일</th><th data-ko="학생" data-en="Student">학생</th><th data-ko="패키지" data-en="Package">패키지</th><th data-ko="월 수강료" data-en="Monthly Fee">월 수강료</th><th data-ko="상태" data-en="Status">상태</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
+      <tbody id="enrollments-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
   </div>
-  <table><thead><tr><th data-ko="신청일" data-en="Created">신청일</th><th data-ko="학생" data-en="Student">학생</th><th data-ko="패키지" data-en="Package">패키지</th><th data-ko="월 수강료" data-en="Monthly Fee">월 수강료</th><th data-ko="상태" data-en="Status">상태</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
-    <tbody id="enrollments-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
-</div>
+</details>
 
 <!-- 커뮤니티 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="📢 커뮤니티 (공지·게시판)" data-en="📢 Community (Notices)">📢 커뮤니티 (공지·게시판)</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 새 글 작성" data-en="＋ New Post">＋ 새 글 작성</summary>
-    <div class="menu-form" style="flex-direction:column;align-items:stretch;">
-      <input id="cm-title" placeholder="제목 (필수)" data-ko-placeholder="제목 (필수)" data-en-placeholder="Title (required)" style="width:100%;" />
-      <textarea id="cm-body" rows="3" placeholder="본문" data-ko-placeholder="본문" data-en-placeholder="Body" style="width:100%;"></textarea>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input id="cm-author" placeholder="작성자" data-ko-placeholder="작성자" data-en-placeholder="Author" style="width:140px;" />
-        <label style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px;"><input id="cm-pinned" type="checkbox" /> <span data-ko="상단 고정" data-en="Pin to top">상단 고정</span></label>
-        <button id="cm-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Post">+ 등록</button>
+<details class="table-card menu-card">
+  <summary><span data-ko="📢 커뮤니티 (공지·게시판)" data-en="📢 Community (Notices)">📢 커뮤니티 (공지·게시판)</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 새 글 작성" data-en="＋ New Post">＋ 새 글 작성</summary>
+      <div class="menu-form" style="flex-direction:column;align-items:stretch;">
+        <input id="cm-title" placeholder="제목 (필수)" data-ko-placeholder="제목 (필수)" data-en-placeholder="Title (required)" style="width:100%;" />
+        <textarea id="cm-body" rows="3" placeholder="본문" data-ko-placeholder="본문" data-en-placeholder="Body" style="width:100%;"></textarea>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input id="cm-author" placeholder="작성자" data-ko-placeholder="작성자" data-en-placeholder="Author" style="width:140px;" />
+          <label style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px;"><input id="cm-pinned" type="checkbox" /> <span data-ko="상단 고정" data-en="Pin to top">상단 고정</span></label>
+          <button id="cm-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Post">+ 등록</button>
+        </div>
       </div>
-    </div>
-  </details>
-  <table style="margin-top:10px;"><thead><tr><th data-ko="작성" data-en="Created">작성</th><th data-ko="제목" data-en="Title">제목</th><th data-ko="작성자" data-en="Author">작성자</th><th data-ko="고정" data-en="Pin">고정</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
-    <tbody id="community-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
-</div>
+    </details>
+    <table style="margin-top:10px;"><thead><tr><th data-ko="작성" data-en="Created">작성</th><th data-ko="제목" data-en="Title">제목</th><th data-ko="작성자" data-en="Author">작성자</th><th data-ko="고정" data-en="Pin">고정</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
+      <tbody id="community-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
+  </div>
+</details>
 
 <!-- 교재 콘텐츠 -->
-<div class="table-card menu-card">
-  <div class="chart-title" data-ko="📖 교재 콘텐츠 관리" data-en="📖 Textbooks">📖 교재 콘텐츠 관리</div>
-  <details>
-    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
-    <div class="menu-form">
-      <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
-      <select id="tb-level" style="width:90px;">
-        <option value="">level…</option>
-        <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
-      </select>
-      <input id="tb-units"     type="number" placeholder="단원 수" data-ko-placeholder="단원 수" data-en-placeholder="Units" style="width:90px;" />
-      <input id="tb-publisher" placeholder="출판사"     data-ko-placeholder="출판사"     data-en-placeholder="Publisher" style="width:140px;" />
-      <input id="tb-isbn"      placeholder="ISBN"        style="width:140px;" />
-      <button id="tb-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-    </div>
-  </details>
-  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="교재명" data-en="Title">교재명</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="단원" data-en="Units">단원</th><th data-ko="출판사" data-en="Publisher">출판사</th><th>ISBN</th></tr></thead>
-    <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
-</div>
+<details class="table-card menu-card">
+  <summary><span data-ko="📖 교재 콘텐츠 관리" data-en="📖 Textbooks">📖 교재 콘텐츠 관리</span></summary>
+  <div class="menu-body">
+    <details>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
+      <div class="menu-form">
+        <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
+        <select id="tb-level" style="width:90px;">
+          <option value="">level…</option>
+          <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+        </select>
+        <input id="tb-units"     type="number" placeholder="단원 수" data-ko-placeholder="단원 수" data-en-placeholder="Units" style="width:90px;" />
+        <input id="tb-publisher" placeholder="출판사"     data-ko-placeholder="출판사"     data-en-placeholder="Publisher" style="width:140px;" />
+        <input id="tb-isbn"      placeholder="ISBN"        style="width:140px;" />
+        <button id="tb-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+      </div>
+    </details>
+    <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="교재명" data-en="Title">교재명</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="단원" data-en="Units">단원</th><th data-ko="출판사" data-en="Publisher">출판사</th><th>ISBN</th></tr></thead>
+      <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+  </div>
+</details>
 
 <!-- 평가 폼 모달 -->
 <div class="eval-modal-bg" id="eval-modal-bg">
@@ -2002,6 +2049,11 @@ async function addTextbook() {
     publisher: e('tb-publisher').value||null, isbn: e('tb-isbn').value||null
   });
   if (d) { ['tb-title','tb-units','tb-publisher','tb-isbn'].forEach(id=>e(id).value=''); e('tb-level').value=''; loadTextbooks(); }
+}
+
+// 메뉴 카드 전체 펼치기/접기
+function toggleAllMenuCards(open) {
+  document.querySelectorAll('details.menu-card').forEach(d => { d.open = !!open; });
 }
 
 // 6개 메뉴 컨트롤 일괄 바인딩
