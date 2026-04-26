@@ -1311,6 +1311,152 @@ export async function handleMangoApi(
       return csvResponse(fname, csv);
     }
 
+    // ========================================================================
+    // 🏢 Phase 9 — 메뉴 6개 (가맹점·교육센터·레벨테스트·수강신청·커뮤니티·교재)
+    //   각 테이블은 cold start 시 IF NOT EXISTS 자동 생성. 별도 마이그레이션 불필요.
+    // ========================================================================
+    // ─── 가맹점 ──────────────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/franchises') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS franchises (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, address TEXT, phone TEXT, owner_name TEXT, opened_at TEXT, active INTEGER DEFAULT 1, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const rs = await env.DB.prepare(`SELECT * FROM franchises ORDER BY active DESC, name ASC`).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.name) return invalidBody(['name']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO franchises (name, address, phone, owner_name, opened_at, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(b.name, b.address || null, b.phone || null, b.owner_name || null, b.opened_at || null, b.notes || null, now, now).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // ─── 교육센터 ─────────────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/centers') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS centers (id INTEGER PRIMARY KEY AUTOINCREMENT, franchise_id INTEGER, name TEXT NOT NULL, country TEXT, address TEXT, manager TEXT, active INTEGER DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const rs = await env.DB.prepare(
+          `SELECT c.*, f.name AS franchise_name FROM centers c LEFT JOIN franchises f ON f.id = c.franchise_id ORDER BY c.active DESC, c.name ASC`
+        ).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.name) return invalidBody(['name']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO centers (franchise_id, name, country, address, manager, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`
+      ).bind(b.franchise_id || null, b.name, b.country || null, b.address || null, b.manager || null, now, now).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // ─── 레벨테스트 ───────────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/level-tests') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS level_tests (id INTEGER PRIMARY KEY AUTOINCREMENT, student_user_id TEXT, student_name TEXT NOT NULL, tested_at INTEGER NOT NULL, level TEXT, score REAL, notes TEXT, evaluator TEXT, created_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const lim = Math.max(1, Math.min(500, parseInt(url.searchParams.get('limit') || '50', 10)));
+        const rs = await env.DB.prepare(`SELECT * FROM level_tests ORDER BY tested_at DESC LIMIT ?`).bind(lim).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.student_name) return invalidBody(['student_name']);
+      const now = Date.now();
+      const tested = b.tested_at ? Number(b.tested_at) : now;
+      const r = await env.DB.prepare(
+        `INSERT INTO level_tests (student_user_id, student_name, tested_at, level, score, notes, evaluator, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(b.student_user_id || null, b.student_name, tested, b.level || null, b.score != null ? Number(b.score) : null, b.notes || null, b.evaluator || 'admin', now).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // ─── 수강신청 ─────────────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/enrollments') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS enrollments (id INTEGER PRIMARY KEY AUTOINCREMENT, student_user_id TEXT, student_name TEXT NOT NULL, package TEXT, started_at INTEGER, ended_at INTEGER, monthly_fee_krw INTEGER, status TEXT DEFAULT 'pending', notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const statusF = url.searchParams.get('status');
+        const lim = Math.max(1, Math.min(500, parseInt(url.searchParams.get('limit') || '100', 10)));
+        const rs = statusF
+          ? await env.DB.prepare(`SELECT * FROM enrollments WHERE status = ? ORDER BY created_at DESC LIMIT ?`).bind(statusF, lim).all()
+          : await env.DB.prepare(`SELECT * FROM enrollments ORDER BY created_at DESC LIMIT ?`).bind(lim).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.student_name || !b.package) return invalidBody(['student_name', 'package']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO enrollments (student_user_id, student_name, package, started_at, ended_at, monthly_fee_krw, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        b.student_user_id || null, b.student_name, b.package,
+        b.started_at ? Number(b.started_at) : now,
+        b.ended_at ? Number(b.ended_at) : null,
+        b.monthly_fee_krw != null ? Number(b.monthly_fee_krw) : null,
+        b.status || 'pending', b.notes || null, now, now
+      ).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // 수강신청 상태 변경 (pending → confirmed → cancelled 등)
+    if (method === 'PATCH' && /^\/api\/admin\/enrollments\/\d+$/.test(path)) {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS enrollments (id INTEGER PRIMARY KEY AUTOINCREMENT, student_user_id TEXT, student_name TEXT NOT NULL, package TEXT, started_at INTEGER, ended_at INTEGER, monthly_fee_krw INTEGER, status TEXT DEFAULT 'pending', notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      const m = path.match(/^\/api\/admin\/enrollments\/(\d+)$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      const b = await parseJsonBody(request);
+      if (!b || !b.status) return invalidBody(['status']);
+      const allowed = new Set(['pending', 'confirmed', 'active', 'cancelled', 'expired']);
+      if (!allowed.has(b.status)) return json({ ok: false, error: 'invalid_status', allowed: Array.from(allowed) }, 400);
+      await env.DB.prepare(`UPDATE enrollments SET status = ?, updated_at = ? WHERE id = ?`).bind(b.status, Date.now(), id).run();
+      return json({ ok: true, id, status: b.status });
+    }
+
+    // ─── 커뮤니티 게시글 ──────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/community-posts') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS community_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, body TEXT, author TEXT, pinned INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const rs = await env.DB.prepare(`SELECT * FROM community_posts ORDER BY pinned DESC, created_at DESC LIMIT 200`).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.title) return invalidBody(['title']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO community_posts (title, body, author, pinned, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)`
+      ).bind(b.title, b.body || null, b.author || 'admin', b.pinned ? 1 : 0, now, now).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
+    // 게시글 고정 토글 / 삭제
+    if (method === 'PATCH' && /^\/api\/admin\/community-posts\/\d+$/.test(path)) {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS community_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, body TEXT, author TEXT, pinned INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      const m = path.match(/^\/api\/admin\/community-posts\/(\d+)$/);
+      const id = m ? parseInt(m[1], 10) : 0;
+      const b = await parseJsonBody(request);
+      if (!b) return invalidBody(['pinned/title/body 등']);
+      const sets: string[] = [];
+      const binds: any[] = [];
+      if (b.title !== undefined)  { sets.push('title = ?');  binds.push(b.title); }
+      if (b.body !== undefined)   { sets.push('body = ?');   binds.push(b.body); }
+      if (b.pinned !== undefined) { sets.push('pinned = ?'); binds.push(b.pinned ? 1 : 0); }
+      if (sets.length === 0) return json({ ok: false, error: 'nothing_to_update' }, 400);
+      sets.push('updated_at = ?'); binds.push(Date.now());
+      binds.push(id);
+      await env.DB.prepare(`UPDATE community_posts SET ${sets.join(', ')} WHERE id = ?`).bind(...binds).run();
+      return json({ ok: true, id });
+    }
+
+    // ─── 교재 콘텐츠 ─────────────────────────────────────────────────────
+    if ((method === 'GET' || method === 'POST') && path === '/api/admin/textbooks') {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS textbooks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, level TEXT, units INTEGER, isbn TEXT, publisher TEXT, notes TEXT, active INTEGER DEFAULT 1, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      if (method === 'GET') {
+        const rs = await env.DB.prepare(`SELECT * FROM textbooks ORDER BY active DESC, level ASC, title ASC`).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+      const b = await parseJsonBody(request);
+      if (!b || !b.title) return invalidBody(['title']);
+      const now = Date.now();
+      const r = await env.DB.prepare(
+        `INSERT INTO textbooks (title, level, units, isbn, publisher, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(b.title, b.level || null, b.units != null ? Number(b.units) : null, b.isbn || null, b.publisher || null, b.notes || null, now, now).run();
+      return json({ ok: true, id: r.meta.last_row_id });
+    }
+
     // ===== 관리자 개입: 녹화 상태 변경 (Phase 4) =====
     //   PATCH /api/recordings/:id/status  body: { status: 'ended' | 'deleted' }
     //     - 기존 DELETE /api/recordings/:id 는 deleted 로만 변경 가능 → 복원(ended) 을 이걸로 처리

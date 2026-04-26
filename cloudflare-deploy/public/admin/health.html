@@ -257,6 +257,13 @@ const ENDPOINTS = [
     desc: '강사 목록. status(office|home), years, rate_per_10min_php 포함.' },
   { path: '/api/admin/payroll/all?year=2026&month=4', method: 'GET', expect: '2xx', label: 'Payroll Calc All', body: null,
     desc: '활성 강사 전원의 월 급여+평가 통합 (수업수×2×10분단가 + 가중점수 + 등급). KRW 환산 포함.' },
+  // Phase 9: 메뉴 6종
+  { path: '/api/admin/franchises',       method: 'GET', expect: '2xx', label: 'Franchises',     body: null, desc: '가맹점 목록 (Phase 9).' },
+  { path: '/api/admin/centers',          method: 'GET', expect: '2xx', label: 'Centers',        body: null, desc: '교육센터 목록 (가맹점 종속, Phase 9).' },
+  { path: '/api/admin/level-tests',      method: 'GET', expect: '2xx', label: 'Level Tests',    body: null, desc: '학생 레벨테스트 결과 목록 (Phase 9).' },
+  { path: '/api/admin/enrollments',      method: 'GET', expect: '2xx', label: 'Enrollments',    body: null, desc: '수강신청 목록 (status 필터 가능, Phase 9).' },
+  { path: '/api/admin/community-posts',  method: 'GET', expect: '2xx', label: 'Community',      body: null, desc: '공지·게시판 목록 (Phase 9).' },
+  { path: '/api/admin/textbooks',        method: 'GET', expect: '2xx', label: 'Textbooks',      body: null, desc: '교재 콘텐츠 목록 (Phase 9).' },
   { path: '/api/admin/teacher-classes', method: 'PUT',  expect: '2xx-or-4xx', label: 'Teacher Classes PUT', body: '{}',
     desc: '월별 수업 수(20분 단위) upsert. 빈 body 면 400 (route alive 검증용).' },
   { path: '/api/admin/teacher-evaluation', method: 'PUT', expect: '2xx-or-4xx', label: 'Teacher Eval PUT', body: '{}',

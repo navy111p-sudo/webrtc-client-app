@@ -203,6 +203,14 @@ export default {
         path === '/api/admin/payroll/rates' ||
         path === '/api/admin/payroll/finalize' ||
         path === '/api/admin/payroll/seed-demo' ||
+        path === '/api/admin/franchises' ||
+        path === '/api/admin/centers' ||
+        path === '/api/admin/level-tests' ||
+        path === '/api/admin/enrollments' ||
+        /^\/api\/admin\/enrollments\/\d+$/.test(path) ||
+        path === '/api/admin/community-posts' ||
+        /^\/api\/admin\/community-posts\/\d+$/.test(path) ||
+        path === '/api/admin/textbooks' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -908,6 +916,13 @@ function isAdminPath(path: string, method: string): boolean {
   if (path === '/api/admin/teacher-classes') return true;
   if (path === '/api/admin/teacher-evaluation') return true;
   if (path.startsWith('/api/admin/payroll/')) return true;
+  // 🏢 Phase 9 — 추가 메뉴 6종
+  if (path === '/api/admin/franchises') return true;
+  if (path === '/api/admin/centers') return true;
+  if (path === '/api/admin/level-tests') return true;
+  if (path === '/api/admin/enrollments' || /^\/api\/admin\/enrollments\/\d+$/.test(path)) return true;
+  if (path === '/api/admin/community-posts' || /^\/api\/admin\/community-posts\/\d+$/.test(path)) return true;
+  if (path === '/api/admin/textbooks') return true;
   // 대시보드·활성 방·방 상태 — 모두 관리자 전용
   if (path === '/api/dashboard') return true;
   if (path === '/api/active-rooms') return true;

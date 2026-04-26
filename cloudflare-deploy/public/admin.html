@@ -266,6 +266,138 @@
   </div>
 </div>
 
+<!-- 🏢 Phase 9: 6개 메뉴 카드 (가맹점·교육센터·레벨테스트·수강신청·커뮤니티·교재) -->
+<style>
+  .menu-card { margin-bottom: 24px; }
+  .menu-card .menu-form { display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;padding:10px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px; }
+  .menu-card .menu-form input,
+  .menu-card .menu-form select,
+  .menu-card .menu-form textarea { padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px; }
+</style>
+
+<!-- 가맹점 관리 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="🏬 가맹점 관리" data-en="🏬 Franchises">🏬 가맹점 관리</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 가맹점 신규 등록" data-en="＋ Add Franchise">＋ 가맹점 신규 등록</summary>
+    <div class="menu-form">
+      <input id="fr-name"   placeholder="가맹점 이름 (필수)" data-ko-placeholder="가맹점 이름 (필수)" data-en-placeholder="Franchise name (required)" style="width:180px;" />
+      <input id="fr-owner"  placeholder="대표자"           data-ko-placeholder="대표자"           data-en-placeholder="Owner" style="width:120px;" />
+      <input id="fr-phone"  placeholder="전화번호"          data-ko-placeholder="전화번호"          data-en-placeholder="Phone" style="width:140px;" />
+      <input id="fr-address" placeholder="주소"             data-ko-placeholder="주소"             data-en-placeholder="Address" style="width:240px;" />
+      <input id="fr-opened" type="date" />
+      <button id="fr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    </div>
+  </details>
+  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="대표" data-en="Owner">대표</th><th data-ko="전화" data-en="Phone">전화</th><th data-ko="주소" data-en="Address">주소</th><th data-ko="개업일" data-en="Opened">개업일</th></tr></thead>
+    <tbody id="franchises-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+</div>
+
+<!-- 교육센터 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="🏫 교육센터" data-en="🏫 Education Centers">🏫 교육센터</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 센터 신규 등록" data-en="＋ Add Center">＋ 센터 신규 등록</summary>
+    <div class="menu-form">
+      <select id="ct-franchise" style="width:180px;"><option value="" data-ko="가맹점 선택…" data-en="Select franchise…">가맹점 선택…</option></select>
+      <input id="ct-name"     placeholder="센터 이름 (필수)" data-ko-placeholder="센터 이름 (필수)" data-en-placeholder="Center name (required)" style="width:180px;" />
+      <input id="ct-country"  placeholder="국가 (예: PH)"   data-ko-placeholder="국가 (예: PH)"   data-en-placeholder="Country (e.g. PH)" style="width:110px;" />
+      <input id="ct-manager"  placeholder="매니저"          data-ko-placeholder="매니저"          data-en-placeholder="Manager" style="width:120px;" />
+      <input id="ct-address"  placeholder="주소"            data-ko-placeholder="주소"            data-en-placeholder="Address" style="width:240px;" />
+      <button id="ct-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    </div>
+  </details>
+  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="가맹점" data-en="Franchise">가맹점</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="국가" data-en="Country">국가</th><th data-ko="매니저" data-en="Manager">매니저</th><th data-ko="주소" data-en="Address">주소</th></tr></thead>
+    <tbody id="centers-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+</div>
+
+<!-- 레벨 테스트 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="📝 레벨 테스트" data-en="📝 Level Tests">📝 레벨 테스트</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 결과 입력" data-en="＋ Add Result">＋ 결과 입력</summary>
+    <div class="menu-form">
+      <input id="lt-name"   placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
+      <input id="lt-uid"    placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
+      <select id="lt-level" style="width:90px;">
+        <option value="">level…</option>
+        <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+      </select>
+      <input id="lt-score"  type="number" step="0.1" placeholder="점수 (0~100)" data-ko-placeholder="점수 (0~100)" data-en-placeholder="Score (0–100)" style="width:130px;" />
+      <input id="lt-date"   type="date" />
+      <button id="lt-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    </div>
+  </details>
+  <table style="margin-top:10px;"><thead><tr><th data-ko="응시일" data-en="Date">응시일</th><th data-ko="학생" data-en="Student">학생</th><th>UID</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="점수" data-en="Score">점수</th></tr></thead>
+    <tbody id="level-tests-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
+</div>
+
+<!-- 수강신청 관리 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="📚 수강신청 관리" data-en="📚 Enrollments">📚 수강신청 관리</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 수강신청 등록" data-en="＋ Add Enrollment">＋ 수강신청 등록</summary>
+    <div class="menu-form">
+      <input id="en-name"    placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
+      <input id="en-uid"     placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
+      <input id="en-package" placeholder="상품/패키지 (필수)" data-ko-placeholder="상품/패키지 (필수)" data-en-placeholder="Package (required)" style="width:180px;" />
+      <input id="en-fee"     type="number" placeholder="월 수강료 (KRW)" data-ko-placeholder="월 수강료 (KRW)" data-en-placeholder="Monthly fee (KRW)" style="width:160px;" />
+      <input id="en-start"   type="date" />
+      <button id="en-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    </div>
+  </details>
+  <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
+    <select id="en-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
+      <option value="" data-ko="전체" data-en="All">전체</option>
+      <option value="pending">pending</option><option value="confirmed">confirmed</option><option value="active">active</option>
+      <option value="cancelled">cancelled</option><option value="expired">expired</option>
+    </select>
+    <button id="en-refresh-btn" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+  </div>
+  <table><thead><tr><th data-ko="신청일" data-en="Created">신청일</th><th data-ko="학생" data-en="Student">학생</th><th data-ko="패키지" data-en="Package">패키지</th><th data-ko="월 수강료" data-en="Monthly Fee">월 수강료</th><th data-ko="상태" data-en="Status">상태</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
+    <tbody id="enrollments-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+</div>
+
+<!-- 커뮤니티 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="📢 커뮤니티 (공지·게시판)" data-en="📢 Community (Notices)">📢 커뮤니티 (공지·게시판)</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 새 글 작성" data-en="＋ New Post">＋ 새 글 작성</summary>
+    <div class="menu-form" style="flex-direction:column;align-items:stretch;">
+      <input id="cm-title" placeholder="제목 (필수)" data-ko-placeholder="제목 (필수)" data-en-placeholder="Title (required)" style="width:100%;" />
+      <textarea id="cm-body" rows="3" placeholder="본문" data-ko-placeholder="본문" data-en-placeholder="Body" style="width:100%;"></textarea>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input id="cm-author" placeholder="작성자" data-ko-placeholder="작성자" data-en-placeholder="Author" style="width:140px;" />
+        <label style="font-size:12px;color:#6b7280;display:flex;align-items:center;gap:4px;"><input id="cm-pinned" type="checkbox" /> <span data-ko="상단 고정" data-en="Pin to top">상단 고정</span></label>
+        <button id="cm-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Post">+ 등록</button>
+      </div>
+    </div>
+  </details>
+  <table style="margin-top:10px;"><thead><tr><th data-ko="작성" data-en="Created">작성</th><th data-ko="제목" data-en="Title">제목</th><th data-ko="작성자" data-en="Author">작성자</th><th data-ko="고정" data-en="Pin">고정</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
+    <tbody id="community-table"><tr><td colspan="5" class="empty">—</td></tr></tbody></table>
+</div>
+
+<!-- 교재 콘텐츠 -->
+<div class="table-card menu-card">
+  <div class="chart-title" data-ko="📖 교재 콘텐츠 관리" data-en="📖 Textbooks">📖 교재 콘텐츠 관리</div>
+  <details>
+    <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
+    <div class="menu-form">
+      <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
+      <select id="tb-level" style="width:90px;">
+        <option value="">level…</option>
+        <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+      </select>
+      <input id="tb-units"     type="number" placeholder="단원 수" data-ko-placeholder="단원 수" data-en-placeholder="Units" style="width:90px;" />
+      <input id="tb-publisher" placeholder="출판사"     data-ko-placeholder="출판사"     data-en-placeholder="Publisher" style="width:140px;" />
+      <input id="tb-isbn"      placeholder="ISBN"        style="width:140px;" />
+      <button id="tb-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    </div>
+  </details>
+  <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="교재명" data-en="Title">교재명</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="단원" data-en="Units">단원</th><th data-ko="출판사" data-en="Publisher">출판사</th><th>ISBN</th></tr></thead>
+    <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+</div>
+
 <!-- 평가 폼 모달 -->
 <div class="eval-modal-bg" id="eval-modal-bg">
   <div class="eval-modal">
@@ -1691,6 +1823,200 @@ function togglePayrollCharts() {
   }
 }
 
+// ============================================================================
+// 🏢 Phase 9 — 6개 추가 메뉴 (가맹점·센터·레벨테스트·수강신청·커뮤니티·교재)
+// ============================================================================
+function _esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function _fmtDate(ts){if(!ts)return '—';const d=new Date(Number(ts));return d.toLocaleDateString(adminLang==='en'?'en-US':'ko-KR');}
+function _fmtDateTime(ts){if(!ts)return '—';const d=new Date(Number(ts));return d.toLocaleString(adminLang==='en'?'en-US':'ko-KR');}
+async function _menuPost(url, body) {
+  const r = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify(body)});
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || d.ok === false) {
+    alert((adminLang==='en'?'Failed: ':'실패: ') + (d.error || ('HTTP '+r.status)));
+    return null;
+  }
+  return d;
+}
+
+// ── 가맹점 ──────────────────────────────────────────────────────────
+async function loadFranchises() {
+  const r = await fetch('/api/admin/franchises',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('franchises-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; _populateFranchiseSelect([]); return; }
+  tb.innerHTML = d.items.map(f =>
+    `<tr><td>${f.id}</td><td><b>${_esc(f.name)}</b></td><td>${_esc(f.owner_name)||'—'}</td><td>${_esc(f.phone)||'—'}</td><td>${_esc(f.address)||'—'}</td><td>${_esc(f.opened_at)||'—'}</td></tr>`
+  ).join('');
+  _populateFranchiseSelect(d.items);
+}
+function _populateFranchiseSelect(items) {
+  const sel = document.getElementById('ct-franchise');
+  if (!sel) return;
+  const placeholder = adminLang==='en' ? 'Select franchise…' : '가맹점 선택…';
+  sel.innerHTML = '<option value="">' + placeholder + '</option>' + items.map(f => `<option value="${f.id}">${_esc(f.name)}</option>`).join('');
+}
+async function addFranchise() {
+  const e = id => document.getElementById(id);
+  const name = (e('fr-name').value||'').trim();
+  if (!name) { alert(adminLang==='en'?'Name required':'이름은 필수'); return; }
+  const d = await _menuPost('/api/admin/franchises', {
+    name, owner_name: e('fr-owner').value||null, phone: e('fr-phone').value||null,
+    address: e('fr-address').value||null, opened_at: e('fr-opened').value||null
+  });
+  if (d) { ['fr-name','fr-owner','fr-phone','fr-address','fr-opened'].forEach(id=>e(id).value=''); loadFranchises(); }
+}
+
+// ── 교육센터 ─────────────────────────────────────────────────────────
+async function loadCenters() {
+  const r = await fetch('/api/admin/centers',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('centers-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = d.items.map(c =>
+    `<tr><td>${c.id}</td><td>${_esc(c.franchise_name)||'—'}</td><td><b>${_esc(c.name)}</b></td><td>${_esc(c.country)||'—'}</td><td>${_esc(c.manager)||'—'}</td><td>${_esc(c.address)||'—'}</td></tr>`
+  ).join('');
+}
+async function addCenter() {
+  const e = id => document.getElementById(id);
+  const name = (e('ct-name').value||'').trim();
+  if (!name) { alert(adminLang==='en'?'Name required':'이름은 필수'); return; }
+  const d = await _menuPost('/api/admin/centers', {
+    franchise_id: e('ct-franchise').value || null, name,
+    country: e('ct-country').value||null, manager: e('ct-manager').value||null,
+    address: e('ct-address').value||null
+  });
+  if (d) { ['ct-name','ct-country','ct-manager','ct-address'].forEach(id=>e(id).value=''); loadCenters(); }
+}
+
+// ── 레벨테스트 ───────────────────────────────────────────────────────
+async function loadLevelTests() {
+  const r = await fetch('/api/admin/level-tests?limit=100',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('level-tests-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="5" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = d.items.map(t =>
+    `<tr><td>${_fmtDate(t.tested_at)}</td><td><b>${_esc(t.student_name)}</b></td><td><code style="font-size:11px;">${_esc(t.student_user_id)||'—'}</code></td><td>${_esc(t.level)||'—'}</td><td style="text-align:right;">${t.score!=null?Number(t.score).toFixed(1):'—'}</td></tr>`
+  ).join('');
+}
+async function addLevelTest() {
+  const e = id => document.getElementById(id);
+  const name = (e('lt-name').value||'').trim();
+  if (!name) { alert(adminLang==='en'?'Name required':'이름은 필수'); return; }
+  const dateStr = e('lt-date').value;
+  const tested_at = dateStr ? new Date(dateStr).getTime() : Date.now();
+  const d = await _menuPost('/api/admin/level-tests', {
+    student_name: name, student_user_id: e('lt-uid').value||null,
+    level: e('lt-level').value||null, score: e('lt-score').value ? parseFloat(e('lt-score').value) : null,
+    tested_at
+  });
+  if (d) { ['lt-name','lt-uid','lt-score','lt-date'].forEach(id=>e(id).value=''); e('lt-level').value=''; loadLevelTests(); }
+}
+
+// ── 수강신청 ─────────────────────────────────────────────────────────
+async function loadEnrollments() {
+  const status = document.getElementById('en-status-filter').value;
+  const url = '/api/admin/enrollments' + (status ? `?status=${status}` : '');
+  const r = await fetch(url,{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('enrollments-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = d.items.map(en => {
+    const fee = en.monthly_fee_krw ? '₩' + Number(en.monthly_fee_krw).toLocaleString() : '—';
+    const statusColor = en.status==='active'?'#10b981':en.status==='confirmed'?'#3b82f6':en.status==='pending'?'#f59e0b':en.status==='cancelled'?'#ef4444':'#6b7280';
+    return `<tr><td>${_fmtDate(en.created_at)}</td><td><b>${_esc(en.student_name)}</b></td><td>${_esc(en.package)}</td><td style="text-align:right;">${fee}</td><td><span style="color:${statusColor};font-weight:600;">${_esc(en.status)}</span></td>
+      <td>
+        <button onclick="setEnrollmentStatus(${en.id},'confirmed')" style="padding:2px 6px;font-size:10px;background:#3b82f6;color:#fff;border:none;border-radius:3px;cursor:pointer;">✓</button>
+        <button onclick="setEnrollmentStatus(${en.id},'active')"    style="padding:2px 6px;font-size:10px;background:#10b981;color:#fff;border:none;border-radius:3px;cursor:pointer;">▶</button>
+        <button onclick="setEnrollmentStatus(${en.id},'cancelled')" style="padding:2px 6px;font-size:10px;background:#ef4444;color:#fff;border:none;border-radius:3px;cursor:pointer;">✕</button>
+      </td></tr>`;
+  }).join('');
+}
+async function addEnrollment() {
+  const e = id => document.getElementById(id);
+  const name = (e('en-name').value||'').trim();
+  const pkg  = (e('en-package').value||'').trim();
+  if (!name || !pkg) { alert(adminLang==='en'?'Name and package required':'이름·패키지 필수'); return; }
+  const startStr = e('en-start').value;
+  const d = await _menuPost('/api/admin/enrollments', {
+    student_name: name, student_user_id: e('en-uid').value||null, package: pkg,
+    monthly_fee_krw: e('en-fee').value ? parseInt(e('en-fee').value, 10) : null,
+    started_at: startStr ? new Date(startStr).getTime() : null
+  });
+  if (d) { ['en-name','en-uid','en-package','en-fee','en-start'].forEach(id=>e(id).value=''); loadEnrollments(); }
+}
+async function setEnrollmentStatus(id, status) {
+  const r = await fetch('/api/admin/enrollments/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({status})});
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || d.ok === false) { alert((adminLang==='en'?'Failed: ':'실패: ')+(d.error||('HTTP '+r.status))); return; }
+  loadEnrollments();
+}
+
+// ── 커뮤니티 ─────────────────────────────────────────────────────────
+async function loadCommunity() {
+  const r = await fetch('/api/admin/community-posts',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('community-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="5" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = d.items.map(p =>
+    `<tr><td>${_fmtDateTime(p.created_at)}</td><td>${p.pinned?'📌 ':''}<b>${_esc(p.title)}</b></td><td>${_esc(p.author)||'—'}</td>
+     <td><button onclick="togglePinPost(${p.id},${p.pinned?0:1})" style="padding:2px 8px;font-size:11px;background:${p.pinned?'#f59e0b':'#fff'};color:${p.pinned?'#fff':'#374151'};border:1px solid ${p.pinned?'#f59e0b':'#d1d5db'};border-radius:4px;cursor:pointer;">${p.pinned?'고정해제':'고정'}</button></td>
+     <td>—</td></tr>`
+  ).join('');
+}
+async function addCommunityPost() {
+  const e = id => document.getElementById(id);
+  const title = (e('cm-title').value||'').trim();
+  if (!title) { alert(adminLang==='en'?'Title required':'제목은 필수'); return; }
+  const d = await _menuPost('/api/admin/community-posts', {
+    title, body: e('cm-body').value||null,
+    author: e('cm-author').value||'admin',
+    pinned: e('cm-pinned').checked ? 1 : 0
+  });
+  if (d) { ['cm-title','cm-body','cm-author'].forEach(id=>e(id).value=''); e('cm-pinned').checked=false; loadCommunity(); }
+}
+async function togglePinPost(id, pinned) {
+  const r = await fetch('/api/admin/community-posts/'+id,{method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({pinned})});
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || d.ok === false) { alert((adminLang==='en'?'Failed: ':'실패: ')+(d.error||('HTTP '+r.status))); return; }
+  loadCommunity();
+}
+
+// ── 교재 ────────────────────────────────────────────────────────────
+async function loadTextbooks() {
+  const r = await fetch('/api/admin/textbooks',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
+  const tb = document.getElementById('textbooks-table');
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; return; }
+  tb.innerHTML = d.items.map(t =>
+    `<tr><td>${t.id}</td><td><b>${_esc(t.title)}</b></td><td>${_esc(t.level)||'—'}</td><td style="text-align:right;">${t.units||'—'}</td><td>${_esc(t.publisher)||'—'}</td><td><code style="font-size:11px;">${_esc(t.isbn)||'—'}</code></td></tr>`
+  ).join('');
+}
+async function addTextbook() {
+  const e = id => document.getElementById(id);
+  const title = (e('tb-title').value||'').trim();
+  if (!title) { alert(adminLang==='en'?'Title required':'교재명은 필수'); return; }
+  const d = await _menuPost('/api/admin/textbooks', {
+    title, level: e('tb-level').value||null,
+    units: e('tb-units').value ? parseInt(e('tb-units').value,10) : null,
+    publisher: e('tb-publisher').value||null, isbn: e('tb-isbn').value||null
+  });
+  if (d) { ['tb-title','tb-units','tb-publisher','tb-isbn'].forEach(id=>e(id).value=''); e('tb-level').value=''; loadTextbooks(); }
+}
+
+// 6개 메뉴 컨트롤 일괄 바인딩
+(function bindPhase9Menus(){
+  const e = id => document.getElementById(id);
+  if (e('fr-add-btn'))      e('fr-add-btn').addEventListener('click', addFranchise);
+  if (e('ct-add-btn'))      e('ct-add-btn').addEventListener('click', addCenter);
+  if (e('lt-add-btn'))      e('lt-add-btn').addEventListener('click', addLevelTest);
+  if (e('en-add-btn'))      e('en-add-btn').addEventListener('click', addEnrollment);
+  if (e('en-refresh-btn'))  e('en-refresh-btn').addEventListener('click', loadEnrollments);
+  if (e('en-status-filter')) e('en-status-filter').addEventListener('change', loadEnrollments);
+  if (e('cm-add-btn'))      e('cm-add-btn').addEventListener('click', addCommunityPost);
+  if (e('tb-add-btn'))      e('tb-add-btn').addEventListener('click', addTextbook);
+})();
+
 async function seedDemoTeachers() {
   const _L = adminLang === 'en';
   const year  = parseInt(document.getElementById('payroll-year').value, 10);
@@ -1972,7 +2298,10 @@ document.getElementById('refresh').onclick = async function() {
 };
 document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
-Promise.allSettled([load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats(), loadPayrollRates()]);
+Promise.allSettled([
+  load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats(), loadPayrollRates(),
+  loadFranchises(), loadCenters(), loadLevelTests(), loadEnrollments(), loadCommunity(), loadTextbooks()
+]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
 </script>
