@@ -72,42 +72,59 @@
 
 <div class="grid" id="kpi"></div>
 
-<div class="charts">
-  <div class="chart-card">
-    <div class="chart-title" data-ko="📅 일자별 출석 (고유 사용자 수)" data-en="📅 Daily Attendance (Unique Users)">📅 일자별 출석 (고유 사용자 수)</div>
-    <div class="chart-wrapper"><canvas id="chart-attendance"></canvas></div>
+<details class="table-card menu-card">
+  <summary><span data-ko="📅 일자별 차트 (출석·보상)" data-en="📅 Daily Charts (Attendance & Rewards)">📅 일자별 차트 (출석·보상)</span></summary>
+  <div class="menu-body">
+    <div class="charts">
+      <div class="chart-card">
+        <div class="chart-title" data-ko="📅 일자별 출석 (고유 사용자 수)" data-en="📅 Daily Attendance (Unique Users)">📅 일자별 출석 (고유 사용자 수)</div>
+        <div class="chart-wrapper"><canvas id="chart-attendance"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" data-ko="🎁 보상 발급 현황" data-en="🎁 Rewards Issued">🎁 보상 발급 현황</div>
+        <div class="chart-wrapper"><canvas id="chart-rewards"></canvas></div>
+      </div>
+    </div>
   </div>
-  <div class="chart-card">
-    <div class="chart-title" data-ko="🎁 보상 발급 현황" data-en="🎁 Rewards Issued">🎁 보상 발급 현황</div>
-    <div class="chart-wrapper"><canvas id="chart-rewards"></canvas></div>
-  </div>
-</div>
+</details>
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="🗣️ 발화시간 TOP 10" data-en="🗣️ Speaking Time TOP 10">🗣️ 발화시간 TOP 10</div>
-  <table>
-    <thead><tr><th data-ko="사용자" data-en="User">사용자</th><th data-ko="활성 발화시간" data-en="Active Speaking">활성 발화시간</th><th data-ko="총 세션시간" data-en="Total Session">총 세션시간</th><th data-ko="활성 비율" data-en="Active %">활성 비율</th></tr></thead>
-    <tbody id="top-speakers"></tbody>
-  </table>
-</div>
+<details class="table-card menu-card">
+  <summary><span data-ko="🗣️ 발화시간 TOP 10" data-en="🗣️ Speaking Time TOP 10">🗣️ 발화시간 TOP 10</span></summary>
+  <div class="menu-body">
+    <table>
+      <thead><tr><th data-ko="사용자" data-en="User">사용자</th><th data-ko="활성 발화시간" data-en="Active Speaking">활성 발화시간</th><th data-ko="총 세션시간" data-en="Total Session">총 세션시간</th><th data-ko="활성 비율" data-en="Active %">활성 비율</th></tr></thead>
+      <tbody id="top-speakers"></tbody>
+    </table>
+  </div>
+</details>
 
 <!-- 🚨 비상 이벤트 카드 제거됨 (2026-04-24)
      이유: 수업 UI 에 트리거(비상 버튼)가 아직 연결되지 않아 항상 "데이터 없음" 상태.
      백엔드(/api/emergency + emergency_events 테이블)는 그대로 유지되어, 향후 수업
      페이지에 버튼을 붙이는 시점에 이 카드 블록만 되살리면 즉시 동작함. -->
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="🗑️ 보관기간 자동 파기" data-en="🗑️ Auto Retention Cleanup">🗑️ 보관기간 자동 파기 <button id="retention-run" style="float:right;padding:4px 10px;font-size:12px;" data-ko="지금 실행" data-en="Run Now">지금 실행</button></div>
-  <div id="retention-status" style="font-size:13px;color:#6b7280;" data-ko-loading="로딩 중..." data-en-loading="Loading...">로딩 중...</div>
-</div>
+<details class="table-card menu-card">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    <span data-ko="🗑️ 보관기간 자동 파기" data-en="🗑️ Auto Retention Cleanup">🗑️ 보관기간 자동 파기</span>
+    <button id="retention-run" style="padding:4px 10px;font-size:12px;margin-right:32px;" data-ko="지금 실행" data-en="Run Now" onclick="event.stopPropagation()">지금 실행</button>
+  </summary>
+  <div class="menu-body">
+    <div id="retention-status" style="font-size:13px;color:#6b7280;" data-ko-loading="로딩 중..." data-en-loading="Loading...">로딩 중...</div>
+  </div>
+</details>
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" data-ko="🔴 실시간 수업 현황" data-en="🔴 Live Classes">🔴 실시간 수업 현황 <button id="rooms-refresh" style="float:right;padding:4px 10px;font-size:12px;" data-ko="새로고침" data-en="Refresh">새로고침</button></div>
-  <table>
-    <thead><tr><th data-ko="방 ID" data-en="Room ID">방 ID</th><th data-ko="참가자 수" data-en="Users">참가자 수</th><th data-ko="참가자" data-en="Participants">참가자</th><th>PDF</th><th data-ko="영상" data-en="Video">영상</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
-    <tbody id="active-rooms-table"><tr><td colspan="6" class="empty" data-ko="로딩 중..." data-en="Loading...">로딩 중...</td></tr></tbody>
-  </table>
-</div>
+<details class="table-card menu-card" open>
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    <span data-ko="🔴 실시간 수업 현황" data-en="🔴 Live Classes">🔴 실시간 수업 현황</span>
+    <button id="rooms-refresh" style="padding:4px 10px;font-size:12px;margin-right:32px;" data-ko="새로고침" data-en="Refresh" onclick="event.stopPropagation()">새로고침</button>
+  </summary>
+  <div class="menu-body">
+    <table>
+      <thead><tr><th data-ko="방 ID" data-en="Room ID">방 ID</th><th data-ko="참가자 수" data-en="Users">참가자 수</th><th data-ko="참가자" data-en="Participants">참가자</th><th>PDF</th><th data-ko="영상" data-en="Video">영상</th><th data-ko="액션" data-en="Actions">액션</th></tr></thead>
+      <tbody id="active-rooms-table"><tr><td colspan="6" class="empty" data-ko="로딩 중..." data-en="Loading...">로딩 중...</td></tr></tbody>
+    </table>
+  </div>
+</details>
 
 <div class="table-card" style="margin-bottom:12px;padding:12px 16px;">
   <button id="test-r2-btn" onclick="testR2()" style="background:#3b82f6;color:#fff;padding:6px 16px;border-radius:6px;font-size:13px;cursor:pointer;border:none;margin-right:8px;" data-ko="🔧 R2 저장소 테스트" data-en="🔧 R2 Storage Test">🔧 R2 저장소 테스트</button>
@@ -115,20 +132,22 @@
 </div>
 
 <!-- 💰 Phase 7: 저장소·비용 통계 -->
-<div class="table-card" style="margin-bottom:24px;padding:14px 18px;">
-  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+<details class="table-card menu-card">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="💰 저장소·비용 통계 (실시간)" data-en="💰 Storage & Cost Stats">💰 저장소·비용 통계 (실시간)</span>
-    <button id="storage-refresh" style="padding:4px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;" data-ko="새로고침" data-en="Refresh">새로고침</button>
+    <button id="storage-refresh" style="padding:4px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;margin-right:32px;" data-ko="새로고침" data-en="Refresh" onclick="event.stopPropagation()">새로고침</button>
+  </summary>
+  <div class="menu-body">
+    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
+         data-ko="💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요."
+         data-en="💡 D1/R2 usage is measured live. KV op counts are visible on Cloudflare dashboard.">
+      💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요.
+    </div>
+    <div id="storage-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;">
+      <div style="padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;text-align:center;color:#6b7280;font-size:13px;">로딩 중...</div>
+    </div>
   </div>
-  <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
-       data-ko="💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요."
-       data-en="💡 D1/R2 usage is measured live. KV op counts are visible on Cloudflare dashboard.">
-    💡 D1·R2 사용량은 실시간 측정. KV(list/get/put) 호출 수는 Cloudflare dashboard 에서 확인하세요.
-  </div>
-  <div id="storage-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;">
-    <div style="padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;text-align:center;color:#6b7280;font-size:13px;">로딩 중...</div>
-  </div>
-</div>
+</details>
 
 <!-- 💼 Phase 8 v2: Mangoi 강사 급여·평가 (10분당 단가 모델 + 5카테고리 평가) -->
 <style>
@@ -157,11 +176,12 @@
   .eval-row .desc { font-size:11px; color:#6b7280; }
 </style>
 
-<div class="table-card" style="margin-bottom:24px;">
-  <div class="chart-title" style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+<details class="table-card menu-card">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="💼 Mangoi 강사 급여·평가 대시보드" data-en="💼 Mangoi Teacher Payroll & Evaluation">💼 Mangoi 강사 급여·평가 대시보드</span>
-    <span style="font-size:12px;font-weight:400;color:#6b7280;" id="payroll-counts">—</span>
-  </div>
+    <span style="font-size:12px;font-weight:400;color:#6b7280;margin-right:32px;" id="payroll-counts">—</span>
+  </summary>
+  <div class="menu-body">
   <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
        data-ko="💡 월급 = 총 수업수(20분) × 2 × 10분당 단가(PHP). 평가는 5개 카테고리(수업25% · 재등록30% · 근태20% · 행정15% · 조직10%) 가중 평균. 행을 클릭하면 평가 폼이 열립니다. 마감(🔒)하면 payslips 에 영구 보존됩니다."
        data-en="💡 Salary = total classes (20-min) × 2 × rate per 10 min (PHP). Evaluation = weighted avg of 5 categories (Inst 25% · Ret 30% · Punct 20% · Admin 15% · Contrib 10%). Click a row to open the evaluation form. Lock (🔒) writes to payslips permanently.">
@@ -264,7 +284,8 @@
       <tbody id="payroll-table"><tr><td colspan="14" class="empty">[🧮 불러오기] 를 눌러 강사 목록과 점수를 표시하세요.</td></tr></tbody>
     </table>
   </div>
-</div>
+  </div>
+</details>
 
 <!-- 🏢 Phase 9: 6개 메뉴 카드 (클릭 토글 메뉴 — 닫힘 상태로 시작) -->
 <style>
