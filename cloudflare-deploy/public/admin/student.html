@@ -226,8 +226,12 @@
     <nav class="tabs" role="tablist">
       <button class="tab active" data-tab="overview" data-ko="📊 개요"            data-en="📊 Overview">📊 개요</button>
       <button class="tab" data-tab="enrollment"      data-ko="📝 등록·수강"        data-en="📝 Enrollment">📝 등록·수강</button>
+      <button class="tab" data-tab="extension"       data-ko="🗓️ 종료·연장"        data-en="🗓️ End/Extend">🗓️ 종료·연장</button>
       <button class="tab" data-tab="payment"         data-ko="💰 수업료"           data-en="💰 Tuition">💰 수업료</button>
       <button class="tab" data-tab="classes"         data-ko="📅 수업 현황"        data-en="📅 Classes">📅 수업 현황</button>
+      <button class="tab" data-tab="attend"          data-ko="🗂️ 출결 현황"        data-en="🗂️ Attendance">🗂️ 출결 현황</button>
+      <button class="tab" data-tab="streak"          data-ko="⚡ 연속 출석"         data-en="⚡ Streak">⚡ 연속 출석</button>
+      <button class="tab" data-tab="daily"           data-ko="📰 일별 보고서"      data-en="📰 Daily Report">📰 일별 보고서</button>
       <button class="tab" data-tab="engagement"      data-ko="🎯 참여도·점수"      data-en="🎯 Engagement">🎯 참여도·점수</button>
       <button class="tab" data-tab="evaluation"      data-ko="📋 평가서"           data-en="📋 Evaluations">📋 평가서</button>
       <button class="tab" data-tab="feedback"        data-ko="💬 교사 피드백"      data-en="💬 Feedback">💬 교사 피드백</button>
@@ -235,6 +239,7 @@
       <button class="tab" data-tab="contact"         data-ko="👨‍👩‍👧 연락처·정보"  data-en="👨‍👩‍👧 Contact">👨‍👩‍👧 연락처·정보</button>
       <button class="tab" data-tab="textbook"        data-ko="📚 교재"             data-en="📚 Textbook">📚 교재</button>
       <button class="tab" data-tab="recording"       data-ko="🎬 수업 녹화"        data-en="🎬 Recording">🎬 수업 녹화</button>
+      <button class="tab" data-tab="talk"            data-ko="💭 톡짹톡"            data-en="💭 TalkChat">💭 톡짹톡</button>
     </nav>
 
     <div class="tab-body">
@@ -260,6 +265,27 @@
       <!-- 2. 등록·수강 -->
       <div class="panel" data-panel="enrollment">
         <div id="enrollmentBox"><div class="empty">로딩 중…</div></div>
+      </div>
+
+      <!-- 2b. 종료·수강연장 -->
+      <div class="panel" data-panel="extension">
+        <div class="kpi-grid" id="extKpis"></div>
+        <div class="add-form-card">
+          <h4 data-ko="🗓️ 수강 연장" data-en="🗓️ Extend Course">🗓️ 수강 연장</h4>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+            <button class="btn-add" onclick="extendBy(1)"  data-ko="+ 1개월"  data-en="+ 1 mo">+ 1개월</button>
+            <button class="btn-add" onclick="extendBy(3)"  data-ko="+ 3개월"  data-en="+ 3 mo">+ 3개월</button>
+            <button class="btn-add" onclick="extendBy(6)"  data-ko="+ 6개월"  data-en="+ 6 mo">+ 6개월</button>
+            <button class="btn-add" onclick="extendBy(12)" data-ko="+ 12개월" data-en="+ 12 mo">+ 12개월</button>
+          </div>
+          <div class="grid-2">
+            <div class="form-row"><label data-ko="직접 입력 종료일" data-en="Custom End Date">직접 입력 종료일</label><input id="extCustomDate" type="date"></div>
+            <div class="form-row"><label data-ko="연장 사유" data-en="Reason">연장 사유</label><input id="extReason" type="text" placeholder="결제 완료·서비스 보상 등"></div>
+          </div>
+          <div class="form-actions"><button class="btn-add" onclick="extendCustom()" data-ko="🗓️ 종료일 직접 변경" data-en="🗓️ Set Custom Date">🗓️ 종료일 직접 변경</button></div>
+        </div>
+        <h3 style="font-size:13px;color:var(--mut);margin:18px 0 8px;text-transform:uppercase;letter-spacing:.5px" data-ko="연장 이력" data-en="Extension History">연장 이력</h3>
+        <div id="extHistoryBox"><div class="empty" data-ko="연장 이력이 없습니다." data-en="No extension history.">연장 이력이 없습니다.</div></div>
       </div>
 
       <!-- 3. 수업료 -->
@@ -290,6 +316,44 @@
       <div class="panel" data-panel="classes">
         <div class="kpi-grid" id="classKpis"></div>
         <div id="classBox"><div class="empty">로딩 중…</div></div>
+      </div>
+
+      <!-- 4b. 출결 현황 (캘린더) -->
+      <div class="panel" data-panel="attend">
+        <div class="kpi-grid" id="attendKpis"></div>
+        <div class="chart-wrap">
+          <h3 data-ko="📅 월별 출석 캘린더 (최근 90일)" data-en="📅 Monthly Attendance Calendar (90d)">📅 월별 출석 캘린더 (최근 90일)</h3>
+          <div id="attendCalendar" style="font-size:13px"></div>
+        </div>
+        <div class="chart-wrap">
+          <h3 data-ko="결석 일자" data-en="Absent Days">결석 일자</h3>
+          <div id="absentList"></div>
+        </div>
+      </div>
+
+      <!-- 4c. 연속 출석 (Streak) -->
+      <div class="panel" data-panel="streak">
+        <div class="kpi-grid" id="streakKpis"></div>
+        <div class="chart-wrap">
+          <h3 data-ko="📊 연속 출석 추이" data-en="📊 Streak Timeline">📊 연속 출석 추이</h3>
+          <div class="chart-box short"><canvas id="streakChart"></canvas></div>
+        </div>
+        <div class="chart-wrap">
+          <h3 data-ko="중단된 날짜 (Gap 기록)" data-en="Streak Breaks">중단된 날짜 (Gap 기록)</h3>
+          <div id="streakGaps"></div>
+        </div>
+      </div>
+
+      <!-- 4d. 일별 보고서 -->
+      <div class="panel" data-panel="daily">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <label style="font-size:12px;color:var(--mut)" data-ko="날짜 선택" data-en="Date">날짜 선택</label>
+          <input id="dailyDate" type="date" style="padding:8px 10px;background:var(--panel2);color:var(--fg);border:1px solid var(--bd);border-radius:6px;font-size:13px">
+          <button class="btn-mini" onclick="dailyShift(-1)" data-ko="◀ 어제" data-en="◀ Prev">◀ 어제</button>
+          <button class="btn-mini" onclick="dailyShift(1)" data-ko="다음 ▶" data-en="Next ▶">다음 ▶</button>
+          <button class="btn-mini" onclick="window.print()" data-ko="🖨 인쇄" data-en="🖨 Print">🖨 인쇄</button>
+        </div>
+        <div id="dailyBox"><div class="empty" data-ko="날짜를 선택하면 그날의 활동 요약이 표시됩니다." data-en="Pick a date to see that day's report.">날짜를 선택하면 그날의 활동 요약이 표시됩니다.</div></div>
       </div>
 
       <!-- 5. 참여도·점수 -->
@@ -408,6 +472,47 @@
       <!-- 11. 녹화 영상 -->
       <div class="panel" data-panel="recording">
         <div id="recordingBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
+      </div>
+
+      <!-- 12. 톡짹톡 (메시지·카톡 빠른 액션) -->
+      <div class="panel" data-panel="talk">
+        <div class="kpi-grid" id="talkKpis"></div>
+        <div class="add-form-card">
+          <h4 data-ko="💭 톡짹톡 — 학생/부모님에게 메시지" data-en="💭 TalkChat — Send to Student/Parent">💭 톡짹톡 — 학생/부모님에게 메시지</h4>
+          <div class="grid-2">
+            <div class="form-row"><label data-ko="수신자" data-en="To">수신자</label>
+              <select id="talkTo">
+                <option value="student" data-ko="학생 (카카오톡)" data-en="Student (KakaoTalk)">학생 (카카오톡)</option>
+                <option value="parent" data-ko="부모님 (카카오톡)" data-en="Parent (KakaoTalk)">부모님 (카카오톡)</option>
+                <option value="phone_student" data-ko="학생 (SMS)" data-en="Student (SMS)">학생 (SMS)</option>
+                <option value="phone_parent" data-ko="부모님 (SMS)" data-en="Parent (SMS)">부모님 (SMS)</option>
+              </select>
+            </div>
+            <div class="form-row"><label data-ko="템플릿" data-en="Template">템플릿</label>
+              <select id="talkTpl" onchange="applyTalkTemplate()">
+                <option value="" data-ko="(직접 입력)" data-en="(Custom)">(직접 입력)</option>
+                <option value="reminder" data-ko="수업 알림" data-en="Class Reminder">수업 알림</option>
+                <option value="absent" data-ko="결석 확인" data-en="Absence Check">결석 확인</option>
+                <option value="report" data-ko="평가서 안내" data-en="Report Ready">평가서 안내</option>
+                <option value="payment" data-ko="결제 알림" data-en="Payment Reminder">결제 알림</option>
+                <option value="extension" data-ko="수강 만료 안내" data-en="Course Ending">수강 만료 안내</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row"><label data-ko="메시지" data-en="Message">메시지</label><textarea id="talkMsg" style="min-height:120px"></textarea></div>
+          <div class="form-actions">
+            <button class="btn-mini" onclick="copyTalkMsg()" data-ko="📋 복사" data-en="📋 Copy">📋 복사</button>
+            <button class="btn-add" onclick="sendTalk()" data-ko="🚀 보내기 (앱 열기)" data-en="🚀 Send (Open App)">🚀 보내기 (앱 열기)</button>
+          </div>
+        </div>
+        <div class="chart-wrap" style="margin-top:14px">
+          <h3 data-ko="💡 안내" data-en="💡 Notes">💡 안내</h3>
+          <ul style="font-size:13px;color:var(--mut);line-height:1.8;padding-left:18px;margin:0">
+            <li data-ko="카카오톡: 학생/부모 카카오 ID 가 등록된 경우 카카오톡 친구 검색 → 직접 전송" data-en="KakaoTalk: opens friend search if Kakao ID is set">카카오톡: 학생/부모 카카오 ID 가 등록된 경우 카카오톡 친구 검색 → 직접 전송</li>
+            <li data-ko="SMS: 휴대폰의 메시지 앱이 자동으로 열리며 본문이 미리 채워짐" data-en="SMS: opens phone's message app with prefilled body">SMS: 휴대폰의 메시지 앱이 자동으로 열리며 본문이 미리 채워짐</li>
+            <li data-ko="모든 발송 행위는 운영자 디바이스에서 직접 실행됨 (서버 자동 발송 아님)" data-en="All sending happens on operator's device (not server-automated)">모든 발송 행위는 운영자 디바이스에서 직접 실행됨 (서버 자동 발송 아님)</li>
+          </ul>
+        </div>
       </div>
     </div>
   </section>
@@ -711,8 +816,12 @@ function renderAll(){
   renderCard();
   renderOverview();
   renderEnrollment();
+  renderExtension();
   renderPayment();
   renderClasses();
+  renderAttendance();
+  renderStreak();
+  renderDailyInit();
   renderEngagement();
   renderEvaluation();
   renderFeedback();
@@ -720,6 +829,7 @@ function renderAll(){
   renderContact();
   renderTextbook();
   renderRecording();
+  renderTalkInit();
 }
 
 // ═══════════════════════ 좌측 카드 ═══════════════════════
@@ -1137,6 +1247,368 @@ async function postSave(url, body, label){
     }
   } catch (e) { toast(t('netError'), true); }
 }
+
+// ═══════════════════════ 🗓️ 종료·연장 ═══════════════════════
+function renderExtension(){
+  const erp = _state.full.erp || {};
+  const enrolls = _state.full.enrollments || [];
+  const today = new Date(); today.setHours(0,0,0,0);
+  const endStr = erp.end_date || '';
+  let dDay = '—', endStatus = 'gray', endStatusLabel = '—';
+  if (/^\d{4}-\d{2}-\d{2}$/.test(endStr)) {
+    const endDt = new Date(endStr+'T23:59:59');
+    const diff = Math.ceil((endDt - today) / 86400000);
+    if (diff < 0) { dDay = 'D+' + Math.abs(diff); endStatus = 'red'; endStatusLabel = (_lang==='en'?'Expired':'만료'); }
+    else if (diff === 0) { dDay = 'D-DAY'; endStatus = 'red'; endStatusLabel = (_lang==='en'?'Today':'오늘'); }
+    else if (diff <= 7) { dDay = 'D-' + diff; endStatus = 'red'; endStatusLabel = (_lang==='en'?'Urgent':'임박'); }
+    else if (diff <= 30) { dDay = 'D-' + diff; endStatus = 'yellow'; endStatusLabel = (_lang==='en'?'Soon':'주의'); }
+    else { dDay = 'D-' + diff; endStatus = 'green'; endStatusLabel = (_lang==='en'?'OK':'여유'); }
+  }
+  const activeEnroll = enrolls.find(e => e.status === 'confirmed' || e.status === 'pending') || enrolls[0];
+
+  $('extKpis').innerHTML = `
+    <div class="kpi ${endStatus==='red'?'red':endStatus==='yellow'?'yellow':endStatus==='green'?'green':''}"><div class="lab">${_lang==='en'?'End Date':'수강 종료일'}</div><div class="val">${endStr || '—'}</div><div class="sub">${endStatusLabel}</div></div>
+    <div class="kpi blue"><div class="lab">${_lang==='en'?'Days Left':'남은 일수'}</div><div class="val">${dDay}</div></div>
+    <div class="kpi yellow"><div class="lab">${_lang==='en'?'Active Package':'활성 패키지'}</div><div class="val" style="font-size:16px">${esc(activeEnroll?.package)||'—'}</div><div class="sub">${activeEnroll?.monthly_fee_krw?fmtKrw(activeEnroll.monthly_fee_krw)+(_lang==='en'?'/mo':'/월'):'—'}</div></div>
+    <div class="kpi purple"><div class="lab">${_lang==='en'?'Sign-up':'가입일'}</div><div class="val" style="font-size:16px">${esc(erp.signup_date)||'—'}</div></div>
+  `;
+
+  // 연장 이력 fetch
+  fetch('/api/admin/student/'+encodeURIComponent(uid)+'/extensions', { credentials:'include' })
+    .then(r => r.json())
+    .then(j => {
+      const items = (j && j.ok && j.items) || [];
+      const box = $('extHistoryBox');
+      if (items.length === 0) { box.innerHTML = '<div class="empty">'+(_lang==='en'?'No extensions yet.':'연장 이력이 없습니다.')+'</div>'; return; }
+      box.innerHTML = '<table class="list"><thead><tr><th>'+(_lang==='en'?'When':'일시')+'</th><th>'+(_lang==='en'?'Prev':'이전')+'</th><th>'+(_lang==='en'?'New':'신규')+'</th><th>'+(_lang==='en'?'Months':'개월')+'</th><th>'+(_lang==='en'?'Reason':'사유')+'</th><th>'+(_lang==='en'?'By':'처리자')+'</th></tr></thead><tbody>'+
+        items.map(e => `<tr>
+          <td>${fmtDate(e.created_at)}</td>
+          <td>${esc(e.prev_end_date)||'—'}</td>
+          <td>${esc(e.new_end_date)}</td>
+          <td>${e.months_added||'—'}</td>
+          <td>${esc(e.reason)||'—'}</td>
+          <td>${esc(e.created_by)||'—'}</td>
+        </tr>`).join('')+'</tbody></table>';
+    })
+    .catch(()=>{});
+}
+
+window.extendBy = async function(months) {
+  if (!confirm((_lang==='en'?'Extend course by ':'수강을 ')+months+(_lang==='en'?' month(s)?':'개월 연장할까요?'))) return;
+  const reason = $('extReason').value || ((_lang==='en'?'+':'+')+months+(_lang==='en'?'mo':'개월'));
+  try {
+    const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/extend', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ months, reason })
+    });
+    const j = await r.json();
+    if (r.ok && j.ok) {
+      toast((_lang==='en'?'Extended to ':'연장 완료 → ') + j.new_end_date);
+      await loadFull();
+    } else toast(t('saveFailed') + ': ' + (j.error||r.status), true);
+  } catch (e) { toast(t('netError'), true); }
+};
+
+window.extendCustom = async function() {
+  const newDate = $('extCustomDate').value;
+  if (!newDate) { toast(_lang==='en'?'Pick a date first':'종료일을 선택하세요', true); return; }
+  if (!confirm((_lang==='en'?'Set end date to ':'종료일을 ')+newDate+(_lang==='en'?'?':' 으로 변경할까요?'))) return;
+  const reason = $('extReason').value || (_lang==='en'?'Manual':'직접 변경');
+  try {
+    const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/extend', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ new_end_date: newDate, reason })
+    });
+    const j = await r.json();
+    if (r.ok && j.ok) {
+      toast((_lang==='en'?'Updated to ':'종료일 변경 완료 → ') + j.new_end_date);
+      await loadFull();
+    } else toast(t('saveFailed') + ': ' + (j.error||r.status), true);
+  } catch (e) { toast(t('netError'), true); }
+};
+
+// ═══════════════════════ 🗂️ 출결 현황 (캘린더) ═══════════════════════
+function renderAttendance(){
+  const sessions = _state.full.sessions || [];
+  const erp = _state.full.erp || {};
+  const dateMap = new Map();   // date → { count, gaze }
+  sessions.forEach(s => {
+    if (!s.date) return;
+    const cur = dateMap.get(s.date) || { count:0, gaze:0, gazeN:0 };
+    cur.count++;
+    if (s.gaze_score != null) { cur.gaze += s.gaze_score; cur.gazeN++; }
+    dateMap.set(s.date, cur);
+  });
+
+  const cpw = parseInt(erp.classes_per_week, 10) || 0;
+  const periodWeeks = (_state.days||30)/7;
+  const expected = Math.round(cpw * periodWeeks);
+  const attended = dateMap.size;
+  const absent = Math.max(0, expected - attended);
+  const rate = expected > 0 ? Math.round(attended / expected * 100) : 0;
+
+  $('attendKpis').innerHTML = `
+    <div class="kpi green"><div class="lab">${_lang==='en'?'Attended':'출석'}</div><div class="val">${attended}</div><div class="sub">${_lang==='en'?'days':'일'}</div></div>
+    <div class="kpi red"><div class="lab">${_lang==='en'?'Absent':'결석'}</div><div class="val">${absent}</div><div class="sub">${_lang==='en'?'expected':'예상'} ${expected}</div></div>
+    <div class="kpi blue"><div class="lab">${_lang==='en'?'Attendance Rate':'출석률'}</div><div class="val">${rate}%</div></div>
+    <div class="kpi yellow"><div class="lab">${_lang==='en'?'Period':'기간'}</div><div class="val" style="font-size:18px">${_state.days}${_lang==='en'?'d':'일'}</div></div>
+  `;
+
+  // 90일 캘린더 (일자별 그리드, 7열)
+  const days = 90;
+  const todayKst = new Date();
+  const cells = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(todayKst.getTime() - i * 86400000);
+    const ds = d.toISOString().slice(0,10);
+    const data = dateMap.get(ds);
+    const c = !data ? '#1e293b'
+      : data.gazeN === 0 ? '#3b82f6'   // 출석은 했지만 시선 점수 없음 (파랑)
+      : (data.gaze/data.gazeN) >= 70 ? '#10b981'
+      : (data.gaze/data.gazeN) >= 40 ? '#f59e0b'
+      : '#ef4444';
+    const tip = `${ds}: ${data ? (data.count + (_lang==='en'?' classes, focus ':'회 수업, 집중 ') + (data.gazeN ? Math.round(data.gaze/data.gazeN) : '—')) : (_lang==='en'?'absent':'결석')}`;
+    cells.push(`<div title="${tip}" style="aspect-ratio:1;background:${c};border-radius:3px"></div>`);
+  }
+  $('attendCalendar').innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin:8px 0">' + cells.join('') + '</div>' +
+    `<div style="margin-top:8px;font-size:11px;color:var(--mut)">
+      <span style="display:inline-block;width:10px;height:10px;background:#10b981;border-radius:2px;vertical-align:middle"></span> ${_lang==='en'?'Excellent (70+)':'우수(70+)'}
+      <span style="display:inline-block;width:10px;height:10px;background:#f59e0b;border-radius:2px;margin-left:8px;vertical-align:middle"></span> ${_lang==='en'?'OK (40~70)':'보통(40~70)'}
+      <span style="display:inline-block;width:10px;height:10px;background:#ef4444;border-radius:2px;margin-left:8px;vertical-align:middle"></span> ${_lang==='en'?'Low (40-)':'저조(40-)'}
+      <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border-radius:2px;margin-left:8px;vertical-align:middle"></span> ${_lang==='en'?'Attended':'출석'}
+      <span style="display:inline-block;width:10px;height:10px;background:#1e293b;border-radius:2px;margin-left:8px;vertical-align:middle;border:1px solid var(--bd)"></span> ${_lang==='en'?'No class':'미수업'}
+    </div>`;
+
+  // 결석 일자 list — 기간 내 평일 중 출석 안 한 날
+  const absentDates = [];
+  for (let i = (_state.days||30) - 1; i >= 0; i--) {
+    const d = new Date(todayKst.getTime() - i*86400000);
+    const ds = d.toISOString().slice(0,10);
+    const wkd = d.getDay();
+    if (wkd === 0 || wkd === 6) continue;   // 주말 제외
+    if (!dateMap.has(ds)) absentDates.push(ds);
+  }
+  $('absentList').innerHTML = absentDates.length === 0
+    ? '<div class="empty">'+(_lang==='en'?'No absences in period (weekdays).':'기간 내 평일 결석 없음.')+'</div>'
+    : '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+      absentDates.map(d => `<span class="badge red">${d}</span>`).join('') +
+      '</div>';
+}
+
+// ═══════════════════════ ⚡ 연속 출석 (Streak) ═══════════════════════
+function renderStreak(){
+  const sessions = _state.full.sessions || [];
+  const dateSet = new Set(sessions.map(s => s.date).filter(Boolean));
+  const dates = Array.from(dateSet).sort();   // ASC
+
+  // 연속 streak 계산: 평일 기준 (주말 제외)
+  function nextWeekday(dStr) {
+    const d = new Date(dStr+'T00:00:00');
+    do { d.setDate(d.getDate()+1); } while (d.getDay()===0 || d.getDay()===6);
+    return d.toISOString().slice(0,10);
+  }
+  let streaks = []; let cur = null;
+  dates.forEach(d => {
+    if (!cur) { cur = { start: d, end: d, len: 1 }; return; }
+    if (nextWeekday(cur.end) === d) {
+      cur.end = d; cur.len++;
+    } else {
+      streaks.push(cur);
+      cur = { start: d, end: d, len: 1 };
+    }
+  });
+  if (cur) streaks.push(cur);
+
+  const longest = streaks.reduce((m, s) => s.len > m.len ? s : m, { len: 0, start: '', end: '' });
+  // 현재 streak: 가장 마지막 streak 가 어제/오늘까지 이어지는지 체크
+  const todayStr = new Date().toISOString().slice(0,10);
+  let currentStreak = 0;
+  if (streaks.length > 0) {
+    const last = streaks[streaks.length - 1];
+    // 마지막 출석일이 오늘 또는 어제(평일이면)면 진행 중
+    const dayDiff = Math.floor((new Date(todayStr) - new Date(last.end)) / 86400000);
+    if (dayDiff <= 3) currentStreak = last.len;
+  }
+
+  $('streakKpis').innerHTML = `
+    <div class="kpi yellow"><div class="lab">⚡ ${_lang==='en'?'Current Streak':'현재 연속'}</div><div class="val">${currentStreak}</div><div class="sub">${_lang==='en'?'days':'일'}</div></div>
+    <div class="kpi green"><div class="lab">🏆 ${_lang==='en'?'Longest':'최장 기록'}</div><div class="val">${longest.len}</div><div class="sub">${longest.start ? longest.start+'~'+longest.end : '—'}</div></div>
+    <div class="kpi blue"><div class="lab">${_lang==='en'?'Total Spans':'전체 구간'}</div><div class="val">${streaks.length}</div></div>
+    <div class="kpi purple"><div class="lab">${_lang==='en'?'Avg Length':'평균 길이'}</div><div class="val">${streaks.length ? Math.round(streaks.reduce((s,x)=>s+x.len,0)/streaks.length) : 0}</div></div>
+  `;
+
+  // streak chart
+  const labels = streaks.map(s => s.start);
+  const data = streaks.map(s => s.len);
+  if (_charts.streak) _charts.streak.destroy();
+  if (labels.length > 0) {
+    _charts.streak = new Chart($('streakChart').getContext('2d'), {
+      type: 'bar',
+      data: { labels, datasets: [{ label: _lang==='en'?'Streak length':'연속 일수', data, backgroundColor:'rgba(245,158,11,.6)', borderColor:'#f59e0b' }]},
+      options: { responsive:true, maintainAspectRatio:false, scales:{ y:{beginAtZero:true,ticks:{color:'#94a3b8'},grid:{color:'#334155'}}, x:{ticks:{color:'#94a3b8',maxRotation:60},grid:{color:'#334155'}}}, plugins:{ legend:{labels:{color:'#e2e8f0'}}}}
+    });
+  }
+
+  // gaps (구간 사이 비어있는 평일)
+  const gaps = [];
+  for (let i = 1; i < streaks.length; i++) {
+    const prev = new Date(streaks[i-1].end);
+    const next = new Date(streaks[i].start);
+    const dayDiff = Math.floor((next - prev) / 86400000);
+    if (dayDiff > 1) {
+      gaps.push({ from: streaks[i-1].end, to: streaks[i].start, days: dayDiff - 1 });
+    }
+  }
+  $('streakGaps').innerHTML = gaps.length === 0
+    ? '<div class="empty">'+(_lang==='en'?'No streak breaks recorded.':'중단 기록 없음.')+'</div>'
+    : '<table class="list"><thead><tr><th>'+(_lang==='en'?'After':'이전 출석')+'</th><th>'+(_lang==='en'?'Resumed':'재출석')+'</th><th>'+(_lang==='en'?'Days off':'중단 일수')+'</th></tr></thead><tbody>'+
+      gaps.map(g => `<tr><td>${g.from}</td><td>${g.to}</td><td><span class="badge red">${g.days}${_lang==='en'?'d':'일'}</span></td></tr>`).join('')+'</tbody></table>';
+}
+
+// ═══════════════════════ 📰 일별 보고서 ═══════════════════════
+function renderDailyInit(){
+  const today = new Date().toISOString().slice(0,10);
+  if (!$('dailyDate').value) $('dailyDate').value = today;
+  $('dailyDate').addEventListener('change', renderDaily);
+  renderDaily();
+}
+function renderDaily(){
+  const day = $('dailyDate').value;
+  if (!day) { $('dailyBox').innerHTML = '<div class="empty">'+(_lang==='en'?'Pick a date':'날짜 선택')+'</div>'; return; }
+  const f = _state.full || {};
+  const sessions = (f.sessions||[]).filter(s => s.date === day);
+  const dayMs = new Date(day+'T00:00:00').getTime();
+  const dayEnd = dayMs + 86400000;
+  const fbs = (f.feedbacks||[]).filter(x => x.class_at >= dayMs && x.class_at < dayEnd);
+  const evs = (f.evaluations||[]).filter(x => x.eval_at >= dayMs && x.eval_at < dayEnd);
+  const cs  = (f.consultations||[]).filter(x => x.consult_at >= dayMs && x.consult_at < dayEnd);
+  const pys = (f.payments||[]).filter(x => x.paid_at && x.paid_at >= dayMs && x.paid_at < dayEnd);
+  const recs= (f.recordings||[]).filter(x => x.started_at && x.started_at >= dayMs && x.started_at < dayEnd);
+
+  const totalActive = sessions.reduce((s,x)=>s+(x.total_active_ms||0), 0);
+  const totalSession = sessions.reduce((s,x)=>s+(x.total_session_ms||0), 0);
+  const gazeArr = sessions.map(s=>s.gaze_score).filter(g=>g!=null);
+  const avgGaze = gazeArr.length ? gazeArr.reduce((a,b)=>a+b,0)/gazeArr.length : null;
+
+  if (sessions.length===0 && fbs.length===0 && evs.length===0 && cs.length===0 && pys.length===0) {
+    $('dailyBox').innerHTML = '<div class="empty">'+(_lang==='en'?'No activity on ':'활동 기록 없음 — ')+day+'</div>';
+    return;
+  }
+
+  const sec = (title, content) => `<div class="chart-wrap" style="margin-bottom:10px"><h3>${title}</h3>${content}</div>`;
+
+  let html = `<h2 style="margin:0 0 14px;font-size:18px;color:#fcd34d">📰 ${day} ${_lang==='en'?'Daily Report':'일별 보고서'}</h2>`;
+  html += `<div class="kpi-grid">
+    <div class="kpi blue"><div class="lab">${_lang==='en'?'Classes':'수업'}</div><div class="val">${sessions.length}</div></div>
+    <div class="kpi green"><div class="lab">${_lang==='en'?'Active':'활동'}</div><div class="val">${fmtMs(totalActive)}</div></div>
+    <div class="kpi yellow"><div class="lab">${_lang==='en'?'Avg Focus':'평균 집중'}</div><div class="val">${avgGaze!=null?Math.round(avgGaze*10)/10:'—'}</div></div>
+    <div class="kpi purple"><div class="lab">${_lang==='en'?'Activity %':'활동 비율'}</div><div class="val">${totalSession?Math.round(totalActive/totalSession*100):0}%</div></div>
+  </div>`;
+
+  if (sessions.length > 0) html += sec(_lang==='en'?'📅 Classes':'📅 수업', '<table class="list"><thead><tr><th>'+t('thIn')+'</th><th>'+t('thOut')+'</th><th>'+t('thRoom')+'</th><th>'+t('thFocusCol')+'</th><th>'+t('thRatio')+'</th></tr></thead><tbody>'+
+    sessions.map(s=>`<tr><td>${fmtDate(s.joined_at)}</td><td>${s.left_at?fmtDate(s.left_at):'—'}</td><td>${esc(s.room_id)}</td><td>${scoreBadge(s.gaze_score)}</td><td>${pctBadge(s.total_active_ms,s.total_session_ms)}</td></tr>`).join('')+'</tbody></table>');
+
+  if (fbs.length > 0) html += sec(_lang==='en'?'💬 Teacher Feedback':'💬 교사 피드백', '<table class="list"><thead><tr><th>'+t('thTeacher')+'</th><th>'+t('thRating')+'</th><th>'+t('thSummary')+'</th><th>'+t('thAction')+'</th></tr></thead><tbody>'+
+    fbs.map(f=>`<tr><td>${esc(f.teacher_name)||'—'}</td><td>${f.rating?'⭐'.repeat(f.rating):'—'}</td><td>${esc(f.summary)}</td><td>${esc(f.action_items)||'—'}</td></tr>`).join('')+'</tbody></table>');
+
+  if (evs.length > 0) html += sec(_lang==='en'?'📋 Evaluations':'📋 평가서', '<table class="list"><thead><tr><th>'+t('thType')+'</th><th>'+t('thTotal')+'</th><th>'+t('thLevel')+'</th><th>'+t('thComment')+'</th></tr></thead><tbody>'+
+    evs.map(e=>`<tr><td>${esc(e.eval_type)||'—'}</td><td>${scoreBadge(e.score_total)}</td><td>${esc(e.level)||'—'}</td><td style="white-space:pre-wrap">${esc(e.comment)||'—'}</td></tr>`).join('')+'</tbody></table>');
+
+  if (cs.length > 0) html += sec(_lang==='en'?'📞 Counseling':'📞 상담', '<table class="list"><thead><tr><th>'+t('thChannel')+'</th><th>'+t('thTopic')+'</th><th>'+t('thContent')+'</th></tr></thead><tbody>'+
+    cs.map(c=>`<tr><td>${esc(c.channel)}</td><td>${esc(c.topic)||'—'}</td><td style="white-space:pre-wrap">${esc(c.content)||'—'}</td></tr>`).join('')+'</tbody></table>');
+
+  if (pys.length > 0) html += sec(_lang==='en'?'💰 Payments':'💰 결제', '<table class="list"><thead><tr><th>'+t('thAmount')+'</th><th>'+t('thMethod')+'</th><th>'+t('thMemo')+'</th></tr></thead><tbody>'+
+    pys.map(p=>`<tr><td>${fmtKrw(p.amount_krw)}</td><td>${esc(p.method)||'—'}</td><td>${esc(p.memo)||'—'}</td></tr>`).join('')+'</tbody></table>');
+
+  if (recs.length > 0) html += sec(_lang==='en'?'🎬 Recordings':'🎬 녹화', '<ul style="font-size:13px;line-height:1.7">' +
+    recs.map(r=>`<li><a href="javascript:void(0)" onclick="window.open('/api/recordings/blob/${r.id}?stream=1','_blank')">${esc(r.filename)}</a> · ${fmtMs(r.duration_ms)}</li>`).join('') + '</ul>');
+
+  $('dailyBox').innerHTML = html;
+}
+window.dailyShift = function(delta){
+  const cur = $('dailyDate').value || new Date().toISOString().slice(0,10);
+  const d = new Date(cur+'T00:00:00');
+  d.setDate(d.getDate() + delta);
+  $('dailyDate').value = d.toISOString().slice(0,10);
+  renderDaily();
+};
+
+// ═══════════════════════ 💭 톡짹톡 (메시지 빠른 액션) ═══════════════════════
+function renderTalkInit(){
+  const erp = _state.full.erp || {};
+  $('talkKpis').innerHTML = `
+    <div class="kpi blue"><div class="lab">${_lang==='en'?'Student Phone':'학생 전화'}</div><div class="val" style="font-size:15px">${esc(erp.student_phone)||'—'}</div></div>
+    <div class="kpi green"><div class="lab">${_lang==='en'?'Parent Phone':'부모님 전화'}</div><div class="val" style="font-size:15px">${esc(erp.parent_phone)||'—'}</div></div>
+    <div class="kpi yellow"><div class="lab">${_lang==='en'?'Student Kakao':'학생 카톡'}</div><div class="val" style="font-size:15px">${esc(erp.kakao_id)||'—'}</div></div>
+    <div class="kpi purple"><div class="lab">${_lang==='en'?'Parent Kakao':'부모 카톡'}</div><div class="val" style="font-size:15px">${esc(erp.parent_kakao_id)||'—'}</div></div>
+  `;
+  // initialize message empty
+}
+
+window.applyTalkTemplate = function(){
+  const erp = _state.full.erp || {};
+  const name = erp.username || (_lang==='en'?'student':'학생');
+  const tpl = $('talkTpl').value;
+  const map = {
+    reminder: _lang==='en'
+      ? `Hello! ${name}'s class is starting soon. Please be ready 5 mins before.`
+      : `안녕하세요! ${name} 학생의 수업이 곧 시작됩니다. 5분 전까지 준비해주세요. 🥭`,
+    absent:   _lang==='en'
+      ? `Hi! ${name} was absent today. Please let us know if everything is ok.`
+      : `안녕하세요! ${name} 학생이 오늘 결석했습니다. 혹시 무슨 일이 있을까요? 연락 부탁드립니다.`,
+    report:   _lang==='en'
+      ? `Hello! ${name}'s monthly evaluation report is ready. Please check the link in the parent app.`
+      : `안녕하세요! ${name} 학생의 월간 평가서가 준비되었습니다. 학부모 앱에서 확인해주세요. 📋`,
+    payment:  _lang==='en'
+      ? `Hi! ${name}'s next month tuition is due. Please process payment within 3 days.`
+      : `안녕하세요! ${name} 학생의 다음 달 수강료가 결제 예정입니다. 3일 내 처리 부탁드립니다. 💰`,
+    extension:_lang==='en'
+      ? `Hi! ${name}'s course will end on ${erp.end_date||'(date)'}. Would you like to extend?`
+      : `안녕하세요! ${name} 학생의 수강이 ${erp.end_date||'(날짜)'} 에 만료됩니다. 연장하시겠어요? 🗓️`,
+  };
+  if (map[tpl]) $('talkMsg').value = map[tpl];
+};
+
+window.copyTalkMsg = function(){
+  const txt = $('talkMsg').value;
+  if (!txt) { toast(_lang==='en'?'Empty message':'메시지가 비어있습니다', true); return; }
+  navigator.clipboard.writeText(txt).then(() => toast(_lang==='en'?'Copied!':'복사 완료')).catch(() => toast(_lang==='en'?'Copy failed':'복사 실패', true));
+};
+
+window.sendTalk = function(){
+  const erp = _state.full.erp || {};
+  const to = $('talkTo').value;
+  const msg = $('talkMsg').value;
+  if (!msg) { toast(_lang==='en'?'Enter message first':'먼저 메시지를 입력하세요', true); return; }
+  const enc = encodeURIComponent(msg);
+  let target = '';
+  if (to === 'student') {
+    const k = erp.kakao_id;
+    if (!k) { toast(_lang==='en'?'No student Kakao ID':'학생 카톡 ID 없음', true); return; }
+    // 카카오톡 ID 검색 — kakao://는 카톡 친구 추가 화면을 못 띄우므로 클립보드 복사 + 카카오 열기
+    navigator.clipboard.writeText(msg).then(()=>{});
+    target = 'https://accounts.kakao.com/login?continue=https://talk.kakao.com';
+    alert((_lang==='en'?'Message copied. Search Kakao ID: ':'메시지를 복사했습니다. 카카오톡에서 ID 검색: ') + k);
+  } else if (to === 'parent') {
+    const k = erp.parent_kakao_id;
+    if (!k) { toast(_lang==='en'?'No parent Kakao ID':'부모 카톡 ID 없음', true); return; }
+    navigator.clipboard.writeText(msg).then(()=>{});
+    alert((_lang==='en'?'Message copied. Search Kakao ID: ':'메시지를 복사했습니다. 카카오톡에서 ID 검색: ') + k);
+    return;
+  } else if (to === 'phone_student') {
+    const p = (erp.student_phone||'').replace(/[^0-9]/g, '');
+    if (!p) { toast(_lang==='en'?'No student phone':'학생 전화번호 없음', true); return; }
+    target = `sms:${p}?body=${enc}`;
+  } else if (to === 'phone_parent') {
+    const p = (erp.parent_phone||'').replace(/[^0-9]/g, '');
+    if (!p) { toast(_lang==='en'?'No parent phone':'부모 전화번호 없음', true); return; }
+    target = `sms:${p}?body=${enc}`;
+  }
+  if (target) location.href = target;
+};
 
 // ═══════════════════════ 📋 평가서 보기 — 종합 리포트 카드 ═══════════════════════
 let _rpCharts = {};

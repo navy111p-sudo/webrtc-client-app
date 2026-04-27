@@ -1991,6 +1991,91 @@ export async function handleMangoApi(
       }
     }
 
+    // /api/admin/student/:uid/extend (POST — 수강 연장)
+    //   body: { months: 1|3|6|12 } 또는 { new_end_date: 'YYYY-MM-DD' }
+    //   - students_erp.end_date 갱신
+    //   - 활성 enrollments 의 ended_at 도 같이 연장 (있으면)
+    //   - extension_log 에 기록 (감사 추적)
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/extend$/);
+      if (m && method === 'POST') {
+        await ensureStudentDetailSchema();
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_extensions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, prev_end_date TEXT, new_end_date TEXT NOT NULL, months_added INTEGER, reason TEXT, created_by TEXT, created_at INTEGER NOT NULL);`);
+        const uid = decodeURIComponent(m[1]);
+        const b = await parseJsonBody(request);
+        if (!b) return invalidBody(['months or new_end_date']);
+
+        // 현재 end_date 조회
+        const cur = await env.DB.prepare(
+          `SELECT end_date FROM students_erp WHERE student_id = ? OR login_id = ? OR username = ? LIMIT 1`
+        ).bind(uid, uid, uid).first<{ end_date: string }>();
+
+        // 새 종료일 계산
+        let newEnd: string;
+        const months = parseInt(b.months, 10);
+        if (b.new_end_date && /^\d{4}-\d{2}-\d{2}$/.test(b.new_end_date)) {
+          newEnd = b.new_end_date;
+        } else if (months > 0 && months <= 60) {
+          // 기존 end_date 기준, 없으면 오늘 기준
+          const baseStr = (cur?.end_date && /^\d{4}-\d{2}-\d{2}$/.test(cur.end_date))
+            ? cur.end_date
+            : new Date().toISOString().slice(0, 10);
+          const d = new Date(baseStr + 'T00:00:00Z');
+          d.setUTCMonth(d.getUTCMonth() + months);
+          newEnd = d.toISOString().slice(0, 10);
+        } else {
+          return json({ ok: false, error: 'invalid_months_or_date' }, 400);
+        }
+
+        // students_erp.end_date 갱신
+        await env.DB.prepare(
+          `UPDATE students_erp SET end_date = ?, updated_at = ?
+           WHERE student_id = ? OR login_id = ? OR username = ?`
+        ).bind(newEnd, Date.now(), uid, uid, uid).run();
+
+        // enrollments 도 함께 연장 (활성 행 1개)
+        const newEndMs = new Date(newEnd + 'T23:59:59Z').getTime();
+        await env.DB.prepare(
+          `UPDATE enrollments SET ended_at = ?, status = 'confirmed', updated_at = ?
+           WHERE student_user_id = ? AND (status = 'pending' OR status = 'confirmed' OR status IS NULL)`
+        ).bind(newEndMs, Date.now(), uid).run();
+
+        // 연장 로그 기록
+        await env.DB.prepare(
+          `INSERT INTO student_extensions (user_id, prev_end_date, new_end_date, months_added, reason, created_by, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          uid,
+          cur?.end_date || null,
+          newEnd,
+          months || null,
+          b.reason || null,
+          b.created_by || 'admin',
+          Date.now()
+        ).run();
+
+        return json({
+          ok: true,
+          prev_end_date: cur?.end_date || null,
+          new_end_date: newEnd,
+          months_added: months || null
+        });
+      }
+    }
+
+    // /api/admin/student/:uid/extensions (GET — 연장 이력)
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/extensions$/);
+      if (m && method === 'GET') {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_extensions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, prev_end_date TEXT, new_end_date TEXT NOT NULL, months_added INTEGER, reason TEXT, created_by TEXT, created_at INTEGER NOT NULL);`);
+        const uid = decodeURIComponent(m[1]);
+        const rs = await env.DB.prepare(
+          `SELECT * FROM student_extensions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`
+        ).bind(uid).all();
+        return json({ ok: true, items: rs.results || [] });
+      }
+    }
+
     // ===== 녹화(Recording) =====
     if (path === '/api/recordings/start' && method === 'POST') {
       const b = await request.json() as any;
