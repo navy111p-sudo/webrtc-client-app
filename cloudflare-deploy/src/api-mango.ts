@@ -1621,7 +1621,11 @@ export async function handleMangoApi(
     //   - 요약 (기간 내 집계)
     //   - 일자별 by_day (차트용)
     //   - 세션 리스트 (최근순)
-    if (path.startsWith('/api/admin/student/') && method === 'GET') {
+    //
+    //   ⚠ Phase 12 — /api/admin/student/:uid/(full|consultations|...) 같은 sub-route 가 추가되면서
+    //      `startsWith` 매칭이 충돌함. /api/admin/student/foo/full 의 userId 가 'foo/full' 로
+    //      잘못 파싱돼 404 가 떨어졌음. user_id 만 있는 경로로 한정하기 위해 정규식으로 좁힘.
+    if (/^\/api\/admin\/student\/[^\/]+$/.test(path) && method === 'GET') {
       const userId = decodeURIComponent(path.replace('/api/admin/student/', ''));
       if (!userId) return invalidBody(['user_id(path)']);
       const days = Math.max(1, Math.min(365, parseInt(url.searchParams.get('days') || '30', 10)));
