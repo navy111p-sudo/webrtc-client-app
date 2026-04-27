@@ -556,6 +556,12 @@
         <div class="report-chartbox tall"><canvas id="rpEngage"></canvas></div>
       </div>
 
+      <h3 data-ko="🎙 발음연습 추이" data-en="🎙 Pronunciation Trend">🎙 발음연습 추이</h3>
+      <div class="grid-charts">
+        <div class="report-chartbox tall"><canvas id="rpPron"></canvas></div>
+        <div class="report-chartbox tall" style="overflow-y:auto" id="rpPronList"></div>
+      </div>
+
       <h3 data-ko="📝 평가 코멘트" data-en="📝 Comments">📝 평가 코멘트</h3>
       <span class="comment-label" data-ko="평가자 의견" data-en="Evaluator Comment">평가자 의견</span>
       <div class="comment-box" id="rpComment">—</div>
@@ -1752,12 +1758,24 @@ window.openReport = function(evalId){
   const totalSession = sm.total_session_ms || 0;
   const activePct = totalSession ? Math.round(totalActive/totalSession*100) : 0;
 
-  // ── 핵심 지표 9개 ──
+  // ── 발음연습 평가 통계 (eval_type='pronunciation' 필터링) ──
+  const pronEvals = (f.evaluations || [])
+    .filter(e => e.eval_type === 'pronunciation' && e.score_total != null)
+    .sort((a, b) => a.eval_at - b.eval_at);
+  const pronCount = pronEvals.length;
+  const pronAvg = pronCount > 0
+    ? Math.round(pronEvals.reduce((s, e) => s + Number(e.score_total||0), 0) / pronCount * 10) / 10
+    : null;
+  const pronBest = pronCount > 0 ? Math.max(...pronEvals.map(e => Number(e.score_total||0))) : null;
+  const pronLatest = pronCount > 0 ? pronEvals[pronEvals.length - 1].score_total : null;
+
+  // ── 핵심 지표 10개 (발음 평균 추가) ──
   $('rpStats').innerHTML = `
     <div class="stat-card green"><div class="lab">${t('thTotal')}</div><div class="val">${ev.score_total!=null?ev.score_total:'—'}</div><div class="sub">${t('rpScore')}</div></div>
     <div class="stat-card blue"><div class="lab">${t('thLevel')}</div><div class="val">${esc(ev.level)||'—'}</div><div class="sub">${esc(ev.eval_type)||t('rpEval')}</div></div>
     <div class="stat-card yellow"><div class="lab">${t('kpiAvgGaze')}</div><div class="val">${avgGaze}</div><div class="sub">${sm.gaze_score_count||0}${t('rpMeasured')}</div></div>
     <div class="stat-card purple"><div class="lab">${t('avgRatio')}</div><div class="val">${activePct}%</div><div class="sub">${t('rpPartake')}</div></div>
+    <div class="stat-card yellow"><div class="lab">🎙 ${_lang==='en'?'Pron. Avg':'발음 평균'}</div><div class="val" style="color:#ea580c">${pronAvg!=null?pronAvg:'—'}</div><div class="sub">${pronCount}${_lang==='en'?' tries':'회 연습'}${pronLatest!=null?' · '+(_lang==='en'?'last ':'최근 ')+pronLatest:''}</div></div>
     <div class="stat-card green"><div class="lab">${t('rpAttended')}</div><div class="val">${totalAttendDays}</div><div class="sub">${_state.days}${_lang==='en'?'-day':'일 기준'}</div></div>
     <div class="stat-card red"><div class="lab">${t('rpAbsent')}</div><div class="val">${absent}</div><div class="sub">${t('rpExpect')} ${expected}${_lang==='en'?'':'회 중'}</div></div>
     <div class="stat-card yellow"><div class="lab">${t('rpRewards')}</div><div class="val">${totalRewards}${_lang==='en'?'':'개'}</div><div class="sub">${totalRewardValue>0?(totalRewardValue+(_lang==='en'?' pts':'점')):'—'}</div></div>
@@ -1840,6 +1858,97 @@ window.openReport = function(evalId){
     }
   });
 
+  // ── 발음연습 막대차트 + 리스트 (눈높이별 색상) ──
+  if (_rpCharts.pron) _rpCharts.pron.destroy();
+  if (pronEvals.length > 0) {
+    const labels = pronEvals.map(e => fmtDay(e.eval_at));
+    const data = pronEvals.map(e => Number(e.score_total||0));
+    // 점수 구간별 색상 (90+ 우수 / 70+ 양호 / 50+ 보통 / 그 미만 미흡)
+    const colors = data.map(v =>
+      v >= 90 ? '#10b981' : v >= 70 ? '#84cc16' : v >= 50 ? '#f59e0b' : '#ef4444'
+    );
+    _rpCharts.pron = new Chart($('rpPron').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{
+          label: _lang==='en'?'Pronunciation Score':'발음 점수',
+          data,
+          backgroundColor: colors,
+          borderRadius: 8,
+          maxBarThickness: 60
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: {
+            display: true,
+            text: (_lang==='en'?'Pronunciation Score by Date':'날짜별 발음 점수'),
+            color: '#666', font: { size: 12, weight: '700' }
+          },
+          tooltip: {
+            callbacks: {
+              afterLabel: (ctx) => {
+                const e = pronEvals[ctx.dataIndex];
+                const lines = [];
+                if (e.level) lines.push((_lang==='en'?'Level: ':'레벨: ') + e.level);
+                if (e.evaluator) lines.push((_lang==='en'?'By: ':'평가자: ') + e.evaluator);
+                if (e.comment) lines.push(e.comment.slice(0, 60));
+                return lines;
+              }
+            }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true, max: 100,
+            ticks: { color: '#666' }, grid: { color: '#e0e0e0' },
+            title: { display: true, text: (_lang==='en'?'Score (0~100)':'점수 (0~100)'), color: '#666' }
+          },
+          x: {
+            ticks: { color: '#666', maxRotation: 60, minRotation: 30, font: { size: 10 } },
+            grid: { color: '#e0e0e0' }
+          }
+        }
+      }
+    });
+    // 발음 연습 최근 10건 리스트 (최신순)
+    const recent = pronEvals.slice().reverse().slice(0, 10);
+    const dot = (v) => v >= 90 ? '🟢' : v >= 70 ? '🟡' : v >= 50 ? '🟠' : '🔴';
+    $('rpPronList').innerHTML = `
+      <h3 style="margin:0 0 10px;font-size:13px;color:#666;font-weight:700;text-transform:uppercase;letter-spacing:.6px;border-bottom:1px solid #eee;padding-bottom:6px">
+        ${_lang==='en'?'🎙 Recent Pronunciation Records':'🎙 최근 발음연습 기록'}
+      </h3>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#fafafa">
+            <th style="padding:6px 8px;text-align:left;color:#888;font-weight:600;font-size:11px">${_lang==='en'?'Date':'일자'}</th>
+            <th style="padding:6px 8px;text-align:right;color:#888;font-weight:600;font-size:11px">${_lang==='en'?'Score':'점수'}</th>
+            <th style="padding:6px 8px;text-align:left;color:#888;font-weight:600;font-size:11px">${_lang==='en'?'Comment':'코멘트'}</th>
+          </tr>
+        </thead>
+        <tbody>${
+          recent.map(e => `<tr style="border-bottom:1px solid #f0f0f0">
+            <td style="padding:6px 8px">${fmtDay(e.eval_at)}</td>
+            <td style="padding:6px 8px;text-align:right;font-weight:700">${dot(e.score_total)} ${e.score_total}</td>
+            <td style="padding:6px 8px;color:#666;font-size:11px">${esc(e.comment||'').slice(0,40) || '—'}</td>
+          </tr>`).join('')
+        }</tbody>
+      </table>`;
+  } else {
+    $('rpPron').parentElement.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#aaa;font-size:13px;text-align:center;padding:20px">
+        <div>
+          <div style="font-size:40px;margin-bottom:10px">🎙</div>
+          <div>${_lang==='en'?'No pronunciation practice yet':'아직 발음연습 기록이 없습니다'}</div>
+          <div style="font-size:11px;color:#bbb;margin-top:6px">${_lang==='en'?'Use the practice button on the Evaluation tab':'평가서 탭의 발음연습 버튼으로 시작'}</div>
+        </div>
+      </div>`;
+    $('rpPronList').innerHTML = '';
+  }
+
   // ── 코멘트 ──
   const cm = $('rpComment');
   if (ev.comment) { cm.textContent = ev.comment; cm.classList.remove('empty'); }
@@ -1887,6 +1996,7 @@ window.closeReport = function(){
   document.body.style.overflow = '';
   if (_rpCharts.radar) { _rpCharts.radar.destroy(); _rpCharts.radar = null; }
   if (_rpCharts.engage){ _rpCharts.engage.destroy(); _rpCharts.engage = null; }
+  if (_rpCharts.pron)  { _rpCharts.pron.destroy();   _rpCharts.pron = null; }
 };
 
 document.addEventListener('keydown', (ev) => {
