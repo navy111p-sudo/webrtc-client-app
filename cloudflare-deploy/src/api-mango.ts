@@ -869,6 +869,155 @@ export async function handleMangoApi(
       return csvResponse(fname, csv);
     }
 
+    // ════════════════════════════════════════════════════════════
+    // 💵 Phase 15 — 매출 / 학생 흐름 통계
+    //   GET /api/admin/stats/revenue?period=day|month|quarter|half|year&from=YYYY-MM-DD&to=YYYY-MM-DD
+    //     · student_payments 테이블 기준 (status='paid' 만 합산)
+    //     · period 별 그룹핑 (날짜·연월·연-Q1~Q4·연-1H/2H·연도)
+    //   GET /api/admin/stats/student-flow?from=&to=
+    //     · students_erp 의 signup_date / end_date 기준
+    //     · 일자별 신규(new), 탈락(dropped), 활성(active) 카운트
+    // ════════════════════════════════════════════════════════════
+
+    if (method === 'GET' && path === '/api/admin/stats/revenue') {
+      // 신규 환경에서 student_payments 가 없을 수 있으니 자동 생성
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_payments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, paid_at INTEGER, period_start TEXT, period_end TEXT, amount_krw INTEGER NOT NULL, method TEXT, memo TEXT, status TEXT DEFAULT 'paid', created_at INTEGER NOT NULL);`);
+
+      const period = (url.searchParams.get('period') || 'day').toLowerCase();
+      const fromStr = url.searchParams.get('from') || '';
+      const toStr = url.searchParams.get('to') || '';
+      const validPeriods = new Set(['day', 'month', 'quarter', 'half', 'year']);
+      if (!validPeriods.has(period)) {
+        return json({ ok: false, error: 'invalid_period', allowed: Array.from(validPeriods) }, 400);
+      }
+
+      // 기본 기간: 최근 90일 (period 가 day) / 최근 1년 (그 외)
+      const now = Date.now();
+      let fromMs = 0, toMs = now + 86400000;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(fromStr)) fromMs = new Date(fromStr + 'T00:00:00Z').getTime();
+      else if (period === 'day') fromMs = now - 90 * 86400000;
+      else fromMs = now - 365 * 86400000;
+      if (/^\d{4}-\d{2}-\d{2}$/.test(toStr)) toMs = new Date(toStr + 'T23:59:59Z').getTime();
+
+      // SQLite expression: KST 기준 date() 변환 (paid_at = ms → seconds → +9h shift)
+      const kstDate = `date((paid_at + 32400000) / 1000, 'unixepoch')`;
+      let groupExpr = '';
+      let labelExpr = '';
+      if (period === 'day') {
+        groupExpr = kstDate; labelExpr = kstDate;
+      } else if (period === 'month') {
+        groupExpr = `substr(${kstDate}, 1, 7)`;
+        labelExpr = groupExpr;
+      } else if (period === 'quarter') {
+        // YYYY-Qn
+        groupExpr = `substr(${kstDate}, 1, 4) || '-Q' || ((CAST(substr(${kstDate}, 6, 2) AS INTEGER) + 2) / 3)`;
+        labelExpr = groupExpr;
+      } else if (period === 'half') {
+        groupExpr = `substr(${kstDate}, 1, 4) || '-' || (CASE WHEN CAST(substr(${kstDate}, 6, 2) AS INTEGER) <= 6 THEN '1H' ELSE '2H' END)`;
+        labelExpr = groupExpr;
+      } else { // year
+        groupExpr = `substr(${kstDate}, 1, 4)`;
+        labelExpr = groupExpr;
+      }
+
+      try {
+        const rows = await env.DB.prepare(
+          `SELECT ${labelExpr} AS label, SUM(amount_krw) AS revenue, COUNT(*) AS pay_count
+           FROM student_payments
+           WHERE status = 'paid' AND paid_at IS NOT NULL AND paid_at BETWEEN ? AND ?
+           GROUP BY ${groupExpr}
+           ORDER BY label ASC`
+        ).bind(fromMs, toMs).all<{ label: string; revenue: number; pay_count: number }>();
+
+        const items = (rows.results || []);
+        const total = items.reduce((s, r) => s + (r.revenue || 0), 0);
+
+        // 추가 요약: 일/월/분기/반기/연 매출 (현재 시점 기준)
+        const todayKst = new Date(Date.now() + 9*3600*1000).toISOString().slice(0,10);
+        const thisMonth = todayKst.slice(0, 7);
+        const thisYear = todayKst.slice(0, 4);
+        const thisMonthNum = parseInt(todayKst.slice(5, 7), 10);
+        const thisQuarter = thisYear + '-Q' + (Math.floor((thisMonthNum - 1) / 3) + 1);
+        const thisHalf = thisYear + '-' + (thisMonthNum <= 6 ? '1H' : '2H');
+
+        const summaryRows = await env.DB.prepare(
+          `SELECT
+             COALESCE(SUM(CASE WHEN ${kstDate} = ? THEN amount_krw END), 0) AS today_rev,
+             COALESCE(SUM(CASE WHEN substr(${kstDate}, 1, 7) = ? THEN amount_krw END), 0) AS month_rev,
+             COALESCE(SUM(CASE WHEN substr(${kstDate}, 1, 4) || '-Q' || ((CAST(substr(${kstDate}, 6, 2) AS INTEGER) + 2) / 3) = ? THEN amount_krw END), 0) AS quarter_rev,
+             COALESCE(SUM(CASE WHEN substr(${kstDate}, 1, 4) || '-' || (CASE WHEN CAST(substr(${kstDate}, 6, 2) AS INTEGER) <= 6 THEN '1H' ELSE '2H' END) = ? THEN amount_krw END), 0) AS half_rev,
+             COALESCE(SUM(CASE WHEN substr(${kstDate}, 1, 4) = ? THEN amount_krw END), 0) AS year_rev
+           FROM student_payments
+           WHERE status = 'paid' AND paid_at IS NOT NULL`
+        ).bind(todayKst, thisMonth, thisQuarter, thisHalf, thisYear).first<any>();
+
+        return json({
+          ok: true,
+          period,
+          from: new Date(fromMs).toISOString().slice(0, 10),
+          to:   new Date(toMs).toISOString().slice(0, 10),
+          items,
+          total,
+          summary: summaryRows || { today_rev:0, month_rev:0, quarter_rev:0, half_rev:0, year_rev:0 }
+        });
+      } catch (e: any) {
+        return json({ ok: false, error: String(e?.message || e) }, 500);
+      }
+    }
+
+    if (method === 'GET' && path === '/api/admin/stats/student-flow') {
+      // students_erp 의 signup_date / end_date 기준 일자별 흐름
+      const fromStr = url.searchParams.get('from') || '';
+      const toStr = url.searchParams.get('to') || '';
+      const today = new Date(Date.now() + 9*3600*1000).toISOString().slice(0,10);
+      const from = /^\d{4}-\d{2}-\d{2}$/.test(fromStr) ? fromStr
+                 : new Date(Date.now() - 90*86400000 + 9*3600*1000).toISOString().slice(0,10);
+      const to = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? toStr : today;
+
+      try {
+        // 신규 가입 (signup_date 기준)
+        const newRows = await env.DB.prepare(
+          `SELECT signup_date AS date, COUNT(*) AS cnt
+           FROM students_erp
+           WHERE signup_date IS NOT NULL AND signup_date BETWEEN ? AND ?
+           GROUP BY signup_date ORDER BY signup_date ASC`
+        ).bind(from, to).all<{ date: string; cnt: number }>();
+
+        // 탈락 (end_date < 오늘 + status 가 정상 아님)
+        const dropRows = await env.DB.prepare(
+          `SELECT end_date AS date, COUNT(*) AS cnt
+           FROM students_erp
+           WHERE end_date IS NOT NULL AND end_date BETWEEN ? AND ?
+             AND end_date < ?
+             AND status != '정상'
+           GROUP BY end_date ORDER BY end_date ASC`
+        ).bind(from, to, today).all<{ date: string; cnt: number }>();
+
+        // 전체 학생 수 (현재 활성 — 종료일 미만이거나 미설정)
+        const activeRow = await env.DB.prepare(
+          `SELECT COUNT(*) AS active
+           FROM students_erp
+           WHERE end_date IS NULL OR end_date >= ?`
+        ).bind(today).first<{ active: number }>();
+
+        const totalNew = (newRows.results || []).reduce((s, r) => s + (r.cnt || 0), 0);
+        const totalDropped = (dropRows.results || []).reduce((s, r) => s + (r.cnt || 0), 0);
+
+        return json({
+          ok: true,
+          from, to,
+          new_by_date: newRows.results || [],
+          dropped_by_date: dropRows.results || [],
+          active: activeRow?.active || 0,
+          total_new: totalNew,
+          total_dropped: totalDropped,
+          net_growth: totalNew - totalDropped
+        });
+      } catch (e: any) {
+        return json({ ok: false, error: String(e?.message || e) }, 500);
+      }
+    }
+
     // ===== 💰 저장소·비용 통계 (Phase 7) =====
     //   GET /api/admin/stats/storage
     //   - D1 테이블별 row 수 + 녹화 총 size_bytes

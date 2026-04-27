@@ -905,9 +905,39 @@
 
 <div class="grid" id="kpi"></div>
 
-<details class="table-card menu-card">
-  <summary><span data-ko="📅 일자별 차트 (출석·보상)" data-en="📅 Daily Charts (Attendance & Rewards)">📅 일자별 차트 (출석·보상)</span></summary>
+<details class="table-card menu-card" open id="card-daily-charts">
+  <summary><span data-ko="📅 일자별 차트 (출석·보상·매출·학생)" data-en="📅 Daily Charts (Attendance · Rewards · Revenue · Students)">📅 일자별 차트 (출석·보상·매출·학생)</span></summary>
   <div class="menu-body">
+
+    <!-- 💰 매출 5단계 KPI 카드 -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px" id="rev-kpis">
+      <div class="card" style="text-align:center"><div class="card-label" data-ko="오늘 매출" data-en="Today">오늘 매출</div><div class="card-value" id="rev-today">—</div></div>
+      <div class="card" style="text-align:center"><div class="card-label" data-ko="이번 달 매출" data-en="This Month">이번 달 매출</div><div class="card-value" id="rev-month">—</div></div>
+      <div class="card" style="text-align:center"><div class="card-label" data-ko="이번 분기 매출" data-en="This Quarter">이번 분기 매출</div><div class="card-value" id="rev-quarter">—</div></div>
+      <div class="card" style="text-align:center"><div class="card-label" data-ko="반기 매출" data-en="Half-year">반기 매출</div><div class="card-value" id="rev-half">—</div></div>
+      <div class="card" style="text-align:center"><div class="card-label" data-ko="연간 매출" data-en="This Year">연간 매출</div><div class="card-value" id="rev-year">—</div></div>
+    </div>
+
+    <!-- 📅 기간 컨트롤 -->
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:10px 14px;margin-bottom:12px">
+      <span style="font-size:12px;font-weight:700;color:#7c2d12" data-ko="📅 기간" data-en="📅 Period">📅 기간</span>
+      <select id="rev-period" style="padding:6px 12px;font-size:13px;border-radius:8px;border:1px solid #d1d5db">
+        <option value="day"     data-ko="일별"   data-en="Daily">일별</option>
+        <option value="month"   data-ko="월별"   data-en="Monthly" selected>월별</option>
+        <option value="quarter" data-ko="분기별" data-en="Quarterly">분기별</option>
+        <option value="half"    data-ko="반기별" data-en="Half-year">반기별</option>
+        <option value="year"    data-ko="연도별" data-en="Yearly">연도별</option>
+      </select>
+      <input type="date" id="rev-from" style="padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #d1d5db">
+      <span>~</span>
+      <input type="date" id="rev-to" style="padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #d1d5db">
+      <button id="rev-apply" class="primary" style="padding:6px 16px;font-size:13px;border-radius:8px" data-ko="적용" data-en="Apply">적용</button>
+      <span style="margin-left:auto;font-size:11px;color:#6b7280">
+        <span data-ko="범위 매출 합계:" data-en="Range total:">범위 매출 합계:</span>
+        <strong id="rev-total" style="color:#c2410c;font-size:15px">—</strong>
+      </span>
+    </div>
+
     <div class="charts">
       <div class="chart-card">
         <div class="chart-title" data-ko="📅 일자별 출석 (고유 사용자 수)" data-en="📅 Daily Attendance (Unique Users)">📅 일자별 출석 (고유 사용자 수)</div>
@@ -917,6 +947,22 @@
         <div class="chart-title" data-ko="🎁 보상 발급 현황" data-en="🎁 Rewards Issued">🎁 보상 발급 현황</div>
         <div class="chart-wrapper"><canvas id="chart-rewards"></canvas></div>
       </div>
+      <div class="chart-card">
+        <div class="chart-title" data-ko="💰 매출 추이 (선택 기간)" data-en="💰 Revenue Trend (Selected Period)">💰 매출 추이 (선택 기간)</div>
+        <div class="chart-wrapper"><canvas id="chart-revenue"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title" data-ko="👥 학생 흐름 (신규·탈락·증가)" data-en="👥 Student Flow (New · Dropped · Net)">👥 학생 흐름 (신규·탈락·증가)</div>
+        <div class="chart-wrapper"><canvas id="chart-student-flow"></canvas></div>
+      </div>
+    </div>
+
+    <!-- 📊 학생 흐름 KPI 카드 -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:14px">
+      <div class="card" style="text-align:center;border-left:4px solid #10b981"><div class="card-label" data-ko="활성 학생" data-en="Active">활성 학생</div><div class="card-value" id="sf-active" style="color:#10b981">—</div></div>
+      <div class="card" style="text-align:center;border-left:4px solid #3b82f6"><div class="card-label" data-ko="기간 내 신규" data-en="New (period)">기간 내 신규</div><div class="card-value" id="sf-new" style="color:#3b82f6">—</div></div>
+      <div class="card" style="text-align:center;border-left:4px solid #ef4444"><div class="card-label" data-ko="기간 내 탈락" data-en="Dropped (period)">기간 내 탈락</div><div class="card-value" id="sf-dropped" style="color:#ef4444">—</div></div>
+      <div class="card" style="text-align:center;border-left:4px solid #f59e0b"><div class="card-label" data-ko="순 증가" data-en="Net Growth">순 증가</div><div class="card-value" id="sf-net" style="color:#f59e0b">—</div></div>
     </div>
   </div>
 </details>
@@ -1817,7 +1863,162 @@ async function load() {
 
   // 비상 이벤트 렌더 블록 제거됨 — #emergency-table DOM 이 없으므로 null 참조 방지.
   //   백엔드 /api/dashboard 는 여전히 emergency 배열을 반환하지만, UI 에서 쓰지 않음.
+
+  // 매출·학생흐름 차트는 별도 endpoint 라 dashboard load 와 함께 같이 호출
+  loadRevenueChart();
+  loadStudentFlowChart();
 }
+
+/* ════════════════════════════════════════════════════════════
+   💵 Phase 15 — 매출·학생흐름 차트 + 기간 컨트롤
+════════════════════════════════════════════════════════════ */
+let chartRev = null, chartFlow = null;
+
+function fmtKrwShort(n) {
+  const v = Number(n) || 0;
+  if (v >= 100000000) return (v/100000000).toFixed(1) + (adminLang==='en'?'억':'억');
+  if (v >= 10000)     return (v/10000).toFixed(1) + (adminLang==='en'?'만':'만');
+  return v.toLocaleString('ko-KR') + (adminLang==='en'?'₩':'원');
+}
+
+async function loadRevenueChart() {
+  const period = (document.getElementById('rev-period')||{}).value || 'month';
+  const fromV  = (document.getElementById('rev-from')||{}).value || '';
+  const toV    = (document.getElementById('rev-to')||{}).value || '';
+  const params = new URLSearchParams({ period });
+  if (fromV) params.set('from', fromV);
+  if (toV)   params.set('to', toV);
+  try {
+    const r = await fetch('/api/admin/stats/revenue?' + params, { credentials:'include', cache:'no-store' });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || r.status);
+
+    // 5단계 KPI 갱신
+    const s = j.summary || {};
+    document.getElementById('rev-today').textContent   = fmtKrwShort(s.today_rev);
+    document.getElementById('rev-month').textContent   = fmtKrwShort(s.month_rev);
+    document.getElementById('rev-quarter').textContent = fmtKrwShort(s.quarter_rev);
+    document.getElementById('rev-half').textContent    = fmtKrwShort(s.half_rev);
+    document.getElementById('rev-year').textContent    = fmtKrwShort(s.year_rev);
+
+    // 범위 합계
+    document.getElementById('rev-total').textContent = fmtKrwShort(j.total);
+
+    // 차트 그리기
+    if (chartRev) chartRev.destroy();
+    chartRev = new Chart(document.getElementById('chart-revenue'), {
+      type: 'bar',
+      data: {
+        labels: j.items.map(it => it.label),
+        datasets: [
+          {
+            label: (adminLang==='en'?'Revenue':'매출'),
+            data: j.items.map(it => it.revenue),
+            backgroundColor: 'rgba(245, 158, 11, 0.7)',
+            borderColor: '#ea580c',
+            borderWidth: 1,
+            borderRadius: 6,
+            yAxisID: 'y'
+          },
+          {
+            label: (adminLang==='en'?'Payment count':'결제 건수'),
+            data: j.items.map(it => it.pay_count),
+            type: 'line',
+            borderColor: '#a855f7',
+            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+            tension: 0.3,
+            yAxisID: 'y1'
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio: false, responsive: true,
+        scales: {
+          y:  { position:'left',  beginAtZero:true, title:{display:true,text:(adminLang==='en'?'Revenue (KRW)':'매출(원)')},
+                ticks:{ callback:(v)=>fmtKrwShort(v) }},
+          y1: { position:'right', beginAtZero:true, grid:{drawOnChartArea:false}, title:{display:true,text:(adminLang==='en'?'Count':'건수')}}
+        }
+      }
+    });
+  } catch (e) {
+    console.warn('[revenue] load failed:', e);
+    if (chartRev) { chartRev.destroy(); chartRev = null; }
+    const el = document.getElementById('chart-revenue');
+    if (el && el.parentElement) el.parentElement.innerHTML = '<div style="text-align:center;padding:30px;color:#9ca3af;font-size:13px">'+(adminLang==='en'?'No payment data yet':'결제 데이터 없음')+'</div>';
+  }
+}
+
+async function loadStudentFlowChart() {
+  const fromV = (document.getElementById('rev-from')||{}).value || '';
+  const toV   = (document.getElementById('rev-to')||{}).value || '';
+  const params = new URLSearchParams();
+  if (fromV) params.set('from', fromV);
+  if (toV)   params.set('to', toV);
+  try {
+    const r = await fetch('/api/admin/stats/student-flow?' + params, { credentials:'include', cache:'no-store' });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || r.status);
+
+    document.getElementById('sf-active').textContent  = j.active;
+    document.getElementById('sf-new').textContent     = j.total_new;
+    document.getElementById('sf-dropped').textContent = j.total_dropped;
+    const net = j.net_growth;
+    const netEl = document.getElementById('sf-net');
+    netEl.textContent = (net > 0 ? '+' : '') + net;
+    netEl.style.color = net >= 0 ? '#10b981' : '#ef4444';
+
+    // 일자별 데이터 조립 — 두 시리즈를 같은 라벨 축에 매핑
+    const allDates = Array.from(new Set([
+      ...(j.new_by_date     || []).map(x => x.date),
+      ...(j.dropped_by_date || []).map(x => x.date)
+    ])).sort();
+    const newMap = new Map((j.new_by_date     || []).map(x => [x.date, x.cnt]));
+    const drpMap = new Map((j.dropped_by_date || []).map(x => [x.date, x.cnt]));
+
+    if (chartFlow) chartFlow.destroy();
+    chartFlow = new Chart(document.getElementById('chart-student-flow'), {
+      type: 'bar',
+      data: {
+        labels: allDates,
+        datasets: [
+          { label: (adminLang==='en'?'New':'신규'),
+            data: allDates.map(d => newMap.get(d) || 0),
+            backgroundColor: 'rgba(59, 130, 246, 0.75)', borderColor:'#2563eb', borderWidth:1, borderRadius:5
+          },
+          { label: (adminLang==='en'?'Dropped':'탈락'),
+            data: allDates.map(d => -(drpMap.get(d) || 0)),  // 음수로 표시 (아래쪽)
+            backgroundColor: 'rgba(239, 68, 68, 0.7)', borderColor:'#dc2626', borderWidth:1, borderRadius:5
+          }
+        ]
+      },
+      options: {
+        maintainAspectRatio:false, responsive:true,
+        scales: { y: { beginAtZero:true, ticks:{ callback:(v)=>Math.abs(v) }, title:{display:true, text:(adminLang==='en'?'Students':'학생 수')} } }
+      }
+    });
+  } catch (e) {
+    console.warn('[student-flow] load failed:', e);
+    if (chartFlow) { chartFlow.destroy(); chartFlow = null; }
+    ['sf-active','sf-new','sf-dropped','sf-net'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = '—'; });
+  }
+}
+
+// 적용 버튼 + 기간 변경 핸들러
+document.getElementById('rev-apply')?.addEventListener('click', () => {
+  loadRevenueChart();
+  loadStudentFlowChart();
+});
+document.getElementById('rev-period')?.addEventListener('change', loadRevenueChart);
+
+// 기본 날짜 채우기 (최근 6개월)
+(function setDefaultDates(){
+  const today = new Date();
+  const sixMoAgo = new Date(today.getTime() - 180 * 86400000);
+  const f = document.getElementById('rev-from');
+  const t = document.getElementById('rev-to');
+  if (f && !f.value) f.value = sixMoAgo.toISOString().slice(0, 10);
+  if (t && !t.value) t.value = today.toISOString().slice(0, 10);
+})();
 
 // 통합 녹화 목록 상태 (필터링을 위해 전역 보관)
 var _unifiedRecRows = [];
