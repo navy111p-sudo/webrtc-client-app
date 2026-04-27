@@ -1506,6 +1506,39 @@
   </div>
 </details>
 
+<!-- 🎯 발음교정 (외부 도구) -->
+<details class="table-card menu-card" id="card-pronunciation">
+  <summary><span data-ko="🎯 발음교정" data-en="🎯 Pronunciation">🎯 발음교정</span></summary>
+  <div class="menu-body">
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:linear-gradient(135deg,rgba(254,243,199,0.5),rgba(254,215,170,0.4));border:1px solid rgba(245,158,11,0.3);border-radius:12px;padding:14px 18px;margin-bottom:12px">
+      <span style="font-size:24px">🎙</span>
+      <div style="flex:1;min-width:240px">
+        <div style="font-size:14px;font-weight:700;color:#7c2d12" data-ko="망고아이 발음교정 연습" data-en="Mangoi Pronunciation Practice">망고아이 발음교정 연습</div>
+        <div style="font-size:11px;color:#92400e;margin-top:2px" data-ko="음성 인식 + AI 발음 평가 — 외부 페이지에서 학생이 직접 연습" data-en="Speech recognition + AI pronunciation feedback — external practice page">음성 인식 + AI 발음 평가 — 외부 페이지에서 학생이 직접 연습</div>
+      </div>
+      <a href="https://mangoi-speech.pages.dev/practice" target="_blank" rel="noopener"
+         class="primary"
+         style="padding:8px 18px;font-size:13px;border-radius:8px;text-decoration:none;display:inline-flex;align-items:center;gap:6px;font-weight:700"
+         data-ko="🔗 새 탭에서 열기" data-en="🔗 Open in new tab">🔗 새 탭에서 열기</a>
+      <button onclick="togglePronPreview()" style="padding:8px 14px;font-size:13px;border:1px solid #d1d5db;border-radius:8px;background:#fff;cursor:pointer;font-weight:600" data-ko="👁 미리보기" data-en="👁 Preview">👁 미리보기</button>
+    </div>
+    <!-- iframe 미리보기 (토글로 펼침) -->
+    <div id="pron-preview" style="display:none;margin-top:10px;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;background:#fff;height:600px;position:relative">
+      <div style="position:absolute;top:8px;right:8px;z-index:5;display:flex;gap:6px">
+        <a href="https://mangoi-speech.pages.dev/practice" target="_blank" rel="noopener"
+           style="padding:5px 12px;font-size:11px;background:#1e293b;color:#fff;border-radius:6px;text-decoration:none;font-weight:600">🔗 새 탭</a>
+        <button onclick="togglePronPreview()" style="padding:5px 10px;font-size:11px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">✕</button>
+      </div>
+      <iframe src="https://mangoi-speech.pages.dev/practice"
+              style="width:100%;height:100%;border:0"
+              referrerpolicy="no-referrer"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals"
+              loading="lazy"
+              title="망고아이 발음교정"></iframe>
+    </div>
+  </div>
+</details>
+
 <!-- 수강신청 관리 -->
 <details class="table-card menu-card">
   <summary><span data-ko="📚 수강신청 관리" data-en="📚 Enrollments">📚 수강신청 관리</span></summary>
@@ -3545,6 +3578,13 @@ async function addTextbook() {
     publisher: e('tb-publisher').value||null, isbn: e('tb-isbn').value||null
   });
   if (d) { ['tb-title','tb-units','tb-publisher','tb-isbn'].forEach(id=>e(id).value=''); e('tb-level').value=''; loadTextbooks(); }
+}
+
+// 🎯 발음교정 iframe 미리보기 토글
+function togglePronPreview() {
+  const el = document.getElementById('pron-preview');
+  if (!el) return;
+  el.style.display = (el.style.display === 'none' || !el.style.display) ? 'block' : 'none';
 }
 
 // 메뉴 카드 전체 펼치기/접기 — 자동으로 legacy 영역도 보이게 처리
