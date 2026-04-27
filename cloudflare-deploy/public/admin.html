@@ -411,7 +411,24 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🥭 3D 망고 텍스트 v4 — 레퍼런스 이미지 정밀 매칭
+  /* 🥭 Phase 19f — 히어로 배너 이미지 (drag-drop 업로드한 PNG/JPG)
+     이미지 로드 실패 시 onerror 로 .hero-banner-img 가 숨고 h1 fallback 이 보임. */
+  .hero-banner-img {
+    display: block;
+    max-width: 100%;
+    width: auto;
+    height: auto;
+    max-height: 180px;
+    margin: 0 0 18px;
+    object-fit: contain;
+    object-position: left center;
+    filter: drop-shadow(0 8px 18px rgba(120, 53, 15, 0.22));
+  }
+  @media (max-width: 900px) {
+    .hero-banner-img { max-height: 100px; margin: 0 auto 14px; object-position: center; }
+  }
+
+  /* 🥭 3D 망고 텍스트 v4 — 레퍼런스 이미지 정밀 매칭 (이미지 fallback 시 사용)
      - 외곽선: 진한 갈색 → 따뜻한 앰버 (#92400e)
      - 본체: 더 밝은 노랑 그라데이션
      - 통통한 인플레이트 느낌 (font-weight + letter-spacing)
@@ -427,15 +444,15 @@
     position: relative;
     display: inline-block;
 
-    /* 망고 본체 — 더 밝고 채도 높은 노랑 그라데이션 (레퍼런스 매칭) */
+    /* 망고 본체 — 순수 노랑 그라데이션 (오렌지·갈색 빠지고 모두 노랑 톤) */
     color: #FFD93D;
     background: linear-gradient(180deg,
-      #FFFBEB 0%,
-      #FEF08A 18%,
-      #FFE873 38%,
+      #FFFCEB 0%,
+      #FFF59D 15%,
+      #FFE873 35%,
       #FFD93D 60%,
-      #F5B400 85%,
-      #C97C00 100%);
+      #FFC107 85%,
+      #FFB300 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -1045,7 +1062,10 @@
     <!-- 🥭 히어로 랜딩 (망고 캐릭터 + 거대 검색창) -->
     <section class="hero">
       <div class="hero-text">
-        <h1 data-ko="안녕하세요💛 망고아이!" data-en="Hello💛 Mangoi!" data-text="안녕하세요💛 망고아이!">안녕하세요💛 망고아이!</h1>
+        <!-- 🥭 Phase 19f — 배너 이미지 우선, 실패 시 CSS h1 fallback -->
+        <img src="/img/hero-greeting.png" alt="안녕하세요, 망고아이!" class="hero-banner-img"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block';" />
+        <h1 data-ko="안녕하세요💛 망고아이!" data-en="Hello💛 Mangoi!" data-text="안녕하세요💛 망고아이!" style="display:none">안녕하세요💛 망고아이!</h1>
         <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
         <div class="hero-search">
           <span class="hero-search-icon" aria-hidden="true">
