@@ -3618,88 +3618,76 @@ function vpLoadUrl() {
         vid.playsInline = true;
         stage.appendChild(vid);
     } else {
-        // 일반 웹사이트 → iframe 시도 + 즉시 접근 가능한 "새 탭 열기" + 차단 감지.
-        //
-        // 📱 모바일 대응 강화 (사용자 보고: "휴대폰에서는 인터넷이 안나와")
-        //   - referrerpolicy 'no-referrer' 제거 → 같은 도메인 admin 페이지의 세션 쿠키 정상 동작
-        //   - 차단 감지 타임아웃 3s → 8s (모바일 망 느린 환경 고려)
-        //   - 같은 origin URL 은 차단 감지 OFF (절대 X-Frame-Options 막힐 일 없음)
-        //   - frameBox 에 absolute 명시적 min-height 보장 → flex 0px 무너짐 방지
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;background:#0f172a;';
-
-        // 상단 주소 바 + 컨트롤
-        const bar = document.createElement('div');
-        bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 10px;background:#1e293b;border-bottom:1px solid #334155;font-size:12px;color:#cbd5e1;flex:0 0 auto;flex-wrap:wrap;';
-        bar.innerHTML = `<span style="flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌐 ${url}</span>
-            <button type="button" data-act="open" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">🔗 새 탭에서 열기</button>
-            <button type="button" data-act="retry" style="padding:6px 10px;background:#334155;color:#e2e8f0;border:none;border-radius:4px;cursor:pointer;font-size:12px;white-space:nowrap;">↻ 다시</button>`;
-        bar.querySelector('[data-act="open"]').onclick = () => window.open(url, '_blank', 'noopener');
-        bar.querySelector('[data-act="retry"]').onclick = () => vpLoadUrl();
-
-        // iframe 컨테이너 (position:relative 로 안내 오버레이 절대배치 가능)
-        // ⚠ 모바일: flex 부모 높이가 0 으로 계산되는 경우가 있어 명시적 min-height 보장
-        const frameBox = document.createElement('div');
-        frameBox.style.cssText = 'position:relative;flex:1 1 auto;min-height:300px;background:#fff;';
-
-        const iframe = document.createElement('iframe');
-        iframe.src = url;
-        iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
-        iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals');
-        // referrerpolicy 제거 — 같은 도메인 admin 페이지의 세션 쿠키 정상 흐름
-
-        // 같은 origin (workers.dev / mangoi.co.kr 등) 인지 확인 — 같으면 차단 감지 SKIP
-        let sameOrigin = false;
-        try {
-          const u = new URL(url);
-          sameOrigin = (u.host === location.host);
-        } catch {}
-
-        // 로딩 스피너 (처음부터 표시, load 시 제거)
-        const loading = document.createElement('div');
-        loading.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#94a3b8;font-size:13px;gap:10px;';
-        loading.innerHTML = `<div style="width:36px;height:36px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:vp-spin 0.8s linear infinite;"></div>
-            <div>로딩 중… <span style="color:#64748b;">(${url.replace(/^https?:\/\//,'').slice(0,40)})</span></div>
-            <div style="color:#64748b;font-size:11px;margin-top:4px;">최대 8초까지 기다립니다</div>`;
-
-        // 차단 안내 오버레이 (감지되면 표시)
-        const makeBlockedNotice = () => {
-            loading.remove();
-            const notice = document.createElement('div');
-            notice.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;padding:24px;text-align:center;';
-            notice.innerHTML = `<div style="font-size:48px;margin-bottom:14px;">🚫</div>
-                <div style="font-size:15px;margin-bottom:8px;font-weight:600;">이 사이트는 화면 안에 띄울 수 없습니다</div>
-                <div style="font-size:12px;color:#94a3b8;margin-bottom:20px;max-width:420px;line-height:1.5;">보안 정책(X-Frame-Options / CSP)으로 iframe 임베드를 차단한 사이트입니다. 새 탭에서 여세요.</div>
-                <button type="button" style="padding:10px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">🔗 ${url.replace(/^https?:\/\//,'').slice(0,40)} — 새 탭에서 열기</button>`;
-            notice.querySelector('button').onclick = () => window.open(url, '_blank', 'noopener');
-            frameBox.appendChild(notice);
-        };
-
-        // 차단 감지: 같은 origin 은 SKIP, cross-origin 은 8초 타임아웃
-        let loaded = false;
-        const blockTimer = sameOrigin ? null : setTimeout(() => { if (!loaded) makeBlockedNotice(); }, 8000);
-
-        iframe.addEventListener('load', () => {
-            loaded = true;
-            if (blockTimer) clearTimeout(blockTimer);
-            loading.remove();
-            // 차단 감지 2: load는 떴지만 about:blank로 리다이렉트된 경우 (cross-origin 만)
-            if (!sameOrigin) {
-              try {
-                  const doc = iframe.contentDocument;
-                  if (doc && doc.body && doc.body.children.length === 0 && doc.URL === 'about:blank') {
-                      makeBlockedNotice();
-                  }
-              } catch (e) { /* cross-origin 접근 불가 = 정상 로드 */ }
-            }
-        });
-
-        frameBox.appendChild(iframe);
-        frameBox.appendChild(loading);
-        wrapper.appendChild(bar);
-        wrapper.appendChild(frameBox);
-        stage.appendChild(wrapper);
+        // 일반 웹사이트 → vpRenderWebUrl 공통 헬퍼 사용 (vpLoadUrlRemote 와 동일 동작)
+        vpRenderWebUrl(stage, url);
     }
+}
+
+/** 일반 웹사이트 URL 을 iframe 으로 렌더링하는 공통 헬퍼.
+ *   - vpLoadUrl (호스트 발신) 과 vpLoadUrlRemote (참가자 수신) 양쪽에서 동일 사용.
+ *   - sameOrigin URL 은 차단 감지 OFF, cross-origin 은 8초 타임아웃 후 fallback.
+ *   - 모바일 LTE 환경 고려, X-Frame-Options 막힐 일 없는 same-origin 신뢰.
+ */
+function vpRenderWebUrl(stage, url) {
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;background:#0f172a;';
+
+    // 상단 주소 바 + 컨트롤
+    const bar = document.createElement('div');
+    bar.style.cssText = 'display:flex;gap:8px;align-items:center;padding:8px 10px;background:#1e293b;border-bottom:1px solid #334155;font-size:12px;color:#cbd5e1;flex:0 0 auto;flex-wrap:wrap;';
+    bar.innerHTML = `<span style="flex:1 1 100%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">🌐 ${url}</span>
+        <button type="button" data-act="open" style="padding:6px 12px;background:#2563eb;color:#fff;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-weight:600;white-space:nowrap;">🔗 새 탭에서 열기</button>`;
+    bar.querySelector('[data-act="open"]').onclick = () => window.open(url, '_blank', 'noopener');
+
+    const frameBox = document.createElement('div');
+    frameBox.style.cssText = 'position:relative;flex:1 1 auto;min-height:300px;background:#fff;';
+
+    const iframe = document.createElement('iframe');
+    iframe.src = url;
+    iframe.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:#fff;';
+    iframe.setAttribute('sandbox', 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals');
+
+    let sameOrigin = false;
+    try { sameOrigin = (new URL(url).host === location.host); } catch {}
+
+    const loading = document.createElement('div');
+    loading.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#94a3b8;font-size:13px;gap:10px;';
+    loading.innerHTML = `<div style="width:36px;height:36px;border:3px solid #334155;border-top-color:#3b82f6;border-radius:50%;animation:vp-spin 0.8s linear infinite;"></div>
+        <div>로딩 중… <span style="color:#64748b;">(${url.replace(/^https?:\/\//,'').slice(0,40)})</span></div>`;
+
+    const makeBlockedNotice = () => {
+        loading.remove();
+        const notice = document.createElement('div');
+        notice.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;padding:24px;text-align:center;';
+        notice.innerHTML = `<div style="font-size:48px;margin-bottom:14px;">🚫</div>
+            <div style="font-size:15px;margin-bottom:8px;font-weight:600;">이 사이트는 화면 안에 띄울 수 없습니다</div>
+            <div style="font-size:12px;color:#94a3b8;margin-bottom:20px;max-width:420px;line-height:1.5;">보안 정책으로 iframe 임베드를 차단한 사이트입니다. 새 탭에서 여세요.</div>
+            <button type="button" style="padding:10px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;font-weight:600;">🔗 새 탭에서 열기</button>`;
+        notice.querySelector('button').onclick = () => window.open(url, '_blank', 'noopener');
+        frameBox.appendChild(notice);
+    };
+
+    let loaded = false;
+    const blockTimer = sameOrigin ? null : setTimeout(() => { if (!loaded) makeBlockedNotice(); }, 8000);
+    iframe.addEventListener('load', () => {
+        loaded = true;
+        if (blockTimer) clearTimeout(blockTimer);
+        loading.remove();
+        if (!sameOrigin) {
+          try {
+              const doc = iframe.contentDocument;
+              if (doc && doc.body && doc.body.children.length === 0 && doc.URL === 'about:blank') {
+                  makeBlockedNotice();
+              }
+          } catch {}
+        }
+    });
+
+    frameBox.appendChild(iframe);
+    frameBox.appendChild(loading);
+    wrapper.appendChild(bar);
+    wrapper.appendChild(frameBox);
+    stage.appendChild(wrapper);
 }
 
 /** 원격에서 동영상 URL을 수신했을 때 로컬에서 재생 (WebSocket 재전송 안 함) */
@@ -3734,12 +3722,9 @@ function vpLoadUrlRemote(url) {
         vid.playsInline = true;
         stage.appendChild(vid);
     } else {
-        const wrapper = document.createElement('div');
-        wrapper.style.cssText = 'position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#e2e8f0;padding:24px;text-align:center;';
-        wrapper.innerHTML = `<div style="font-size:48px;margin-bottom:14px;">🔗</div>
-            <div style="font-size:14px;margin-bottom:8px;">공유된 링크</div>
-            <button onclick="window.open('${url}','_blank')" style="padding:10px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:14px;">새 탭에서 열기</button>`;
-        stage.appendChild(wrapper);
+        // 🩹 옛 코드는 "🔗 새 탭에서 열기" 버튼만 표시 → 수신자가 페이지를 못 봤음.
+        //    이제 vpLoadUrl 과 동일하게 iframe 으로 렌더링.
+        vpRenderWebUrl(stage, url);
     }
     console.log('[vc] 원격 동영상 수신:', url);
 }
