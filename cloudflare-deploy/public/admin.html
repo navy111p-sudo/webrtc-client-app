@@ -215,6 +215,18 @@
     font-size: 11px; color: #ea580c; font-weight: 600;
     background: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 6px;
     white-space: nowrap;
+    transition: background 0.2s, color 0.2s;
+  }
+  /* 자동 호출 카운트다운 진행바 */
+  .ai-fallback-bar {
+    margin-top: 10px; height: 3px;
+    background: rgba(0, 0, 0, 0.06); border-radius: 999px; overflow: hidden;
+  }
+  .ai-fallback-bar-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #fbbf24, #f97316);
+    transition: width 0.1s linear;
+    border-radius: 999px;
   }
 
   /* === 하위(nested) 메뉴 토글 — 학생관리 같은 상위 카드 안의 sub-item === */
@@ -4174,6 +4186,17 @@ document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacy
           inputEl.value = text;
           // input 이벤트 → 통합 검색 자동완성 자동 갱신
           inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+          // 🥭 Phase 21g — 음성 final 결과면 즉시 askAI() 호출 (손 안 써도 자동 작동)
+          if (finalText && typeof askAI === 'function') {
+            // 약간의 지연 후 호출 — 검색 인덱스 매칭 확인 후 자동 fallback
+            setTimeout(() => {
+              if (typeof _searchCurrentHits !== 'undefined' && _searchCurrentHits.length === 0) {
+                const dd = document.getElementById('menu-search-dropdown');
+                if (dd) dd.classList.remove('show');
+                askAI(text);
+              }
+            }, 250);
+          }
         }
       };
       recognition.onerror = (ev) => {
@@ -5137,6 +5160,7 @@ function renderSearchDropdown(q) {
           '</div>' +
           '<span class="ai-fallback-hint">' + hint + '</span>' +
         '</div>' +
+        '<div class="ai-fallback-bar"><div class="ai-fallback-bar-fill"></div></div>' +
       '</div>';
     dd.classList.add('show');
     _searchActiveIdx = -1;
@@ -5172,12 +5196,62 @@ function renderSearchDropdown(q) {
   if (!input || !dd) return;
 
   let timer;
+  // 🥭 Phase 21g — 자동 트리거 디바운스
+  // 사용자가 타이핑 멈춘 후 2초 → 메뉴 매칭 없으면 askAI() 자동 호출
+  // 카운트다운 표시기를 드롭다운 안에 그려줘 시각 피드백
+  let _aiAutoTimer = null;
+  let _aiCountdownTimer = null;
+  const AI_AUTO_DELAY_MS = 2000;
+  function _cancelAiAuto() {
+    if (_aiAutoTimer) { clearTimeout(_aiAutoTimer); _aiAutoTimer = null; }
+    if (_aiCountdownTimer) { clearInterval(_aiCountdownTimer); _aiCountdownTimer = null; }
+  }
+  function _scheduleAiAuto(q) {
+    _cancelAiAuto();
+    if (!q || q.length < 2) return;
+    let remaining = AI_AUTO_DELAY_MS;
+    _aiCountdownTimer = setInterval(() => {
+      remaining -= 100;
+      const fb = document.getElementById('menu-ai-fallback');
+      if (!fb) { _cancelAiAuto(); return; }
+      const hint = fb.querySelector('.ai-fallback-hint');
+      if (hint) {
+        const sec = Math.max(0, Math.ceil(remaining / 100) / 10).toFixed(1);
+        hint.textContent = '🤖 ' + sec + '초';
+        hint.style.background = 'rgba(245, 158, 11, 0.85)';
+        hint.style.color = '#fff';
+      }
+      // 진행 바 업데이트
+      const bar = fb.querySelector('.ai-fallback-bar-fill');
+      if (bar) bar.style.width = ((1 - remaining/AI_AUTO_DELAY_MS) * 100).toFixed(1) + '%';
+    }, 100);
+    _aiAutoTimer = setTimeout(() => {
+      _cancelAiAuto();
+      // 메뉴 매칭이 없을 때만 자동 호출 (안전장치)
+      if (_searchCurrentHits.length === 0 && typeof askAI === 'function') {
+        dd.classList.remove('show');
+        askAI(q);
+      }
+    }, AI_AUTO_DELAY_MS);
+  }
+
   input.addEventListener('input', () => {
     clearTimeout(timer);
-    timer = setTimeout(() => renderSearchDropdown(input.value), 80);
+    _cancelAiAuto();
+    timer = setTimeout(() => {
+      renderSearchDropdown(input.value);
+      // 렌더 후 메뉴 매칭이 없으면 자동 트리거 예약
+      if (_searchCurrentHits.length === 0) {
+        _scheduleAiAuto(input.value.trim());
+      }
+    }, 80);
   });
   input.addEventListener('focus', () => {
     if (input.value.trim()) renderSearchDropdown(input.value);
+  });
+  input.addEventListener('blur', () => {
+    // 포커스 잃으면 자동 호출 취소 (다른 곳 클릭 시 의도 흐트러짐 방지)
+    setTimeout(_cancelAiAuto, 200);
   });
   input.addEventListener('keydown', (e) => {
     const items = dd.querySelectorAll('.menu-search-item');
