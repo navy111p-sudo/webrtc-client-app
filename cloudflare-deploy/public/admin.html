@@ -1193,6 +1193,33 @@
 
 <div class="grid" id="kpi"></div>
 
+<!-- 🥭 Phase 20 — 오늘의 KPI 4박스 (매출·학생수·결석률·신규등록)
+     - 위 .grid#kpi 가 7일 누적 4박스, 이 .grid#kpi-today 가 오늘 4박스
+     - 같은 .card 스타일 재사용해서 시각적 통일
+     - 좌측 색 보더로 일일 지표임을 시각 구분 -->
+<div class="grid" id="kpi-today">
+  <div class="card" style="border-left:4px solid #f59e0b">
+    <div class="card-label" data-ko="📅 오늘의 매출" data-en="📅 Today's Revenue">📅 오늘의 매출</div>
+    <div class="card-value" id="today-revenue">—</div>
+    <div class="card-sub" id="today-revenue-sub" data-ko="KST 기준 오늘 결제 합계" data-en="KST today's payments">KST 기준 오늘 결제 합계</div>
+  </div>
+  <div class="card" style="border-left:4px solid #10b981">
+    <div class="card-label" data-ko="👥 오늘의 학생수" data-en="👥 Today's Students">👥 오늘의 학생수</div>
+    <div class="card-value" id="today-students">—</div>
+    <div class="card-sub" id="today-students-sub" data-ko="오늘 출석한 고유 학생" data-en="Unique students attended today">오늘 출석한 고유 학생</div>
+  </div>
+  <div class="card" style="border-left:4px solid #ef4444">
+    <div class="card-label" data-ko="🚫 오늘의 결석률" data-en="🚫 Today's Absence Rate">🚫 오늘의 결석률</div>
+    <div class="card-value" id="today-absence">—</div>
+    <div class="card-sub" id="today-absence-sub" data-ko="결석 / 예정 수업" data-en="Absent / Scheduled">결석 / 예정 수업</div>
+  </div>
+  <div class="card" style="border-left:4px solid #3b82f6">
+    <div class="card-label" data-ko="✨ 오늘의 신규 등록" data-en="✨ New Signups Today">✨ 오늘의 신규 등록</div>
+    <div class="card-value" id="today-signups">—</div>
+    <div class="card-sub" id="today-signups-sub" data-ko="오늘 신규 가입 학생" data-en="New students enrolled today">오늘 신규 가입 학생</div>
+  </div>
+</div>
+
 <details class="table-card menu-card" open id="card-daily-charts">
   <summary><span data-ko="📅 일자별 차트 (출석·보상·매출·학생)" data-en="📅 Daily Charts (Attendance · Rewards · Revenue · Students)">📅 일자별 차트 (출석·보상·매출·학생)</span></summary>
   <div class="menu-body">
@@ -2222,6 +2249,9 @@ async function load() {
     <div class="card"><div class="card-label">${L?'Rewards':'보상 발급'}</div><div class="card-value">${totalRewards}</div><div class="card-sub">${L?'Stickers + Coupons':'스티커+쿠폰 합산'}</div></div>
   `;
 
+  // 🥭 Phase 20 — 오늘의 KPI 4박스 갱신 (병렬 fetch, 실패해도 다른 위젯에 영향 없음)
+  loadTodayKpi();
+
   // 출석 차트
   const byDay = (data.attendance.by_day || []).slice().reverse();
   if (chartAtt) chartAtt.destroy();
@@ -2282,6 +2312,57 @@ function fmtKrwShort(n) {
   if (v >= 100000000) return (v/100000000).toFixed(1) + (adminLang==='en'?'억':'억');
   if (v >= 10000)     return (v/10000).toFixed(1) + (adminLang==='en'?'만':'만');
   return v.toLocaleString('ko-KR') + (adminLang==='en'?'₩':'원');
+}
+
+// 🥭 Phase 20 — 오늘의 KPI 4박스 (매출·학생수·결석률·신규등록)
+//   - /api/admin/stats/today 한 번 호출로 4개 값 모두 갱신
+//   - 실패해도 다른 위젯에 영향 없게 try/catch 안에 가둠
+async function loadTodayKpi() {
+  const $ = (id) => document.getElementById(id);
+  try {
+    const r = await fetch('/api/admin/stats/today', { credentials:'include', cache:'no-store' });
+    const j = await r.json();
+    if (!j || !j.ok) {
+      $('today-revenue').textContent  = '—';
+      $('today-students').textContent = '—';
+      $('today-absence').textContent  = '—';
+      $('today-signups').textContent  = '—';
+      return;
+    }
+    const L = adminLang === 'en';
+
+    // 매출 — 천 단위 콤마 + ₩ 표시 (영문은 KRW)
+    const rev = j.revenue?.amount_krw || 0;
+    $('today-revenue').textContent = (L ? '₩' : '₩') + rev.toLocaleString('ko-KR');
+    $('today-revenue-sub').textContent =
+      (j.revenue?.pay_count || 0) + (L ? ' payments today (KST)' : '건 결제 (KST)');
+
+    // 학생수 — 활성 학생 중 출석 / 활성
+    const att = j.students?.attended || 0;
+    const act = j.students?.active || 0;
+    $('today-students').textContent = att + (L ? '' : '명');
+    $('today-students-sub').textContent =
+      (L ? 'Attended ' : '출석 ') + att + (L ? ' / Active ' : ' / 활성 ') + act + (L ? '' : '명');
+
+    // 결석률 — 백분율 (소수 1자리)
+    const rate = (typeof j.absence?.rate_pct === 'number') ? j.absence.rate_pct : 0;
+    $('today-absence').textContent = rate.toFixed(1) + '%';
+    $('today-absence-sub').textContent =
+      (j.absence?.absent || 0) + (L ? ' absent / ' : '명 결석 / ') +
+      (j.absence?.scheduled || 0) + (L ? ' scheduled' : '명 예정');
+
+    // 신규 등록 — 단순 카운트
+    const sign = j.signups?.count || 0;
+    $('today-signups').textContent = sign + (L ? '' : '명');
+    $('today-signups-sub').textContent =
+      L ? 'New enrollments today (KST)' : '오늘 신규 가입 (KST)';
+  } catch (e) {
+    $('today-revenue').textContent  = '—';
+    $('today-students').textContent = '—';
+    $('today-absence').textContent  = '—';
+    $('today-signups').textContent  = '—';
+    console.warn('[today-kpi] fetch failed:', e);
+  }
 }
 
 async function loadRevenueChart() {
