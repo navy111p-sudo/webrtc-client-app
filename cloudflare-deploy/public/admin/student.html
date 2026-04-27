@@ -365,16 +365,27 @@
 
       <!-- 6. 평가서 -->
       <div class="panel" data-panel="evaluation">
+        <!-- 🎯 발음연습 결과 가져오기 -->
+        <div style="background:linear-gradient(135deg,rgba(254,243,199,0.6),rgba(254,215,170,0.5));border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <span style="font-size:24px">🎯</span>
+          <div style="flex:1;min-width:240px">
+            <div style="font-size:14px;font-weight:700;color:#7c2d12" data-ko="발음연습 결과 평가서로 가져오기" data-en="Import pronunciation results to evaluation">발음연습 결과 평가서로 가져오기</div>
+            <div style="font-size:11px;color:#92400e;margin-top:2px" data-ko="mangoi-speech 발음연습 페이지에서 받은 점수를 자동으로 평가서에 기록" data-en="Automatically log mangoi-speech pronunciation scores as evaluations">mangoi-speech 발음연습 페이지에서 받은 점수를 자동으로 평가서에 기록</div>
+          </div>
+          <button class="btn-add" onclick="openPronPractice()" style="background:linear-gradient(135deg,#f59e0b,#ea580c)" data-ko="🎙 발음연습 시작 → 결과 자동 기록" data-en="🎙 Start Practice → Auto-log">🎙 발음연습 시작 → 결과 자동 기록</button>
+        </div>
+
         <div class="add-form-card">
           <h4 data-ko="📋 평가서 작성" data-en="📋 Add Evaluation">📋 평가서 작성</h4>
           <div class="grid-2">
             <div class="form-row"><label data-ko="평가일" data-en="Eval Date">평가일</label><input id="evDate" type="date"></div>
             <div class="form-row"><label data-ko="평가 유형" data-en="Eval Type">평가 유형</label>
               <select id="evType">
-                <option value="monthly"   data-ko="월간 평가"   data-en="Monthly">월간 평가</option>
-                <option value="quarterly" data-ko="분기 평가"   data-en="Quarterly">분기 평가</option>
-                <option value="level"     data-ko="레벨 테스트" data-en="Level Test">레벨 테스트</option>
-                <option value="final"     data-ko="최종 평가"   data-en="Final">최종 평가</option>
+                <option value="monthly"      data-ko="월간 평가"     data-en="Monthly">월간 평가</option>
+                <option value="quarterly"    data-ko="분기 평가"     data-en="Quarterly">분기 평가</option>
+                <option value="level"        data-ko="레벨 테스트"   data-en="Level Test">레벨 테스트</option>
+                <option value="pronunciation" data-ko="🎯 발음연습"  data-en="🎯 Pronunciation">🎯 발음연습</option>
+                <option value="final"        data-ko="최종 평가"     data-en="Final">최종 평가</option>
               </select>
             </div>
             <div class="form-row"><label data-ko="레벨" data-en="Level">레벨</label><input id="evLevel" type="text" placeholder="A1·B1·B2…"></div>
@@ -1087,6 +1098,91 @@ $('evAddBtn').addEventListener('click', async () => {
   };
   await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/evaluations', body, _lang==='en'?'Evaluation':'평가서');
   ['evLevel','evSpeak','evList','evRead','evWrite','evTotal','evComment','evGoal'].forEach(id=>$(id).value='');
+});
+
+// ═══════════════════════ 🎯 발음연습 → 평가서 자동 기록 ═══════════════════════
+//   - 새 창으로 mangoi-speech.pages.dev/practice 열기
+//   - 학생 정보 (uid, username) + 콜백 origin 을 URL 파라미터로 전달
+//   - 발음연습 페이지가 window.opener.postMessage 로 결과 송신 → 자동 평가서 INSERT
+//   - 발음연습 페이지가 아직 postMessage 미지원이면 수동 입력 fallback 안내
+let _pronPopup = null;
+window.openPronPractice = function() {
+  const f = _state.full || {};
+  const erp = f.erp || {};
+  const studentName = erp.username || (f.profile||{}).username || uid;
+  // 학생 정보 + 콜백 출처를 URL 파라미터로 전달 (발음연습 페이지가 식별 후 결과 송신)
+  const params = new URLSearchParams({
+    uid: uid,
+    name: studentName,
+    callback_origin: location.origin,
+    return: '1'
+  });
+  const url = 'https://mangoi-speech.pages.dev/practice?' + params;
+  // 팝업 윈도우 (postMessage 양방향 통신 가능, 마이크 권한 정상)
+  _pronPopup = window.open(url, 'mangoi-pron-practice',
+    'width=900,height=720,toolbar=0,location=0,menubar=0,resizable=1,scrollbars=1');
+  if (!_pronPopup) {
+    toast(_lang==='en'?'Popup blocked. Allow popups for this site.':'팝업이 차단됐습니다. 팝업을 허용해주세요.', true);
+    return;
+  }
+
+  toast(_lang==='en'
+    ? '🎯 Practice opened. Results will auto-save when you finish.'
+    : '🎯 발음연습 창이 열렸습니다. 끝나면 결과가 자동 저장됩니다.');
+};
+
+// postMessage 수신 — 발음연습 페이지가 보낸 결과를 자동으로 평가서로 저장
+window.addEventListener('message', async (ev) => {
+  // 보안: mangoi-speech.pages.dev 출처만 허용
+  const allowedOrigins = ['https://mangoi-speech.pages.dev', 'https://mangoi-speech.workers.dev'];
+  if (!allowedOrigins.some(o => ev.origin === o || ev.origin.endsWith('mangoi-speech.pages.dev'))) {
+    return;   // 다른 origin 메시지는 무시
+  }
+  const data = ev.data;
+  if (!data || typeof data !== 'object') return;
+  if (data.type !== 'pronunciation_result') return;
+
+  // 결과 검증 + 평가서 INSERT
+  //   기대 포맷: { type:'pronunciation_result', score: 0~100, pass_rate, comment, words?, level? }
+  const score = Number(data.score ?? data.score_total);
+  if (isNaN(score)) return;
+
+  const body = {
+    eval_at: Date.now(),
+    eval_type: 'pronunciation',
+    level: data.level || null,
+    score_speaking: Number(data.score_speaking) || score,   // 발음은 발화 영역
+    score_listening: Number(data.score_listening) || null,
+    score_reading: Number(data.score_reading) || null,
+    score_writing: Number(data.score_writing) || null,      // 집중도 (구 라이팅 라벨)
+    score_total: score,
+    evaluator: data.evaluator || 'mangoi-speech',
+    comment: data.comment || ('🎯 발음연습 자동 기록 — 정확도 ' + score + '점' +
+              (data.words ? ' (' + data.words + ')' : '')),
+    next_goal: data.next_goal || null
+  };
+
+  try {
+    const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/evaluations', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if (r.ok && j.ok) {
+      toast(_lang==='en'
+        ? '✅ Pronunciation result saved (score: ' + score + ')'
+        : '✅ 발음연습 결과 저장 완료 (점수: ' + score + ')');
+      await loadFull();   // 평가서 표 즉시 갱신
+      // 팝업 응답 ack
+      if (ev.source && typeof ev.source.postMessage === 'function') {
+        ev.source.postMessage({ type: 'pronunciation_saved', ok: true, score }, ev.origin);
+      }
+    } else {
+      toast((_lang==='en'?'Save failed: ':'저장 실패: ') + (j.error||r.status), true);
+    }
+  } catch (e) {
+    toast(t('netError'), true);
+  }
 });
 
 // ═══════════════════════ 7. 교사 피드백 ═══════════════════════
