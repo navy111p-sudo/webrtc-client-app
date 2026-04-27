@@ -132,6 +132,16 @@ export class VideoCallRoom {
         case 'pdf-stop-share':
           this.handlePdfStopShare(userId);
           break;
+        // 📹 동영상 / 일반 웹사이트 URL 공유 (Phase 12 후속 핫픽스)
+        //   클라이언트는 vcConn.send({type:'video-share', data:{url, type}}) 로 송신.
+        //   여기서 다른 참가자에게 그대로 전달 — vpLoadUrlRemote 가 iframe 으로 표시.
+        case 'video-share':
+        case 'video-sync':
+          this.broadcast(userId, { type: 'video-share', data: msg.data });
+          break;
+        case 'video-stop-share':
+          this.broadcast(userId, { type: 'video-stop-share', data: {} });
+          break;
         case 'offer':
           this.handleOffer(userId, msg.data as any);
           break;
