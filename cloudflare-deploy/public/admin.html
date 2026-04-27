@@ -349,7 +349,7 @@
   }
   .hero .hero-search input {
     width: 100%;
-    padding: 28px 80px 28px 36px;
+    padding: 28px 80px 28px 76px;   /* 좌측에 SVG 아이콘 자리 확보 */
     background: transparent;
     border: 0;
     font-size: 24px;
@@ -359,6 +359,44 @@
     outline: none;
   }
   .hero .hero-search input::placeholder { color: #a8a29e; font-weight: 400; }
+
+  /* 🔎 SVG 검색 아이콘 — 망고 그라데이션 + 글래스 배경 + 펄스 (이모지 대신) */
+  .hero .hero-search-icon {
+    position: absolute;
+    left: 18px; top: 50%;
+    transform: translateY(-50%);
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none;
+    /* 그라데이션 글래스 원형 배경 */
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 113, 133, 0.2) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    box-shadow:
+      0 4px 12px -2px rgba(245, 158, 11, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    z-index: 4;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .hero .hero-search-icon svg {
+    width: 22px; height: 22px;
+    color: #c2410c;
+    filter: drop-shadow(0 1px 2px rgba(124, 45, 18, 0.18));
+  }
+  /* 포커스 시 살짝 펄스 + 컬러 진하게 — "활성화" 시각 신호 */
+  .hero .hero-search:focus-within .hero-search-icon {
+    transform: translateY(-50%) scale(1.08);
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.45) 0%, rgba(251, 113, 133, 0.35) 100%);
+    box-shadow:
+      0 6px 18px -2px rgba(245, 158, 11, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    animation: searchIconPulse 1.6s ease-in-out infinite;
+  }
+  .hero .hero-search:focus-within .hero-search-icon svg { color: #9a3412; }
+  @keyframes searchIconPulse {
+    0%, 100% { box-shadow: 0 6px 18px -2px rgba(245, 158, 11, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.85); }
+    50%      { box-shadow: 0 8px 28px -2px rgba(245, 158, 11, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.95); }
+  }
   .hero .hero-search-clear {
     position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
     background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(245, 158, 11, 0.18));
@@ -504,8 +542,10 @@
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
     .hero h1 { font-size: 38px; text-align: center; }
     .hero .hero-sub { text-align: center; font-size: 17px; margin-bottom: 24px; }
-    .hero .hero-search input { padding: 20px 60px 20px 22px; font-size: 18px; }
+    .hero .hero-search input { padding: 20px 60px 20px 64px; font-size: 18px; }
     .hero .hero-search-clear { width: 36px; height: 36px; right: 14px; }
+    .hero .hero-search-icon { width: 38px; height: 38px; left: 12px; }
+    .hero .hero-search-icon svg { width: 19px; height: 19px; }
     /* 모바일에서 힌트 칩 숨김 — 화면 공간 절약 */
     .hero-tips { display: none; }
     .hero-character-frame img { max-width: 280px; min-width: 200px; }
@@ -730,10 +770,16 @@
         <h1 data-ko="안녕하세요, 망고아이!" data-en="Hello, Mangoi!">안녕하세요, 망고아이!</h1>
         <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
         <div class="hero-search">
+          <span class="hero-search-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="7"></circle>
+              <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+            </svg>
+          </span>
           <input id="menu-search" type="search" autocomplete="off"
-                 placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
-                 data-ko-placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
-                 data-en-placeholder="🔍 Search anything — students, teachers, franchises, menus" />
+                 placeholder="통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+                 data-ko-placeholder="통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+                 data-en-placeholder="Search anything — students, teachers, franchises, menus" />
           <button class="hero-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
           <div class="hero-search-dropdown menu-search-dropdown" id="menu-search-dropdown"></div>
         </div>
