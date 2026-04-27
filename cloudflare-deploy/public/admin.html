@@ -411,42 +411,77 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🎈 3D 풍선 텍스트 — 망고 시그니처 스타일
-     - 둥글둥글한 디스플레이 폰트 (Jua)
-     - 노란 풍선 + 진한 갈색 테두리 + 5단 입체 그림자
-     - ::after 광택 레이어 (위쪽 흰빛)
+  /* 🎈 3D 풍선 텍스트 v2 — 강한 입체감
+     - 8px 진한 갈색 외곽선 (이중)
+     - 12단 그라데이션 그림자 (오렌지→갈색 점진적 변화)
+     - 외부에 부드러운 외광 + 강한 drop shadow
+     - 내부 그라데이션 (밝은 노랑→진한 노랑)
+     - 상단 흰색 광택 + 반짝임 (sparkle dot 2개)
   */
   .hero h1 {
-    margin: 0 0 14px;
+    margin: 0 0 24px;
     font-family: 'Jua', 'Black Han Sans', 'Noto Sans KR', sans-serif;
-    font-size: 76px; font-weight: 400;
-    color: #fde047;                       /* 베이스 노란색 */
-    -webkit-text-stroke: 5px #7c2d12;     /* 진한 갈색 외곽선 */
-    paint-order: stroke fill;             /* stroke 가 fill 침범 안 하도록 */
-    letter-spacing: 1px;
-    line-height: 1.1;
-    /* 5단 입체 그림자 — 점점 진해지며 아래로 내려가다가 마지막은 부드러운 외광 */
-    text-shadow:
-      0 2px 0 #facc15,
-      0 4px 0 #ea580c,
-      0 6px 0 #c2410c,
-      0 8px 0 #92400e,
-      0 10px 0 #78350f,
-      0 14px 18px rgba(120, 53, 15, 0.45);
+    font-size: 84px; font-weight: 400;
+    letter-spacing: 2px;
+    line-height: 1.15;
     position: relative;
     display: inline-block;
+    /* 본체: 노랑 그라데이션 (밝은 위 → 진한 아래) — background-clip text 트릭 */
+    color: #fde047;                                   /* fallback 색 */
+    background: linear-gradient(180deg, #fef9c3 0%, #fde047 30%, #facc15 60%, #eab308 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* 두꺼운 진한 갈색 외곽선 — paint-order 로 stroke 가 fill 안 가리게 */
+    -webkit-text-stroke: 8px #3b1407;
+    paint-order: stroke fill;
+    /* 12단 입체 추출 — 원본 위치에서 1px씩 아래로 내려가며 색이 점점 진해짐
+       각 픽셀이 마치 빵의 단면처럼 쌓임 */
+    text-shadow:
+      1px 1px 0 #ea580c,
+      2px 2px 0 #d97706,
+      3px 3px 0 #c2410c,
+      4px 4px 0 #a16207,
+      5px 5px 0 #92400e,
+      6px 6px 0 #854d0e,
+      7px 7px 0 #78350f,
+      8px 8px 0 #713f12,
+      9px 9px 0 #5c2d09,
+      10px 10px 0 #451a03,
+      12px 12px 0 #3b1407,
+      14px 18px 30px rgba(59, 20, 7, 0.55),
+      0 0 40px rgba(245, 158, 11, 0.3);
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.18));
+    transform: translateZ(0);   /* GPU 가속 */
   }
-  /* 위쪽 흰색 광택 — 상단 30% 만 흰빛 오버레이 */
+  /* 광택 1: 위쪽 절반 부드러운 흰빛 — text-fill-color 와 충돌 안 하도록 별도 글자 클론 */
   .hero h1::before {
     content: attr(data-text);
-    position: absolute; top: 0; left: 0;
-    color: rgba(255, 255, 255, 0.55);
+    position: absolute; top: 0; left: 0; right: 0;
+    color: transparent;
+    background: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.5) 25%, rgba(255,255,255,0) 50%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
     -webkit-text-stroke: 0;
-    pointer-events: none;
-    clip-path: polygon(0 0, 100% 0, 100% 35%, 0 50%);
     text-shadow: none;
-    font-family: inherit; font-size: inherit; font-weight: inherit;
+    pointer-events: none;
+    font: inherit;
     letter-spacing: inherit; line-height: inherit;
+    z-index: 2;
+  }
+  /* 광택 2: 작은 반짝이 점 (글자 좌상단) */
+  .hero h1::after {
+    content: '';
+    position: absolute;
+    top: 8%; left: 14%;
+    width: 14px; height: 14px;
+    background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    box-shadow:
+      18% 80% 0 -2px rgba(255,255,255,0.6),
+      40% 30% 0 -3px rgba(255,255,255,0.4);
   }
   .hero .hero-sub {
     font-size: 22px; color: #78350f; margin-bottom: 36px;
@@ -765,8 +800,8 @@
   /* 모바일 대응 */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
-    .hero h1 { font-size: 44px; text-align: center; -webkit-text-stroke-width: 4px; text-shadow:
-      0 2px 0 #facc15, 0 3px 0 #ea580c, 0 4px 0 #c2410c, 0 5px 0 #92400e, 0 6px 0 #78350f, 0 9px 12px rgba(120,53,15,0.4); }
+    .hero h1 { font-size: 48px; text-align: center; -webkit-text-stroke-width: 5px; letter-spacing: 1px; text-shadow:
+      1px 1px 0 #ea580c, 2px 2px 0 #d97706, 3px 3px 0 #c2410c, 4px 4px 0 #92400e, 5px 5px 0 #78350f, 6px 6px 0 #5c2d09, 7px 7px 0 #3b1407, 9px 12px 18px rgba(59,20,7,0.5), 0 0 24px rgba(245,158,11,0.25); }
     .hero .hero-sub { text-align: center; font-size: 17px; margin-bottom: 24px; }
     .hero .hero-search input { padding: 20px 110px 20px 64px; font-size: 18px; }
     .hero .hero-search-clear { width: 32px; height: 32px; right: 60px; font-size: 14px; }
