@@ -416,26 +416,46 @@
       inset 0 1px 0 rgba(255, 255, 255, 1);
   }
 
-  /* ━━ 캐릭터 + 멀티 컬러 후광 ━━ */
+  /* ━━ 캐릭터 + 멀티 컬러 후광 + 그라데이션 프레임 ━━ */
   .hero-character {
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
   }
-  .hero-character img {
-    width: 100%;
-    max-width: 460px;
-    height: auto;
-    object-fit: contain;
-    /* 3단 컬러 그림자로 무지개 후광 효과 */
-    filter:
-      drop-shadow(0 25px 50px rgba(245, 158, 11, 0.45))
-      drop-shadow(0 -8px 30px rgba(251, 113, 133, 0.28))
-      drop-shadow(15px 5px 35px rgba(168, 85, 247, 0.25));
+  /* 그라데이션 링 (이미지의 흰 배경을 자연스럽게 감쌈 — "폴라로이드"느낌) */
+  .hero-character-frame {
+    position: relative;
+    padding: 8px;
+    background: linear-gradient(135deg, #fbbf24 0%, #f43f5e 50%, #a855f7 100%);
+    border-radius: 32px;
+    box-shadow:
+      0 25px 50px -12px rgba(245, 158, 11, 0.45),
+      0 -8px 30px -8px rgba(251, 113, 133, 0.28),
+      15px 5px 35px -10px rgba(168, 85, 247, 0.25),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
     animation: heroBob 4s ease-in-out infinite;
   }
+  .hero-character-frame::after {
+    content: '';
+    position: absolute; inset: 4px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.4);
+    pointer-events: none;
+    z-index: 0;
+  }
+  .hero-character-frame img {
+    position: relative; z-index: 1;
+    width: 100%;
+    max-width: 460px;
+    min-width: 240px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 24px;
+    background: #fff;
+    display: block;
+  }
   @keyframes heroBob {
-    0%, 100% { transform: translateY(0) rotate(-3deg); }
-    50%      { transform: translateY(-18px) rotate(3deg); }
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-14px) rotate(2deg); }
   }
 
   /* 기존 카드 영역 — 기본 숨김. legacy-show 클래스 토글로 보이기 */
@@ -488,49 +508,208 @@
     .hero .hero-search-clear { width: 36px; height: 36px; right: 14px; }
     .hero-tips { justify-content: center; }
     .hero-tips span { font-size: 13px; padding: 7px 14px; }
-    .hero-character img { max-width: 280px; }
+    .hero-character-frame img { max-width: 280px; min-width: 200px; }
+    .hero-character-frame { padding: 6px; border-radius: 28px; }
+    .hero-character-frame img { border-radius: 22px; }
     .hero-character { order: -1; }
+  }
+
+  /* ════════════════════════════════════════════════════════════
+     🎩 Phase 14e — 상단 헤더 글래스모피즘 (반응형)
+     - 검은색 단색 → 따뜻한 글래스 (히어로 톤 매칭)
+     - 모바일에서 텍스트가 세로로 깨지는 버그 수정 (flex-wrap)
+     - 캐릭터 작은 원형 아이콘 + 그라데이션 텍스트
+  ════════════════════════════════════════════════════════════ */
+  .top-header {
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    padding: 14px 22px;
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px;
+    margin-bottom: 24px;
+    box-shadow:
+      0 12px 32px -8px rgba(120, 53, 15, 0.18),
+      0 4px 8px -2px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+  .th-brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
+  .th-logo {
+    width: 42px; height: 42px; border-radius: 50%;
+    object-fit: cover; background: #fff;
+    border: 2px solid rgba(245, 158, 11, 0.6);
+    box-shadow:
+      0 4px 12px rgba(245, 158, 11, 0.35),
+      inset 0 0 0 2px rgba(255, 255, 255, 0.9);
+    flex-shrink: 0;
+  }
+  .th-title {
+    font-weight: 900; font-size: 22px;
+    background: linear-gradient(135deg, #c2410c 0%, #f59e0b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    letter-spacing: -0.02em;
+  }
+  .th-divider {
+    width: 1px; height: 26px;
+    background: linear-gradient(180deg, transparent, rgba(120, 53, 15, 0.25), transparent);
+  }
+  .th-subtitle {
+    font-size: 16px; font-weight: 600; color: #7c2d12;
+  }
+
+  .th-controls { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .th-select, .th-btn {
+    padding: 8px 14px; font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(10px);
+    color: #7c2d12; cursor: pointer;
+    text-decoration: none;
+    box-shadow:
+      0 2px 8px -1px rgba(120, 53, 15, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .th-select { padding-right: 28px; appearance: none; background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%237c2d12' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 12px center;
+  }
+  .th-select:hover, .th-btn:hover {
+    background: rgba(255, 255, 255, 0.85);
+    transform: translateY(-1px);
+    box-shadow:
+      0 6px 14px -2px rgba(120, 53, 15, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+  .th-btn-primary {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 60%, #f43f5e 100%);
+    color: #fff; border-color: rgba(255, 255, 255, 0.4);
+    box-shadow:
+      0 6px 14px -2px rgba(245, 158, 11, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .th-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 10px 22px -4px rgba(245, 158, 11, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .th-btn-amber {
+    background: linear-gradient(135deg, rgba(254, 215, 170, 0.7), rgba(253, 186, 116, 0.6));
+    color: #7c2d12; border-color: rgba(245, 158, 11, 0.4);
+  }
+  .th-btn-ghost { background: rgba(255, 255, 255, 0.45); }
+
+  .th-user {
+    position: relative;
+    background: linear-gradient(135deg, rgba(254, 215, 170, 0.7), rgba(252, 211, 77, 0.65));
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 999px;
+    padding: 8px 16px;
+    color: #7c2d12; font-size: 13px; font-weight: 700;
+    cursor: pointer; user-select: none;
+    box-shadow:
+      0 2px 8px -1px rgba(120, 53, 15, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.2s;
+  }
+  .th-user:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -2px rgba(245, 158, 11, 0.4), inset 0 1px 0 rgba(255, 255, 255, 1); }
+
+  .th-user-popup {
+    display: none; position: absolute; right: 0; top: calc(100% + 8px);
+    min-width: 230px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    color: #44403c;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 16px;
+    box-shadow: 0 16px 40px -8px rgba(0,0,0,0.18), 0 4px 10px -2px rgba(0,0,0,0.06);
+    padding: 6px;
+    z-index: 200;
+    font-weight: 500;
+  }
+  .th-user-popup-head {
+    padding: 10px 14px; font-size: 12px; font-weight: 600; color: #78350f;
+    border-bottom: 1px solid rgba(245, 158, 11, 0.18); margin-bottom: 4px;
+  }
+  .th-user-popup a {
+    display: block; padding: 9px 14px;
+    color: #44403c; text-decoration: none;
+    font-size: 13px; border-radius: 10px;
+    transition: all 0.15s;
+  }
+  .th-user-popup a:hover {
+    background: linear-gradient(135deg, rgba(254, 215, 170, 0.5), rgba(252, 211, 77, 0.5));
+    color: #7c2d12;
+  }
+  .th-user-popup-divider { height: 1px; background: rgba(245, 158, 11, 0.2); margin: 4px 8px; }
+  .th-user-popup-logout {
+    display: block; width: 100%; text-align: left;
+    background: transparent; border: 0;
+    padding: 9px 14px; color: #dc2626;
+    font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 10px;
+    transition: all 0.15s;
+  }
+  .th-user-popup-logout:hover { background: rgba(254, 226, 226, 0.7); color: #b91c1c; }
+
+  /* 모바일 헤더 — 세로로 깨지지 않게 */
+  @media (max-width: 720px) {
+    .top-header { padding: 12px 16px; border-radius: 18px; gap: 10px; }
+    .th-brand { gap: 10px; flex: 1 1 auto; min-width: 0; }
+    .th-title { font-size: 18px; }
+    .th-divider { display: none; }
+    .th-subtitle { font-size: 13px; color: #92400e; }
+    .th-logo { width: 36px; height: 36px; }
+    .th-controls { gap: 6px; flex: 1 1 100%; justify-content: flex-start; }
+    .th-select, .th-btn { padding: 7px 12px; font-size: 12px; }
+    .th-user { padding: 7px 12px; font-size: 12px; }
+  }
+  @media (max-width: 480px) {
+    .th-subtitle { display: none; }                     /* 정말 좁은 화면에서는 부제 숨김 */
+    .th-btn-amber span:not(.icon) { font-size: 11px; }
   }
 </style>
 </head>
 <body>
 
-<!-- 상단 로고 헤더 (어두운 배경) -->
-<div style="background:#2d3436;border-radius:14px;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;box-shadow:0 2px 12px rgba(0,0,0,0.15);">
-  <div style="display:flex;align-items:center;gap:16px;">
-    <div style="display:flex;align-items:center;gap:10px;font-weight:800;font-size:24px;color:#fff;letter-spacing:-0.02em;"><img src="/img/Mangoi_Character.jpg" alt="Mangoi" style="width:46px;height:46px;border-radius:50%;object-fit:cover;background:#fff;border:2px solid #f59e0b;box-shadow:0 2px 8px rgba(245,158,11,0.35);" /><span>망고아이</span></div>
-    <div style="width:1px;height:36px;background:#636e72;margin:0 12px;"></div>
-    <span style="font-size:20px;font-weight:700;color:#dfe6e9;" data-ko="화상수업 대시보드" data-en="Class Dashboard">화상수업 대시보드</span>
+<!-- 상단 로고 헤더 — 글래스모피즘 (Phase 14e) -->
+<div class="top-header">
+  <div class="th-brand">
+    <img src="/img/Mangoi_Character.jpg" alt="Mangoi" class="th-logo" />
+    <span class="th-title">망고아이</span>
+    <span class="th-divider"></span>
+    <span class="th-subtitle" data-ko="화상수업 대시보드" data-en="Class Dashboard">화상수업 대시보드</span>
   </div>
-  <div class="controls" style="display:flex;gap:8px;align-items:center;">
-    <select id="period" style="background:#636e72;color:#fff;border-color:#636e72;">
-      <option value="1" data-ko="최근 1일" data-en="Last 1 day">최근 1일</option>
+  <div class="th-controls">
+    <select id="period" class="th-select">
+      <option value="1"  data-ko="최근 1일"  data-en="Last 1 day">최근 1일</option>
       <option value="7" selected data-ko="최근 7일" data-en="Last 7 days">최근 7일</option>
       <option value="30" data-ko="최근 30일" data-en="Last 30 days">최근 30일</option>
       <option value="90" data-ko="최근 90일" data-en="Last 90 days">최근 90일</option>
     </select>
-    <button class="primary" id="refresh" data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
-    <a href="/admin/health" title="셀프 진단 — 바인딩·엔드포인트 상태 한눈에" style="background:rgba(245,158,11,0.15);border:1px solid #f59e0b;border-radius:8px;padding:6px 12px;color:#f59e0b;font-size:13px;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" data-ko="🩺 셀프 진단" data-en="🩺 Self-Health">🩺 셀프 진단</a>
-    <button onclick="toggleAdminLang()" style="background:rgba(99,110,114,0.4);border:1px solid #636e72;border-radius:8px;padding:6px 10px;color:#dfe6e9;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:4px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+    <button class="th-btn th-btn-primary" id="refresh" data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
+    <a class="th-btn th-btn-amber" href="/admin/health" title="셀프 진단" data-ko="🩺 셀프 진단" data-en="🩺 Health">🩺 셀프 진단</a>
+    <button class="th-btn th-btn-ghost" onclick="toggleAdminLang()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       <span id="admin-lang-label">EN</span>
     </button>
 
-    <!-- 👤 Phase 11 — 사용자 메뉴 (마이페이지·로그아웃) -->
-    <div id="topUserBtn"
-         style="position:relative;background:rgba(245,158,11,0.18);border:1px solid #f59e0b;border-radius:8px;padding:6px 12px;color:#fde68a;font-size:13px;font-weight:600;cursor:pointer;user-select:none;"
-         data-ko="👤 관리자" data-en="👤 Admin">
+    <!-- 👤 사용자 메뉴 -->
+    <div id="topUserBtn" class="th-user" data-ko="👤 관리자" data-en="👤 Admin">
       <span id="topUserLabel">👤 관리자</span>
-      <div id="topUserPopup"
-           style="display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:220px;background:#fff;color:#222;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.18);padding:6px;z-index:200;font-weight:400;">
-        <div id="topUserHeader" style="padding:10px 12px;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0;">로딩 중…</div>
-        <a href="/admin/mypage" style="display:block;padding:9px 12px;color:#222;text-decoration:none;font-size:13px;border-radius:6px;">🪪 마이페이지</a>
-        <a href="/admin/health" target="_blank" style="display:block;padding:9px 12px;color:#222;text-decoration:none;font-size:13px;border-radius:6px;">🩺 셀프 진단</a>
-        <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
-        <button id="topLogoutBtn" type="button"
-                style="display:block;width:100%;text-align:left;background:transparent;border:0;padding:9px 12px;color:#c33;font-size:13px;cursor:pointer;border-radius:6px;">
-          🚪 로그아웃
-        </button>
+      <div id="topUserPopup" class="th-user-popup">
+        <div id="topUserHeader" class="th-user-popup-head">로딩 중…</div>
+        <a href="/admin/mypage">🪪 마이페이지</a>
+        <a href="/admin/health" target="_blank">🩺 셀프 진단</a>
+        <div class="th-user-popup-divider"></div>
+        <button id="topLogoutBtn" type="button" class="th-user-popup-logout">🚪 로그아웃</button>
       </div>
     </div>
   </div>
@@ -566,8 +745,10 @@
         </div>
       </div>
       <div class="hero-character">
-        <img src="/img/Mangoi_Character.jpg" alt="Mangoi"
-             onerror="this.onerror=null;this.style.borderRadius='32px';this.style.background='linear-gradient(135deg,#fbbf24,#f59e0b)';this.style.padding='40px';this.style.fontSize='120px';this.alt='🥭';" />
+        <div class="hero-character-frame">
+          <img src="/img/Mangoi_Character.jpg" alt="Mangoi"
+               onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#fbbf24,#f59e0b)';this.style.padding='40px';this.style.fontSize='120px';this.alt='🥭';" />
+        </div>
       </div>
     </section>
 
