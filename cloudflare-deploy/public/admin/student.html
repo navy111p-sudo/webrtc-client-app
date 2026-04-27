@@ -1071,21 +1071,52 @@ function renderEngagement(){
 function renderEvaluation(){
   const items = _state.full.evaluations || [];
   if (items.length === 0) { $('evalBox').innerHTML = '<div class="empty">'+t('emptyEval')+'</div>'; return; }
-  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDate')+'</th><th>'+t('thType')+'</th><th>'+t('thLevel')+'</th><th>'+t('thTotal')+'</th><th>'+t('thSpeak')+'</th><th>'+t('thList')+'</th><th>'+t('thGrammar')+'</th><th>'+t('thFocus')+'</th><th>'+t('thEvaluator')+'</th><th>'+t('thNextGoal')+'</th><th>'+t('thComment')+'</th><th>'+t('thReport')+'</th></tr></thead><tbody>'+
-    items.map(e=>`<tr>
-      <td>${fmtDay(e.eval_at)}</td>
-      <td>${esc(e.eval_type)||'—'}</td>
-      <td>${esc(e.level)||'—'}</td>
-      <td>${scoreBadge(e.score_total)}</td>
-      <td>${scoreBadge(e.score_speaking)}</td>
-      <td>${scoreBadge(e.score_listening)}</td>
-      <td>${scoreBadge(e.score_reading)}</td>
-      <td>${scoreBadge(e.score_writing)}</td>
-      <td>${esc(e.evaluator)||'—'}</td>
-      <td>${esc(e.next_goal)||'—'}</td>
-      <td style="white-space:pre-wrap;max-width:300px">${esc(e.comment)||'—'}</td>
-      <td><button class="btn-mini" onclick="openReport(${e.id})" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1e293b;border:0;font-weight:700">${t('thReportBtn')}</button></td>
-    </tr>`).join('')+'</tbody></table>';
+
+  // 🎯 발음연습 카운트 — eval_type='pronunciation' 인 행에 시간순 번호 매김
+  //   - 표 헤더 위에 "총 N회" 배지 표시
+  //   - 각 행에 "🎯 N번째" 표기 (시간순)
+  const pronSorted = items
+    .map((e, i) => ({ e, i }))
+    .filter(x => x.e.eval_type === 'pronunciation')
+    .sort((a, b) => a.e.eval_at - b.e.eval_at);
+  const pronIndex = new Map();
+  pronSorted.forEach((x, idx) => pronIndex.set(x.e.id, idx + 1));   // id → 1, 2, 3, ...
+  const totalPron = pronSorted.length;
+  const pronAvg = totalPron > 0
+    ? Math.round(pronSorted.reduce((s, x) => s + (Number(x.e.score_total)||0), 0) / totalPron * 10) / 10
+    : null;
+
+  // 상단 발음연습 요약 배지
+  const pronBadge = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(254,215,170,0.5),rgba(252,211,77,0.45));border:1px solid rgba(245,158,11,0.35);border-radius:10px;font-size:13px;color:#7c2d12;flex-wrap:wrap">
+    <span style="font-size:18px">🎯</span>
+    <strong>${_lang==='en'?'Pronunciation Practice':'발음연습'}</strong>
+    <span style="background:#fff;padding:3px 10px;border-radius:12px;font-weight:700;color:#ea580c">${_lang==='en'?'Total ':'총 '}${totalPron}${_lang==='en'?' times':'회'}</span>
+    ${pronAvg!=null ? `<span style="background:#fff;padding:3px 10px;border-radius:12px;font-weight:700;color:#ea580c">${_lang==='en'?'Avg ':'평균 '}${pronAvg}${_lang==='en'?'':'점'}</span>` : ''}
+    <span style="margin-left:auto;font-size:11px;color:#92400e">${_lang==='en'?'Each row shows practice order':'각 행에 연습 순서 표시'}</span>
+  </div>`;
+
+  $('evalBox').innerHTML = pronBadge + '<table class="list"><thead><tr><th>'+t('thDate')+'</th><th>'+t('thType')+'</th><th>'+t('thLevel')+'</th><th>'+t('thTotal')+'</th><th>'+t('thSpeak')+'</th><th>'+t('thList')+'</th><th>'+t('thGrammar')+'</th><th>'+t('thFocus')+'</th><th>🎯 '+(_lang==='en'?'Pron.':'발음연습')+'</th><th>'+t('thEvaluator')+'</th><th>'+t('thNextGoal')+'</th><th>'+t('thComment')+'</th><th>'+t('thReport')+'</th></tr></thead><tbody>'+
+    items.map(e=>{
+      const isPron = e.eval_type === 'pronunciation';
+      const pronCell = isPron
+        ? `<span style="display:inline-block;padding:3px 10px;background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;border-radius:12px;font-size:11px;font-weight:700">🎯 ${pronIndex.get(e.id)}${_lang==='en'?'th':'번째'}</span>`
+        : '<span style="color:#cbd5e1;font-size:11px">—</span>';
+      return `<tr${isPron?' style="background:rgba(254,215,170,0.18)"':''}>
+        <td>${fmtDay(e.eval_at)}</td>
+        <td>${esc(e.eval_type)||'—'}</td>
+        <td>${esc(e.level)||'—'}</td>
+        <td>${scoreBadge(e.score_total)}</td>
+        <td>${scoreBadge(e.score_speaking)}</td>
+        <td>${scoreBadge(e.score_listening)}</td>
+        <td>${scoreBadge(e.score_reading)}</td>
+        <td>${scoreBadge(e.score_writing)}</td>
+        <td>${pronCell}</td>
+        <td>${esc(e.evaluator)||'—'}</td>
+        <td>${esc(e.next_goal)||'—'}</td>
+        <td style="white-space:pre-wrap;max-width:300px">${esc(e.comment)||'—'}</td>
+        <td><button class="btn-mini" onclick="openReport(${e.id})" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1e293b;border:0;font-weight:700">${t('thReportBtn')}</button></td>
+      </tr>`;
+    }).join('')+'</tbody></table>';
 }
 
 $('evAddBtn').addEventListener('click', async () => {
