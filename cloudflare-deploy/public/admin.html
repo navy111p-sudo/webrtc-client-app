@@ -356,47 +356,47 @@
   ════════════════════════════════════════════════════════════ */
   .hero {
     display: grid;
-    grid-template-columns: 1fr 520px;
-    gap: 50px;
+    grid-template-columns: 1fr 460px;
+    gap: 56px;
     align-items: center;
-    /* 메시 그라데이션 — 4개 블롭이 자연스럽게 섞임 */
+    /* 🎨 Phase 19g — 조화로운 따뜻한 메시 그라데이션
+       배너의 핑크-피치-옐로 톤에 맞춰 라벤더·민트 빠지고 모두 따뜻한 색으로 통일 */
     background:
-      radial-gradient(circle at 12% 18%, rgba(251, 113, 133, 0.55) 0%, transparent 32%),
-      radial-gradient(circle at 88% 12%, rgba(251, 191, 36, 0.65) 0%, transparent 38%),
-      radial-gradient(circle at 92% 88%, rgba(168, 85, 247, 0.42) 0%, transparent 38%),
-      radial-gradient(circle at 8% 92%, rgba(52, 211, 153, 0.32) 0%, transparent 32%),
-      linear-gradient(135deg, #fefce8 0%, #fef3c7 60%, #fed7aa 100%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    border-radius: 36px;
-    padding: 90px 70px;
+      radial-gradient(circle at 15% 20%, rgba(252, 165, 165, 0.45) 0%, transparent 38%),
+      radial-gradient(circle at 85% 15%, rgba(254, 215, 170, 0.55) 0%, transparent 42%),
+      radial-gradient(circle at 75% 85%, rgba(254, 240, 138, 0.5) 0%, transparent 40%),
+      radial-gradient(circle at 12% 88%, rgba(253, 186, 116, 0.4) 0%, transparent 36%),
+      linear-gradient(135deg, #fff8f3 0%, #fef3e6 45%, #fed7aa 100%);
+    border: 1px solid rgba(255, 255, 255, 0.75);
+    border-radius: 40px;
+    padding: 80px 64px;
     margin-bottom: 32px;
-    min-height: 540px;
-    /* 멀티 레이어 그림자로 깊이감 */
+    min-height: 520px;
     box-shadow:
-      0 40px 80px -20px rgba(120, 53, 15, 0.30),
-      0 12px 24px -8px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85),
-      inset 0 -1px 0 rgba(120, 53, 15, 0.08);
+      0 36px 72px -20px rgba(154, 52, 18, 0.22),
+      0 10px 22px -8px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      inset 0 -1px 0 rgba(154, 52, 18, 0.06);
     position: relative;
     overflow: hidden;
     isolation: isolate;
   }
-  /* 떠다니는 코랄 블롭 (애니메이션) */
+  /* 떠다니는 살구색 블롭 (배너 톤 매칭) */
   .hero::before {
     content: '';
-    position: absolute; top: -80px; right: -80px;
-    width: 460px; height: 460px;
-    background: radial-gradient(circle, rgba(244, 114, 182, 0.32) 0%, transparent 65%);
+    position: absolute; top: -100px; right: -100px;
+    width: 480px; height: 480px;
+    background: radial-gradient(circle, rgba(254, 178, 153, 0.38) 0%, transparent 65%);
     border-radius: 50%;
     pointer-events: none;
     animation: blobFloat1 14s ease-in-out infinite;
   }
-  /* 떠다니는 라벤더 블롭 */
+  /* 떠다니는 옅은 코랄 블롭 (배너의 핑크빛과 매칭) */
   .hero::after {
     content: '';
-    position: absolute; bottom: -120px; left: -100px;
-    width: 380px; height: 380px;
-    background: radial-gradient(circle, rgba(165, 180, 252, 0.36) 0%, transparent 65%);
+    position: absolute; bottom: -140px; left: -120px;
+    width: 420px; height: 420px;
+    background: radial-gradient(circle, rgba(252, 165, 165, 0.35) 0%, transparent 65%);
     border-radius: 50%;
     pointer-events: none;
     animation: blobFloat2 18s ease-in-out infinite;
@@ -411,21 +411,19 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🥭 Phase 19f — 히어로 배너 이미지 (drag-drop 업로드한 PNG/JPG)
-     이미지 로드 실패 시 onerror 로 .hero-banner-img 가 숨고 h1 fallback 이 보임. */
+  /* 🥭 Phase 19f/g — 히어로 배너 이미지 (drag-drop 업로드한 PNG/JPG) */
   .hero-banner-img {
     display: block;
-    max-width: 100%;
-    width: auto;
+    width: 100%;
     height: auto;
-    max-height: 180px;
-    margin: 0 0 18px;
+    max-height: 220px;
+    margin: 0 0 20px;
     object-fit: contain;
     object-position: left center;
-    filter: drop-shadow(0 8px 18px rgba(120, 53, 15, 0.22));
+    filter: drop-shadow(0 12px 24px rgba(154, 52, 18, 0.25));
   }
   @media (max-width: 900px) {
-    .hero-banner-img { max-height: 100px; margin: 0 auto 14px; object-position: center; }
+    .hero-banner-img { max-height: 110px; margin: 0 auto 14px; object-position: center; }
   }
 
   /* 🥭 3D 망고 텍스트 v4 — 레퍼런스 이미지 정밀 매칭 (이미지 fallback 시 사용)
@@ -515,36 +513,37 @@
     50%      { opacity: 0.7; transform: scale(1.18) rotate(12deg); }
   }
   .hero .hero-sub {
-    font-size: 22px; color: #78350f; margin-bottom: 36px;
+    font-size: 19px; color: #9a3412; margin-bottom: 28px;
     line-height: 1.55;
-    font-weight: 500;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
   }
 
-  /* ━━ 글래스모피즘 검색창 ━━ */
+  /* ━━ 글래스모피즘 검색창 (배너 톤 매칭) ━━ */
   .hero .hero-search {
     position: relative;
-    background: rgba(255, 255, 255, 0.55);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    border: 1.5px solid rgba(255, 255, 255, 0.85);
-    border-radius: 28px;
+    background: rgba(255, 248, 240, 0.7);
+    backdrop-filter: blur(20px) saturate(170%);
+    -webkit-backdrop-filter: blur(20px) saturate(170%);
+    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    border-radius: 26px;
     box-shadow:
-      0 20px 48px -12px rgba(120, 53, 15, 0.22),
-      0 6px 16px -6px rgba(0, 0, 0, 0.06),
+      0 18px 42px -10px rgba(154, 52, 18, 0.18),
+      0 5px 14px -4px rgba(0, 0, 0, 0.05),
       inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 -1px 0 rgba(245, 158, 11, 0.12);
+      inset 0 -1px 0 rgba(245, 158, 11, 0.1);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 3;
   }
   .hero .hero-search:focus-within {
-    background: rgba(255, 255, 255, 0.85);
-    border-color: rgba(245, 158, 11, 0.55);
+    background: rgba(255, 252, 247, 0.92);
+    border-color: rgba(251, 146, 60, 0.55);
     box-shadow:
-      0 28px 64px -16px rgba(245, 158, 11, 0.4),
-      0 12px 24px -8px rgba(0, 0, 0, 0.08),
+      0 24px 56px -14px rgba(251, 146, 60, 0.35),
+      0 10px 22px -6px rgba(0, 0, 0, 0.07),
       inset 0 1px 0 rgba(255, 255, 255, 1),
-      0 0 0 4px rgba(251, 191, 36, 0.18);
+      0 0 0 4px rgba(254, 215, 170, 0.5);
     transform: translateY(-2px) scale(1.005);
   }
   .hero .hero-search input {
@@ -742,17 +741,17 @@
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
   }
-  /* 그라데이션 링 (이미지의 흰 배경을 자연스럽게 감쌈 — "폴라로이드"느낌) */
+  /* 그라데이션 링 — 배너 톤 매칭 (앰버 → 코랄 핑크, 보라 제거) */
   .hero-character-frame {
     position: relative;
-    padding: 8px;
-    background: linear-gradient(135deg, #fbbf24 0%, #f43f5e 50%, #a855f7 100%);
+    padding: 10px;
+    background: linear-gradient(135deg, #fbbf24 0%, #fb923c 45%, #fb7185 100%);
     border-radius: 32px;
     box-shadow:
-      0 25px 50px -12px rgba(245, 158, 11, 0.45),
-      0 -8px 30px -8px rgba(251, 113, 133, 0.28),
-      15px 5px 35px -10px rgba(168, 85, 247, 0.25),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
+      0 30px 56px -14px rgba(251, 146, 60, 0.4),
+      0 -8px 28px -8px rgba(251, 113, 133, 0.28),
+      0 0 60px rgba(254, 215, 170, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
     animation: heroBob 4s ease-in-out infinite;
   }
   .hero-character-frame::after {
