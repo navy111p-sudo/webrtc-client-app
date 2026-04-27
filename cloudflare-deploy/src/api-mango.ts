@@ -4,11 +4,16 @@
  *  - 비상 카카오 ID 관리 / 비상 이벤트 로깅
  *  - 보상(스티커/쿠폰) 발급 with 일일 상한
  *  - 관리 대시보드 KPI
+ *  - 🥭 Phase 21: AI 명령 엔드포인트 (Workers AI Llama 3.3 70B)
  */
+
+import { processAiCommand, executeAction } from './ai-command';
 
 export interface MangoEnv {
   DB: D1Database;
   SESSION_STATE: KVNamespace;
+  // 🥭 Phase 21 — Workers AI 바인딩 (검색창 AI 명령)
+  AI?: any;
 }
 
 const json = (data: any, status = 200): Response =>
@@ -947,6 +952,39 @@ export async function handleMangoApi(
       } catch (e: any) {
         return json({ ok: false, error: String(e?.message || e) }, 500);
       }
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 🥭 Phase 21 — AI 명령 (Workers AI Llama 3.3 70B)
+    //   POST /api/admin/ai-command  { command: string }
+    //     · 자연어 명령을 의도 분류 (answer / navigate / query / action)
+    //     · query intent 는 서버에서 자동 도구 실행 후 결과 반환
+    //     · action intent 는 confirm_text 만 반환 (실행은 ai-action 엔드포인트)
+    //   POST /api/admin/ai-action   { name: string, args: object }
+    //     · 사용자가 confirm 다이얼로그 OK 한 후 호출
+    //     · 화이트리스트 액션만 실행 (send_kakao_self/issue_sticker/mark_intervention)
+    // ════════════════════════════════════════════════════════════
+    if (method === 'POST' && path === '/api/admin/ai-command') {
+      if (!env.AI) {
+        return json({ ok: false, error: 'ai_binding_missing',
+                      hint: 'wrangler.toml 에 [ai] binding=AI 설정 후 재배포 필요' }, 503);
+      }
+      const body = await parseJsonBody(request);
+      const command = body?.command || '';
+      if (!command) return json({ ok: false, error: 'command_required' }, 400);
+      const result = await processAiCommand(env, command);
+      return json(result, result.ok === false ? 500 : 200);
+    }
+
+    if (method === 'POST' && path === '/api/admin/ai-action') {
+      const body = await parseJsonBody(request);
+      const name = body?.name || '';
+      const args = body?.args || {};
+      if (!name) return json({ ok: false, error: 'name_required' }, 400);
+      // adminUserId 는 세션쿠키 미들웨어에서 헤더로 주입되거나 미상이면 null
+      const adminUserId = request.headers.get('x-admin-user-id') || null;
+      const result = await executeAction(env, name, args, adminUserId);
+      return json(result, result.ok === false ? 400 : 200);
     }
 
     if (method === 'GET' && path === '/api/admin/stats/revenue') {

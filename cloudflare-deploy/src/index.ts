@@ -37,6 +37,10 @@ interface Env {
   //   - wrangler.toml 의 [vars] / [env.production.vars] 에서 주입.
   //   - fix-and-deploy.ps1 이 커밋 직전 자동으로 현재 시각+단축해시로 갱신.
   BUILD_STAMP?: string;
+  // 🥭 Phase 21 — Workers AI 바인딩 (검색창 AI 명령)
+  //   - wrangler.toml 의 [ai] binding = "AI" 로 주입
+  //   - Llama 3.3 70B Instruct fp8-fast 사용 (한국어 + function calling)
+  AI?: any;
 }
 
 export { SignalingRoom, VideoCallRoom };
@@ -223,6 +227,8 @@ export default {
         /^\/api\/admin\/notifications\/\d+$/.test(path) ||
         path.startsWith('/api/admin/export/') ||
         path.startsWith('/api/admin/stats/') ||
+        path === '/api/admin/ai-command' ||
+        path === '/api/admin/ai-action' ||
         path === '/api/admin/teachers' ||
         /^\/api\/admin\/teachers\/\d+$/.test(path) ||
         path === '/api/admin/teacher-hours' ||
@@ -971,6 +977,8 @@ function isAdminPath(path: string, method: string): boolean {
   if (path.startsWith('/api/admin/export/')) return true;
   // 💰 저장소·비용 통계 (Phase 7) — 관리자 전용
   if (path.startsWith('/api/admin/stats/')) return true;
+  // 🥭 Phase 21 — AI 명령 / 액션 (Workers AI)
+  if (path === '/api/admin/ai-command' || path === '/api/admin/ai-action') return true;
   // 💼 강사 급여·평가 (Phase 8) — 관리자 전용
   if (path === '/api/admin/teachers' || /^\/api\/admin\/teachers\/\d+$/.test(path)) return true;
   if (path === '/api/admin/teacher-hours') return true;          // (deprecated, 호환성)

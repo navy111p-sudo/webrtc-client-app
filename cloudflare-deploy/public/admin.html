@@ -726,6 +726,89 @@
   }
   .hero .hero-search-dropdown.show { display: block; }
 
+  /* 🥭 Phase 21 — AI 응답 패널 (검색창 아래 카드)
+     - 글래스모피즘으로 검색창과 톤 통일
+     - 4가지 intent 표시 영역 (answer/navigate/query/action) */
+  .ai-panel {
+    margin-top: 16px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-radius: 20px;
+    box-shadow:
+      0 16px 48px -12px rgba(120, 53, 15, 0.18),
+      0 4px 12px -3px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    animation: aiPanelIn 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes aiPanelIn {
+    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .ai-panel-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.18), rgba(251, 146, 60, 0.18));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  }
+  .ai-panel-badge {
+    font-size: 13px; font-weight: 700;
+    color: #9a3412;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.02em;
+  }
+  .ai-panel-title { flex: 1; font-size: 14px; font-weight: 600; color: #78350f; }
+  .ai-panel-close {
+    background: transparent; border: 0; color: #9a3412;
+    font-size: 16px; cursor: pointer; padding: 6px 10px; border-radius: 8px;
+  }
+  .ai-panel-close:hover { background: rgba(0,0,0,0.05); }
+  .ai-panel-body { padding: 18px 22px; max-height: 420px; overflow-y: auto; }
+  .ai-loading { display: flex; align-items: center; gap: 10px; color: #92400e; font-size: 14px; }
+  .ai-dots { display: inline-flex; gap: 4px; }
+  .ai-dots i {
+    width: 6px; height: 6px; background: #f59e0b; border-radius: 50%;
+    animation: aiDot 1.2s ease-in-out infinite both;
+  }
+  .ai-dots i:nth-child(2) { animation-delay: 0.16s; }
+  .ai-dots i:nth-child(3) { animation-delay: 0.32s; }
+  @keyframes aiDot {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30%           { transform: translateY(-6px); opacity: 1; }
+  }
+  .ai-content { font-size: 14px; line-height: 1.6; color: #422006; }
+  .ai-content .ai-answer { white-space: pre-wrap; }
+  .ai-content .ai-tool-name {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    background: #fef3c7; color: #78350f;
+    padding: 3px 8px; border-radius: 6px; margin-bottom: 10px;
+  }
+  .ai-content table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+  .ai-content table th, .ai-content table td {
+    padding: 8px 10px; text-align: left;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .ai-content table th { font-weight: 600; color: #78350f; background: rgba(251, 191, 36, 0.08); }
+  .ai-content .ai-action-confirm {
+    margin-top: 14px; padding: 14px 16px;
+    background: rgba(254, 226, 226, 0.7); border-left: 4px solid #ef4444;
+    border-radius: 8px;
+  }
+  .ai-content .ai-action-confirm .label { font-weight: 600; color: #991b1b; margin-bottom: 8px; }
+  .ai-content .ai-action-buttons { display: flex; gap: 10px; margin-top: 12px; }
+  .ai-content .ai-action-buttons button {
+    padding: 8px 16px; border-radius: 8px; border: 0; cursor: pointer; font-weight: 600;
+  }
+  .ai-content .ai-action-confirm-btn { background: #dc2626; color: #fff; }
+  .ai-content .ai-action-confirm-btn:hover { background: #b91c1c; }
+  .ai-content .ai-action-cancel-btn { background: #e5e7eb; color: #374151; }
+  .ai-content .ai-error {
+    color: #991b1b; padding: 10px 14px;
+    background: rgba(254, 226, 226, 0.5); border-radius: 8px; font-size: 13px;
+  }
+
   /* ━━ 글래스 힌트 칩 ━━ */
   .hero-tips {
     margin-top: 28px;
@@ -1172,6 +1255,24 @@
           <div class="hero-search-dropdown menu-search-dropdown" id="menu-search-dropdown"></div>
         </div>
         <div class="voice-hint" id="voice-hint" data-ko="🎙 듣고 있습니다… 말씀해주세요" data-en="🎙 Listening… speak now" style="display:none">🎙 듣고 있습니다… 말씀해주세요</div>
+
+        <!-- 🥭 Phase 21 — AI 응답 패널 (검색창 Enter → AI 명령 결과 표시)
+             - 기본 숨김, AI 호출 시 펼침
+             - 4가지 intent: answer/navigate/query(데이터 카드)/action(확인 다이얼로그) -->
+        <div class="ai-panel" id="ai-panel" style="display:none">
+          <div class="ai-panel-head">
+            <span class="ai-panel-badge">🤖 AI</span>
+            <span class="ai-panel-title" id="ai-panel-title">AI 응답</span>
+            <button class="ai-panel-close" id="ai-panel-close" type="button" aria-label="닫기">✕</button>
+          </div>
+          <div class="ai-panel-body" id="ai-panel-body">
+            <div class="ai-loading" id="ai-loading" style="display:none">
+              <span class="ai-dots"><i></i><i></i><i></i></span>
+              <span data-ko="망고아이가 생각 중…" data-en="Mangoi AI is thinking…">망고아이가 생각 중…</span>
+            </div>
+            <div class="ai-content" id="ai-content"></div>
+          </div>
+        </div>
       </div>
       <div class="hero-character">
         <div class="hero-character-frame">
@@ -5043,10 +5144,17 @@ function renderSearchDropdown(q) {
       e.preventDefault();
       const idx = _searchActiveIdx >= 0 ? _searchActiveIdx : 0;
       const hit = _searchCurrentHits[idx];
+      // 🥭 Phase 21 — 드롭다운 매칭 있으면 메뉴 점프, 없으면 AI 명령으로 위임
       if (hit && typeof hit.action === 'function') {
         hit.action();
         dd.classList.remove('show');
         input.blur();
+      } else {
+        const q = (input.value || '').trim();
+        if (q && typeof askAI === 'function') {
+          dd.classList.remove('show');
+          askAI(q);
+        }
       }
     } else if (e.key === 'Escape') {
       dd.classList.remove('show'); input.blur();
@@ -5077,6 +5185,235 @@ function renderSearchDropdown(q) {
     input.focus();
   });
 })();
+
+/* ════════════════════════════════════════════════════════════
+   🥭 Phase 21 — AI 명령 호출 + 응답 패널 렌더링
+   - askAI(command): /api/admin/ai-command 호출 → intent 별 분기
+   - 4가지 intent 처리:
+     · answer    → 텍스트 답변 표시
+     · navigate  → window.location 이동 (사용자 확인 짧게)
+     · query     → 도구 결과를 데이터 카드/표로 렌더
+     · action    → 빨간 확인 다이얼로그 → confirm 시 /api/admin/ai-action 실행
+   ════════════════════════════════════════════════════════════ */
+function _aiPanelOpen() {
+  const p = document.getElementById('ai-panel');
+  if (p) p.style.display = 'block';
+}
+function _aiPanelClose() {
+  const p = document.getElementById('ai-panel');
+  if (p) p.style.display = 'none';
+  const c = document.getElementById('ai-content');
+  if (c) c.innerHTML = '';
+}
+function _aiSetLoading(on, title) {
+  const ld = document.getElementById('ai-loading');
+  const ct = document.getElementById('ai-content');
+  const tt = document.getElementById('ai-panel-title');
+  if (ld) ld.style.display = on ? 'flex' : 'none';
+  if (ct && on) ct.innerHTML = '';
+  if (tt && title) tt.textContent = title;
+}
+function _aiEsc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+  ));
+}
+function _aiFmtNum(n) {
+  return (typeof n === 'number') ? n.toLocaleString('ko-KR') : _aiEsc(n);
+}
+
+// query 결과를 도구별로 보기 좋게 렌더
+function _aiRenderQueryResult(tool, result, args) {
+  if (!result) return '<div class="ai-error">결과가 비어있습니다.</div>';
+  if (result.error) return '<div class="ai-error">오류: ' + _aiEsc(result.error) + '</div>';
+
+  if (tool === 'today_stats') {
+    return `
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px">
+        <div class="card" style="border-left:4px solid #f59e0b"><div class="card-label">📅 매출</div><div class="card-value">₩${_aiFmtNum(result.revenue_krw)}</div></div>
+        <div class="card" style="border-left:4px solid #10b981"><div class="card-label">👥 학생수</div><div class="card-value">${_aiFmtNum(result.attended)}/${_aiFmtNum(result.active_students)}</div></div>
+        <div class="card" style="border-left:4px solid #ef4444"><div class="card-label">🚫 결석률</div><div class="card-value">${result.absence_rate_pct}%</div></div>
+        <div class="card" style="border-left:4px solid #3b82f6"><div class="card-label">✨ 신규</div><div class="card-value">${_aiFmtNum(result.new_signups)}</div></div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:8px">기준일: ${_aiEsc(result.date)} (KST)</div>
+    `;
+  }
+
+  if (tool === 'weekly_dashboard') {
+    return `
+      <div>최근 7일 — 총 세션 <b>${_aiFmtNum(result.total_sessions)}</b>회 ·
+        재연결 <b>${_aiFmtNum(result.total_disconnects)}</b>회 ·
+        평균 발화 <b>${result.avg_speaking_pct}%</b></div>
+    `;
+  }
+
+  if (tool === 'find_student') {
+    if (!result.matches || result.matches.length === 0) {
+      return '<div class="ai-error">"' + _aiEsc(args?.q || '') + '" 검색 결과 없음</div>';
+    }
+    let html = '<div class="ai-tool-name">🔍 학생 검색 — ' + result.count + '명</div><table>'
+      + '<tr><th>UID</th><th>한글</th><th>영문</th><th>상태</th><th>가입일</th><th></th></tr>';
+    for (const s of result.matches) {
+      const uidEnc = encodeURIComponent(s.user_id || '');
+      html += '<tr>'
+        + '<td><code>' + _aiEsc(s.user_id) + '</code></td>'
+        + '<td>' + _aiEsc(s.korean_name) + '</td>'
+        + '<td>' + _aiEsc(s.english_name) + '</td>'
+        + '<td>' + _aiEsc(s.status) + '</td>'
+        + '<td>' + _aiEsc(s.signup_date) + '</td>'
+        + '<td><a href="/admin/student.html?uid=' + uidEnc + '" style="color:#f59e0b">상세 →</a></td>'
+        + '</tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  if (tool === 'revenue') {
+    if (!result.items || result.items.length === 0) return '<div class="ai-error">매출 데이터 없음</div>';
+    let html = '<div class="ai-tool-name">💰 매출 (' + _aiEsc(result.period) + ')</div><table>'
+      + '<tr><th>기간</th><th style="text-align:right">매출</th></tr>';
+    for (const r of result.items) {
+      html += '<tr><td>' + _aiEsc(r.label) + '</td><td style="text-align:right">₩' + _aiFmtNum(r.revenue) + '</td></tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  if (tool === 'active_rooms') {
+    if (!result.rooms || result.rooms.length === 0) return '<div class="ai-error">현재 활성 수업 없음</div>';
+    let html = '<div class="ai-tool-name">📡 활성 방 — ' + result.count + '개</div><table>'
+      + '<tr><th>방 ID</th><th>참여자</th><th>시작</th></tr>';
+    for (const r of result.rooms) {
+      html += '<tr><td><code>' + _aiEsc(r.room_id) + '</code></td><td>' + _aiFmtNum(r.users) + '명</td><td>'
+           + new Date(r.started_at).toLocaleString('ko-KR') + '</td></tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  if (tool === 'recent_recordings') {
+    if (!result.recordings || result.recordings.length === 0) return '<div class="ai-error">녹화 데이터 없음</div>';
+    let html = '<div class="ai-tool-name">🎬 최근 녹화 — ' + result.count + '개</div><table>'
+      + '<tr><th>방</th><th>학생</th><th>시작</th><th>길이</th><th>크기</th></tr>';
+    for (const r of result.recordings) {
+      const dur = r.duration_ms ? Math.round(r.duration_ms/60000) + '분' : '—';
+      const sz = r.size_bytes ? (r.size_bytes/1048576).toFixed(1) + 'MB' : '—';
+      html += '<tr><td><code>' + _aiEsc(r.room_id) + '</code></td><td>' + _aiEsc(r.user_id) + '</td>'
+           + '<td>' + new Date(r.started_at).toLocaleString('ko-KR') + '</td>'
+           + '<td>' + dur + '</td><td>' + sz + '</td></tr>';
+    }
+    html += '</table>';
+    return html;
+  }
+
+  // fallback — JSON 그대로
+  return '<pre style="font-size:12px;background:#f9fafb;padding:10px;border-radius:6px;overflow:auto">'
+       + _aiEsc(JSON.stringify(result, null, 2)) + '</pre>';
+}
+
+async function askAI(command) {
+  _aiPanelOpen();
+  _aiSetLoading(true, '🤖 AI 처리 중…');
+
+  let res;
+  try {
+    const r = await fetch('/api/admin/ai-command', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ command })
+    });
+    res = await r.json();
+  } catch (e) {
+    _aiSetLoading(false, '⚠️ 오류');
+    document.getElementById('ai-content').innerHTML =
+      '<div class="ai-error">AI 호출 실패: ' + _aiEsc(String(e && e.message || e)) + '</div>';
+    return;
+  }
+  _aiSetLoading(false, '🤖 AI 응답');
+
+  const ct = document.getElementById('ai-content');
+  if (!res || res.ok === false) {
+    ct.innerHTML = '<div class="ai-error">' + _aiEsc(res?.error || '알 수 없는 오류') +
+      (res?.detail ? ' — ' + _aiEsc(res.detail) : '') + '</div>';
+    return;
+  }
+
+  // intent 분기
+  if (res.intent === 'answer') {
+    ct.innerHTML = '<div class="ai-answer">' + _aiEsc(res.answer || '') + '</div>';
+    return;
+  }
+
+  if (res.intent === 'navigate') {
+    ct.innerHTML = '<div class="ai-answer">' + _aiEsc(res.answer || '페이지로 이동합니다…') + '</div>';
+    setTimeout(() => { window.location.href = res.url || '/admin.html'; }, 600);
+    return;
+  }
+
+  if (res.intent === 'query') {
+    let html = '';
+    if (res.answer) html += '<div class="ai-answer" style="margin-bottom:10px">' + _aiEsc(res.answer) + '</div>';
+    html += _aiRenderQueryResult(res.tool, res.result, res.args);
+    ct.innerHTML = html;
+    return;
+  }
+
+  if (res.intent === 'action') {
+    const argsJson = JSON.stringify(res.args || {});
+    ct.innerHTML =
+      '<div class="ai-answer">' + _aiEsc(res.answer || '') + '</div>' +
+      '<div class="ai-action-confirm">' +
+        '<div class="label">⚠️ 확인이 필요한 작업</div>' +
+        '<div>' + _aiEsc(res.confirm_text || '실행하시겠습니까?') + '</div>' +
+        '<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:#9ca3af">실행 상세</summary>' +
+        '<pre style="font-size:11px;background:#f9fafb;padding:8px;border-radius:6px;margin-top:6px">' +
+        _aiEsc(JSON.stringify({name: res.name, args: res.args}, null, 2)) +
+        '</pre></details>' +
+        '<div class="ai-action-buttons">' +
+          '<button class="ai-action-confirm-btn" onclick="executeAiAction(' +
+            "'" + _aiEsc(res.name) + "'," + _aiEsc(argsJson).replace(/'/g, "&#39;") + ')">실행</button>' +
+          '<button class="ai-action-cancel-btn" onclick="_aiPanelClose()">취소</button>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
+  ct.innerHTML = '<div class="ai-error">알 수 없는 intent: ' + _aiEsc(res.intent) + '</div>';
+}
+
+// 사용자 확인 후 액션 실행
+async function executeAiAction(name, args) {
+  if (typeof args === 'string') {
+    try { args = JSON.parse(args); } catch { args = {}; }
+  }
+  _aiSetLoading(true, '실행 중…');
+  try {
+    const r = await fetch('/api/admin/ai-action', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, args })
+    });
+    const j = await r.json();
+    _aiSetLoading(false, '✅ 완료');
+    const ct = document.getElementById('ai-content');
+    if (j.ok) {
+      ct.innerHTML = '<div class="ai-answer">✅ <b>' + _aiEsc(name) + '</b> 실행 완료.</div>' +
+        '<pre style="font-size:11px;background:#f0fdf4;padding:10px;border-radius:6px;margin-top:8px">' +
+        _aiEsc(JSON.stringify(j, null, 2)) + '</pre>';
+    } else {
+      ct.innerHTML = '<div class="ai-error">실행 실패: ' + _aiEsc(j.error || '알 수 없는 오류') + '</div>';
+    }
+  } catch (e) {
+    _aiSetLoading(false, '⚠️ 오류');
+    document.getElementById('ai-content').innerHTML =
+      '<div class="ai-error">실행 중 오류: ' + _aiEsc(String(e && e.message || e)) + '</div>';
+  }
+}
+
+// 닫기 버튼
+document.getElementById('ai-panel-close')?.addEventListener('click', _aiPanelClose);
 
 // 사이드바 클릭 → 메뉴 점프 (이벤트 위임)
 document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) => {
