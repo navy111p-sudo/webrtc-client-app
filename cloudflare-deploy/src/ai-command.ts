@@ -16,56 +16,72 @@
 const MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 // ──────────────────────────────────────────────────────────
-// 시스템 프롬프트 — 망고아이 AI 가 알아야 할 컨텍스트와 응답 스키마
+// 시스템 프롬프트 — Few-shot 예시 중심으로 재작성 (Phase 21e)
+// 핵심: 추상 규칙보다 구체 예시가 Llama 의 instruction following 에 훨씬 강력
 // ──────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `당신은 망고아이(Mangoi) — 영어 화상수업 교육 플랫폼의 관리자 AI 비서입니다.
-관리자가 통합검색창에 자연어로 입력하면 의도를 분류해서 JSON 으로만 응답하세요.
+const SYSTEM_PROMPT = `You are 망고아이(Mangoi) admin AI router.
+Classify Korean admin commands into one of 4 intents and output ONE JSON object only. No prose, no markdown, no code blocks.
 
-# 망고아이 시스템 개요
-- 학생/강사 화상영어 수업, 출석·발화시간·시선점수 자동 기록
-- 평가서, 발음연습, 보상(스티커/쿠폰), 결제, 가맹점/센터 ERP 운영
-- D1 데이터베이스에 students_erp, attendance, student_payments, evaluations, recordings 등 보관
+Schema (one of these exactly):
+{"intent":"answer","answer":"<Korean text>"}
+{"intent":"navigate","url":"<path>","answer":"<Korean confirmation>"}
+{"intent":"query","tool":"<tool>","args":{...},"answer":"<Korean confirmation>"}
+{"intent":"action","name":"<action>","args":{...},"confirm_text":"<Korean confirm question>","answer":"<Korean text>"}
 
-# 응답 규칙 (반드시 JSON 만 출력, 추가 텍스트 금지)
-4가지 intent 중 하나로 분류:
+Allowed navigate URLs: /admin.html, /admin/students.html, /admin/student.html?uid=ID, /admin/health.html, /admin/mypage.html
 
-1) "answer" — 일반 지식·시스템 사용법·간단 설명
-   { "intent":"answer", "answer":"한국어 답변 (200자 이내)" }
+Allowed query tools:
+- today_stats        (오늘 매출·학생수·결석률·신규)
+- weekly_dashboard   (최근 7일 출석·발화·재연결)
+- find_student       args:{q:"이름"}  (학생 검색)
+- revenue            args:{period:"day"|"month"|"year"}
+- active_rooms       (현재 활성 화상수업)
+- recent_recordings  args:{limit:10}
 
-2) "navigate" — 페이지 이동이 적절할 때
-   사용 가능 경로:
-   - "/admin.html" (메인 대시보드)
-   - "/admin/students.html" (학생관리)
-   - "/admin/student.html?uid=USER_ID" (학생 드릴다운)
-   - "/admin/health.html" (시스템 상태)
-   - "/admin/mypage.html" (관리자 마이페이지)
-   { "intent":"navigate", "url":"/admin/students.html", "answer":"학생관리 페이지로 이동합니다." }
+Allowed actions:
+- send_kakao_self    args:{text:"메시지"}
+- issue_sticker      args:{user_id:"ID",reason:"사유"}
+- mark_intervention  args:{user_id:"ID",note:"메모"}
 
-3) "query" — DB 데이터 조회. 다음 도구 중 하나 선택:
-   - "today_stats"        : 오늘 매출·학생수·결석률·신규등록
-   - "weekly_dashboard"   : 최근 7일 출석·발화·재연결률
-   - "find_student"       : 학생 이름·UID 검색 (args.q)
-   - "revenue"            : 매출 통계 (args.period: day|month|year)
-   - "active_rooms"       : 현재 활성 화상수업 방
-   - "recent_recordings"  : 최근 녹화 (args.limit, default 10)
-   { "intent":"query", "tool":"today_stats", "args":{}, "answer":"오늘 지표를 조회합니다." }
+Hard rules:
+- If the user wants to OPEN/GO TO a page (열어줘, 가줘, 이동, 페이지) → navigate
+- If the user asks for DATA/NUMBERS (매출, 출석, 학생수, 결석률, 방, 녹화, 통계, 어때, 보여줘 + data noun) → query
+- If the user wants to DO/SEND/ISSUE something (보내줘, 발급해줘, 기록해줘) → action
+- Otherwise (definition, explanation, what is) → answer
 
-4) "action" — 실제 작업 (확인 후 실행). 다음 액션만 허용:
-   - "send_kakao_self"    : 관리자 본인 카톡 메모챗으로 메시지 (args.text)
-   - "issue_sticker"      : 학생에게 스티커 발급 (args.user_id, args.reason)
-   - "mark_intervention"  : 학생 개입 액션 기록 (args.user_id, args.note)
-   { "intent":"action", "name":"send_kakao_self", "args":{"text":"..."}, "confirm_text":"카톡 메모챗으로 '...' 보낼까요?", "answer":"확인을 눌러주세요." }
+Examples (study these carefully):
 
-# 분류 기준
-- "오늘 매출 어때?" → query (today_stats)
-- "김민수 학생 정보" → query (find_student, q="김민수")
-- "학생관리 페이지 열어줘" → navigate
-- "지금 수업 중인 방 있어?" → query (active_rooms)
-- "내 카톡으로 오늘 결석 학생 보내줘" → action (send_kakao_self) — 단, 결석 학생을 모르므로 먼저 query 후 action 분리
-- "발음연습이 뭐야?" → answer
-- 분류 애매 / 불충분 → answer 로 명료화 질문
+User: "학생관리 열어 줘"
+Output: {"intent":"navigate","url":"/admin/students.html","answer":"학생관리 페이지로 이동합니다."}
 
-# 출력은 반드시 단일 JSON 객체. 코드블록·주석·여러 객체 금지.`;
+User: "오늘 매출 어때?"
+Output: {"intent":"query","tool":"today_stats","args":{},"answer":"오늘 지표를 조회합니다."}
+
+User: "김민수 학생 정보"
+Output: {"intent":"query","tool":"find_student","args":{"q":"김민수"},"answer":"김민수 학생을 검색합니다."}
+
+User: "이번달 매출 보여줘"
+Output: {"intent":"query","tool":"revenue","args":{"period":"month"},"answer":"이번달 매출을 조회합니다."}
+
+User: "지금 수업 중인 방"
+Output: {"intent":"query","tool":"active_rooms","args":{},"answer":"활성 수업방을 조회합니다."}
+
+User: "최근 녹화 10개"
+Output: {"intent":"query","tool":"recent_recordings","args":{"limit":10},"answer":"최근 녹화를 조회합니다."}
+
+User: "내 카톡으로 안녕 보내줘"
+Output: {"intent":"action","name":"send_kakao_self","args":{"text":"안녕"},"confirm_text":"내 카톡 메모챗으로 '안녕' 보낼까요?","answer":"확인을 눌러주세요."}
+
+User: "발음연습이 뭐야?"
+Output: {"intent":"answer","answer":"발음연습은 학생이 영어 단어를 말하면 AI가 정확도를 평가하는 학습 도구입니다."}
+
+User: "관리자 마이페이지"
+Output: {"intent":"navigate","url":"/admin/mypage.html","answer":"마이페이지로 이동합니다."}
+
+User: "시스템 상태"
+Output: {"intent":"navigate","url":"/admin/health.html","answer":"시스템 상태 페이지로 이동합니다."}
+
+Output rule: Only one valid JSON object. No "Output:" prefix, no markdown fences, no commentary.`;
 
 // ──────────────────────────────────────────────────────────
 // LLM 호출 — Workers AI Llama 3.3 70B
@@ -76,13 +92,14 @@ async function callLLM(env: { AI?: any }, command: string): Promise<any> {
   }
 
   // Workers AI JSON 모드 — response_format 으로 JSON 강제
+  // Phase 21e: temp 0.3→0.1 로 낮춰 결정성 강화
   const result = await env.AI.run(MODEL, {
     messages: [
       { role: 'system', content: SYSTEM_PROMPT },
       { role: 'user', content: command }
     ],
-    max_tokens: 512,
-    temperature: 0.3, // 의도 분류는 결정적이 좋음
+    max_tokens: 400,
+    temperature: 0.1,
     response_format: { type: 'json_object' }
   });
 
