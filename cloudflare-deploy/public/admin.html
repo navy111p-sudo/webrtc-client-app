@@ -10,7 +10,21 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans KR', -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif; background: #f3f4f6; color: #111827; padding: 24px; letter-spacing: -0.5px; line-height: 1; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, "맑은 고딕", "Malgun Gothic", sans-serif;
+    color: #1c1917;
+    padding: 24px;
+    letter-spacing: -0.5px;
+    line-height: 1;
+    /* Phase 14d: 페이지 전체 배경도 따뜻한 그라데이션 메시 */
+    background:
+      radial-gradient(circle at 0% 0%, rgba(251, 191, 36, 0.12) 0%, transparent 35%),
+      radial-gradient(circle at 100% 0%, rgba(244, 114, 182, 0.08) 0%, transparent 30%),
+      radial-gradient(circle at 100% 100%, rgba(168, 85, 247, 0.08) 0%, transparent 30%),
+      linear-gradient(180deg, #fffbf5 0%, #fef7ed 50%, #fff7ed 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
   .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
   h1 { font-size: 24px; font-weight: 700; }
   .controls { display: flex; gap: 8px; align-items: center; }
@@ -44,21 +58,97 @@
   .score-na   { color:#9ca3af; }
   @media (max-width: 768px) { .charts { grid-template-columns: 1fr; } }
 
-  /* === 사이드바 + 메인 레이아웃 === */
-  .admin-layout { display: grid; grid-template-columns: 240px 1fr; gap: 20px; }
+  /* ════════════════════════════════════════════════════════════
+     🥭 Phase 14d — 사이드바 글래스모피즘 재디자인 (히어로 톤 매칭)
+     - 반투명 글래스 + backdrop-filter blur
+     - 따뜻한 크림/피치 그라데이션 베이스
+     - 호버: 살짝 좌측으로 슬라이드 + 앰버 그라데이션 배경
+     - 액티브: 앰버→코랄 그라데이션 + 흰 글자
+  ════════════════════════════════════════════════════════════ */
+  .admin-layout { display: grid; grid-template-columns: 260px 1fr; gap: 24px; }
   .admin-sidebar {
     position: sticky; top: 20px; align-self: start;
-    background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:14px 10px;
-    max-height: calc(100vh - 40px); overflow-y: auto; box-shadow:0 1px 3px rgba(0,0,0,0.05);
+    background:
+      linear-gradient(180deg, rgba(255,251,235,0.7) 0%, rgba(255,237,213,0.55) 50%, rgba(254,215,170,0.45) 100%);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 24px;
+    padding: 18px 12px;
+    max-height: calc(100vh - 40px); overflow-y: auto;
+    box-shadow:
+      0 16px 40px -12px rgba(120, 53, 15, 0.18),
+      0 4px 12px -4px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    position: sticky;
   }
-  .admin-sidebar h4 { margin:6px 8px 10px; font-size:11px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; }
+  /* 사이드바 자체에도 미세한 컬러 블롭 */
+  .admin-sidebar::before {
+    content: '';
+    position: absolute; top: 0; right: 0; width: 100%; height: 120px;
+    background: radial-gradient(circle at 80% 30%, rgba(251, 191, 36, 0.25) 0%, transparent 60%);
+    border-radius: 24px 24px 0 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .admin-sidebar > * { position: relative; z-index: 1; }
+
+  .admin-sidebar::-webkit-scrollbar { width: 6px; }
+  .admin-sidebar::-webkit-scrollbar-track { background: transparent; }
+  .admin-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(245, 158, 11, 0.3); border-radius: 3px;
+  }
+  .admin-sidebar::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.5); }
+
+  .admin-sidebar h4 {
+    margin: 4px 10px 14px;
+    font-size: 11px; font-weight: 800;
+    background: linear-gradient(135deg, #c2410c, #f59e0b);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-transform: uppercase; letter-spacing: 1.2px;
+  }
   .admin-sidebar a {
-    display:block; padding:7px 10px; font-size:13px; color:#374151;
-    text-decoration:none; border-radius:6px; cursor:pointer;
-    transition: background 0.12s;
+    display: block; padding: 10px 14px;
+    margin-bottom: 3px;
+    font-size: 13px; font-weight: 500;
+    color: #44403c;
+    text-decoration: none;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid transparent;
   }
-  .admin-sidebar a:hover { background:#eff6ff; color:#1e40af; }
-  .admin-sidebar a.active { background:#3b82f6; color:#fff; font-weight:600; }
+  .admin-sidebar a:hover {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(8px);
+    color: #7c2d12;
+    transform: translateX(4px);
+    border-color: rgba(245, 158, 11, 0.25);
+    box-shadow:
+      0 4px 12px -4px rgba(120, 53, 15, 0.18),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  .admin-sidebar a.active {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 60%, #f43f5e 100%);
+    color: #fff;
+    font-weight: 700;
+    transform: translateX(4px);
+    box-shadow:
+      0 8px 20px -4px rgba(245, 158, 11, 0.5),
+      0 2px 6px -1px rgba(120, 53, 15, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .admin-sidebar a.active::before {
+    content: '';
+    position: absolute; left: -1px; top: 8px; bottom: 8px;
+    width: 3px; border-radius: 2px;
+    background: #fff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+  }
   /* 좁은 화면에서는 사이드바 숨김 */
   @media (max-width: 900px) {
     .admin-layout { grid-template-columns: 1fr; }
@@ -353,18 +443,41 @@
   .legacy-cards.legacy-show { display: block; }
 
   .menu-toggle-bar {
-    display: flex; gap: 10px; align-items: center; justify-content: center;
-    margin: 0 auto 24px; max-width: 700px; flex-wrap: wrap;
+    display: flex; gap: 12px; align-items: center; justify-content: center;
+    margin: 0 auto 28px; max-width: 700px; flex-wrap: wrap;
   }
   .menu-toggle-bar button {
-    padding: 10px 22px; font-size: 13px; font-weight: 600;
-    border: 1px solid #d1d5db; border-radius: 22px;
-    background: #fff; color: #374151; cursor: pointer;
-    transition: all 0.15s;
+    padding: 11px 24px; font-size: 13px; font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 999px;
+    background: rgba(255, 255, 255, 0.6);
+    backdrop-filter: blur(12px) saturate(160%);
+    -webkit-backdrop-filter: blur(12px) saturate(160%);
+    color: #7c2d12; cursor: pointer;
+    box-shadow:
+      0 4px 12px -2px rgba(120, 53, 15, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
-  .menu-toggle-bar button:hover { border-color: #f59e0b; color: #92400e; background: #fffbeb; }
-  .menu-toggle-bar button.primary { background: #f59e0b; color: #fff; border-color: #f59e0b; }
-  .menu-toggle-bar button.primary:hover { background: #d97706; }
+  .menu-toggle-bar button:hover {
+    background: rgba(255, 255, 255, 0.85);
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 20px -4px rgba(120, 53, 15, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 1);
+  }
+  .menu-toggle-bar button.primary {
+    background: linear-gradient(135deg, #f59e0b 0%, #ea580c 60%, #f43f5e 100%);
+    color: #fff; border-color: rgba(255, 255, 255, 0.4);
+    box-shadow:
+      0 8px 20px -4px rgba(245, 158, 11, 0.45),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  }
+  .menu-toggle-bar button.primary:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 28px -6px rgba(245, 158, 11, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
 
   /* 모바일 대응 */
   @media (max-width: 900px) {
