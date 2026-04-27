@@ -1087,16 +1087,7 @@ function renderEvaluation(){
     ? Math.round(pronSorted.reduce((s, x) => s + (Number(x.e.score_total)||0), 0) / totalPron * 10) / 10
     : null;
 
-  // 상단 발음연습 요약 배지
-  const pronBadge = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:10px;padding:10px 14px;background:linear-gradient(135deg,rgba(254,215,170,0.5),rgba(252,211,77,0.45));border:1px solid rgba(245,158,11,0.35);border-radius:10px;font-size:13px;color:#7c2d12;flex-wrap:wrap">
-    <span style="font-size:18px">🎯</span>
-    <strong>${_lang==='en'?'Pronunciation Practice':'발음연습'}</strong>
-    <span style="background:#fff;padding:3px 10px;border-radius:12px;font-weight:700;color:#ea580c">${_lang==='en'?'Total ':'총 '}${totalPron}${_lang==='en'?' times':'회'}</span>
-    ${pronAvg!=null ? `<span style="background:#fff;padding:3px 10px;border-radius:12px;font-weight:700;color:#ea580c">${_lang==='en'?'Avg ':'평균 '}${pronAvg}${_lang==='en'?'':'점'}</span>` : ''}
-    <span style="margin-left:auto;font-size:11px;color:#92400e">${_lang==='en'?'Each row shows practice order':'각 행에 연습 순서 표시'}</span>
-  </div>`;
-
-  $('evalBox').innerHTML = pronBadge + '<table class="list"><thead><tr><th>'+t('thDate')+'</th><th>'+t('thType')+'</th><th>'+t('thLevel')+'</th><th>'+t('thTotal')+'</th><th>'+t('thSpeak')+'</th><th>'+t('thList')+'</th><th>'+t('thGrammar')+'</th><th>'+t('thFocus')+'</th><th>🎯 '+(_lang==='en'?'Pron.':'발음연습')+'</th><th>'+t('thEvaluator')+'</th><th>'+t('thNextGoal')+'</th><th>'+t('thComment')+'</th><th>'+t('thReport')+'</th></tr></thead><tbody>'+
+  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDate')+'</th><th>'+t('thType')+'</th><th>'+t('thLevel')+'</th><th>'+t('thTotal')+'</th><th>'+t('thSpeak')+'</th><th>'+t('thList')+'</th><th>'+t('thGrammar')+'</th><th>'+t('thFocus')+'</th><th>🎯 '+(_lang==='en'?'Pron.':'발음연습')+'</th><th>'+t('thEvaluator')+'</th><th>'+t('thNextGoal')+'</th><th>'+t('thComment')+'</th><th>'+t('thReport')+'</th></tr></thead><tbody>'+
     items.map(e=>{
       const isPron = e.eval_type === 'pronunciation';
       const pronCell = isPron

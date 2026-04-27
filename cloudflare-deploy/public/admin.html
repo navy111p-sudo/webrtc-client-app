@@ -232,6 +232,23 @@
     line-height: 1.6;
   }
 
+  /* 🔃 Phase 18 — 정렬 가능 표 헤더 */
+  .sortable-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+    transition: background 0.12s;
+  }
+  .sortable-table th.sortable:hover { background: rgba(245, 158, 11, 0.08); }
+  .sortable-table th.sortable::after {
+    content: '⇅';
+    font-size: 9px; opacity: 0.35;
+    margin-left: 5px; vertical-align: middle;
+    color: #6b7280;
+  }
+  .sortable-table th.sortable.sort-asc::after  { content: '▲'; opacity: 1; color: #ea580c; }
+  .sortable-table th.sortable.sort-desc::after { content: '▼'; opacity: 1; color: #ea580c; }
+
   /* ════════════════════════════════════════════════════════════
      🥭 Phase 14 — 히어로 랜딩 (망고 캐릭터 + 거대 검색창)
      - 좌측 사이드바 + 통합 검색만으로 모든 메뉴 접근
@@ -1147,13 +1164,13 @@
             <a href="/admin/students" target="_blank" style="padding:5px 12px;font-size:12px;background:#f59e0b;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;" data-ko="🖥️ 풀페이지 열기 (ERP)" data-en="🖥️ Open Full Page (ERP)">🖥️ 풀페이지 열기 (ERP)</a>
             <span style="font-size:11px;color:#6b7280;" id="sm-students-count"></span>
           </div>
-          <table>
+          <table id="sm-students-table" class="sortable-table">
             <thead><tr>
-              <th data-ko="user_id" data-en="user_id">user_id</th>
-              <th data-ko="이름" data-en="Name">이름</th>
-              <th data-ko="세션 수" data-en="Sessions">세션 수</th>
-              <th data-ko="최초 방문" data-en="First Seen">최초 방문</th>
-              <th data-ko="최근 방문" data-en="Last Seen">최근 방문</th>
+              <th class="sortable" data-sort-key="user_id"     data-ko="user_id" data-en="user_id">user_id</th>
+              <th class="sortable" data-sort-key="username"    data-ko="이름" data-en="Name">이름</th>
+              <th class="sortable" data-sort-key="session_count" data-sort-default-dir="desc" data-ko="세션 수" data-en="Sessions">세션 수</th>
+              <th class="sortable" data-sort-key="first_seen"  data-ko="최초 방문" data-en="First Seen">최초 방문</th>
+              <th class="sortable" data-sort-key="last_seen"   data-sort-default-dir="desc" data-ko="최근 방문" data-en="Last Seen">최근 방문</th>
               <th data-ko="드릴다운" data-en="Drilldown">드릴다운</th>
             </tr></thead>
             <tbody id="sm-students-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
@@ -3724,7 +3741,10 @@ document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacy
   });
 })();
 
-// 👨‍🎓 학생 목록 (학생관리 → 학생 목록)
+// 👨‍🎓 학생 목록 (학생관리 → 학생 목록) — 정렬 가능
+let _smStudents = [];                                       // 원본 데이터 캐시
+let _smSort = { key: 'last_seen', dir: 'desc' };            // 현재 정렬 상태
+
 async function loadStudentList() {
   const _L = adminLang === 'en';
   const tb = document.getElementById('sm-students-tbody');
@@ -3738,30 +3758,83 @@ async function loadStudentList() {
       tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Load failed':'로딩 실패') + '</td></tr>';
       return;
     }
-    if (cnt) cnt.textContent = (_L ? d.items.length + ' students' : d.items.length + '명');
-    if (d.items.length === 0) {
+    _smStudents = d.items.map(s => ({
+      ...s,
+      // 정렬용 정규화: session_count alias, 문자열 소문자
+      session_count: Number(s.sessions || 0),
+      _username_lc: String(s.username || s.user_id || '').toLowerCase()
+    }));
+    if (cnt) cnt.textContent = (_L ? _smStudents.length + ' students' : _smStudents.length + '명');
+    if (_smStudents.length === 0) {
       tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'No students yet':'아직 학생 데이터 없음') + '</td></tr>';
       return;
     }
-    tb.innerHTML = d.items.map(s => {
-      const uid = String(s.user_id || '');
-      const uidEnc = encodeURIComponent(uid);
-      const safeUid  = _esc(uid);
-      const safeName = _esc(s.username || uid);
-      const role = s.role ? _esc(s.role) : '';
-      return `<tr>
-        <td><code style="font-size:11px;">${safeUid}</code></td>
-        <td><b>${safeName}</b>${role ? ' <span style="font-size:10px;color:#9ca3af;">'+role+'</span>' : ''}</td>
-        <td style="text-align:right;">${(s.sessions||0).toLocaleString()}</td>
-        <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.first_seen)}</td>
-        <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.last_seen)}</td>
-        <td><a href="/admin/student?uid=${uidEnc}" target="_blank" style="padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;">🎓 ${_L?'Drill':'드릴다운'}</a></td>
-      </tr>`;
-    }).join('');
+    renderStudentTable();
   } catch (e) {
     tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Network error: ':'네트워크 에러: ') + e.message + '</td></tr>';
   }
 }
+
+function renderStudentTable() {
+  const _L = adminLang === 'en';
+  const tb = document.getElementById('sm-students-tbody');
+  if (!tb || !_smStudents.length) return;
+
+  // 정렬
+  const { key, dir } = _smSort;
+  const sortKey = key === 'username' ? '_username_lc' : key;
+  const arr = _smStudents.slice().sort((a, b) => {
+    const va = a[sortKey] != null ? a[sortKey] : '';
+    const vb = b[sortKey] != null ? b[sortKey] : '';
+    if (typeof va === 'number' && typeof vb === 'number') {
+      return dir === 'asc' ? va - vb : vb - va;
+    }
+    const sa = String(va), sb = String(vb);
+    return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+  });
+
+  // 헤더 정렬 인디케이터 갱신
+  const tbl = document.getElementById('sm-students-table');
+  if (tbl) {
+    tbl.querySelectorAll('th.sortable').forEach(th => {
+      th.classList.remove('sort-asc', 'sort-desc');
+      if (th.dataset.sortKey === key) th.classList.add('sort-' + dir);
+    });
+  }
+
+  tb.innerHTML = arr.map(s => {
+    const uid = String(s.user_id || '');
+    const uidEnc = encodeURIComponent(uid);
+    const safeUid  = _esc(uid);
+    const safeName = _esc(s.username || uid);
+    const role = s.role ? _esc(s.role) : '';
+    return `<tr>
+      <td><code style="font-size:11px;">${safeUid}</code></td>
+      <td><b>${safeName}</b>${role ? ' <span style="font-size:10px;color:#9ca3af;">'+role+'</span>' : ''}</td>
+      <td style="text-align:right;">${(s.session_count||0).toLocaleString()}</td>
+      <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.first_seen)}</td>
+      <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.last_seen)}</td>
+      <td><a href="/admin/student?uid=${uidEnc}" target="_blank" style="padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;">🎓 ${_L?'Drill':'드릴다운'}</a></td>
+    </tr>`;
+  }).join('');
+}
+
+// 헤더 클릭 → 정렬 토글 (위임)
+document.addEventListener('click', (ev) => {
+  const th = ev.target.closest('#sm-students-table th.sortable');
+  if (!th) return;
+  const key = th.dataset.sortKey;
+  if (!key) return;
+  if (_smSort.key === key) {
+    // 같은 컬럼 → asc / desc 토글
+    _smSort.dir = (_smSort.dir === 'asc' ? 'desc' : 'asc');
+  } else {
+    // 다른 컬럼 → 기본 방향 (data-sort-default-dir 또는 asc)
+    _smSort.key = key;
+    _smSort.dir = th.dataset.sortDefaultDir || 'asc';
+  }
+  renderStudentTable();
+});
 
 // 학생 목록 로드 버튼 + 첫 펼침 시 자동 로드
 (function bindStudentList(){
