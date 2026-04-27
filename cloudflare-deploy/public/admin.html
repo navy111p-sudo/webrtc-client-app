@@ -5471,14 +5471,41 @@ async function askAI(command) {
   }
 
   if (res.intent === 'navigate') {
-    ct.innerHTML = '<div class="ai-answer">' + _aiEsc(res.answer || '페이지로 이동합니다…') + '</div>';
-    // 🥭 Phase 21h — 3가지 navigate 방식 분기:
-    //   ① external_url → 새 탭에서 열기 (window.open)
+    // 🥭 Phase 21h/21i — 3가지 navigate 방식 분기:
+    //   ① external_url → 새 탭 열기 시도 + 차단 대비 큰 버튼 fallback
     //   ② menu_id      → 같은 페이지의 메뉴 카드로 스크롤
     //   ③ url          → 같은 탭에서 이동 (window.location)
     if (res.external_url) {
-      setTimeout(() => { window.open(res.external_url, '_blank', 'noopener'); }, 600);
-    } else if (res.menu_id) {
+      // 팝업 차단을 우회하기 어려우므로 패널에 명시적 큰 버튼을 항상 표시
+      ct.innerHTML =
+        '<div class="ai-answer">' + _aiEsc(res.answer || '외부 링크를 엽니다…') + '</div>' +
+        '<div style="margin-top:14px;display:flex;flex-direction:column;gap:10px">' +
+          '<a href="' + _aiEsc(res.external_url) + '" target="_blank" rel="noopener" ' +
+             'class="ai-action-confirm-btn" ' +
+             'style="display:inline-flex;align-items:center;justify-content:center;gap:8px;' +
+                    'padding:14px 22px;background:linear-gradient(135deg,#fbbf24,#f59e0b);' +
+                    'color:#fff;border-radius:12px;text-decoration:none;font-weight:700;' +
+                    'font-size:15px;box-shadow:0 8px 20px -6px rgba(245,158,11,0.5)">' +
+            '🔗 새 탭에서 열기 — ' + _aiEsc(new URL(res.external_url).hostname) +
+          '</a>' +
+          '<div style="font-size:11px;color:#9ca3af;text-align:center">' +
+            '브라우저 팝업이 차단된 경우 위 버튼을 클릭하세요' +
+          '</div>' +
+        '</div>';
+      // 자동 팝업도 시도 (허용된 경우 즉시 열림)
+      setTimeout(() => {
+        try {
+          const w = window.open(res.external_url, '_blank', 'noopener');
+          // 자동 열기 성공하면 패널의 버튼은 그대로 두 (사용자가 닫고 다시 열 수 있게)
+          if (!w) console.info('[ai-navigate] popup blocked — fallback button shown');
+        } catch (e) {
+          console.warn('[ai-navigate] window.open failed:', e);
+        }
+      }, 300);
+      return;
+    }
+    ct.innerHTML = '<div class="ai-answer">' + _aiEsc(res.answer || '페이지로 이동합니다…') + '</div>';
+    if (res.menu_id) {
       setTimeout(() => {
         // legacy-cards 가 숨겨져 있으면 펼침
         const lc = document.getElementById('legacy-cards');
