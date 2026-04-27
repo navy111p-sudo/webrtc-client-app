@@ -754,35 +754,95 @@
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
   }
-  /* 그라데이션 링 — 배경과 자연스럽게 섞이도록 부드럽게 */
+  /* 🌌 Phase 19k — 폴라로이드 안쪽 우주 공간 (별·행성·UFO)
+     - 그라데이션 링 외곽 (앰버→코랄)
+     - 안쪽: 딥 퍼플 우주 + 별·행성·UFO ::before/::after
+     - 캐릭터 이미지는 mix-blend-mode 로 흰 배경 우주에 녹여듦 */
   .hero-character-frame {
     position: relative;
     padding: 10px;
     background: linear-gradient(135deg, #fbbf24 0%, #fb923c 45%, #fb7185 100%);
     border-radius: 32px;
-    /* 보더 라인 제거, 외부 글로우만 유지 */
     box-shadow:
       0 28px 56px -16px rgba(251, 146, 60, 0.35),
       0 0 80px rgba(254, 215, 170, 0.5);
     animation: heroBob 4s ease-in-out infinite;
+    overflow: hidden;
   }
-  .hero-character-frame::after {
+  /* 우주 배경 — 별 + 그라데이션 (다중 radial-gradient 로 별 산포) */
+  .hero-character-frame::before {
     content: '';
-    position: absolute; inset: 4px;
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.4);
-    pointer-events: none;
+    position: absolute; inset: 6px;
+    border-radius: 26px;
+    background:
+      /* 큰 별 5개 (밝은 흰색 점) */
+      radial-gradient(circle 1.5px at 12% 18%, #fff 100%, transparent 100%),
+      radial-gradient(circle 2px at 78% 14%, #fff 100%, transparent 100%),
+      radial-gradient(circle 1.5px at 22% 78%, #fef9c3 100%, transparent 100%),
+      radial-gradient(circle 2px at 88% 75%, #fff 100%, transparent 100%),
+      radial-gradient(circle 1.2px at 50% 88%, #fef9c3 100%, transparent 100%),
+      /* 중간 별 6개 */
+      radial-gradient(circle 1px at 35% 22%, #fff 100%, transparent 100%),
+      radial-gradient(circle 0.8px at 62% 30%, #fff 100%, transparent 100%),
+      radial-gradient(circle 1px at 18% 50%, #fff 100%, transparent 100%),
+      radial-gradient(circle 0.8px at 92% 45%, #fed7aa 100%, transparent 100%),
+      radial-gradient(circle 1px at 45% 65%, #fff 100%, transparent 100%),
+      radial-gradient(circle 0.8px at 70% 88%, #fff 100%, transparent 100%),
+      /* 작은 별 8개 (ambient sparkle) */
+      radial-gradient(circle 0.5px at 8% 35%, rgba(255,255,255,.7) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 26% 38%, rgba(255,255,255,.6) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 55% 12%, rgba(255,255,255,.7) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 82% 30%, rgba(255,255,255,.5) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 38% 50%, rgba(255,255,255,.6) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 64% 60%, rgba(255,255,255,.5) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 80% 90%, rgba(255,255,255,.7) 100%, transparent 100%),
+      radial-gradient(circle 0.5px at 5% 92%, rgba(255,255,255,.5) 100%, transparent 100%),
+      /* 행성 1: 좌상단 큰 보라 행성 (링 효과) */
+      radial-gradient(circle 28px at 16% 25%, #c084fc 0%, #9333ea 60%, transparent 65%),
+      /* 행성 2: 우하단 작은 청록 행성 */
+      radial-gradient(circle 18px at 86% 82%, #06b6d4 0%, #0891b2 60%, transparent 65%),
+      /* 메인 우주 그라데이션 (딥 퍼플 → 네이비 → 블랙) */
+      radial-gradient(ellipse at 30% 30%, #4c1d95 0%, transparent 50%),
+      radial-gradient(ellipse at 70% 70%, #831843 0%, transparent 60%),
+      linear-gradient(135deg, #1e1b4b 0%, #0f0a26 60%, #000000 100%);
     z-index: 0;
+    animation: starsTwinkle 3s ease-in-out infinite alternate;
   }
+  /* UFO 우주선 — 떠다니는 애니메이션 */
+  .hero-character-frame::after {
+    content: '🛸';
+    position: absolute;
+    top: 12%; right: 18%;
+    font-size: 28px;
+    z-index: 1;
+    filter: drop-shadow(0 0 8px rgba(168, 85, 247, 0.7))
+            drop-shadow(0 0 16px rgba(99, 102, 241, 0.4));
+    animation: ufoFloat 6s ease-in-out infinite;
+    pointer-events: none;
+  }
+  @keyframes starsTwinkle {
+    0%   { opacity: 0.85; }
+    100% { opacity: 1; }
+  }
+  @keyframes ufoFloat {
+    0%, 100% { transform: translate(0, 0) rotate(-5deg); }
+    25%      { transform: translate(-12px, -8px) rotate(8deg); }
+    50%      { transform: translate(-25px, 4px) rotate(-3deg); }
+    75%      { transform: translate(-10px, 10px) rotate(6deg); }
+  }
+  /* 캐릭터 이미지 — SVG feColorMatrix 필터로 흰 배경 → 투명 변환
+     · 매트릭스 마지막 행 (-1,-1,-1,1,0) 이 알파를 (1 − R − G − B) 로 만들어
+       흰색(R+G+B≈3) 은 알파 0 (투명), 어두운 색은 알파 1 (불투명)
+     · 노란 캐릭터는 R·G 합이 크지만 B 가 적어 알파 약 0.6~0.8 (반투명) → 우주 배경 살짝 비침 */
   .hero-character-frame img {
-    position: relative; z-index: 1;
+    position: relative; z-index: 2;
     width: 100%;
     max-width: 460px;
     min-width: 240px;
     height: auto;
     object-fit: contain;
     border-radius: 24px;
-    background: #fff;
+    filter: url(#whiteToTransparent) drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
     display: block;
   }
   @keyframes heroBob {
@@ -1109,6 +1169,16 @@
       </div>
       <div class="hero-character">
         <div class="hero-character-frame">
+          <!-- 🌌 SVG 필터: 흰색 픽셀 → 투명 (luminance to alpha) -->
+          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+            <filter id="whiteToTransparent" color-interpolation-filters="sRGB">
+              <feColorMatrix type="matrix" values="
+                1 0 0 0 0
+                0 1 0 0 0
+                0 0 1 0 0
+                -0.7 -0.7 -0.7 1.4 0" />
+            </filter>
+          </svg>
           <img src="/img/Mangoi_Character.jpg" alt="Mangoi"
                onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#fbbf24,#f59e0b)';this.style.padding='40px';this.style.fontSize='120px';this.alt='🥭';" />
         </div>
