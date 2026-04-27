@@ -349,7 +349,7 @@
   }
   .hero .hero-search input {
     width: 100%;
-    padding: 28px 80px 28px 76px;   /* 좌측에 SVG 아이콘 자리 확보 */
+    padding: 28px 140px 28px 76px;   /* 좌: 검색 아이콘 / 우: 클리어+마이크 자리 */
     background: transparent;
     border: 0;
     font-size: 24px;
@@ -359,6 +359,88 @@
     outline: none;
   }
   .hero .hero-search input::placeholder { color: #a8a29e; font-weight: 400; }
+
+  /* 🎤 음성 검색 마이크 버튼 — 입력창 우측에 위치 */
+  .hero .hero-search-mic {
+    position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+    width: 52px; height: 52px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 113, 133, 0.22) 100%);
+    box-shadow:
+      0 4px 14px -2px rgba(245, 158, 11, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    cursor: pointer; padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 4;
+  }
+  .hero .hero-search-mic:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.4) 0%, rgba(251, 113, 133, 0.35) 100%);
+    transform: translateY(-50%) scale(1.08);
+    box-shadow:
+      0 8px 22px -2px rgba(245, 158, 11, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+  .hero .hero-search-mic .mic-icon {
+    width: 24px; height: 24px;
+    color: #c2410c;
+    filter: drop-shadow(0 1px 2px rgba(124, 45, 18, 0.18));
+    z-index: 2;
+    transition: color 0.2s;
+  }
+
+  /* 사운드 웨이브 (듣는 중일 때만 표시) — 3개 동심원이 순차적으로 펴져나감 */
+  .hero .hero-search-mic .mic-ring {
+    position: absolute; inset: 0;
+    border-radius: 50%;
+    border: 2px solid rgba(239, 68, 68, 0.6);
+    opacity: 0; pointer-events: none;
+    z-index: 1;
+  }
+  /* 듣는 중 — listening 상태일 때 빨간 글로우 + 펄스 + 회전 + 사운드 웨이브 */
+  .hero .hero-search-mic.listening {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: rgba(255, 255, 255, 0.6);
+    animation: micBreathe 1.2s ease-in-out infinite;
+    box-shadow:
+      0 0 0 4px rgba(239, 68, 68, 0.2),
+      0 8px 28px -4px rgba(239, 68, 68, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+  .hero .hero-search-mic.listening .mic-icon { color: #fff; }
+  .hero .hero-search-mic.listening .mic-ring {
+    animation: micWave 1.8s ease-out infinite;
+  }
+  .hero .hero-search-mic.listening .mic-ring-2 { animation-delay: 0.6s; }
+  .hero .hero-search-mic.listening .mic-ring-3 { animation-delay: 1.2s; }
+
+  @keyframes micBreathe {
+    0%, 100% { transform: translateY(-50%) scale(1); }
+    50%      { transform: translateY(-50%) scale(1.1); }
+  }
+  @keyframes micWave {
+    0%   { transform: scale(1); opacity: 0.7; border-width: 3px; }
+    100% { transform: scale(2.4); opacity: 0; border-width: 1px; }
+  }
+
+  /* 듣는 중 안내 텍스트 — 검색창 아래 부드럽게 등장 */
+  .voice-hint {
+    margin-top: 14px; text-align: center;
+    font-size: 14px; font-weight: 600; color: #b91c1c;
+    background: linear-gradient(135deg, rgba(254, 226, 226, 0.7), rgba(255, 247, 237, 0.7));
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    border-radius: 999px;
+    padding: 8px 18px;
+    display: inline-block;
+    animation: voiceHintFade 0.3s ease-out;
+    box-shadow: 0 4px 12px -2px rgba(239, 68, 68, 0.18);
+  }
+  @keyframes voiceHintFade {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 
   /* 🔎 SVG 검색 아이콘 — 망고 그라데이션 + 글래스 배경 + 펄스 (이모지 대신) */
   .hero .hero-search-icon {
@@ -398,15 +480,16 @@
     50%      { box-shadow: 0 8px 28px -2px rgba(245, 158, 11, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.95); }
   }
   .hero .hero-search-clear {
-    position: absolute; right: 22px; top: 50%; transform: translateY(-50%);
+    position: absolute; right: 86px; top: 50%; transform: translateY(-50%);  /* 마이크 버튼 좌측에 배치 */
     background: linear-gradient(135deg, rgba(251, 113, 133, 0.18), rgba(245, 158, 11, 0.18));
     border: 1px solid rgba(255, 255, 255, 0.6);
     border-radius: 50%;
-    width: 44px; height: 44px;
-    color: #9a3412; font-size: 18px; cursor: pointer;
+    width: 40px; height: 40px;
+    color: #9a3412; font-size: 16px; cursor: pointer;
     display: none; align-items: center; justify-content: center;
     backdrop-filter: blur(8px);
     transition: all 0.15s;
+    z-index: 4;
   }
   .hero .hero-search-clear:hover {
     background: linear-gradient(135deg, rgba(251, 113, 133, 0.32), rgba(245, 158, 11, 0.32));
@@ -542,10 +625,13 @@
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
     .hero h1 { font-size: 38px; text-align: center; }
     .hero .hero-sub { text-align: center; font-size: 17px; margin-bottom: 24px; }
-    .hero .hero-search input { padding: 20px 60px 20px 64px; font-size: 18px; }
-    .hero .hero-search-clear { width: 36px; height: 36px; right: 14px; }
+    .hero .hero-search input { padding: 20px 110px 20px 64px; font-size: 18px; }
+    .hero .hero-search-clear { width: 32px; height: 32px; right: 60px; font-size: 14px; }
     .hero .hero-search-icon { width: 38px; height: 38px; left: 12px; }
     .hero .hero-search-icon svg { width: 19px; height: 19px; }
+    .hero .hero-search-mic { width: 42px; height: 42px; right: 12px; }
+    .hero .hero-search-mic .mic-icon { width: 20px; height: 20px; }
+    .voice-hint { font-size: 13px; padding: 7px 14px; }
     /* 모바일에서 힌트 칩 숨김 — 화면 공간 절약 */
     .hero-tips { display: none; }
     .hero-character-frame img { max-width: 280px; min-width: 200px; }
@@ -781,8 +867,23 @@
                  data-ko-placeholder="통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
                  data-en-placeholder="Search anything — students, teachers, franchises, menus" />
           <button class="hero-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
+          <button class="hero-search-mic" id="menu-search-mic" type="button"
+                  title="음성 검색 — 클릭 후 말하세요"
+                  data-ko-title="음성 검색 — 클릭 후 말하세요"
+                  data-en-title="Voice search — click and speak" aria-label="Voice search">
+            <span class="mic-ring mic-ring-1"></span>
+            <span class="mic-ring mic-ring-2"></span>
+            <span class="mic-ring mic-ring-3"></span>
+            <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="2" width="6" height="13" rx="3"></rect>
+              <path d="M5 11a7 7 0 0 0 14 0"></path>
+              <line x1="12" y1="18" x2="12" y2="22"></line>
+              <line x1="8" y1="22" x2="16" y2="22"></line>
+            </svg>
+          </button>
           <div class="hero-search-dropdown menu-search-dropdown" id="menu-search-dropdown"></div>
         </div>
+        <div class="voice-hint" id="voice-hint" data-ko="🎙 듣고 있습니다… 말씀해주세요" data-en="🎙 Listening… speak now" style="display:none">🎙 듣고 있습니다… 말씀해주세요</div>
       </div>
       <div class="hero-character">
         <div class="hero-character-frame">
@@ -3005,6 +3106,107 @@ function syncLegacyToggleLabel() {
   btn.classList.toggle('primary', !showing);
 }
 document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacyCards);
+
+/* ════════════════════════════════════════════════════════════
+   🎤 Phase 14i — Web Speech API 음성 검색
+   - 마이크 버튼 클릭 → 듣기 시작 → 사운드 웨이브 애니메이션 (.listening)
+   - 음성 인식 결과를 검색창에 입력 + input 이벤트 dispatch (자동완성 트리거)
+   - 멈추면 (자동/수동) 애니메이션 중지
+   - Korean / English 언어는 현재 페이지 lang (adminLang) 따름
+════════════════════════════════════════════════════════════ */
+(function setupVoiceSearch(){
+  const micBtn = document.getElementById('menu-search-mic');
+  const inputEl = document.getElementById('menu-search');
+  const hintEl  = document.getElementById('voice-hint');
+  if (!micBtn || !inputEl) return;
+
+  // 브라우저 지원 확인
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) {
+    micBtn.style.display = 'none';   // 미지원 브라우저는 마이크 버튼 숨김
+    console.info('[voice] SpeechRecognition unsupported in this browser');
+    return;
+  }
+
+  let recognition = null;
+  let isListening = false;
+
+  function startListening() {
+    if (isListening) return;
+    try {
+      recognition = new SR();
+      recognition.lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en-US' : 'ko-KR';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        isListening = true;
+        micBtn.classList.add('listening');
+        if (hintEl) hintEl.style.display = 'inline-block';
+        inputEl.placeholder = (adminLang === 'en')
+          ? '🎙 Listening… speak now'
+          : '🎙 듣고 있습니다… 말씀해주세요';
+      };
+      recognition.onresult = (ev) => {
+        let interim = '', finalText = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          const t = ev.results[i][0].transcript;
+          if (ev.results[i].isFinal) finalText += t;
+          else interim += t;
+        }
+        const text = (finalText || interim).trim();
+        if (text) {
+          inputEl.value = text;
+          // input 이벤트 → 통합 검색 자동완성 자동 갱신
+          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      };
+      recognition.onerror = (ev) => {
+        console.warn('[voice] error:', ev.error);
+        // 에러 메시지 토스트 (마이크 차단·네트워크 등)
+        const msg = ({
+          'not-allowed':       (adminLang==='en'?'Mic permission denied':'마이크 권한이 거부됐습니다'),
+          'service-not-allowed':(adminLang==='en'?'Voice service unavailable':'음성 서비스를 사용할 수 없습니다'),
+          'no-speech':         (adminLang==='en'?'No speech detected':'음성이 감지되지 않았습니다'),
+          'audio-capture':     (adminLang==='en'?'No microphone found':'마이크를 찾을 수 없습니다'),
+          'network':           (adminLang==='en'?'Network error':'네트워크 오류'),
+        })[ev.error] || (adminLang==='en'?'Voice error':'음성 인식 오류') + ': ' + ev.error;
+        alert(msg);
+      };
+      recognition.onend = () => {
+        isListening = false;
+        micBtn.classList.remove('listening');
+        if (hintEl) hintEl.style.display = 'none';
+        // placeholder 복원
+        inputEl.placeholder = (adminLang === 'en')
+          ? 'Search anything — students, teachers, franchises, menus'
+          : '통합 검색 — 학생·교사·가맹점·메뉴 무엇이든';
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.error('[voice] start failed:', e);
+      alert((adminLang === 'en' ? 'Voice start failed: ' : '음성 시작 실패: ') + (e.message || e));
+      micBtn.classList.remove('listening');
+      isListening = false;
+    }
+  }
+
+  function stopListening() {
+    if (!isListening || !recognition) return;
+    try { recognition.stop(); } catch {}
+  }
+
+  micBtn.addEventListener('click', () => {
+    if (isListening) stopListening();
+    else startListening();
+  });
+  // 입력창 클릭 시 듣기 중이면 멈춤 (수동 입력 우선)
+  inputEl.addEventListener('focus', () => {
+    if (isListening && document.activeElement === inputEl) stopListening();
+  });
+})();
 
 // 👨‍🎓 학생 목록 (학생관리 → 학생 목록)
 async function loadStudentList() {
