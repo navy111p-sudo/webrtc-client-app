@@ -1000,13 +1000,58 @@
   </div>
 </details>
 
-<details class="table-card menu-card">
-  <summary><span data-ko="🗣️ 발화시간 TOP 10" data-en="🗣️ Speaking Time TOP 10">🗣️ 발화시간 TOP 10</span></summary>
+<details class="table-card menu-card" id="card-rankings">
+  <summary><span data-ko="🏆 학생 랭킹 (발화·시선·집중도)" data-en="🏆 Student Rankings (Speaking · Gaze · Focus)">🏆 학생 랭킹 (발화·시선·집중도)</span></summary>
   <div class="menu-body">
+
+    <!-- 📅 기간·정렬 컨트롤 -->
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:rgba(255,255,255,.55);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.7);border-radius:14px;padding:10px 14px;margin-bottom:14px">
+      <span style="font-size:12px;font-weight:700;color:#7c2d12" data-ko="📅 기간" data-en="📅 Period">📅 기간</span>
+      <select id="rk-period" style="padding:6px 12px;font-size:13px;border-radius:8px;border:1px solid #d1d5db">
+        <option value="day"     data-ko="오늘"   data-en="Today">오늘</option>
+        <option value="week" selected data-ko="최근 1주"  data-en="Last week">최근 1주</option>
+        <option value="month"   data-ko="최근 1개월"  data-en="Last month">최근 1개월</option>
+        <option value="quarter" data-ko="최근 분기"  data-en="Last quarter">최근 분기</option>
+        <option value="custom"  data-ko="직접 선택"  data-en="Custom">직접 선택</option>
+      </select>
+      <input type="date" id="rk-from" style="padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #d1d5db" disabled>
+      <span>~</span>
+      <input type="date" id="rk-to" style="padding:6px 10px;font-size:13px;border-radius:8px;border:1px solid #d1d5db" disabled>
+
+      <span style="margin-left:14px;font-size:12px;font-weight:700;color:#7c2d12" data-ko="🔢 정렬" data-en="🔢 Sort">🔢 정렬</span>
+      <select id="rk-sort" style="padding:6px 12px;font-size:13px;border-radius:8px;border:1px solid #d1d5db">
+        <option value="focus"    data-ko="집중도 ▼"  data-en="Focus ▼" selected>집중도 ▼</option>
+        <option value="speaking" data-ko="발화시간 ▼" data-en="Speaking ▼">발화시간 ▼</option>
+        <option value="gaze"     data-ko="시선 점수 ▼" data-en="Gaze ▼">시선 점수 ▼</option>
+        <option value="ratio"    data-ko="발화 비율 ▼" data-en="Active% ▼">발화 비율 ▼</option>
+        <option value="sessions" data-ko="세션 수 ▼" data-en="Sessions ▼">세션 수 ▼</option>
+      </select>
+
+      <button id="rk-apply" class="primary" style="padding:6px 16px;font-size:13px;border-radius:8px" data-ko="적용" data-en="Apply">적용</button>
+      <span style="margin-left:auto;font-size:11px;color:#6b7280" id="rk-summary">—</span>
+    </div>
+
     <table>
-      <thead><tr><th data-ko="사용자" data-en="User">사용자</th><th data-ko="활성 발화시간" data-en="Active Speaking">활성 발화시간</th><th data-ko="총 세션시간" data-en="Total Session">총 세션시간</th><th data-ko="활성 비율" data-en="Active %">활성 비율</th></tr></thead>
-      <tbody id="top-speakers"></tbody>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th data-ko="사용자" data-en="User">사용자</th>
+          <th data-ko="세션" data-en="Sess">세션</th>
+          <th data-ko="🗣️ 발화시간" data-en="🗣️ Speaking">🗣️ 발화시간</th>
+          <th data-ko="⏱ 총 세션시간" data-en="⏱ Total">⏱ 총 세션시간</th>
+          <th data-ko="📊 발화 비율" data-en="📊 Active%">📊 발화 비율</th>
+          <th data-ko="👁 시선 점수" data-en="👁 Gaze">👁 시선 점수</th>
+          <th data-ko="🎯 집중도" data-en="🎯 Focus">🎯 집중도</th>
+        </tr>
+      </thead>
+      <tbody id="rk-tbody"><tr><td colspan="8" class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</td></tr></tbody>
     </table>
+
+    <div style="margin-top:10px;padding:10px 14px;background:rgba(254, 243, 199, 0.5);border-radius:10px;font-size:11px;color:#92400e;line-height:1.6">
+      💡 <strong data-ko="집중도 계산식" data-en="Focus formula">집중도 계산식</strong>:
+      <span data-ko="시선 점수 50% + 발화 비율 40% − 끊김 페널티 10%" data-en="Gaze 50% + Speaking% 40% − Disconnect penalty 10%">시선 점수 50% + 발화 비율 40% − 끊김 페널티 10%</span>
+      <span data-ko="(시선 데이터가 없는 학생은 발화 비율 70% − 끊김 30%)" data-en="(if no gaze data: Speaking% 70% − Disconnect 30%)">(시선 데이터가 없는 학생은 발화 비율 70% − 끊김 30%)</span>
+    </div>
   </div>
 </details>
 
@@ -1897,10 +1942,11 @@ async function load() {
   // 비상 이벤트 렌더 블록 제거됨 — #emergency-table DOM 이 없으므로 null 참조 방지.
   //   백엔드 /api/dashboard 는 여전히 emergency 배열을 반환하지만, UI 에서 쓰지 않음.
 
-  // 매출·학생흐름 차트는 별도 endpoint 라 dashboard load 와 함께 같이 호출
+  // 매출·학생흐름 차트 + 학생 랭킹 — 별도 endpoint 라 dashboard load 와 함께 같이 호출
   loadRevenueChart();
   loadStudentFlowChart();
-  loadKpiSparklines();   // 5개 KPI 카드의 미니 꺾은선 그래프
+  loadKpiSparklines();           // 5개 KPI 카드의 미니 꺾은선 그래프
+  loadStudentRankings();          // 발화·시선·집중도 랭킹
 }
 
 /* ════════════════════════════════════════════════════════════
@@ -2139,6 +2185,105 @@ document.getElementById('rev-apply')?.addEventListener('click', () => {
   loadKpiSparklines();
 });
 document.getElementById('rev-period')?.addEventListener('change', loadRevenueChart);
+
+/* ════════════════════════════════════════════════════════════
+   🏆 Phase 15c — 학생 랭킹 (발화·시선·집중도)
+════════════════════════════════════════════════════════════ */
+async function loadStudentRankings() {
+  const period = (document.getElementById('rk-period') || {}).value || 'week';
+  const sortBy = (document.getElementById('rk-sort') || {}).value || 'focus';
+  const fromV  = (document.getElementById('rk-from') || {}).value || '';
+  const toV    = (document.getElementById('rk-to') || {}).value || '';
+  const tb = document.getElementById('rk-tbody');
+  const sumEl = document.getElementById('rk-summary');
+  if (!tb) return;
+  tb.innerHTML = '<tr><td colspan="8" class="empty">' + (adminLang==='en'?'Loading…':'로딩 중…') + '</td></tr>';
+
+  const params = new URLSearchParams({ period, sort_by: sortBy, limit: '20' });
+  if (period === 'custom') {
+    if (!fromV || !toV) {
+      tb.innerHTML = '<tr><td colspan="8" class="empty">' + (adminLang==='en'?'Pick from/to dates':'시작·종료 날짜를 선택하세요') + '</td></tr>';
+      return;
+    }
+    params.set('from', fromV);
+    params.set('to', toV);
+  }
+
+  try {
+    const r = await fetch('/api/admin/stats/student-rankings?' + params, { credentials:'include', cache:'no-store' });
+    const j = await r.json();
+    if (!j.ok) throw new Error(j.error || r.status);
+
+    if (sumEl) {
+      sumEl.textContent = (adminLang==='en'?'Period: ':'기간: ') + j.from + ' ~ ' + j.to + '  ·  ' +
+                         (adminLang==='en'?'Total students: ':'전체 학생: ') + j.total;
+    }
+
+    if (j.items.length === 0) {
+      tb.innerHTML = '<tr><td colspan="8" class="empty">' + (adminLang==='en'?'No data in this period':'기간 내 데이터 없음') + '</td></tr>';
+      return;
+    }
+
+    const fmtMs2 = (ms) => {
+      if (!ms) return '0';
+      const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+      if (h) return h + (adminLang==='en'?'h ':'시간 ') + m + (adminLang==='en'?'m':'분');
+      if (m) return m + (adminLang==='en'?'m ':'분 ') + sec + (adminLang==='en'?'s':'초');
+      return sec + (adminLang==='en'?'s':'초');
+    };
+    const scoreBadge = (n, hi=70, mid=40) => {
+      if (n == null || isNaN(n)) return '<span class="badge" style="background:#f3f4f6;color:#9ca3af">—</span>';
+      const v = Math.round(Number(n)*10)/10;
+      const cls = v >= hi ? 'ok' : v >= mid ? 'warn' : '';
+      const bg = v >= hi ? '#d1fae5' : v >= mid ? '#fef3c7' : '#fee2e2';
+      const fg = v >= hi ? '#065f46' : v >= mid ? '#92400e' : '#991b1b';
+      return `<span class="badge" style="background:${bg};color:${fg};font-weight:700">${v}</span>`;
+    };
+    const escName = (s) => String(s||'').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    tb.innerHTML = j.items.map((it, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1);
+      const uidEnc = encodeURIComponent(it.user_id);
+      return `<tr>
+        <td style="font-weight:700;text-align:center">${medal}</td>
+        <td><a href="/admin/student?uid=${uidEnc}" target="_blank" style="color:#0984e3;text-decoration:none;border-bottom:1px dotted #0984e3">${escName(it.username)}</a></td>
+        <td>${it.session_count}</td>
+        <td>${fmtMs2(it.active_ms)}</td>
+        <td>${fmtMs2(it.session_ms)}</td>
+        <td>${scoreBadge(it.active_ratio, 30, 10)}<span style="color:#94a3b8;font-size:11px;margin-left:4px">%</span></td>
+        <td>${scoreBadge(it.avg_gaze)}${it.gaze_count?'<span style="color:#94a3b8;font-size:11px;margin-left:4px">(' + it.gaze_count + ')</span>':''}</td>
+        <td>${scoreBadge(it.focus_score)}</td>
+      </tr>`;
+    }).join('');
+  } catch (e) {
+    console.warn('[rankings] load failed:', e);
+    tb.innerHTML = '<tr><td colspan="8" class="empty">' + (adminLang==='en'?'Load failed':'로드 실패') + ': ' + (e.message||e) + '</td></tr>';
+  }
+}
+
+// 컨트롤 바인딩
+(function bindRankingsControls(){
+  const periodEl = document.getElementById('rk-period');
+  const fromEl   = document.getElementById('rk-from');
+  const toEl     = document.getElementById('rk-to');
+  const applyBtn = document.getElementById('rk-apply');
+  const sortEl   = document.getElementById('rk-sort');
+  if (!periodEl) return;
+
+  periodEl.addEventListener('change', () => {
+    const isCustom = periodEl.value === 'custom';
+    fromEl.disabled = !isCustom;
+    toEl.disabled = !isCustom;
+    if (isCustom && !fromEl.value) {
+      const today = new Date();
+      const monthAgo = new Date(today.getTime() - 30 * 86400000);
+      fromEl.value = monthAgo.toISOString().slice(0, 10);
+      toEl.value = today.toISOString().slice(0, 10);
+    }
+  });
+  applyBtn?.addEventListener('click', loadStudentRankings);
+  sortEl?.addEventListener('change', loadStudentRankings);
+})();
 
 // 기본 날짜 채우기 (최근 6개월)
 (function setDefaultDates(){

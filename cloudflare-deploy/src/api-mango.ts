@@ -965,6 +965,108 @@ export async function handleMangoApi(
       }
     }
 
+    // 🏆 학생 랭킹 — 발화·시선·집중도 3개 지표 통합 (Phase 15c)
+    //   GET /api/admin/stats/student-rankings?period=day|week|month|quarter|custom&from=&to=&sort_by=speaking|gaze|focus&limit=10
+    //   - 발화 (active_ms / session_ms 비율)
+    //   - 시선 (avg gaze_score 0~100)
+    //   - 집중도 (composite: 시선 50% + 발화비율 40% - 끊김 10%)
+    if (method === 'GET' && path === '/api/admin/stats/student-rankings') {
+      const period = (url.searchParams.get('period') || 'week').toLowerCase();
+      const fromStr = url.searchParams.get('from') || '';
+      const toStr = url.searchParams.get('to') || '';
+      const sortBy = (url.searchParams.get('sort_by') || 'focus').toLowerCase();
+      const limit = Math.max(1, Math.min(100, parseInt(url.searchParams.get('limit') || '10', 10)));
+
+      // 기간 자동 계산 (period 우선, custom 이면 from/to 사용)
+      const now = Date.now();
+      let fromMs = 0, toMs = now + 1;
+      if (period === 'custom' && /^\d{4}-\d{2}-\d{2}$/.test(fromStr)) {
+        fromMs = new Date(fromStr + 'T00:00:00Z').getTime();
+        toMs = /^\d{4}-\d{2}-\d{2}$/.test(toStr) ? new Date(toStr + 'T23:59:59Z').getTime() : now + 1;
+      } else if (period === 'day') {
+        fromMs = now - 1 * 86400000;
+      } else if (period === 'week') {
+        fromMs = now - 7 * 86400000;
+      } else if (period === 'month') {
+        fromMs = now - 30 * 86400000;
+      } else if (period === 'quarter') {
+        fromMs = now - 90 * 86400000;
+      } else {
+        fromMs = now - 7 * 86400000;   // default: 1주
+      }
+
+      try {
+        // 학생별 집계 (role='student' 만)
+        const rows = await env.DB.prepare(
+          `SELECT user_id,
+                  COALESCE(MAX(username), user_id) AS username,
+                  COUNT(*) AS session_count,
+                  COALESCE(SUM(total_active_ms), 0) AS active_ms,
+                  COALESCE(SUM(total_session_ms), 0) AS session_ms,
+                  COALESCE(SUM(disconnect_count), 0) AS disconnect_sum,
+                  AVG(CASE WHEN gaze_score IS NOT NULL THEN gaze_score END) AS avg_gaze,
+                  COUNT(CASE WHEN gaze_score IS NOT NULL THEN 1 END) AS gaze_count,
+                  MAX(joined_at) AS last_seen
+           FROM attendance
+           WHERE joined_at BETWEEN ? AND ?
+             AND COALESCE(role, 'student') = 'student'
+           GROUP BY user_id
+           HAVING session_ms > 0 OR session_count > 0`
+        ).bind(fromMs, toMs).all<any>();
+
+        const items = (rows.results || []).map(r => {
+          const activeRatio = r.session_ms > 0 ? (r.active_ms / r.session_ms * 100) : 0;
+          const avgGaze = r.avg_gaze != null ? Number(r.avg_gaze) : null;
+          // 집중도 composite: 시선 50% + 발화 비율 40% - 끊김 페널티 10%
+          // 시선 데이터 없으면 발화 비율 70% + 끊김 30% 만 사용
+          let focus;
+          if (avgGaze != null) {
+            const dcPenalty = Math.min(100, (r.disconnect_sum / Math.max(1, r.session_count)) * 20);
+            focus = avgGaze * 0.5 + activeRatio * 0.4 - dcPenalty * 0.1;
+          } else {
+            const dcPenalty = Math.min(100, (r.disconnect_sum / Math.max(1, r.session_count)) * 20);
+            focus = activeRatio * 0.7 - dcPenalty * 0.3;
+          }
+          focus = Math.max(0, Math.min(100, focus));
+          return {
+            user_id: r.user_id,
+            username: r.username,
+            session_count: r.session_count,
+            active_ms: r.active_ms,
+            session_ms: r.session_ms,
+            active_ratio: Math.round(activeRatio * 10) / 10,
+            avg_gaze: avgGaze != null ? Math.round(avgGaze * 10) / 10 : null,
+            gaze_count: r.gaze_count,
+            disconnect_sum: r.disconnect_sum,
+            focus_score: Math.round(focus * 10) / 10,
+            last_seen: r.last_seen
+          };
+        });
+
+        // 정렬
+        const sorters: Record<string, (a:any,b:any)=>number> = {
+          speaking: (a, b) => b.active_ms - a.active_ms,
+          gaze:     (a, b) => (b.avg_gaze ?? -1) - (a.avg_gaze ?? -1),
+          focus:    (a, b) => b.focus_score - a.focus_score,
+          ratio:    (a, b) => b.active_ratio - a.active_ratio,
+          sessions: (a, b) => b.session_count - a.session_count
+        };
+        items.sort(sorters[sortBy] || sorters.focus);
+
+        return json({
+          ok: true,
+          period,
+          from: new Date(fromMs).toISOString().slice(0, 10),
+          to: new Date(toMs).toISOString().slice(0, 10),
+          sort_by: sortBy,
+          total: items.length,
+          items: items.slice(0, limit)
+        });
+      } catch (e: any) {
+        return json({ ok: false, error: String(e?.message || e) }, 500);
+      }
+    }
+
     if (method === 'GET' && path === '/api/admin/stats/student-flow') {
       // students_erp 의 signup_date / end_date 기준 일자별 흐름
       const fromStr = url.searchParams.get('from') || '';
