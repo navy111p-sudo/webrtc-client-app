@@ -232,6 +232,85 @@
     line-height: 1.6;
   }
 
+  /* 📐 Phase 18c — 학생 목록 표 그리드 정렬 (행·열 깔끔) */
+  #sm-students-table {
+    table-layout: fixed;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  #sm-students-table th, #sm-students-table td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* 컬럼 너비 — table-layout: fixed 가 첫 row 의 col 너비를 따름 */
+  #sm-students-table th:nth-child(1), #sm-students-table td:nth-child(1) { width: 22%; }   /* USER_ID */
+  #sm-students-table th:nth-child(2), #sm-students-table td:nth-child(2) { width: 18%; }   /* 이름 */
+  #sm-students-table th:nth-child(3), #sm-students-table td:nth-child(3) { width: 9%;  text-align: right; font-variant-numeric: tabular-nums; }   /* 세션 수 */
+  #sm-students-table th:nth-child(4), #sm-students-table td:nth-child(4) { width: 18%; font-variant-numeric: tabular-nums; }   /* 최초 방문 */
+  #sm-students-table th:nth-child(5), #sm-students-table td:nth-child(5) { width: 18%; font-variant-numeric: tabular-nums; }   /* 최근 방문 */
+  #sm-students-table th:nth-child(6), #sm-students-table td:nth-child(6) { width: 15%; text-align: center; }   /* 드릴다운 */
+
+  /* 헤더 강조 */
+  #sm-students-table thead th {
+    background: linear-gradient(180deg, rgba(254,243,199,0.5), rgba(254,215,170,0.3));
+    color: #7c2d12; font-weight: 700; font-size: 12px;
+    border-bottom: 2px solid rgba(245,158,11,0.35);
+    text-transform: uppercase; letter-spacing: 0.4px;
+  }
+  /* 행 줄무늬 + 호버 강조 */
+  #sm-students-table tbody tr:nth-child(even) td { background: rgba(254,243,199,0.18); }
+  #sm-students-table tbody tr:hover td { background: rgba(245,158,11,0.12); cursor: default; }
+  /* USER_ID — 모노 폰트, 색상 흐리게 */
+  #sm-students-table td:nth-child(1) code {
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 11px; color: #78716c; background: transparent;
+  }
+  /* 이름 — 굵게 + role 배지 */
+  #sm-students-table td:nth-child(2) b {
+    color: #1c1917; font-weight: 700;
+  }
+  #sm-students-table td:nth-child(2) .role-badge {
+    display: inline-block;
+    background: rgba(245,158,11,0.15);
+    color: #92400e;
+    font-size: 9px; font-weight: 700;
+    padding: 1px 6px; border-radius: 8px;
+    margin-left: 4px; vertical-align: middle;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
+  /* 세션 수 — 큰 숫자 강조 */
+  #sm-students-table td:nth-child(3) .sess-count {
+    display: inline-block;
+    font-weight: 700; color: #c2410c;
+    background: rgba(245,158,11,0.1);
+    padding: 2px 10px; border-radius: 10px;
+    min-width: 36px; text-align: center;
+  }
+  /* 날짜 — 두 줄 (날짜 + 시각) 으로 정렬 */
+  #sm-students-table td .date-line {
+    font-size: 11px; line-height: 1.4;
+  }
+  #sm-students-table td .date-line .date-d { color: #44403c; font-weight: 500; }
+  #sm-students-table td .date-line .date-t { color: #a8a29e; font-size: 10px; }
+  /* 드릴다운 버튼 */
+  #sm-students-table td:nth-child(6) a {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 5px 12px; font-size: 11px; font-weight: 700;
+    background: linear-gradient(135deg, #f59e0b, #ea580c);
+    color: #fff; border-radius: 14px; text-decoration: none;
+    box-shadow: 0 2px 6px -1px rgba(245,158,11,0.4);
+    transition: all 0.15s;
+  }
+  #sm-students-table td:nth-child(6) a:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 10px -2px rgba(245,158,11,0.55);
+  }
+
   /* 🔃 Phase 18 — 정렬 가능 표 헤더 (멀티 정렬: Shift+클릭으로 최대 3개 동시) */
   .sortable-table th.sortable {
     cursor: pointer;
@@ -3842,6 +3921,16 @@ function renderStudentTable() {
     });
   }
 
+  // 날짜를 2줄 (날짜 + 시각) 로 분리하는 헬퍼
+  const splitDt = (ts) => {
+    if (!ts) return '<span class="date-line"><span class="date-d">—</span></span>';
+    const d = new Date(ts);
+    const pad = n => String(n).padStart(2,'0');
+    const dPart = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+    const tPart = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return `<span class="date-line"><span class="date-d">${dPart}</span><br><span class="date-t">${tPart}</span></span>`;
+  };
+
   tb.innerHTML = arr.map(s => {
     const uid = String(s.user_id || '');
     const uidEnc = encodeURIComponent(uid);
@@ -3849,12 +3938,12 @@ function renderStudentTable() {
     const safeName = _esc(s.username || uid);
     const role = s.role ? _esc(s.role) : '';
     return `<tr>
-      <td><code style="font-size:11px;">${safeUid}</code></td>
-      <td><b>${safeName}</b>${role ? ' <span style="font-size:10px;color:#9ca3af;">'+role+'</span>' : ''}</td>
-      <td style="text-align:right;">${(s.session_count||0).toLocaleString()}</td>
-      <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.first_seen)}</td>
-      <td style="font-size:11px;color:#6b7280;">${_fmtDateTime(s.last_seen)}</td>
-      <td><a href="/admin/student?uid=${uidEnc}" target="_blank" style="padding:3px 8px;font-size:11px;background:#3b82f6;color:#fff;border-radius:4px;text-decoration:none;">🎓 ${_L?'Drill':'드릴다운'}</a></td>
+      <td title="${safeUid}"><code>${safeUid}</code></td>
+      <td><b>${safeName}</b>${role ? '<span class="role-badge">'+role+'</span>' : ''}</td>
+      <td><span class="sess-count">${(s.session_count||0).toLocaleString()}</span></td>
+      <td>${splitDt(s.first_seen)}</td>
+      <td>${splitDt(s.last_seen)}</td>
+      <td><a href="/admin/student?uid=${uidEnc}" target="_blank">🎓 ${_L?'Drill':'드릴다운'}</a></td>
     </tr>`;
   }).join('');
 }
