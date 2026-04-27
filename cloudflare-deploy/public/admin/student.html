@@ -308,8 +308,8 @@
             <div class="form-row"><label>평가자</label><input id="evEvaluator" type="text" placeholder="이름"></div>
             <div class="form-row"><label>스피킹 점수</label><input id="evSpeak" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-row"><label>리스닝 점수</label><input id="evList" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>리딩 점수</label><input id="evRead" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>라이팅 점수</label><input id="evWrite" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label>문법 점수</label><input id="evRead" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label>집중도 점수</label><input id="evWrite" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-row"><label>총점</label><input id="evTotal" type="number" min="0" max="100" step="0.1"></div>
             <div class="form-row"><label>다음 목표</label><input id="evGoal" type="text"></div>
           </div>
@@ -758,7 +758,7 @@ function renderEngagement(){
 function renderEvaluation(){
   const items = _state.full.evaluations || [];
   if (items.length === 0) { $('evalBox').innerHTML = '<div class="empty">평가서가 없습니다. 위 폼으로 작성하세요.</div>'; return; }
-  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>평가일</th><th>유형</th><th>레벨</th><th>총점</th><th>스피킹</th><th>리스닝</th><th>리딩</th><th>라이팅</th><th>평가자</th><th>다음 목표</th><th>코멘트</th><th>리포트</th></tr></thead><tbody>'+
+  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>평가일</th><th>유형</th><th>레벨</th><th>총점</th><th>스피킹</th><th>리스닝</th><th>문법</th><th>집중도</th><th>평가자</th><th>다음 목표</th><th>코멘트</th><th>리포트</th></tr></thead><tbody>'+
     items.map(e=>`<tr>
       <td>${fmtDay(e.eval_at)}</td>
       <td>${esc(e.eval_type)||'—'}</td>
@@ -1016,7 +1016,7 @@ window.openReport = function(evalId){
   _rpCharts.radar = new Chart($('rpRadar').getContext('2d'), {
     type: 'radar',
     data: {
-      labels: ['스피킹', '리스닝', '리딩', '라이팅'],
+      labels: ['스피킹', '리스닝', '문법', '집중도'],
       datasets: [{
         label: studentName + ' (' + fmtDay(ev.eval_at) + ')',
         data: [
