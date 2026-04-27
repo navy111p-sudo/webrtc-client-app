@@ -232,22 +232,35 @@
     line-height: 1.6;
   }
 
-  /* 🔃 Phase 18 — 정렬 가능 표 헤더 */
+  /* 🔃 Phase 18 — 정렬 가능 표 헤더 (멀티 정렬: Shift+클릭으로 최대 3개 동시) */
   .sortable-table th.sortable {
     cursor: pointer;
     user-select: none;
     position: relative;
     transition: background 0.12s;
+    padding-right: 28px !important;
   }
   .sortable-table th.sortable:hover { background: rgba(245, 158, 11, 0.08); }
-  .sortable-table th.sortable::after {
-    content: '⇅';
-    font-size: 9px; opacity: 0.35;
-    margin-left: 5px; vertical-align: middle;
-    color: #6b7280;
+  .sortable-table th.sortable .sort-indicator {
+    position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+    display: inline-flex; align-items: center; gap: 2px;
+    font-size: 9px; opacity: 0.35; color: #6b7280;
   }
-  .sortable-table th.sortable.sort-asc::after  { content: '▲'; opacity: 1; color: #ea580c; }
-  .sortable-table th.sortable.sort-desc::after { content: '▼'; opacity: 1; color: #ea580c; }
+  .sortable-table th.sortable .sort-indicator::before { content: '⇅'; }
+  .sortable-table th.sortable.sort-asc  .sort-indicator,
+  .sortable-table th.sortable.sort-desc .sort-indicator {
+    opacity: 1; color: #ea580c; font-weight: 700;
+  }
+  .sortable-table th.sortable.sort-asc  .sort-indicator::before { content: '▲'; }
+  .sortable-table th.sortable.sort-desc .sort-indicator::before { content: '▼'; }
+  /* 정렬 우선순위 번호 (1·2·3) */
+  .sortable-table th.sortable .sort-rank {
+    background: #ea580c; color: #fff; font-size: 9px; font-weight: 700;
+    width: 14px; height: 14px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-left: 2px;
+  }
+  .sortable-table th.sortable:not(.sort-asc):not(.sort-desc) .sort-rank { display: none; }
 
   /* ════════════════════════════════════════════════════════════
      🥭 Phase 14 — 히어로 랜딩 (망고 캐릭터 + 거대 검색창)
@@ -1164,13 +1177,18 @@
             <a href="/admin/students" target="_blank" style="padding:5px 12px;font-size:12px;background:#f59e0b;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;" data-ko="🖥️ 풀페이지 열기 (ERP)" data-en="🖥️ Open Full Page (ERP)">🖥️ 풀페이지 열기 (ERP)</a>
             <span style="font-size:11px;color:#6b7280;" id="sm-students-count"></span>
           </div>
+          <div style="font-size:11px;color:#92400e;background:rgba(254,243,199,0.45);border:1px solid rgba(245,158,11,0.25);border-radius:6px;padding:6px 12px;margin-bottom:6px"
+               data-ko="💡 컬럼 헤더 클릭 = 정렬 / Shift+클릭 = 다중 정렬 (최대 3개 동시)"
+               data-en="💡 Click header to sort / Shift+Click for multi-sort (up to 3)">
+            💡 컬럼 헤더 클릭 = 정렬 / Shift+클릭 = 다중 정렬 (최대 3개 동시)
+          </div>
           <table id="sm-students-table" class="sortable-table">
             <thead><tr>
-              <th class="sortable" data-sort-key="user_id"     data-ko="user_id" data-en="user_id">user_id</th>
-              <th class="sortable" data-sort-key="username"    data-ko="이름" data-en="Name">이름</th>
-              <th class="sortable" data-sort-key="session_count" data-sort-default-dir="desc" data-ko="세션 수" data-en="Sessions">세션 수</th>
-              <th class="sortable" data-sort-key="first_seen"  data-ko="최초 방문" data-en="First Seen">최초 방문</th>
-              <th class="sortable" data-sort-key="last_seen"   data-sort-default-dir="desc" data-ko="최근 방문" data-en="Last Seen">최근 방문</th>
+              <th class="sortable" data-sort-key="user_id"     data-ko="user_id" data-en="user_id">user_id<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort-key="username"    data-ko="이름" data-en="Name">이름<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort-key="session_count" data-sort-default-dir="desc" data-ko="세션 수" data-en="Sessions">세션 수<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort-key="first_seen"  data-ko="최초 방문" data-en="First Seen">최초 방문<span class="sort-indicator"></span></th>
+              <th class="sortable" data-sort-key="last_seen"   data-sort-default-dir="desc" data-ko="최근 방문" data-en="Last Seen">최근 방문<span class="sort-indicator"></span></th>
               <th data-ko="드릴다운" data-en="Drilldown">드릴다운</th>
             </tr></thead>
             <tbody id="sm-students-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
@@ -3741,9 +3759,13 @@ document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacy
   });
 })();
 
-// 👨‍🎓 학생 목록 (학생관리 → 학생 목록) — 정렬 가능
+// 👨‍🎓 학생 목록 (학생관리 → 학생 목록) — 멀티 정렬 (최대 3개)
+//   기본 클릭: 단일 정렬 (다른 정렬 모두 제거)
+//   Shift+클릭: 다중 정렬 추가 (이미 있으면 방향 토글, 없으면 끝에 추가, 최대 3개)
+//   다시 같은 컬럼 Shift+클릭으로 desc → asc → 제거 cycle
+const SM_SORT_MAX = 3;
 let _smStudents = [];                                       // 원본 데이터 캐시
-let _smSort = { key: 'last_seen', dir: 'desc' };            // 현재 정렬 상태
+let _smSort = [{ key: 'last_seen', dir: 'desc' }];          // 정렬 배열 (우선순위 순)
 
 async function loadStudentList() {
   const _L = adminLang === 'en';
@@ -3780,25 +3802,43 @@ function renderStudentTable() {
   const tb = document.getElementById('sm-students-tbody');
   if (!tb || !_smStudents.length) return;
 
-  // 정렬
-  const { key, dir } = _smSort;
-  const sortKey = key === 'username' ? '_username_lc' : key;
+  // 멀티 정렬 (최대 3개) — _smSort 배열 우선순위 순으로 cascade 비교
   const arr = _smStudents.slice().sort((a, b) => {
-    const va = a[sortKey] != null ? a[sortKey] : '';
-    const vb = b[sortKey] != null ? b[sortKey] : '';
-    if (typeof va === 'number' && typeof vb === 'number') {
-      return dir === 'asc' ? va - vb : vb - va;
+    for (const s of _smSort) {
+      const sortKey = s.key === 'username' ? '_username_lc' : s.key;
+      const va = a[sortKey] != null ? a[sortKey] : '';
+      const vb = b[sortKey] != null ? b[sortKey] : '';
+      let cmp = 0;
+      if (typeof va === 'number' && typeof vb === 'number') {
+        cmp = va - vb;
+      } else {
+        cmp = String(va).localeCompare(String(vb));
+      }
+      if (cmp !== 0) return s.dir === 'asc' ? cmp : -cmp;
     }
-    const sa = String(va), sb = String(vb);
-    return dir === 'asc' ? sa.localeCompare(sb) : sb.localeCompare(sa);
+    return 0;
   });
 
-  // 헤더 정렬 인디케이터 갱신
+  // 헤더 정렬 인디케이터 갱신 (우선순위 번호 + ▲▼)
   const tbl = document.getElementById('sm-students-table');
   if (tbl) {
     tbl.querySelectorAll('th.sortable').forEach(th => {
       th.classList.remove('sort-asc', 'sort-desc');
-      if (th.dataset.sortKey === key) th.classList.add('sort-' + dir);
+      // sort-indicator span 보장 (없으면 추가)
+      let ind = th.querySelector('.sort-indicator');
+      if (!ind) { ind = document.createElement('span'); ind.className = 'sort-indicator'; th.appendChild(ind); }
+      ind.innerHTML = '';
+      const idx = _smSort.findIndex(s => s.key === th.dataset.sortKey);
+      if (idx >= 0) {
+        th.classList.add('sort-' + _smSort[idx].dir);
+        // 멀티 정렬 시 우선순위 번호 (1·2·3) 표시
+        if (_smSort.length > 1) {
+          const rank = document.createElement('span');
+          rank.className = 'sort-rank';
+          rank.textContent = String(idx + 1);
+          ind.appendChild(rank);
+        }
+      }
     });
   }
 
@@ -3819,19 +3859,43 @@ function renderStudentTable() {
   }).join('');
 }
 
-// 헤더 클릭 → 정렬 토글 (위임)
+// 헤더 클릭 → 정렬 토글 (위임). Shift+클릭으로 멀티 정렬 (최대 3개).
 document.addEventListener('click', (ev) => {
   const th = ev.target.closest('#sm-students-table th.sortable');
   if (!th) return;
   const key = th.dataset.sortKey;
   if (!key) return;
-  if (_smSort.key === key) {
-    // 같은 컬럼 → asc / desc 토글
-    _smSort.dir = (_smSort.dir === 'asc' ? 'desc' : 'asc');
+
+  const defaultDir = th.dataset.sortDefaultDir || 'asc';
+  const idx = _smSort.findIndex(s => s.key === key);
+
+  if (ev.shiftKey) {
+    // ─── 멀티 정렬 모드 (Shift+클릭) ───
+    if (idx >= 0) {
+      // 이미 있는 컬럼: asc → desc → 제거 cycle
+      const cur = _smSort[idx];
+      if (cur.dir === defaultDir) {
+        cur.dir = (defaultDir === 'asc' ? 'desc' : 'asc');
+      } else {
+        _smSort.splice(idx, 1);   // 두 번째 토글 후 제거
+        if (_smSort.length === 0) _smSort.push({ key, dir: defaultDir });   // 모두 비면 기본 복원
+      }
+    } else {
+      // 새 컬럼 추가 (최대 3개)
+      if (_smSort.length >= SM_SORT_MAX) {
+        _smSort.shift();   // 가장 오래된 정렬 제거 (FIFO)
+      }
+      _smSort.push({ key, dir: defaultDir });
+    }
   } else {
-    // 다른 컬럼 → 기본 방향 (data-sort-default-dir 또는 asc)
-    _smSort.key = key;
-    _smSort.dir = th.dataset.sortDefaultDir || 'asc';
+    // ─── 단일 정렬 모드 (일반 클릭) ───
+    if (idx === 0 && _smSort.length === 1) {
+      // 같은 컬럼 단일 정렬 중 → 방향 토글
+      _smSort[0].dir = (_smSort[0].dir === 'asc' ? 'desc' : 'asc');
+    } else {
+      // 새 컬럼 → 단일 정렬로 리셋
+      _smSort = [{ key, dir: defaultDir }];
+    }
   }
   renderStudentTable();
 });
