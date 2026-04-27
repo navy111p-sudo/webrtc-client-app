@@ -365,16 +365,6 @@
 
       <!-- 6. 평가서 -->
       <div class="panel" data-panel="evaluation">
-        <!-- 🎯 발음연습 결과 가져오기 -->
-        <div style="background:linear-gradient(135deg,rgba(254,243,199,0.6),rgba(254,215,170,0.5));border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:14px 18px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
-          <span style="font-size:24px">🎯</span>
-          <div style="flex:1;min-width:240px">
-            <div style="font-size:14px;font-weight:700;color:#7c2d12" data-ko="발음연습 결과 평가서로 가져오기" data-en="Import pronunciation results to evaluation">발음연습 결과 평가서로 가져오기</div>
-            <div style="font-size:11px;color:#92400e;margin-top:2px" data-ko="mangoi-speech 발음연습 페이지에서 받은 점수를 자동으로 평가서에 기록" data-en="Automatically log mangoi-speech pronunciation scores as evaluations">mangoi-speech 발음연습 페이지에서 받은 점수를 자동으로 평가서에 기록</div>
-          </div>
-          <button class="btn-add" onclick="openPronPractice()" style="background:linear-gradient(135deg,#f59e0b,#ea580c)" data-ko="🎙 발음연습 시작 → 결과 자동 기록" data-en="🎙 Start Practice → Auto-log">🎙 발음연습 시작 → 결과 자동 기록</button>
-        </div>
-
         <div class="add-form-card">
           <h4 data-ko="📋 평가서 작성" data-en="📋 Add Evaluation">📋 평가서 작성</h4>
           <div class="grid-2">
@@ -867,6 +857,16 @@ function renderCard(){
   $('cardStatus').textContent = st;
   $('cardStatus').className = 'status-pill ' + cls;
 
+  // 🎯 발음연습 횟수 + 평균 (eval_type='pronunciation' 필터)
+  const pronEvals = (f.evaluations || []).filter(x => x.eval_type === 'pronunciation' && x.score_total != null);
+  const pronCount = pronEvals.length;
+  const pronAvgVal = pronCount > 0
+    ? Math.round(pronEvals.reduce((s, x) => s + Number(x.score_total||0), 0) / pronCount * 10) / 10
+    : null;
+  const pronCellVal = pronCount === 0
+    ? '—'
+    : pronCount + (_lang==='en'?' tries':'회') + (pronAvgVal!=null ? ' · ' + (_lang==='en'?'avg ':'평균 ') + pronAvgVal : '');
+
   const rows = [
     [t('qStudentId'), erp.student_id || uid],
     [t('qSignup'), erp.signup_date || '—'],
@@ -877,6 +877,7 @@ function renderCard(){
     [t('qSessions'), (sm.session_count||0) + (_lang==='en'?' (period)':'회 (기간 내)')],
     [t('qGaze'), sm.avg_gaze_score != null ? Math.round(sm.avg_gaze_score*10)/10 : '—'],
     [t('qRewards'), (f.rewards||[]).length + (_lang==='en'?'':'개')],
+    ['🎯 ' + (_lang==='en'?'Pronunciation (result)':'발음연습 (결과)'), pronCellVal],
   ];
   $('cardQuick').innerHTML = rows.map(([k,v]) =>
     '<div class="quick-row"><b>'+esc(k)+'</b><span class="v">'+esc(v)+'</span></div>'
