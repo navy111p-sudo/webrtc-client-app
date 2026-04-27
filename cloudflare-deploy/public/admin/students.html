@@ -315,14 +315,14 @@
     </span>
   </div>
   <div class="top-user" id="user-btn">
-    👤 정우영1
+    <span id="topUserLabel">👤 관리자</span>
     <div class="top-popup" id="user-popup">
-      <div class="header">👤 정우영1 (관리자)</div>
-      <a href="/admin.html" target="_blank">📊 메인 대시보드</a>
+      <div class="header" id="topUserHeader">👤 관리자</div>
+      <a href="/admin.html">📊 메인 대시보드</a>
       <a href="/admin/health" target="_blank">🩺 셀프 진단</a>
       <div class="divider"></div>
-      <button onclick="alert('프로필 편집 — 다음 사이클')">🪪 프로필</button>
-      <button onclick="if(confirm('정말 로그아웃 하시겠습니까?')) location.href='/admin.html'">🚪 로그아웃</button>
+      <a href="/admin/mypage">🪪 마이페이지</a>
+      <button id="topLogoutBtn" type="button">🚪 로그아웃</button>
     </div>
   </div>
 </div>
@@ -1186,6 +1186,29 @@ document.getElementById('check-all').addEventListener('change', e => {
 
 // 첫 로드
 loadStudents();
+
+// ───── Phase 11 — 우상단 사용자 메뉴: /me 로 라벨 갱신 + 로그아웃 처리 ─────
+(function initTopUser(){
+  fetch('/api/admin/me', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      if (!j || !j.ok || !j.user) return;
+      const u = j.user;
+      const display = (u.name || u.username || '관리자') + (u.username ? ' (@' + u.username + ')' : '');
+      const label = document.getElementById('topUserLabel');
+      const head  = document.getElementById('topUserHeader');
+      if (label) label.textContent = '👤 ' + (u.name || u.username || '관리자');
+      if (head)  head.textContent  = '👤 ' + display;
+    })
+    .catch(()=>{});
+
+  const lo = document.getElementById('topLogoutBtn');
+  if (lo) lo.addEventListener('click', async () => {
+    if (!confirm('정말 로그아웃 하시겠습니까?')) return;
+    try { await fetch('/api/admin/logout', { method: 'POST', credentials: 'include' }); } catch {}
+    location.replace('/admin/login');
+  });
+})();
 </script>
 
 </body>
