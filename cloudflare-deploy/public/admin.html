@@ -358,13 +358,21 @@
     grid-template-columns: 1fr 460px;
     gap: 56px;
     align-items: center;
-    /* 🎨 Phase 19h — 테두리 제거, 부드럽게 페이드 */
+    /* 🎨 Phase 19i — 배너 내부 핑크-피치 톤과 정확히 매칭 (박스 경계 사라짐)
+       위쪽 영역 (배너가 차지하는 곳)에 진한 핑크-살구 농도, 아래쪽은 부드러운 피치 */
     background:
-      radial-gradient(circle at 15% 20%, rgba(252, 165, 165, 0.45) 0%, transparent 38%),
-      radial-gradient(circle at 85% 15%, rgba(254, 215, 170, 0.55) 0%, transparent 42%),
-      radial-gradient(circle at 75% 85%, rgba(254, 240, 138, 0.5) 0%, transparent 40%),
-      radial-gradient(circle at 12% 88%, rgba(253, 186, 116, 0.4) 0%, transparent 36%),
-      linear-gradient(135deg, #fff8f3 0%, #fef3e6 45%, #fed7aa 100%);
+      /* 좌상단 — 배너 좌측 핑크 (#fbc4c4 톤) */
+      radial-gradient(ellipse 60% 55% at 25% 25%, rgba(252, 196, 196, 0.7) 0%, transparent 60%),
+      /* 우상단 — 배너 우측 살구 (#fed7aa 톤) */
+      radial-gradient(ellipse 55% 50% at 78% 22%, rgba(254, 215, 170, 0.75) 0%, transparent 60%),
+      /* 가운데 — 따뜻한 피치 글로우 */
+      radial-gradient(ellipse 70% 40% at 50% 50%, rgba(254, 240, 222, 0.6) 0%, transparent 70%),
+      /* 좌하단 — 부드러운 핑크 */
+      radial-gradient(circle at 15% 90%, rgba(254, 205, 170, 0.45) 0%, transparent 50%),
+      /* 우하단 — 옅은 노랑 */
+      radial-gradient(circle at 85% 88%, rgba(254, 240, 138, 0.4) 0%, transparent 50%),
+      /* 베이스 — 배너의 핑크-크림 톤과 매칭 */
+      linear-gradient(160deg, #fde7e3 0%, #fdebd6 35%, #fed7aa 70%, #fcc99e 100%);
     border: 0;                        /* 테두리 제거 */
     border-radius: 40px;
     padding: 80px 64px;
@@ -408,7 +416,10 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🥭 Phase 19f/g/h — 히어로 배너 이미지 + 가장자리 페이드 */
+  /* 🥭 Phase 19i — 배너 이미지 박스 흔적까지 완전 페이드
+     - mix-blend-mode: multiply → 배너 내부 핑크 박스가 배경 핑크와 자연스럽게 섞임
+     - 강한 가장자리 mask (radial + linear) → 네 모서리 부드럽게 사라짐
+     - drop-shadow 줄여서 박스 음영 흔적 제거 */
   .hero-banner-img {
     display: block;
     width: 100%;
@@ -417,14 +428,19 @@
     margin: 0 0 20px;
     object-fit: contain;
     object-position: left center;
-    filter: drop-shadow(0 12px 24px rgba(154, 52, 18, 0.18));
-    /* 가장자리 부드럽게 페이드 — 배경과 자연스럽게 섞임 */
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%),
-                        linear-gradient(180deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
-            mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%),
-                        linear-gradient(180deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+    /* 박스 색이 배경에 녹아들도록 multiply 합성 — 핑크 × 따뜻한 크림 = 같은 톤 */
+    mix-blend-mode: multiply;
+    /* 가장자리 더 크게 페이드 (12% / 10%) + 모서리 라디얼 마스크 */
+    -webkit-mask-image:
+      linear-gradient(90deg,  transparent 0%, #000 12%, #000 88%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
+            mask-image:
+      linear-gradient(90deg,  transparent 0%, #000 12%, #000 88%, transparent 100%),
+      linear-gradient(180deg, transparent 0%, #000 10%, #000 90%, transparent 100%);
     -webkit-mask-composite: source-in;
             mask-composite: intersect;
+    /* 그림자 제거 (박스 흔적이 보이지 않도록) */
+    filter: none;
   }
   @media (max-width: 900px) {
     .hero-banner-img { max-height: 110px; margin: 0 auto 14px; object-position: center; }
