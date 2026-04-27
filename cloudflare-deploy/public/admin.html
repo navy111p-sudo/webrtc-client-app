@@ -189,6 +189,33 @@
   .menu-search-item mark { background:#e5e7eb; color:#111827; padding:0 3px; border-radius:3px; font-weight:700; }
   .menu-search-item.active mark { background:#cbd5e1; color:#0f172a; }
   .menu-search-empty { padding:14px 16px; color:#9ca3af; font-size:13px; text-align:center; }
+  /* 🥭 Phase 21f — 일치 결과 없음 자리 AI 묻기 버튼 */
+  .menu-search-ai-fallback {
+    cursor: pointer;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.10), rgba(251, 146, 60, 0.10));
+    transition: background 0.15s ease;
+  }
+  .menu-search-ai-fallback:hover {
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.22), rgba(251, 146, 60, 0.22));
+  }
+  .ai-fallback-row { display:flex; align-items:center; gap:12px; }
+  .ai-fallback-icon {
+    font-size: 22px;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.85); border-radius: 12px;
+    box-shadow: 0 4px 10px -3px rgba(245, 158, 11, 0.4);
+  }
+  .ai-fallback-body { flex: 1; min-width: 0; }
+  .ai-fallback-title { font-weight: 700; font-size: 14px; color: #78350f; }
+  .ai-fallback-q { font-size: 12px; color: #9a3412; margin-top: 2px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ai-fallback-hint {
+    font-size: 11px; color: #ea580c; font-weight: 600;
+    background: rgba(255,255,255,0.7); padding: 4px 8px; border-radius: 6px;
+    white-space: nowrap;
+  }
 
   /* === 하위(nested) 메뉴 토글 — 학생관리 같은 상위 카드 안의 sub-item === */
   .sub-menu { display:flex; flex-direction:column; gap:0; padding-left:8px; border-left:3px solid #e5e7eb; margin:8px 0; }
@@ -5094,9 +5121,33 @@ function renderSearchDropdown(q) {
   const hits = searchAllFor(q);
   _searchCurrentHits = hits;
   if (hits.length === 0) {
-    dd.innerHTML = '<div class="menu-search-empty">' + (adminLang==='en'?'No matches found':'일치 결과 없음') + '</div>';
+    // 🥭 Phase 21f — "일치 결과 없음" 대신 AI 묻기 버튼 (큰 클릭 영역)
+    const safeQ = q.replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+    const hint = adminLang === 'en' ? 'Press Enter or click' : 'Enter 또는 클릭';
+    const askLabel = adminLang === 'en' ? 'Ask Mangoi AI' : '망고아이 AI에게 묻기';
+    dd.innerHTML =
+      '<div class="menu-search-ai-fallback" id="menu-ai-fallback">' +
+        '<div class="ai-fallback-row">' +
+          '<span class="ai-fallback-icon">🤖</span>' +
+          '<div class="ai-fallback-body">' +
+            '<div class="ai-fallback-title">' + askLabel + '</div>' +
+            '<div class="ai-fallback-q">"' + safeQ + '"</div>' +
+          '</div>' +
+          '<span class="ai-fallback-hint">' + hint + '</span>' +
+        '</div>' +
+      '</div>';
     dd.classList.add('show');
     _searchActiveIdx = -1;
+    // 클릭 핸들러 — askAI() 직접 호출
+    const fb = document.getElementById('menu-ai-fallback');
+    if (fb) {
+      fb.addEventListener('click', function() {
+        dd.classList.remove('show');
+        if (typeof askAI === 'function') askAI(q);
+      });
+    }
     return;
   }
   const useEn = (typeof adminLang !== 'undefined' && adminLang === 'en');
