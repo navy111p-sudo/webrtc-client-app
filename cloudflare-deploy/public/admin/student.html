@@ -113,6 +113,79 @@
     aside.student-card{position:static}
     .grid-2{grid-template-columns:1fr}
   }
+
+  /* ───── 📋 평가서 보기 모달 (리포트 카드) ───── */
+  .modal-backdrop{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.6);
+    backdrop-filter:blur(4px); z-index:1000; align-items:flex-start; justify-content:center;
+    overflow-y:auto; padding:30px 20px;
+  }
+  .modal-backdrop.show{display:flex}
+  .report-modal{
+    width:100%; max-width:1000px; background:linear-gradient(180deg,#fff 0%,#fafafa 100%);
+    color:#222; border-radius:14px; overflow:hidden; box-shadow:0 30px 80px rgba(0,0,0,.5);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Apple SD Gothic Neo",sans-serif;
+  }
+  .report-head{
+    background:linear-gradient(135deg,#ffb800 0%,#ff8c00 100%);
+    color:#1a1a1a; padding:24px 32px; display:flex; align-items:center; gap:18px;
+  }
+  .report-head .mango{font-size:36px}
+  .report-head h2{margin:0; font-size:22px; font-weight:800}
+  .report-head .meta{margin-top:4px; font-size:13px; color:#5a3d00}
+  .report-head .right{margin-left:auto; display:flex; gap:8px}
+  .report-head button{
+    background:#1a1a1a; color:#ffb800; border:0; padding:8px 14px; border-radius:6px;
+    font-size:12px; font-weight:700; cursor:pointer;
+  }
+  .report-head button.ghost{background:rgba(255,255,255,.2); color:#1a1a1a}
+  .report-head button:hover{opacity:.85}
+
+  .report-body{padding:24px 32px; background:#fff; color:#222}
+  .report-body h3{margin:18px 0 10px; font-size:13px; color:#666; font-weight:700; text-transform:uppercase; letter-spacing:.6px; border-bottom:1px solid #eee; padding-bottom:6px}
+  .report-body h3:first-child{margin-top:0}
+
+  .stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin-bottom:14px}
+  .stat-card{background:#f8f8f8; border:1px solid #eee; border-radius:8px; padding:12px 14px}
+  .stat-card .lab{font-size:10px; color:#888; text-transform:uppercase; letter-spacing:.5px; font-weight:600}
+  .stat-card .val{font-size:22px; font-weight:800; margin-top:2px; color:#1a1a1a}
+  .stat-card .sub{font-size:11px; color:#aaa; margin-top:1px}
+  .stat-card.green .val{color:#16a34a}
+  .stat-card.blue .val{color:#0284c7}
+  .stat-card.yellow .val{color:#ca8a04}
+  .stat-card.red .val{color:#dc2626}
+  .stat-card.purple .val{color:#9333ea}
+
+  .grid-charts{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:8px}
+  @media (max-width:760px){.grid-charts{grid-template-columns:1fr}}
+
+  .report-chartbox{
+    background:#fff; border:1px solid #eee; border-radius:8px; padding:14px;
+    position:relative; height:300px;
+  }
+  .report-chartbox.tall{height:340px}
+
+  .comment-box{
+    background:#fffbe9; border:1px solid #fce5a3; border-radius:8px; padding:14px 16px;
+    margin-top:6px; white-space:pre-wrap; font-size:13px; line-height:1.6; color:#222
+  }
+  .comment-box.empty{color:#aaa; font-style:italic; background:#fafafa; border-color:#eee}
+  .comment-label{font-size:11px; font-weight:700; color:#a87a00; text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; display:block}
+
+  .report-foot{
+    padding:16px 32px; background:#f8f8f8; border-top:1px solid #eee;
+    font-size:11px; color:#888; text-align:center
+  }
+
+  /* 인쇄용 — A4 한 장에 들어가게 */
+  @media print{
+    body > *{display:none !important}
+    .modal-backdrop{display:block !important; position:static; padding:0; background:#fff; backdrop-filter:none}
+    .modal-backdrop > *{display:block !important}
+    .report-modal{max-width:none; box-shadow:none; border-radius:0}
+    .report-head .right{display:none}
+    .report-foot{background:#fff}
+  }
 </style>
 </head>
 <body>
@@ -326,6 +399,48 @@
 </main>
 
 <div class="toast" id="toast"></div>
+
+<!-- ════════════════ 📋 평가서 보기 모달 (리포트 카드) ════════════════ -->
+<div class="modal-backdrop" id="reportBackdrop" onclick="if(event.target===this) closeReport()">
+  <div class="report-modal" id="reportModal">
+    <header class="report-head">
+      <div class="mango">🥭</div>
+      <div>
+        <h2 id="rpName">학생 리포트</h2>
+        <div class="meta" id="rpMeta">—</div>
+      </div>
+      <div class="right">
+        <button class="ghost" onclick="window.print()">🖨 인쇄 / PDF</button>
+        <button onclick="closeReport()">✕ 닫기</button>
+      </div>
+    </header>
+
+    <div class="report-body">
+      <h3>📊 핵심 지표</h3>
+      <div class="stat-grid" id="rpStats"></div>
+
+      <h3>🎯 영역별 점수 (방사형)</h3>
+      <div class="grid-charts">
+        <div class="report-chartbox tall"><canvas id="rpRadar"></canvas></div>
+        <div class="report-chartbox tall"><canvas id="rpEngage"></canvas></div>
+      </div>
+
+      <h3>📝 평가 코멘트</h3>
+      <span class="comment-label">평가자 의견</span>
+      <div class="comment-box" id="rpComment">—</div>
+
+      <span class="comment-label" style="margin-top:12px">다음 학습 목표</span>
+      <div class="comment-box" id="rpGoal">—</div>
+
+      <h3>📅 출석 — 최근 30일</h3>
+      <div id="rpAttendCal" style="font-size:13px; color:#444; line-height:1.7"></div>
+    </div>
+
+    <div class="report-foot">
+      🥭 망고아이 영어 학습 리포트 · 출력일 <span id="rpPrintDate"></span>
+    </div>
+  </div>
+</div>
 
 <script>
 // ═══════════════════════ 공통 ═══════════════════════
@@ -643,7 +758,7 @@ function renderEngagement(){
 function renderEvaluation(){
   const items = _state.full.evaluations || [];
   if (items.length === 0) { $('evalBox').innerHTML = '<div class="empty">평가서가 없습니다. 위 폼으로 작성하세요.</div>'; return; }
-  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>평가일</th><th>유형</th><th>레벨</th><th>총점</th><th>스피킹</th><th>리스닝</th><th>리딩</th><th>라이팅</th><th>평가자</th><th>다음 목표</th><th>코멘트</th></tr></thead><tbody>'+
+  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>평가일</th><th>유형</th><th>레벨</th><th>총점</th><th>스피킹</th><th>리스닝</th><th>리딩</th><th>라이팅</th><th>평가자</th><th>다음 목표</th><th>코멘트</th><th>리포트</th></tr></thead><tbody>'+
     items.map(e=>`<tr>
       <td>${fmtDay(e.eval_at)}</td>
       <td>${esc(e.eval_type)||'—'}</td>
@@ -656,6 +771,7 @@ function renderEvaluation(){
       <td>${esc(e.evaluator)||'—'}</td>
       <td>${esc(e.next_goal)||'—'}</td>
       <td style="white-space:pre-wrap;max-width:300px">${esc(e.comment)||'—'}</td>
+      <td><button class="btn-mini" onclick="openReport(${e.id})" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1e293b;border:0;font-weight:700">📋 평가서 보기</button></td>
     </tr>`).join('')+'</tbody></table>';
 }
 
@@ -835,6 +951,193 @@ async function postSave(url, body, label){
     }
   } catch (e) { toast('네트워크 오류', true); }
 }
+
+// ═══════════════════════ 📋 평가서 보기 — 종합 리포트 카드 ═══════════════════════
+let _rpCharts = {};
+
+window.openReport = function(evalId){
+  const f = _state.full || {};
+  const ev = (f.evaluations || []).find(x => x.id === evalId);
+  if (!ev) { toast('평가서를 찾을 수 없습니다', true); return; }
+
+  const erp = f.erp || {};
+  const sm  = f.summary || {};
+  const sessions = f.sessions || [];
+  const rewards  = f.rewards  || [];
+  const enrolls  = f.enrollments || [];
+  const feedbacks= f.feedbacks|| [];
+  const payments = f.payments || [];
+  const consults = f.consultations || [];
+
+  // ── 헤더 ──
+  const studentName = erp.username || (f.profile||{}).username || uid;
+  $('rpName').textContent = '🎓 ' + studentName + ' — 학습 리포트';
+  $('rpMeta').textContent =
+    fmtDay(ev.eval_at) + ' · ' + (ev.eval_type||'평가') +
+    (ev.level ? ' · ' + ev.level + ' 레벨' : '') +
+    (ev.evaluator ? ' · 평가자: ' + ev.evaluator : '');
+  $('rpPrintDate').textContent = new Date().toLocaleString('ko-KR');
+
+  // ── 결석일수 계산: enrollment 시작~오늘 사이의 expected vs actual ──
+  // 1) 현재까지 진행된 일수 (시그업일 ~ 오늘) 중 평일 기준으로 expected
+  // 2) attendance 일수와의 차이 = 결석 (대략치)
+  const activeSet = new Set();
+  sessions.forEach(s => { if (s.date) activeSet.add(s.date); });
+  const totalAttendDays = activeSet.size;
+  const cpw = parseInt(erp.classes_per_week, 10) || 0;
+  // 기간 내 expected (주당 cpw 회 × 주 수)
+  const periodWeeks = (_state.days || 30) / 7;
+  const expected = Math.round(cpw * periodWeeks);
+  const absent = Math.max(0, expected - totalAttendDays);
+
+  const totalRewards = rewards.length;
+  const totalRewardValue = rewards.reduce((s,r)=> s + (parseInt(r.value,10)||0), 0);
+  const totalPaid = payments.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount_krw||0), 0);
+  const totalActive = sm.total_active_ms || 0;
+  const avgGaze = sm.avg_gaze_score!=null ? Math.round(sm.avg_gaze_score*10)/10 : '—';
+  const totalSession = sm.total_session_ms || 0;
+  const activePct = totalSession ? Math.round(totalActive/totalSession*100) : 0;
+
+  // ── 핵심 지표 9개 ──
+  $('rpStats').innerHTML = `
+    <div class="stat-card green"><div class="lab">총점</div><div class="val">${ev.score_total!=null?ev.score_total:'—'}</div><div class="sub">/100점</div></div>
+    <div class="stat-card blue"><div class="lab">레벨</div><div class="val">${esc(ev.level)||'—'}</div><div class="sub">${esc(ev.eval_type)||'평가'}</div></div>
+    <div class="stat-card yellow"><div class="lab">평균 집중도</div><div class="val">${avgGaze}</div><div class="sub">${sm.gaze_score_count||0}회 측정</div></div>
+    <div class="stat-card purple"><div class="lab">활동 비율</div><div class="val">${activePct}%</div><div class="sub">발화·참여</div></div>
+    <div class="stat-card green"><div class="lab">출석 일수</div><div class="val">${totalAttendDays}</div><div class="sub">${_state.days}일 기준</div></div>
+    <div class="stat-card red"><div class="lab">결석 일수</div><div class="val">${absent}</div><div class="sub">예상 ${expected}회 중</div></div>
+    <div class="stat-card yellow"><div class="lab">보상 점수</div><div class="val">${totalRewards}개</div><div class="sub">${totalRewardValue>0?(totalRewardValue+'점'):'—'}</div></div>
+    <div class="stat-card blue"><div class="lab">총 학습 시간</div><div class="val">${fmtMs(totalActive)}</div><div class="sub">활동 시간</div></div>
+    <div class="stat-card purple"><div class="lab">납부 완료</div><div class="val">${fmtKrw(totalPaid)}</div><div class="sub">${payments.length}회 결제</div></div>
+  `;
+
+  // ── 방사형 차트 (4영역) ──
+  if (_rpCharts.radar) _rpCharts.radar.destroy();
+  _rpCharts.radar = new Chart($('rpRadar').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: ['스피킹', '리스닝', '리딩', '라이팅'],
+      datasets: [{
+        label: studentName + ' (' + fmtDay(ev.eval_at) + ')',
+        data: [
+          ev.score_speaking||0, ev.score_listening||0,
+          ev.score_reading||0, ev.score_writing||0
+        ],
+        backgroundColor: 'rgba(245,158,11,0.25)',
+        borderColor: '#f59e0b',
+        borderWidth: 2,
+        pointBackgroundColor: '#f59e0b',
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        r: {
+          beginAtZero: true, max: 100,
+          pointLabels: { font: { size: 13, weight: '700' }, color: '#222' },
+          ticks: { backdropColor: 'transparent', color: '#888', stepSize: 20 },
+          grid: { color: '#e0e0e0' },
+          angleLines: { color: '#e0e0e0' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: '#222', font: { size: 12 } } },
+        title: { display: true, text: '4 영역 학습 능력', color: '#666', font: { size: 12, weight: '700' } }
+      }
+    }
+  });
+
+  // ── 시선·집중도 라인차트 (최근 세션 30건) ──
+  const recentSess = sessions.slice(0, 30).reverse();
+  if (_rpCharts.engage) _rpCharts.engage.destroy();
+  _rpCharts.engage = new Chart($('rpEngage').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: recentSess.map(s => fmtDay(s.joined_at)),
+      datasets: [
+        {
+          label: '시선 집중도',
+          data: recentSess.map(s => s.gaze_score),
+          borderColor: '#f59e0b',
+          backgroundColor: 'rgba(245,158,11,0.18)',
+          tension: 0.3, fill: true, yAxisID: 'y'
+        },
+        {
+          label: '활동 비율 (%)',
+          data: recentSess.map(s => s.total_session_ms ? Math.round(s.total_active_ms/s.total_session_ms*100) : null),
+          borderColor: '#16a34a',
+          backgroundColor: 'rgba(22,163,74,0.15)',
+          tension: 0.3, yAxisID: 'y'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, max: 100, ticks: { color: '#666' }, grid: { color: '#e0e0e0' }, title: { display: true, text: '점수 / %', color: '#666' } },
+        x: { ticks: { color: '#666', maxRotation: 60, minRotation: 30, font: { size: 10 } }, grid: { color: '#e0e0e0' } }
+      },
+      plugins: {
+        legend: { labels: { color: '#222' } },
+        title: { display: true, text: '시선 집중도 + 발화 활동 추이', color: '#666', font: { size: 12, weight: '700' } }
+      }
+    }
+  });
+
+  // ── 코멘트 ──
+  const cm = $('rpComment');
+  if (ev.comment) { cm.textContent = ev.comment; cm.classList.remove('empty'); }
+  else { cm.textContent = '평가자 코멘트가 입력되지 않았습니다.'; cm.classList.add('empty'); }
+
+  const gl = $('rpGoal');
+  if (ev.next_goal) { gl.textContent = ev.next_goal; gl.classList.remove('empty'); }
+  else { gl.textContent = '다음 학습 목표가 입력되지 않았습니다.'; gl.classList.add('empty'); }
+
+  // ── 출석 캘린더 (최근 30일 점) ──
+  const cal = $('rpAttendCal');
+  const days = [];
+  const todayKst = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date(todayKst.getTime() - i * 86400000);
+    const ds = d.toISOString().slice(0,10);
+    const sess = sessions.filter(s => s.date === ds);
+    days.push({ date: ds, count: sess.length, gaze: sess.length ? sess.reduce((a,s)=>a+(s.gaze_score||0),0)/sess.length : null });
+  }
+  cal.innerHTML =
+    '<div style="display:grid;grid-template-columns:repeat(15,1fr);gap:3px">' +
+    days.map(d => {
+      const c = d.count === 0 ? '#f0f0f0'
+              : d.gaze == null ? '#cbd5e1'
+              : d.gaze >= 70 ? '#16a34a'
+              : d.gaze >= 40 ? '#fbbf24' : '#dc2626';
+      return `<div title="${d.date}: ${d.count}회 (집중도 ${d.gaze!=null?Math.round(d.gaze):'—'})"
+                   style="aspect-ratio:1;background:${c};border-radius:3px"></div>`;
+    }).join('') +
+    '</div>' +
+    '<div style="margin-top:8px;font-size:11px;color:#888">' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;vertical-align:middle"></span> 우수(70+) ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#fbbf24;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 보통(40~70) ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 저조(40-) ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#f0f0f0;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 결석' +
+    '</div>';
+
+  // ── 모달 열기 ──
+  $('reportBackdrop').classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+
+window.closeReport = function(){
+  $('reportBackdrop').classList.remove('show');
+  document.body.style.overflow = '';
+  if (_rpCharts.radar) { _rpCharts.radar.destroy(); _rpCharts.radar = null; }
+  if (_rpCharts.engage){ _rpCharts.engage.destroy(); _rpCharts.engage = null; }
+};
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && $('reportBackdrop').classList.contains('show')) closeReport();
+});
 
 // ═══════════════════════ 컨트롤 ═══════════════════════
 $('refreshBtn').addEventListener('click', loadFull);
