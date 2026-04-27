@@ -36,7 +36,7 @@ MAX_RECORDING_MB = "500"
 ALLOWED_RECORDING_MIME = "video/webm,video/mp4,audio/webm,audio/mp4"
 # 🩺 /admin/health 의 "마지막 배포" 타일에 표시되는 식별자.
 #    fix-and-deploy.ps1 이 커밋 직전 자동으로 현재 시각+단축해시로 갱신.
-BUILD_STAMP = "2026-04-27T12:34:07Z"
+BUILD_STAMP = "2026-04-27T12:37:58Z"
 
 [assets]
 directory = "./public"
@@ -81,7 +81,7 @@ bucket_name = "webrtc-class-recordings"
 [env.production.vars]
 MAX_RECORDING_MB = "500"
 ALLOWED_RECORDING_MIME = "video/webm,video/mp4,audio/webm,audio/mp4"
-BUILD_STAMP = "2026-04-27T12:34:07Z"
+BUILD_STAMP = "2026-04-27T12:37:58Z"
 
 [env.production.assets]
 directory = "./public"
