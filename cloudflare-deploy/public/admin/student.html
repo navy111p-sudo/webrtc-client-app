@@ -66,6 +66,11 @@
   /* ── 차트 ── */
   .chart-wrap{background:var(--panel2);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:14px}
   .chart-wrap h3{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--mut);text-transform:uppercase;letter-spacing:.6px}
+  /* 🩹 Chart.js 무한 확대 방지 — canvas 부모에 명시적 높이 + position:relative 필수.
+     responsive:true + maintainAspectRatio:false 사용 시 부모 박스 크기를 매 프레임 측정하기 때문에
+     높이가 고정 안 되면 자기 자신을 다시 키우는 피드백 루프가 돈다. */
+  .chart-box{position:relative;height:280px;width:100%}
+  .chart-box.short{height:220px}
 
   /* ── 테이블 ── */
   table.list{width:100%;border-collapse:collapse;font-size:13px}
@@ -160,7 +165,7 @@
         <div class="kpi-grid" id="overviewKpis"></div>
         <div class="chart-wrap">
           <h3>일자별 활동 (출석·세션·집중도)</h3>
-          <canvas id="dayChart" height="80"></canvas>
+          <div class="chart-box"><canvas id="dayChart"></canvas></div>
         </div>
         <div class="grid-2">
           <div class="chart-wrap">
@@ -210,8 +215,8 @@
       <!-- 5. 참여도·점수 -->
       <div class="panel" data-panel="engagement">
         <div class="kpi-grid" id="engKpis"></div>
-        <div class="chart-wrap"><h3>일자별 평균 집중도(시선 점수)</h3><canvas id="gazeChart" height="70"></canvas></div>
-        <div class="chart-wrap"><h3>세션별 점수 (최근 30건)</h3><canvas id="sessionScoreChart" height="80"></canvas></div>
+        <div class="chart-wrap"><h3>일자별 평균 집중도(시선 점수)</h3><div class="chart-box short"><canvas id="gazeChart"></canvas></div></div>
+        <div class="chart-wrap"><h3>세션별 점수 (최근 30건)</h3><div class="chart-box"><canvas id="sessionScoreChart"></canvas></div></div>
       </div>
 
       <!-- 6. 평가서 -->
