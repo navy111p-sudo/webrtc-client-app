@@ -113,23 +113,29 @@ async function runTool(
 ): Promise<any> {
   const todayKst = new Date(Date.now() + 9 * 3600 * 1000).toISOString().slice(0, 10);
 
+  // 안전 헬퍼 — 개별 쿼리 실패가 전체 도구를 죽이지 않도록
+  const safe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+    try { return await fn(); } catch { return fallback; }
+  };
+
   switch (tool) {
     case 'today_stats': {
       const startMs = new Date(todayKst + 'T00:00:00+09:00').getTime();
       const endMs = startMs + 86400000;
       const [rev, att, act, sign] = await Promise.all([
-        env.DB.prepare(`SELECT COALESCE(SUM(amount_krw),0) AS revenue, COUNT(*) AS cnt
+        safe(() => env.DB.prepare(`SELECT COALESCE(SUM(amount_krw),0) AS revenue, COUNT(*) AS cnt
                         FROM student_payments
                         WHERE status='paid' AND paid_at IS NOT NULL AND paid_at >= ? AND paid_at < ?`)
-          .bind(startMs, endMs).first<any>(),
-        env.DB.prepare(`SELECT COUNT(DISTINCT user_id) AS attended
+          .bind(startMs, endMs).first<any>(), { revenue: 0, cnt: 0 } as any),
+        safe(() => env.DB.prepare(`SELECT COUNT(DISTINCT user_id) AS attended
                         FROM attendance WHERE date = ?`).bind(todayKst).first<any>(),
-        env.DB.prepare(`SELECT COUNT(*) AS active
+          { attended: 0 } as any),
+        safe(() => env.DB.prepare(`SELECT COUNT(*) AS active
                         FROM students_erp
                         WHERE end_date IS NULL OR end_date='' OR end_date >= ?`)
-          .bind(todayKst).first<any>(),
-        env.DB.prepare(`SELECT COUNT(*) AS signups FROM students_erp WHERE signup_date = ?`)
-          .bind(todayKst).first<any>()
+          .bind(todayKst).first<any>(), { active: 0 } as any),
+        safe(() => env.DB.prepare(`SELECT COUNT(*) AS signups FROM students_erp WHERE signup_date = ?`)
+          .bind(todayKst).first<any>(), { signups: 0 } as any)
       ]);
       const attended = att?.attended || 0;
       const active = act?.active || 0;

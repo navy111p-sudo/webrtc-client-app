@@ -890,68 +890,83 @@ export async function handleMangoApi(
     //   - 결석률 = (활성 학생수 - 오늘 출석 학생수) / 활성 학생수 * 100
     //   - student_payments / attendance / students_erp 3개 테이블 사용
     if (method === 'GET' && path === '/api/admin/stats/today') {
-      // 신규 환경에서 student_payments 가 없을 수 있으니 자동 생성
-      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_payments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, paid_at INTEGER, period_start TEXT, period_end TEXT, amount_krw INTEGER NOT NULL, method TEXT, memo TEXT, status TEXT DEFAULT 'paid', created_at INTEGER NOT NULL);`);
+      // 🥭 Phase 20d 핫픽스 — production D1 에 테이블/컬럼이 없을 수 있으므로
+      //  ① 필요한 모든 테이블을 IF NOT EXISTS 로 자동 생성
+      //  ② 4개 쿼리를 개별 try/catch 로 격리 (하나 실패해도 나머지 살아있음)
+      //  ③ 컬럼 누락 등 어떤 에러든 0 으로 graceful degradation, 전체 200 OK 유지
 
-      // KST 기준 오늘 (YYYY-MM-DD)
+      // 자동 자가치유 — 누락된 테이블 생성 (이미 있으면 NOOP)
+      try {
+        await env.DB.exec(
+          `CREATE TABLE IF NOT EXISTS student_payments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, paid_at INTEGER, period_start TEXT, period_end TEXT, amount_krw INTEGER NOT NULL, method TEXT, memo TEXT, status TEXT DEFAULT 'paid', created_at INTEGER NOT NULL);`
+        );
+      } catch {}
+      try {
+        await env.DB.exec(
+          `CREATE TABLE IF NOT EXISTS students_erp (user_id TEXT PRIMARY KEY, korean_name TEXT, english_name TEXT, status TEXT DEFAULT '정상', signup_date TEXT, end_date TEXT, created_at INTEGER);`
+        );
+      } catch {}
+      try {
+        await env.DB.exec(
+          `CREATE TABLE IF NOT EXISTS attendance (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT NOT NULL, user_id TEXT NOT NULL, username TEXT, role TEXT DEFAULT 'student', joined_at INTEGER NOT NULL, left_at INTEGER, status TEXT DEFAULT 'present', date TEXT, total_session_ms INTEGER DEFAULT 0, total_active_ms INTEGER DEFAULT 0, disconnect_count INTEGER DEFAULT 0);`
+        );
+      } catch {}
+
       const todayKst = new Date(Date.now() + 9*3600*1000).toISOString().slice(0,10);
-      // KST 기준 오늘의 ms 범위
       const startMs = new Date(todayKst + 'T00:00:00+09:00').getTime();
       const endMs = startMs + 86400000;
 
-      try {
-        const [revRow, attRow, activeRow, signupRow] = await Promise.all([
-          // 1) 오늘 매출 — student_payments.paid_at 가 KST 오늘 범위 안
-          env.DB.prepare(
-            `SELECT COALESCE(SUM(amount_krw), 0) AS revenue, COUNT(*) AS pay_count
-             FROM student_payments
-             WHERE status = 'paid' AND paid_at IS NOT NULL
-               AND paid_at >= ? AND paid_at < ?`
-          ).bind(startMs, endMs).first<{ revenue: number; pay_count: number }>(),
+      // 각 쿼리를 안전 헬퍼로 감싸 — 개별 실패가 전체 실패를 일으키지 않도록
+      const safe = async <T,>(fn: () => Promise<T>, fallback: T): Promise<T> => {
+        try { return await fn(); } catch { return fallback; }
+      };
 
-          // 2) 오늘 출석 고유 학생 수 — attendance.date = today
-          env.DB.prepare(
-            `SELECT COUNT(DISTINCT user_id) AS attended
-             FROM attendance
-             WHERE date = ?`
-          ).bind(todayKst).first<{ attended: number }>(),
+      const [revRow, attRow, activeRow, signupRow] = await Promise.all([
+        safe(() => env.DB.prepare(
+          `SELECT COALESCE(SUM(amount_krw), 0) AS revenue, COUNT(*) AS pay_count
+           FROM student_payments
+           WHERE status = 'paid' AND paid_at IS NOT NULL
+             AND paid_at >= ? AND paid_at < ?`
+        ).bind(startMs, endMs).first<{ revenue: number; pay_count: number }>(),
+        { revenue: 0, pay_count: 0 } as any),
 
-          // 3) 활성 학생 수 — end_date 없거나 오늘 이후
-          env.DB.prepare(
-            `SELECT COUNT(*) AS active
-             FROM students_erp
-             WHERE end_date IS NULL OR end_date = '' OR end_date >= ?`
-          ).bind(todayKst).first<{ active: number }>(),
+        safe(() => env.DB.prepare(
+          `SELECT COUNT(DISTINCT user_id) AS attended
+           FROM attendance WHERE date = ?`
+        ).bind(todayKst).first<{ attended: number }>(),
+        { attended: 0 } as any),
 
-          // 4) 오늘 신규 등록 — students_erp.signup_date = today
-          env.DB.prepare(
-            `SELECT COUNT(*) AS signups
-             FROM students_erp
-             WHERE signup_date = ?`
-          ).bind(todayKst).first<{ signups: number }>()
-        ]);
+        safe(() => env.DB.prepare(
+          `SELECT COUNT(*) AS active
+           FROM students_erp
+           WHERE end_date IS NULL OR end_date = '' OR end_date >= ?`
+        ).bind(todayKst).first<{ active: number }>(),
+        { active: 0 } as any),
 
-        const revenue = revRow?.revenue || 0;
-        const payCount = revRow?.pay_count || 0;
-        const attended = attRow?.attended || 0;
-        const active = activeRow?.active || 0;
-        const signups = signupRow?.signups || 0;
+        safe(() => env.DB.prepare(
+          `SELECT COUNT(*) AS signups
+           FROM students_erp WHERE signup_date = ?`
+        ).bind(todayKst).first<{ signups: number }>(),
+        { signups: 0 } as any)
+      ]);
 
-        // 결석률 = (활성 - 출석) / 활성 * 100  (활성 0 이면 0%)
-        const absentCount = Math.max(0, active - attended);
-        const absenceRate = active > 0 ? (absentCount * 100 / active) : 0;
+      const revenue = revRow?.revenue || 0;
+      const payCount = revRow?.pay_count || 0;
+      const attended = attRow?.attended || 0;
+      const active = activeRow?.active || 0;
+      const signups = signupRow?.signups || 0;
 
-        return json({
-          ok: true,
-          date: todayKst,
-          revenue: { amount_krw: revenue, pay_count: payCount },
-          students: { attended, active },
-          absence: { rate_pct: Math.round(absenceRate * 10) / 10, absent: absentCount, scheduled: active },
-          signups: { count: signups }
-        });
-      } catch (e: any) {
-        return json({ ok: false, error: String(e?.message || e) }, 500);
-      }
+      const absentCount = Math.max(0, active - attended);
+      const absenceRate = active > 0 ? (absentCount * 100 / active) : 0;
+
+      return json({
+        ok: true,
+        date: todayKst,
+        revenue: { amount_krw: revenue, pay_count: payCount },
+        students: { attended, active },
+        absence: { rate_pct: Math.round(absenceRate * 10) / 10, absent: absentCount, scheduled: active },
+        signups: { count: signups }
+      });
     }
 
     // ════════════════════════════════════════════════════════════
