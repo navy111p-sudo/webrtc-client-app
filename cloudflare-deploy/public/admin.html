@@ -411,67 +411,65 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🥭 3D 망고 텍스트 v3 — 망고 캐릭터 톤 매칭
-     레이어 구성 (뒤→앞):
-     1. 뒷쪽 외광 (앰버 60px blur)
-     2. 7단 갈색 추출 (글자가 단면처럼 두꺼움)
-     3. 부드러운 큰 drop shadow
-     4. 진한 갈색 외곽선 (paint-order: stroke fill)
-     5. 본체: 망고 옐로 그라데이션 (#FFFAEB → #FED14B → #F59E0B → #C2410C)
-     6. 위쪽 흰빛 광택 (::before, sweep gradient)
-     7. ✨ 반짝이 (::after, animate)
+  /* 🥭 3D 망고 텍스트 v4 — 레퍼런스 이미지 정밀 매칭
+     - 외곽선: 진한 갈색 → 따뜻한 앰버 (#92400e)
+     - 본체: 더 밝은 노랑 그라데이션
+     - 통통한 인플레이트 느낌 (font-weight + letter-spacing)
+     - 💛 이모지가 텍스트에 자연스럽게 들어감
   */
   .hero h1 {
     margin: 0 0 24px;
     font-family: 'Jua', 'Black Han Sans', 'Noto Sans KR', sans-serif;
-    font-size: 88px; font-weight: 400;
-    letter-spacing: 2px;
-    line-height: 1.15;
+    font-size: 90px; font-weight: 400;
+    letter-spacing: 3px;
+    line-height: 1.18;
     position: relative;
     display: inline-block;
 
-    /* 망고 본체 — 위 거의 흰색 → 아래 깊은 오렌지 그라데이션 */
-    color: #FED14B;
-    background: linear-gradient(178deg,
-      #FFFAEB 0%,
-      #FFE873 18%,
-      #FED14B 38%,
-      #F59E0B 70%,
-      #C2410C 100%);
+    /* 망고 본체 — 더 밝고 채도 높은 노랑 그라데이션 (레퍼런스 매칭) */
+    color: #FFD93D;
+    background: linear-gradient(180deg,
+      #FFFBEB 0%,
+      #FEF08A 18%,
+      #FFE873 38%,
+      #FFD93D 60%,
+      #F5B400 85%,
+      #C97C00 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
 
-    /* 진한 갈색 외곽선 — 망고 캐릭터의 눈/입 outline 톤 */
-    -webkit-text-stroke: 6px #3b1407;
+    /* 따뜻한 앰버 외곽선 — 캐릭터 디자인의 부드러운 outline 톤 */
+    -webkit-text-stroke: 7px #92400e;
     paint-order: stroke fill;
 
-    /* 입체 추출 + 외광 + drop shadow 통합 */
+    /* 입체 추출 — 외곽선 색과 자연스럽게 이어지는 단계 */
     text-shadow:
-      0 1px 0 #ea580c,
-      0 2px 0 #c2410c,
+      0 1px 0 #d97706,
+      0 2px 0 #b45309,
       0 3px 0 #a16207,
       0 4px 0 #854d0e,
-      0 5px 0 #713f12,
-      0 6px 0 #5c2d09,
-      0 7px 0 #4A2511,
-      0 14px 24px rgba(74, 37, 17, 0.55),
-      0 0 60px rgba(255, 209, 75, 0.45);
-    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+      0 5px 0 #78350f,
+      0 6px 0 #6b3711,
+      0 7px 0 #5c2d09,
+      0 12px 22px rgba(92, 45, 9, 0.5),
+      0 0 60px rgba(255, 217, 61, 0.5);
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,0.18));
     transform: translateZ(0);
   }
 
-  /* 광택 1: 상단 sweep highlight (좌상단에서 우하단으로 비스듬한 흰빛) */
+  /* 광택 1: 상단 강한 sweep — 통통한 인플레이트 느낌 */
   .hero h1::before {
     content: attr(data-text);
     position: absolute; top: 0; left: 0; right: 0;
     pointer-events: none;
     -webkit-text-stroke: 0;
     text-shadow: none;
-    background: linear-gradient(168deg,
-      rgba(255,255,255,0.92) 0%,
-      rgba(255,255,255,0.55) 20%,
-      rgba(255,255,255,0)    42%);
+    background: linear-gradient(170deg,
+      rgba(255,255,255,0.95) 0%,
+      rgba(255,255,255,0.7)  10%,
+      rgba(255,255,255,0.35) 22%,
+      rgba(255,255,255,0)    40%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -481,14 +479,14 @@
     z-index: 2;
   }
 
-  /* 광택 2: 우상단 반짝이 ✨ (animate) */
+  /* 광택 2: 우상단 반짝이 ✨ (애니메이션) */
   .hero h1::after {
     content: '✨';
     position: absolute;
     top: -8%; right: -3%;
     font-size: 0.42em;
-    filter: drop-shadow(0 0 8px rgba(255, 235, 100, 0.95))
-            drop-shadow(0 0 16px rgba(255, 200, 0, 0.5));
+    filter: drop-shadow(0 0 10px rgba(255, 235, 100, 0.95))
+            drop-shadow(0 0 18px rgba(255, 200, 0, 0.5));
     animation: sparkleFloat 2.4s ease-in-out infinite;
     pointer-events: none;
     -webkit-text-stroke: 0;
@@ -815,8 +813,8 @@
   /* 모바일 대응 */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
-    .hero h1 { font-size: 50px; text-align: center; -webkit-text-stroke-width: 4px; letter-spacing: 1px; text-shadow:
-      0 1px 0 #ea580c, 0 2px 0 #c2410c, 0 3px 0 #a16207, 0 4px 0 #854d0e, 0 5px 0 #5c2d09, 0 6px 0 #4A2511, 0 9px 14px rgba(74,37,17,0.5), 0 0 32px rgba(255,209,75,0.35); }
+    .hero h1 { font-size: 52px; text-align: center; -webkit-text-stroke-width: 5px; letter-spacing: 2px; text-shadow:
+      0 1px 0 #d97706, 0 2px 0 #b45309, 0 3px 0 #a16207, 0 4px 0 #854d0e, 0 5px 0 #78350f, 0 6px 0 #5c2d09, 0 9px 14px rgba(92,45,9,0.45), 0 0 32px rgba(255,217,61,0.4); }
     .hero .hero-sub { text-align: center; font-size: 17px; margin-bottom: 24px; }
     .hero .hero-search input { padding: 20px 110px 20px 64px; font-size: 18px; }
     .hero .hero-search-clear { width: 32px; height: 32px; right: 60px; font-size: 14px; }
@@ -1046,7 +1044,7 @@
     <!-- 🥭 히어로 랜딩 (망고 캐릭터 + 거대 검색창) -->
     <section class="hero">
       <div class="hero-text">
-        <h1 data-ko="안녕하세요, 망고아이!" data-en="Hello, Mangoi!" data-text="안녕하세요, 망고아이!">안녕하세요, 망고아이!</h1>
+        <h1 data-ko="안녕하세요💛 망고아이!" data-en="Hello💛 Mangoi!" data-text="안녕하세요💛 망고아이!">안녕하세요💛 망고아이!</h1>
         <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
         <div class="hero-search">
           <span class="hero-search-icon" aria-hidden="true">
