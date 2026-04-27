@@ -620,6 +620,14 @@
       inset 0 1px 0 rgba(255, 255, 255, 0.4);
   }
 
+  /* 매출 KPI 카드 안에 들어가는 미니 sparkline 영역 */
+  .spark-wrap {
+    position: relative;
+    height: 50px;
+    margin-top: 8px;
+  }
+  .spark-wrap canvas { width: 100% !important; height: 100% !important; }
+
   /* 모바일 대응 */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
@@ -909,13 +917,38 @@
   <summary><span data-ko="📅 일자별 차트 (출석·보상·매출·학생)" data-en="📅 Daily Charts (Attendance · Rewards · Revenue · Students)">📅 일자별 차트 (출석·보상·매출·학생)</span></summary>
   <div class="menu-body">
 
-    <!-- 💰 매출 5단계 KPI 카드 -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px" id="rev-kpis">
-      <div class="card" style="text-align:center"><div class="card-label" data-ko="오늘 매출" data-en="Today">오늘 매출</div><div class="card-value" id="rev-today">—</div></div>
-      <div class="card" style="text-align:center"><div class="card-label" data-ko="이번 달 매출" data-en="This Month">이번 달 매출</div><div class="card-value" id="rev-month">—</div></div>
-      <div class="card" style="text-align:center"><div class="card-label" data-ko="이번 분기 매출" data-en="This Quarter">이번 분기 매출</div><div class="card-value" id="rev-quarter">—</div></div>
-      <div class="card" style="text-align:center"><div class="card-label" data-ko="반기 매출" data-en="Half-year">반기 매출</div><div class="card-value" id="rev-half">—</div></div>
-      <div class="card" style="text-align:center"><div class="card-label" data-ko="연간 매출" data-en="This Year">연간 매출</div><div class="card-value" id="rev-year">—</div></div>
+    <!-- 💰 매출 5단계 KPI 카드 + 미니 꺾은선 (sparkline) -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-bottom:14px" id="rev-kpis">
+      <div class="card" style="text-align:center;border-top:3px solid #f59e0b">
+        <div class="card-label" data-ko="오늘 매출" data-en="Today">오늘 매출</div>
+        <div class="card-value" id="rev-today">—</div>
+        <div class="card-sub" data-ko="최근 14일 추이" data-en="Last 14 days">최근 14일 추이</div>
+        <div class="spark-wrap"><canvas id="spark-today"></canvas></div>
+      </div>
+      <div class="card" style="text-align:center;border-top:3px solid #ea580c">
+        <div class="card-label" data-ko="이번 달 매출" data-en="This Month">이번 달 매출</div>
+        <div class="card-value" id="rev-month">—</div>
+        <div class="card-sub" data-ko="최근 6개월 추이" data-en="Last 6 months">최근 6개월 추이</div>
+        <div class="spark-wrap"><canvas id="spark-month"></canvas></div>
+      </div>
+      <div class="card" style="text-align:center;border-top:3px solid #dc2626">
+        <div class="card-label" data-ko="이번 분기 매출" data-en="This Quarter">이번 분기 매출</div>
+        <div class="card-value" id="rev-quarter">—</div>
+        <div class="card-sub" data-ko="최근 6분기 추이" data-en="Last 6 quarters">최근 6분기 추이</div>
+        <div class="spark-wrap"><canvas id="spark-quarter"></canvas></div>
+      </div>
+      <div class="card" style="text-align:center;border-top:3px solid #a855f7">
+        <div class="card-label" data-ko="반기 매출" data-en="Half-year">반기 매출</div>
+        <div class="card-value" id="rev-half">—</div>
+        <div class="card-sub" data-ko="최근 4반기 추이" data-en="Last 4 halves">최근 4반기 추이</div>
+        <div class="spark-wrap"><canvas id="spark-half"></canvas></div>
+      </div>
+      <div class="card" style="text-align:center;border-top:3px solid #3b82f6">
+        <div class="card-label" data-ko="연간 매출" data-en="This Year">연간 매출</div>
+        <div class="card-value" id="rev-year">—</div>
+        <div class="card-sub" data-ko="최근 5년 추이" data-en="Last 5 years">최근 5년 추이</div>
+        <div class="spark-wrap"><canvas id="spark-year"></canvas></div>
+      </div>
     </div>
 
     <!-- 📅 기간 컨트롤 -->
@@ -1867,12 +1900,14 @@ async function load() {
   // 매출·학생흐름 차트는 별도 endpoint 라 dashboard load 와 함께 같이 호출
   loadRevenueChart();
   loadStudentFlowChart();
+  loadKpiSparklines();   // 5개 KPI 카드의 미니 꺾은선 그래프
 }
 
 /* ════════════════════════════════════════════════════════════
    💵 Phase 15 — 매출·학생흐름 차트 + 기간 컨트롤
 ════════════════════════════════════════════════════════════ */
 let chartRev = null, chartFlow = null;
+const _sparkCharts = {};   // sparkline 인스턴스 보관 (5개)
 
 function fmtKrwShort(n) {
   const v = Number(n) || 0;
@@ -2003,10 +2038,105 @@ async function loadStudentFlowChart() {
   }
 }
 
+// 📈 5개 KPI 카드별 미니 꺾은선 (sparkline) 로드
+//   각 KPI 의 트렌드를 한 눈에 — 일/월/분기/반기/연 별 다른 윈도우
+async function loadKpiSparklines() {
+  const today = new Date();
+  const fmt = d => d.toISOString().slice(0, 10);
+
+  // (period, fromDate, toDate, canvasId, color) 5종
+  const configs = [
+    { period: 'day',     from: new Date(today.getTime() - 14*86400000), id: 'spark-today',   color: '#f59e0b' },
+    { period: 'month',   from: new Date(today.getFullYear(), today.getMonth() - 5, 1), id: 'spark-month',   color: '#ea580c' },
+    { period: 'quarter', from: new Date(today.getFullYear() - 1, today.getMonth() - 6, 1), id: 'spark-quarter', color: '#dc2626' },
+    { period: 'half',    from: new Date(today.getFullYear() - 2, 0, 1), id: 'spark-half',    color: '#a855f7' },
+    { period: 'year',    from: new Date(today.getFullYear() - 4, 0, 1), id: 'spark-year',    color: '#3b82f6' },
+  ];
+  const toStr = fmt(today);
+
+  await Promise.allSettled(configs.map(async (c) => {
+    try {
+      const r = await fetch(`/api/admin/stats/revenue?period=${c.period}&from=${fmt(c.from)}&to=${toStr}`,
+                            { credentials: 'include', cache: 'no-store' });
+      const j = await r.json();
+      if (!j.ok) return;
+      renderSparkline(c.id, j.items || [], c.color);
+    } catch (e) { console.warn('[spark]', c.period, 'failed:', e); }
+  }));
+}
+
+function renderSparkline(canvasId, items, color) {
+  const el = document.getElementById(canvasId);
+  if (!el) return;
+  if (_sparkCharts[canvasId]) _sparkCharts[canvasId].destroy();
+
+  // 데이터 없으면 빈 라인 표시
+  const labels = items.map(i => i.label);
+  const data   = items.map(i => i.revenue || 0);
+  const hasData = data.some(v => v > 0);
+
+  // 색상 → rgba 알파 변환 (#f59e0b → rgba(245,158,11,0.18))
+  const hex2rgba = (hex, a) => {
+    const h = hex.replace('#','');
+    const n = parseInt(h.length === 3 ? h.split('').map(c=>c+c).join('') : h, 16);
+    return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;
+  };
+
+  _sparkCharts[canvasId] = new Chart(el.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        borderColor: hasData ? color : '#d1d5db',
+        backgroundColor: hasData ? hex2rgba(color, 0.18) : 'rgba(209,213,219,.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.35,
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHoverBackgroundColor: color,
+        pointHoverBorderColor: '#fff',
+        pointHoverBorderWidth: 2,
+      }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      responsive: true,
+      animation: { duration: 600 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          backgroundColor: 'rgba(28,25,23,0.95)',
+          titleFont: { size: 11, weight: '600' },
+          bodyFont: { size: 12, weight: '700' },
+          padding: 8,
+          cornerRadius: 6,
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.parsed.y || 0;
+              if (v >= 100000000) return (v/100000000).toFixed(1) + '억';
+              if (v >= 10000)     return (v/10000).toFixed(1) + '만원';
+              return v.toLocaleString('ko-KR') + '원';
+            }
+          }
+        }
+      },
+      scales: {
+        x: { display: false },
+        y: { display: false, beginAtZero: true }
+      },
+      elements: { line: { capBezierPoints: true }}
+    }
+  });
+}
+
 // 적용 버튼 + 기간 변경 핸들러
 document.getElementById('rev-apply')?.addEventListener('click', () => {
   loadRevenueChart();
   loadStudentFlowChart();
+  loadKpiSparklines();
 });
 document.getElementById('rev-period')?.addEventListener('change', loadRevenueChart);
 
