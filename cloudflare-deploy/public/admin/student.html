@@ -191,18 +191,23 @@
 <body>
 
 <header class="top">
-  <span class="brand">🥭 망고아이</span>
-  <span class="crumb">관리자 &rsaquo; 학생 드릴다운</span>
+  <span class="brand">🥭 <span data-ko="망고아이" data-en="Mangoi">망고아이</span></span>
+  <span class="crumb" data-ko="관리자 › 학생 드릴다운" data-en="Admin › Student Drilldown">관리자 &rsaquo; 학생 드릴다운</span>
   <div class="right">
     <select id="period">
-      <option value="7">최근 7일</option>
-      <option value="30" selected>최근 30일</option>
-      <option value="90">최근 90일</option>
-      <option value="365">최근 1년</option>
+      <option value="7"   data-ko="최근 7일"   data-en="Last 7 days">최근 7일</option>
+      <option value="30" selected data-ko="최근 30일" data-en="Last 30 days">최근 30일</option>
+      <option value="90"  data-ko="최근 90일"  data-en="Last 90 days">최근 90일</option>
+      <option value="365" data-ko="최근 1년"   data-en="Last 1 year">최근 1년</option>
     </select>
-    <button class="btn" id="refreshBtn">🔄 새로고침</button>
-    <a class="btn" href="/admin/students">👨‍🎓 학생 목록</a>
-    <a class="btn" href="/admin.html">📊 대시보드</a>
+    <button class="btn" id="refreshBtn" data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
+    <a class="btn" href="/admin/students" data-ko="👨‍🎓 학생 목록" data-en="👨‍🎓 Students">👨‍🎓 학생 목록</a>
+    <a class="btn" href="/admin.html" data-ko="📊 대시보드" data-en="📊 Dashboard">📊 대시보드</a>
+    <button class="btn" id="langBtn" title="Toggle language"
+            style="display:flex;align-items:center;gap:4px">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+      <span id="langLabel">EN</span>
+    </button>
   </div>
 </header>
 
@@ -219,17 +224,17 @@
   <!-- 우측 탭 영역 -->
   <section>
     <nav class="tabs" role="tablist">
-      <button class="tab active" data-tab="overview">📊 개요</button>
-      <button class="tab" data-tab="enrollment">📝 등록·수강</button>
-      <button class="tab" data-tab="payment">💰 수업료</button>
-      <button class="tab" data-tab="classes">📅 수업 현황</button>
-      <button class="tab" data-tab="engagement">🎯 참여도·점수</button>
-      <button class="tab" data-tab="evaluation">📋 평가서</button>
-      <button class="tab" data-tab="feedback">💬 교사 피드백</button>
-      <button class="tab" data-tab="consult">📞 상담 내역</button>
-      <button class="tab" data-tab="contact">👨‍👩‍👧 연락처·정보</button>
-      <button class="tab" data-tab="textbook">📚 교재</button>
-      <button class="tab" data-tab="recording">🎬 수업 녹화</button>
+      <button class="tab active" data-tab="overview" data-ko="📊 개요"            data-en="📊 Overview">📊 개요</button>
+      <button class="tab" data-tab="enrollment"      data-ko="📝 등록·수강"        data-en="📝 Enrollment">📝 등록·수강</button>
+      <button class="tab" data-tab="payment"         data-ko="💰 수업료"           data-en="💰 Tuition">💰 수업료</button>
+      <button class="tab" data-tab="classes"         data-ko="📅 수업 현황"        data-en="📅 Classes">📅 수업 현황</button>
+      <button class="tab" data-tab="engagement"      data-ko="🎯 참여도·점수"      data-en="🎯 Engagement">🎯 참여도·점수</button>
+      <button class="tab" data-tab="evaluation"      data-ko="📋 평가서"           data-en="📋 Evaluations">📋 평가서</button>
+      <button class="tab" data-tab="feedback"        data-ko="💬 교사 피드백"      data-en="💬 Feedback">💬 교사 피드백</button>
+      <button class="tab" data-tab="consult"         data-ko="📞 상담 내역"        data-en="📞 Counseling">📞 상담 내역</button>
+      <button class="tab" data-tab="contact"         data-ko="👨‍👩‍👧 연락처·정보"  data-en="👨‍👩‍👧 Contact">👨‍👩‍👧 연락처·정보</button>
+      <button class="tab" data-tab="textbook"        data-ko="📚 교재"             data-en="📚 Textbook">📚 교재</button>
+      <button class="tab" data-tab="recording"       data-ko="🎬 수업 녹화"        data-en="🎬 Recording">🎬 수업 녹화</button>
     </nav>
 
     <div class="tab-body">
@@ -260,23 +265,25 @@
       <!-- 3. 수업료 -->
       <div class="panel" data-panel="payment">
         <div class="add-form-card">
-          <h4>💰 수업료 결제 추가</h4>
+          <h4 data-ko="💰 수업료 결제 추가" data-en="💰 Add Tuition Payment">💰 수업료 결제 추가</h4>
           <div class="grid-2">
-            <div class="form-row"><label>결제일</label><input id="payDate" type="date"></div>
-            <div class="form-row"><label>금액 (원)</label><input id="payAmount" type="number" placeholder="120000"></div>
-            <div class="form-row"><label>기간 시작</label><input id="payPeriodStart" type="date"></div>
-            <div class="form-row"><label>기간 종료</label><input id="payPeriodEnd" type="date"></div>
-            <div class="form-row"><label>방식</label>
+            <div class="form-row"><label data-ko="결제일" data-en="Paid Date">결제일</label><input id="payDate" type="date"></div>
+            <div class="form-row"><label data-ko="금액 (원)" data-en="Amount (KRW)">금액 (원)</label><input id="payAmount" type="number" placeholder="120000"></div>
+            <div class="form-row"><label data-ko="기간 시작" data-en="Period Start">기간 시작</label><input id="payPeriodStart" type="date"></div>
+            <div class="form-row"><label data-ko="기간 종료" data-en="Period End">기간 종료</label><input id="payPeriodEnd" type="date"></div>
+            <div class="form-row"><label data-ko="방식" data-en="Method">방식</label>
               <select id="payMethod">
-                <option value="card">카드</option><option value="transfer">계좌이체</option>
-                <option value="cash">현금</option><option value="kakao">카카오페이</option>
+                <option value="card"     data-ko="카드"      data-en="Card">카드</option>
+                <option value="transfer" data-ko="계좌이체"  data-en="Bank">계좌이체</option>
+                <option value="cash"     data-ko="현금"      data-en="Cash">현금</option>
+                <option value="kakao"    data-ko="카카오페이" data-en="KakaoPay">카카오페이</option>
               </select>
             </div>
-            <div class="form-row"><label>메모</label><input id="payMemo" type="text" placeholder="2026년 5월 수강료"></div>
+            <div class="form-row"><label data-ko="메모" data-en="Memo">메모</label><input id="payMemo" type="text" placeholder="2026년 5월 수강료"></div>
           </div>
-          <div class="form-actions"><button class="btn-add" id="payAddBtn">+ 결제 추가</button></div>
+          <div class="form-actions"><button class="btn-add" id="payAddBtn" data-ko="+ 결제 추가" data-en="+ Add Payment">+ 결제 추가</button></div>
         </div>
-        <div id="paymentBox"><div class="empty">로딩 중…</div></div>
+        <div id="paymentBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
 
       <!-- 4. 수업 현황 -->
@@ -295,104 +302,112 @@
       <!-- 6. 평가서 -->
       <div class="panel" data-panel="evaluation">
         <div class="add-form-card">
-          <h4>📋 평가서 작성</h4>
+          <h4 data-ko="📋 평가서 작성" data-en="📋 Add Evaluation">📋 평가서 작성</h4>
           <div class="grid-2">
-            <div class="form-row"><label>평가일</label><input id="evDate" type="date"></div>
-            <div class="form-row"><label>평가 유형</label>
+            <div class="form-row"><label data-ko="평가일" data-en="Eval Date">평가일</label><input id="evDate" type="date"></div>
+            <div class="form-row"><label data-ko="평가 유형" data-en="Eval Type">평가 유형</label>
               <select id="evType">
-                <option value="monthly">월간 평가</option><option value="quarterly">분기 평가</option>
-                <option value="level">레벨 테스트</option><option value="final">최종 평가</option>
+                <option value="monthly"   data-ko="월간 평가"   data-en="Monthly">월간 평가</option>
+                <option value="quarterly" data-ko="분기 평가"   data-en="Quarterly">분기 평가</option>
+                <option value="level"     data-ko="레벨 테스트" data-en="Level Test">레벨 테스트</option>
+                <option value="final"     data-ko="최종 평가"   data-en="Final">최종 평가</option>
               </select>
             </div>
-            <div class="form-row"><label>레벨</label><input id="evLevel" type="text" placeholder="A1·B1·B2…"></div>
-            <div class="form-row"><label>평가자</label><input id="evEvaluator" type="text" placeholder="이름"></div>
-            <div class="form-row"><label>스피킹 점수</label><input id="evSpeak" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>리스닝 점수</label><input id="evList" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>문법 점수</label><input id="evRead" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>집중도 점수</label><input id="evWrite" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>총점</label><input id="evTotal" type="number" min="0" max="100" step="0.1"></div>
-            <div class="form-row"><label>다음 목표</label><input id="evGoal" type="text"></div>
+            <div class="form-row"><label data-ko="레벨" data-en="Level">레벨</label><input id="evLevel" type="text" placeholder="A1·B1·B2…"></div>
+            <div class="form-row"><label data-ko="평가자" data-en="Evaluator">평가자</label><input id="evEvaluator" type="text" placeholder="이름"></div>
+            <div class="form-row"><label data-ko="스피킹 점수" data-en="Speaking">스피킹 점수</label><input id="evSpeak" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label data-ko="리스닝 점수" data-en="Listening">리스닝 점수</label><input id="evList" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label data-ko="문법 점수" data-en="Grammar">문법 점수</label><input id="evRead" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label data-ko="집중도 점수" data-en="Focus">집중도 점수</label><input id="evWrite" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label data-ko="총점" data-en="Total">총점</label><input id="evTotal" type="number" min="0" max="100" step="0.1"></div>
+            <div class="form-row"><label data-ko="다음 목표" data-en="Next Goal">다음 목표</label><input id="evGoal" type="text"></div>
           </div>
-          <div class="form-row"><label>코멘트</label><textarea id="evComment" placeholder="평가 종합 의견"></textarea></div>
-          <div class="form-actions"><button class="btn-add" id="evAddBtn">+ 평가서 저장</button></div>
+          <div class="form-row"><label data-ko="코멘트" data-en="Comment">코멘트</label><textarea id="evComment" placeholder="평가 종합 의견"></textarea></div>
+          <div class="form-actions"><button class="btn-add" id="evAddBtn" data-ko="+ 평가서 저장" data-en="+ Save Evaluation">+ 평가서 저장</button></div>
         </div>
-        <div id="evalBox"><div class="empty">로딩 중…</div></div>
+        <div id="evalBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
 
       <!-- 7. 교사 피드백 -->
       <div class="panel" data-panel="feedback">
         <div class="add-form-card">
-          <h4>💬 교사 피드백 추가</h4>
+          <h4 data-ko="💬 교사 피드백 추가" data-en="💬 Add Teacher Feedback">💬 교사 피드백 추가</h4>
           <div class="grid-2">
-            <div class="form-row"><label>수업일</label><input id="fbDate" type="date"></div>
-            <div class="form-row"><label>교사</label><input id="fbTeacher" type="text"></div>
-            <div class="form-row"><label>방 ID</label><input id="fbRoom" type="text"></div>
-            <div class="form-row"><label>평점 (1~5)</label><input id="fbRating" type="number" min="1" max="5"></div>
+            <div class="form-row"><label data-ko="수업일" data-en="Class Date">수업일</label><input id="fbDate" type="date"></div>
+            <div class="form-row"><label data-ko="교사" data-en="Teacher">교사</label><input id="fbTeacher" type="text"></div>
+            <div class="form-row"><label data-ko="방 ID" data-en="Room ID">방 ID</label><input id="fbRoom" type="text"></div>
+            <div class="form-row"><label data-ko="평점 (1~5)" data-en="Rating (1~5)">평점 (1~5)</label><input id="fbRating" type="number" min="1" max="5"></div>
           </div>
-          <div class="form-row"><label>요약</label><input id="fbSummary" type="text" placeholder="한 줄 요약"></div>
-          <div class="form-row"><label>상세</label><textarea id="fbContent"></textarea></div>
-          <div class="form-row"><label>액션 아이템</label><textarea id="fbActions" placeholder="다음 수업 전까지 할 것"></textarea></div>
-          <div class="form-actions"><button class="btn-add" id="fbAddBtn">+ 피드백 저장</button></div>
+          <div class="form-row"><label data-ko="요약" data-en="Summary">요약</label><input id="fbSummary" type="text" placeholder="한 줄 요약"></div>
+          <div class="form-row"><label data-ko="상세" data-en="Detail">상세</label><textarea id="fbContent"></textarea></div>
+          <div class="form-row"><label data-ko="액션 아이템" data-en="Action Items">액션 아이템</label><textarea id="fbActions" placeholder="다음 수업 전까지 할 것"></textarea></div>
+          <div class="form-actions"><button class="btn-add" id="fbAddBtn" data-ko="+ 피드백 저장" data-en="+ Save Feedback">+ 피드백 저장</button></div>
         </div>
-        <div id="feedbackBox"><div class="empty">로딩 중…</div></div>
+        <div id="feedbackBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
 
       <!-- 8. 상담 내역 -->
       <div class="panel" data-panel="consult">
         <div class="add-form-card">
-          <h4>📞 상담 기록 추가</h4>
+          <h4 data-ko="📞 상담 기록 추가" data-en="📞 Add Counseling Record">📞 상담 기록 추가</h4>
           <div class="grid-2">
-            <div class="form-row"><label>상담 일시</label><input id="csDate" type="datetime-local"></div>
-            <div class="form-row"><label>채널</label>
+            <div class="form-row"><label data-ko="상담 일시" data-en="Date / Time">상담 일시</label><input id="csDate" type="datetime-local"></div>
+            <div class="form-row"><label data-ko="채널" data-en="Channel">채널</label>
               <select id="csChannel">
-                <option value="phone">전화</option><option value="kakao">카카오톡</option>
-                <option value="visit">방문</option><option value="email">이메일</option>
-                <option value="online">온라인 미팅</option>
+                <option value="phone"  data-ko="전화"        data-en="Phone">전화</option>
+                <option value="kakao"  data-ko="카카오톡"    data-en="KakaoTalk">카카오톡</option>
+                <option value="visit"  data-ko="방문"        data-en="Visit">방문</option>
+                <option value="email"  data-ko="이메일"      data-en="Email">이메일</option>
+                <option value="online" data-ko="온라인 미팅" data-en="Online">온라인 미팅</option>
               </select>
             </div>
-            <div class="form-row"><label>상담자</label><input id="csCounselor" type="text"></div>
-            <div class="form-row"><label>주제</label><input id="csTopic" type="text" placeholder="진도·결제·불만 등"></div>
-            <div class="form-row"><label>후속 일정</label><input id="csFollow" type="datetime-local"></div>
-            <div class="form-row"><label>상태</label>
-              <select id="csStatus"><option value="open">진행</option><option value="resolved">완료</option><option value="escalated">에스컬레이션</option></select>
+            <div class="form-row"><label data-ko="상담자" data-en="Counselor">상담자</label><input id="csCounselor" type="text"></div>
+            <div class="form-row"><label data-ko="주제" data-en="Topic">주제</label><input id="csTopic" type="text" placeholder="진도·결제·불만 등"></div>
+            <div class="form-row"><label data-ko="후속 일정" data-en="Follow-up">후속 일정</label><input id="csFollow" type="datetime-local"></div>
+            <div class="form-row"><label data-ko="상태" data-en="Status">상태</label>
+              <select id="csStatus">
+                <option value="open"       data-ko="진행"           data-en="Open">진행</option>
+                <option value="resolved"   data-ko="완료"           data-en="Resolved">완료</option>
+                <option value="escalated"  data-ko="에스컬레이션"   data-en="Escalated">에스컬레이션</option>
+              </select>
             </div>
           </div>
-          <div class="form-row"><label>상담 내용</label><textarea id="csContent"></textarea></div>
-          <div class="form-actions"><button class="btn-add" id="csAddBtn">+ 상담 저장</button></div>
+          <div class="form-row"><label data-ko="상담 내용" data-en="Content">상담 내용</label><textarea id="csContent"></textarea></div>
+          <div class="form-actions"><button class="btn-add" id="csAddBtn" data-ko="+ 상담 저장" data-en="+ Save Record">+ 상담 저장</button></div>
         </div>
-        <div id="consultBox"><div class="empty">로딩 중…</div></div>
+        <div id="consultBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
 
       <!-- 9. 연락처·정보 -->
       <div class="panel" data-panel="contact">
         <div class="add-form-card">
-          <h4>👨‍👩‍👧 학생 정보 편집</h4>
+          <h4 data-ko="👨‍👩‍👧 학생 정보 편집" data-en="👨‍👩‍👧 Edit Student Info">👨‍👩‍👧 학생 정보 편집</h4>
           <div class="grid-2">
-            <div class="form-row"><label>학생 전화</label><input id="cStudentPhone" type="tel"></div>
-            <div class="form-row"><label>부모님 전화</label><input id="cParentPhone" type="tel"></div>
-            <div class="form-row"><label>담임 교사 전화</label><input id="cTeacherPhone" type="tel"></div>
-            <div class="form-row"><label>학생 카톡 ID</label><input id="cKakao" type="text"></div>
-            <div class="form-row"><label>부모님 카톡 ID</label><input id="cParentKakao" type="text"></div>
-            <div class="form-row"><label>학교</label><input id="cSchool" type="text"></div>
-            <div class="form-row"><label>학년</label><input id="cGrade" type="text" placeholder="초3·중1·고2…"></div>
-            <div class="form-row"><label>생년월일</label><input id="cBirth" type="date"></div>
-            <div class="form-row"><label>가맹점</label><input id="cFranchise" type="text"></div>
-            <div class="form-row"><label>지점</label><input id="cShop" type="text"></div>
+            <div class="form-row"><label data-ko="학생 전화"      data-en="Student Phone">학생 전화</label><input id="cStudentPhone" type="tel"></div>
+            <div class="form-row"><label data-ko="부모님 전화"    data-en="Parent Phone">부모님 전화</label><input id="cParentPhone" type="tel"></div>
+            <div class="form-row"><label data-ko="담임 교사 전화" data-en="Teacher Phone">담임 교사 전화</label><input id="cTeacherPhone" type="tel"></div>
+            <div class="form-row"><label data-ko="학생 카톡 ID"   data-en="Student Kakao">학생 카톡 ID</label><input id="cKakao" type="text"></div>
+            <div class="form-row"><label data-ko="부모님 카톡 ID" data-en="Parent Kakao">부모님 카톡 ID</label><input id="cParentKakao" type="text"></div>
+            <div class="form-row"><label data-ko="학교"           data-en="School">학교</label><input id="cSchool" type="text"></div>
+            <div class="form-row"><label data-ko="학년"           data-en="Grade">학년</label><input id="cGrade" type="text" placeholder="초3·중1·고2…"></div>
+            <div class="form-row"><label data-ko="생년월일"       data-en="Birth Date">생년월일</label><input id="cBirth" type="date"></div>
+            <div class="form-row"><label data-ko="가맹점"         data-en="Franchise">가맹점</label><input id="cFranchise" type="text"></div>
+            <div class="form-row"><label data-ko="지점"           data-en="Branch">지점</label><input id="cShop" type="text"></div>
           </div>
-          <div class="form-row"><label>주소</label><input id="cAddress" type="text"></div>
-          <div class="form-row"><label>특이사항</label><textarea id="cNotes" placeholder="알레르기·관심사·학습 성향 등"></textarea></div>
-          <div class="form-actions"><button class="btn-add" id="cSaveBtn">💾 저장</button></div>
+          <div class="form-row"><label data-ko="주소"     data-en="Address">주소</label><input id="cAddress" type="text"></div>
+          <div class="form-row"><label data-ko="특이사항" data-en="Notes">특이사항</label><textarea id="cNotes" placeholder="알레르기·관심사·학습 성향 등"></textarea></div>
+          <div class="form-actions"><button class="btn-add" id="cSaveBtn" data-ko="💾 저장" data-en="💾 Save">💾 저장</button></div>
         </div>
       </div>
 
       <!-- 10. 교재 -->
       <div class="panel" data-panel="textbook">
-        <div id="textbookBox"><div class="empty">로딩 중…</div></div>
+        <div id="textbookBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
 
       <!-- 11. 녹화 영상 -->
       <div class="panel" data-panel="recording">
-        <div id="recordingBox"><div class="empty">로딩 중…</div></div>
+        <div id="recordingBox"><div class="empty" data-ko="로딩 중…" data-en="Loading…">로딩 중…</div></div>
       </div>
     </div>
   </section>
@@ -410,34 +425,35 @@
         <div class="meta" id="rpMeta">—</div>
       </div>
       <div class="right">
-        <button class="ghost" onclick="window.print()">🖨 인쇄 / PDF</button>
-        <button onclick="closeReport()">✕ 닫기</button>
+        <button class="ghost" onclick="window.print()" data-ko="🖨 인쇄 / PDF" data-en="🖨 Print / PDF">🖨 인쇄 / PDF</button>
+        <button onclick="closeReport()" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
       </div>
     </header>
 
     <div class="report-body">
-      <h3>📊 핵심 지표</h3>
+      <h3 data-ko="📊 핵심 지표" data-en="📊 Key Metrics">📊 핵심 지표</h3>
       <div class="stat-grid" id="rpStats"></div>
 
-      <h3>🎯 영역별 점수 (방사형)</h3>
+      <h3 data-ko="🎯 영역별 점수 (방사형)" data-en="🎯 Skill Map (Radar)">🎯 영역별 점수 (방사형)</h3>
       <div class="grid-charts">
         <div class="report-chartbox tall"><canvas id="rpRadar"></canvas></div>
         <div class="report-chartbox tall"><canvas id="rpEngage"></canvas></div>
       </div>
 
-      <h3>📝 평가 코멘트</h3>
-      <span class="comment-label">평가자 의견</span>
+      <h3 data-ko="📝 평가 코멘트" data-en="📝 Comments">📝 평가 코멘트</h3>
+      <span class="comment-label" data-ko="평가자 의견" data-en="Evaluator Comment">평가자 의견</span>
       <div class="comment-box" id="rpComment">—</div>
 
-      <span class="comment-label" style="margin-top:12px">다음 학습 목표</span>
+      <span class="comment-label" style="margin-top:12px" data-ko="다음 학습 목표" data-en="Next Learning Goal">다음 학습 목표</span>
       <div class="comment-box" id="rpGoal">—</div>
 
-      <h3>📅 출석 — 최근 30일</h3>
+      <h3 data-ko="📅 출석 — 최근 30일" data-en="📅 Attendance — Last 30 days">📅 출석 — 최근 30일</h3>
       <div id="rpAttendCal" style="font-size:13px; color:#444; line-height:1.7"></div>
     </div>
 
     <div class="report-foot">
-      🥭 망고아이 영어 학습 리포트 · 출력일 <span id="rpPrintDate"></span>
+      <span data-ko="🥭 망고아이 영어 학습 리포트 · 출력일" data-en="🥭 Mangoi English Learning Report · Printed">🥭 망고아이 영어 학습 리포트 · 출력일</span>
+      <span id="rpPrintDate"></span>
     </div>
   </div>
 </div>
@@ -449,17 +465,179 @@ const uid = new URLSearchParams(location.search).get('uid') || '';
 let _state = { full: null, days: 30 };
 let _charts = {};
 
+// ═══════════════════════ 🌐 i18n (한국어 / English) ═══════════════════════
+let _lang = (function(){ try { return localStorage.getItem('mangoi_admin_lang') || 'ko'; } catch { return 'ko'; } })();
+const T = {
+  // 좌측 학생 카드 (quick rows)
+  qStudentId:{ko:'🏷️ 학생 ID', en:'🏷️ Student ID'},
+  qSignup:   {ko:'📅 가입일', en:'📅 Signup'},
+  qEnd:      {ko:'📅 수강 종료', en:'📅 End Date'},
+  qClassesPW:{ko:'📚 주당 수업', en:'📚 Classes / wk'},
+  qPayType:  {ko:'💰 결제 유형', en:'💰 Payment'},
+  qFranchise:{ko:'🏢 가맹점', en:'🏢 Franchise'},
+  qSessions: {ko:'📊 출석 세션', en:'📊 Sessions'},
+  qGaze:     {ko:'🎯 평균 집중도', en:'🎯 Avg. Focus'},
+  qRewards:  {ko:'🎁 보상 보유', en:'🎁 Rewards'},
+  unitTimes: {ko:'회', en: ''},
+  unitSessions:{ko:'회 (기간 내)', en:'sess. (period)'},
+  unitItems: {ko:'개', en:''},
+  // 개요 KPI
+  kpiSession:{ko:'출석 세션', en:'Sessions'},
+  kpiActive: {ko:'총 활동 시간', en:'Total Active'},
+  kpiTotal:  {ko:'전체', en:'Total'},
+  kpiAvgGaze:{ko:'평균 집중도', en:'Avg. Focus'},
+  kpiActiveDays:{ko:'활동 일수', en:'Active Days'},
+  kpiDisconnect:{ko:'끊김', en:'Disconnects'},
+  kpiOverdue:{ko:'미납', en:'Overdue'},
+  kpiPaymentCount:{ko:'회 결제', en:' payments'},
+  kpiPeriodNDays:{ko:'일 기준', en:'-day window'},
+  kpiSamples:{ko:'세션', en:'samples'},
+  kpiSum:    {ko:'기간 합계', en:'period sum'},
+  kpiOf:     {ko:'/', en:' / '},
+  // 차트 제목
+  chartDailyActivity:{ko:'일자별 활동 (출석·세션·집중도)', en:'Daily Activity (Sessions · Focus)'},
+  chartLegendSess:{ko:'세션 수', en:'Sessions'},
+  chartLegendFocus:{ko:'집중도', en:'Focus'},
+  chartGazeDaily:{ko:'일자별 평균 집중도(시선 점수)', en:'Daily Avg. Focus (Gaze)'},
+  chartSessionScore:{ko:'세션별 점수 (최근 30건)', en:'Session Scores (last 30)'},
+  chartActivityRatio:{ko:'활동 비율 (%)', en:'Active Ratio (%)'},
+  // 빈 상태 메시지
+  emptyEnroll:{ko:'등록·수강 이력이 없습니다.', en:'No enrollment records.'},
+  emptyPayment:{ko:'결제 내역이 없습니다. 위 폼으로 추가하세요.', en:'No payment records. Add via the form above.'},
+  emptyClass:{ko:'기간 내 수업 기록이 없습니다.', en:'No class records in this period.'},
+  emptyEval:{ko:'평가서가 없습니다. 위 폼으로 작성하세요.', en:'No evaluations yet. Write one above.'},
+  emptyFeedback:{ko:'피드백이 없습니다.', en:'No feedback yet.'},
+  emptyConsult:{ko:'상담 내역이 없습니다.', en:'No counseling records.'},
+  emptyTextbook:{ko:'배정된 교재가 없습니다.', en:'No textbook assigned.'},
+  emptyRecording:{ko:'녹화 영상이 없습니다.', en:'No recordings.'},
+  emptyConsent:{ko:'동의 기록이 없습니다.', en:'No consent record.'},
+  emptyRewards:{ko:'아직 보상 내역이 없습니다.', en:'No reward history yet.'},
+  // 표 헤더
+  thDate:{ko:'평가일', en:'Date'},      thType:{ko:'유형', en:'Type'},        thLevel:{ko:'레벨', en:'Level'},
+  thTotal:{ko:'총점', en:'Total'},      thSpeak:{ko:'스피킹', en:'Speak'},    thList:{ko:'리스닝', en:'Listen'},
+  thGrammar:{ko:'문법', en:'Grammar'},  thFocus:{ko:'집중도', en:'Focus'},
+  thEvaluator:{ko:'평가자', en:'Evaluator'}, thNextGoal:{ko:'다음 목표', en:'Next Goal'},
+  thComment:{ko:'코멘트', en:'Comment'}, thReport:{ko:'리포트', en:'Report'},
+  thPaidDate:{ko:'결제일', en:'Paid'},  thPeriod:{ko:'기간', en:'Period'},
+  thAmount:{ko:'금액', en:'Amount'},    thMethod:{ko:'방식', en:'Method'},
+  thStatus:{ko:'상태', en:'Status'},    thMemo:{ko:'메모', en:'Memo'},
+  thPackage:{ko:'패키지', en:'Package'}, thStart:{ko:'시작', en:'Start'},
+  thEnd:{ko:'종료', en:'End'},          thMonthly:{ko:'월 수강료', en:'Monthly Fee'},
+  thNotes:{ko:'비고', en:'Notes'},
+  thDay:{ko:'일자', en:'Day'},          thRoom:{ko:'방 ID', en:'Room ID'},
+  thIn:{ko:'입장', en:'In'},            thOut:{ko:'퇴장', en:'Out'},
+  thDuration:{ko:'전체 시간', en:'Duration'}, thActive:{ko:'활동', en:'Active'},
+  thRatio:{ko:'활동 비율', en:'Active%'}, thDC:{ko:'끊김', en:'DC'},
+  thFocusCol:{ko:'집중도', en:'Focus'},
+  thClassDate:{ko:'수업일', en:'Class Date'}, thTeacher:{ko:'교사', en:'Teacher'},
+  thRating:{ko:'평점', en:'Rating'},    thSummary:{ko:'요약', en:'Summary'},
+  thDetail:{ko:'상세', en:'Detail'},    thAction:{ko:'액션', en:'Action'},
+  thChannel:{ko:'채널', en:'Channel'},  thCounselor:{ko:'상담자', en:'Counselor'},
+  thTopic:{ko:'주제', en:'Topic'},      thContent:{ko:'내용', en:'Content'},
+  thFollow:{ko:'후속', en:'Follow-up'},
+  thTextbook:{ko:'교재', en:'Textbook'}, thProgress:{ko:'진도', en:'Progress'},
+  thFile:{ko:'파일', en:'File'},        thSize:{ko:'크기', en:'Size'},
+  thLength:{ko:'길이', en:'Length'},    thPlay:{ko:'▶ 재생', en:'▶ Play'},
+  thReportBtn:{ko:'📋 평가서 보기', en:'📋 View Report'},
+  // KPI 수업현황
+  classCount:{ko:'수업 횟수 (기간)', en:'Class Count'},
+  goalPW:{ko:'주당 목표', en:'Weekly Goal'},
+  totalClasses:{ko:'전체 누적', en:'All-time'},
+  // 평가 KPI
+  avgRatio:{ko:'활동 비율 평균', en:'Avg. Active %'},
+  avgDC:{ko:'끊김 평균', en:'Avg. DC'},
+  // 결제 KPI
+  totalPaid:{ko:'총 납부', en:'Total Paid'},
+  paymentTimes:{ko:'결제 횟수', en:'Payments'},
+  // 보상 표
+  rwIssued:{ko:'발급', en:'Issued'}, rwType:{ko:'유형', en:'Type'},
+  rwValue:{ko:'값', en:'Value'},     rwMessage:{ko:'메시지', en:'Message'},
+  // 동의
+  consentRec:{ko:'📹 녹화', en:'📹 Recording'},
+  consentVoice:{ko:'🎤 음성 분석', en:'🎤 Voice Analysis'},
+  consentAttend:{ko:'📊 출석', en:'📊 Attendance'},
+  consentReward:{ko:'🎁 보상', en:'🎁 Reward'},
+  consentKakao:{ko:'💬 카카오', en:'💬 KakaoTalk'},
+  consentYes:{ko:'동의', en:'Agreed'},
+  consentNo:{ko:'미동의', en:'Declined'},
+  consentDate:{ko:'동의일', en:'Consented'},
+  // 보상 카드
+  ovRewards:{ko:'최근 보상', en:'Recent Rewards'},
+  ovConsent:{ko:'동의 현황', en:'Consent Status'},
+  // 토스트 / 알림
+  saved:{ko:'저장 완료', en:'Saved'},
+  saveFailed:{ko:'저장 실패', en:'Save failed'},
+  netError:{ko:'네트워크 오류', en:'Network error'},
+  payAmountReq:{ko:'금액을 입력하세요', en:'Enter amount'},
+  fbSummaryReq:{ko:'요약을 입력하세요', en:'Enter summary'},
+  csContentReq:{ko:'주제 또는 내용을 입력하세요', en:'Enter topic or content'},
+  notFound:{ko:'학생을 찾을 수 없습니다', en:'Student not found'},
+  loadFailed:{ko:'로딩 실패', en:'Load failed'},
+  contactSaved:{ko:'학생 정보가 저장되었습니다', en:'Student info saved'},
+  contactFields:{ko:'개 필드', en:' fields'},
+  // 리포트 카드
+  rpReport:{ko:'학습 리포트', en:'Learning Report'},
+  rpScore:{ko:'/100점', en:'/100'},
+  rpEval:{ko:'평가', en:'eval'},
+  rpAttended:{ko:'출석 일수', en:'Attended Days'},
+  rpAbsent:{ko:'결석 일수', en:'Absent Days'},
+  rpExpect:{ko:'예상', en:'expected'},
+  rpRewards:{ko:'보상 점수', en:'Reward Pts'},
+  rpStudyTime:{ko:'총 학습 시간', en:'Total Study'},
+  rpStudyMs:{ko:'활동 시간', en:'Active time'},
+  rpPaid:{ko:'납부 완료', en:'Paid'},
+  rpMeasured:{ko:'회 측정', en:' measured'},
+  rpPartake:{ko:'발화·참여', en:'Voice·Attend'},
+  rpRadarTitle:{ko:'4 영역 학습 능력', en:'4 Skill Map'},
+  rpEngageTitle:{ko:'시선 집중도 + 발화 활동 추이', en:'Focus + Voice Trend'},
+  rpScale:{ko:'점수 / %', en:'Score / %'},
+  rpEvalEmpty:{ko:'평가자 코멘트가 입력되지 않았습니다.', en:'No evaluator comment.'},
+  rpGoalEmpty:{ko:'다음 학습 목표가 입력되지 않았습니다.', en:'No next goal entered.'},
+  rpExcellent:{ko:'우수(70+)', en:'Excellent(70+)'},
+  rpAvg:{ko:'보통(40~70)', en:'Average(40~70)'},
+  rpLow:{ko:'저조(40-)', en:'Low(40-)'},
+  rpAbsentLgd:{ko:'결석', en:'Absent'},
+  rpEvalSession:{ko:'회 측정', en:' samples'},
+  // 시간 표시
+  hours:{ko:'시간', en:'h'},
+  minutes:{ko:'분', en:'m'},
+  seconds:{ko:'초', en:'s'},
+};
+const t = (key) => (T[key] && T[key][_lang]) ? T[key][_lang] : (T[key]?T[key].ko:key);
+
+function applyLangAttrs(){
+  document.querySelectorAll('[data-ko][data-en]').forEach(el => {
+    const v = el.getAttribute('data-' + _lang);
+    if (v != null) {
+      // option 은 textContent 만 바꿈, button/a/span/div/h4/label/th 도 textContent
+      el.textContent = v;
+    }
+  });
+  // langLabel 은 반대 언어 표시 (현재 KO → 토글하면 EN 으로 바뀜을 안내)
+  const lbl = $('langLabel');
+  if (lbl) lbl.textContent = (_lang === 'ko' ? 'EN' : 'KR');
+  document.documentElement.lang = (_lang === 'ko' ? 'ko' : 'en');
+}
+
+function toggleLang(){
+  _lang = (_lang === 'ko' ? 'en' : 'ko');
+  try { localStorage.setItem('mangoi_admin_lang', _lang); } catch {}
+  applyLangAttrs();
+  if (_state.full) renderAll();   // 동적 텍스트 다시 렌더
+}
+
 function toast(msg, isErr){
   const el = $('toast');
   el.textContent = msg; el.classList.toggle('err', !!isErr); el.classList.add('show');
   clearTimeout(toast._t); toast._t = setTimeout(()=>el.classList.remove('show'), 2500);
 }
 function fmtMs(ms){
-  if (!ms || ms<0) return '0초';
+  if (!ms || ms<0) return '0' + t('seconds');
   const s = Math.floor(ms/1000), h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-  if (h>0) return h+'시간 '+m+'분';
-  if (m>0) return m+'분 '+sec+'초';
-  return sec+'초';
+  const sp = (_lang === 'en' ? '' : ' ');
+  if (h>0) return h + t('hours') + sp + m + t('minutes');
+  if (m>0) return m + t('minutes') + sp + sec + t('seconds');
+  return sec + t('seconds');
 }
 function fmtDate(ts){
   if (!ts) return '—';
@@ -471,7 +649,10 @@ function fmtDay(ts){
   const d = new Date(ts);
   return d.toLocaleDateString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit'});
 }
-function fmtKrw(n){ return (Number(n)||0).toLocaleString('ko-KR') + '원'; }
+function fmtKrw(n){
+  const v = (Number(n)||0).toLocaleString('ko-KR');
+  return _lang === 'en' ? '₩' + v : v + '원';
+}
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function scoreBadge(v){
   if (v == null || isNaN(v)) return '<span class="badge gray">—</span>';
@@ -501,7 +682,10 @@ document.querySelectorAll('.tab').forEach(b => {
 // ═══════════════════════ 데이터 로드 ═══════════════════════
 async function loadFull() {
   if (!uid) {
-    document.querySelector('main').innerHTML = '<div class="empty">⚠ ?uid=&lt;학생ID&gt; 파라미터가 필요합니다. 학생 목록에서 클릭해 주세요.</div>';
+    const msg = _lang==='en'
+      ? '⚠ ?uid=&lt;studentID&gt; parameter required. Click a student from the list.'
+      : '⚠ ?uid=&lt;학생ID&gt; 파라미터가 필요합니다. 학생 목록에서 클릭해 주세요.';
+    document.querySelector('main').innerHTML = '<div class="empty">'+msg+'</div>';
     return;
   }
   _state.days = parseInt($('period').value, 10) || 30;
@@ -509,7 +693,7 @@ async function loadFull() {
     const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/full?days='+_state.days, { credentials:'include' });
     if (r.status === 404) {
       const j = await r.json().catch(()=>({}));
-      document.querySelector('main').innerHTML = '<div class="empty">학생을 찾을 수 없습니다 — '+(j.user_id||uid)+'</div>';
+      document.querySelector('main').innerHTML = '<div class="empty">'+t('notFound')+' — '+(j.user_id||uid)+'</div>';
       return;
     }
     if (r.status === 401) { location.replace('/admin/login?next='+encodeURIComponent(location.pathname+location.search)); return; }
@@ -518,7 +702,7 @@ async function loadFull() {
     _state.full = j;
     renderAll();
   } catch (e) {
-    toast('로딩 실패: '+(e.message||e), true);
+    toast(t('loadFailed') + ': ' + (e.message||e), true);
     console.error(e);
   }
 }
@@ -557,15 +741,15 @@ function renderCard(){
   $('cardStatus').className = 'status-pill ' + cls;
 
   const rows = [
-    ['🏷️ 학생 ID', erp.student_id || uid],
-    ['📅 가입일', erp.signup_date || '—'],
-    ['📅 수강 종료', erp.end_date || '—'],
-    ['📚 주당 수업', (erp.classes_per_week||'—') + '회'],
-    ['💰 결제 유형', erp.payment_type || '—'],
-    ['🏢 가맹점', erp.franchise || erp.shop_name || '—'],
-    ['📊 출석 세션', (sm.session_count||0) + '회 (기간 내)'],
-    ['🎯 평균 집중도', sm.avg_gaze_score != null ? Math.round(sm.avg_gaze_score*10)/10 : '—'],
-    ['🎁 보상 보유', (f.rewards||[]).length + '개'],
+    [t('qStudentId'), erp.student_id || uid],
+    [t('qSignup'), erp.signup_date || '—'],
+    [t('qEnd'), erp.end_date || '—'],
+    [t('qClassesPW'), (erp.classes_per_week||'—') + (_lang==='en'?'':'회')],
+    [t('qPayType'), erp.payment_type || '—'],
+    [t('qFranchise'), erp.franchise || erp.shop_name || '—'],
+    [t('qSessions'), (sm.session_count||0) + (_lang==='en'?' (period)':'회 (기간 내)')],
+    [t('qGaze'), sm.avg_gaze_score != null ? Math.round(sm.avg_gaze_score*10)/10 : '—'],
+    [t('qRewards'), (f.rewards||[]).length + (_lang==='en'?'':'개')],
   ];
   $('cardQuick').innerHTML = rows.map(([k,v]) =>
     '<div class="quick-row"><b>'+esc(k)+'</b><span class="v">'+esc(v)+'</span></div>'
@@ -577,12 +761,12 @@ function renderOverview(){
   const sm = _state.full.summary || {};
   const erp = _state.full.erp || {};
   $('overviewKpis').innerHTML = `
-    <div class="kpi green"><div class="lab">출석 세션</div><div class="val">${sm.session_count||0}</div><div class="sub">${_state.days}일 기준</div></div>
-    <div class="kpi blue"><div class="lab">총 활동 시간</div><div class="val">${fmtMs(sm.total_active_ms)}</div><div class="sub">전체 ${fmtMs(sm.total_session_ms)}</div></div>
-    <div class="kpi yellow"><div class="lab">평균 집중도</div><div class="val">${sm.avg_gaze_score!=null?(Math.round(sm.avg_gaze_score*10)/10):'—'}</div><div class="sub">${sm.gaze_score_count||0} 세션</div></div>
-    <div class="kpi purple"><div class="lab">활동 일수</div><div class="val">${sm.active_days||0}</div><div class="sub">/${_state.days}일</div></div>
-    <div class="kpi red"><div class="lab">끊김</div><div class="val">${sm.disconnect_sum||0}</div><div class="sub">기간 합계</div></div>
-    <div class="kpi"><div class="lab">미납</div><div class="val">${(_state.full.payments||[]).filter(p=>p.status==='overdue').length}</div><div class="sub">${(_state.full.payments||[]).length}회 결제</div></div>
+    <div class="kpi green"><div class="lab">${t('kpiSession')}</div><div class="val">${sm.session_count||0}</div><div class="sub">${_state.days}${_lang==='en'?'-day':'일 기준'}</div></div>
+    <div class="kpi blue"><div class="lab">${t('kpiActive')}</div><div class="val">${fmtMs(sm.total_active_ms)}</div><div class="sub">${t('kpiTotal')} ${fmtMs(sm.total_session_ms)}</div></div>
+    <div class="kpi yellow"><div class="lab">${t('kpiAvgGaze')}</div><div class="val">${sm.avg_gaze_score!=null?(Math.round(sm.avg_gaze_score*10)/10):'—'}</div><div class="sub">${sm.gaze_score_count||0} ${t('kpiSamples')}</div></div>
+    <div class="kpi purple"><div class="lab">${t('kpiActiveDays')}</div><div class="val">${sm.active_days||0}</div><div class="sub">/${_state.days}${_lang==='en'?'d':'일'}</div></div>
+    <div class="kpi red"><div class="lab">${t('kpiDisconnect')}</div><div class="val">${sm.disconnect_sum||0}</div><div class="sub">${t('kpiSum')}</div></div>
+    <div class="kpi"><div class="lab">${t('kpiOverdue')}</div><div class="val">${(_state.full.payments||[]).filter(p=>p.status==='overdue').length}</div><div class="sub">${(_state.full.payments||[]).length}${t('kpiPaymentCount')}</div></div>
   `;
 
   // 일자별 차트
@@ -596,15 +780,15 @@ function renderOverview(){
     data: {
       labels,
       datasets: [
-        { label:'세션 수', data:sessions, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.18)', yAxisID:'y', tension:.3 },
-        { label:'집중도', data:gaze, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.18)', yAxisID:'y1', tension:.3 },
+        { label:t('chartLegendSess'), data:sessions, borderColor:'#3b82f6', backgroundColor:'rgba(59,130,246,.18)', yAxisID:'y', tension:.3 },
+        { label:t('chartLegendFocus'), data:gaze, borderColor:'#f59e0b', backgroundColor:'rgba(245,158,11,.18)', yAxisID:'y1', tension:.3 },
       ]
     },
     options: {
       responsive:true, maintainAspectRatio:false,
       scales: {
-        y:{ position:'left', beginAtZero:true, ticks:{color:'#94a3b8'}, grid:{color:'#334155'}, title:{display:true,text:'세션',color:'#94a3b8'}},
-        y1:{ position:'right', beginAtZero:true, max:100, ticks:{color:'#94a3b8'}, grid:{drawOnChartArea:false}, title:{display:true,text:'집중도',color:'#94a3b8'}},
+        y:{ position:'left', beginAtZero:true, ticks:{color:'#94a3b8'}, grid:{color:'#334155'}, title:{display:true,text:t('chartLegendSess'),color:'#94a3b8'}},
+        y1:{ position:'right', beginAtZero:true, max:100, ticks:{color:'#94a3b8'}, grid:{drawOnChartArea:false}, title:{display:true,text:t('chartLegendFocus'),color:'#94a3b8'}},
         x: { ticks:{color:'#94a3b8'}, grid:{color:'#334155'}}
       },
       plugins: { legend:{labels:{color:'#e2e8f0'}}}
@@ -614,30 +798,32 @@ function renderOverview(){
   // 보상
   const rewards = _state.full.rewards || [];
   $('overviewRewards').innerHTML = rewards.length===0
-    ? '<div class="empty">아직 보상 내역이 없습니다.</div>'
-    : '<table class="list"><thead><tr><th>발급</th><th>유형</th><th>값</th><th>메시지</th></tr></thead><tbody>' +
+    ? '<div class="empty">'+t('emptyRewards')+'</div>'
+    : '<table class="list"><thead><tr><th>'+t('rwIssued')+'</th><th>'+t('rwType')+'</th><th>'+t('rwValue')+'</th><th>'+t('rwMessage')+'</th></tr></thead><tbody>' +
       rewards.slice(0,5).map(r=>`<tr><td>${fmtDate(r.issued_at)}</td><td>${esc(r.type)}</td><td>${esc(r.value)}</td><td>${esc(r.message)||'—'}</td></tr>`).join('')+
       '</tbody></table>';
 
   // 동의
   const c = _state.full.consent;
+  const yes = '<span class="badge green">'+t('consentYes')+'</span>';
+  const no  = '<span class="badge red">'+t('consentNo')+'</span>';
   $('overviewConsent').innerHTML = !c
-    ? '<div class="empty">동의 기록이 없습니다.</div>'
+    ? '<div class="empty">'+t('emptyConsent')+'</div>'
     : '<div style="font-size:13px;line-height:1.7">'+
-      `<div>📹 녹화: ${c.recording_consent?'<span class="badge green">동의</span>':'<span class="badge red">미동의</span>'}</div>`+
-      `<div>🎤 음성 분석: ${c.voice_analysis_consent?'<span class="badge green">동의</span>':'<span class="badge red">미동의</span>'}</div>`+
-      `<div>📊 출석: ${c.attendance_consent?'<span class="badge green">동의</span>':'<span class="badge red">미동의</span>'}</div>`+
-      `<div>🎁 보상: ${c.reward_consent?'<span class="badge green">동의</span>':'<span class="badge red">미동의</span>'}</div>`+
-      `<div>💬 카카오: ${c.kakao_consent?'<span class="badge green">동의</span>':'<span class="badge red">미동의</span>'}</div>`+
-      `<div style="margin-top:6px;color:var(--mut);font-size:11px">동의일: ${fmtDate(c.consented_at)} (v${esc(c.consent_version)})</div>`+
+      `<div>${t('consentRec')}: ${c.recording_consent?yes:no}</div>`+
+      `<div>${t('consentVoice')}: ${c.voice_analysis_consent?yes:no}</div>`+
+      `<div>${t('consentAttend')}: ${c.attendance_consent?yes:no}</div>`+
+      `<div>${t('consentReward')}: ${c.reward_consent?yes:no}</div>`+
+      `<div>${t('consentKakao')}: ${c.kakao_consent?yes:no}</div>`+
+      `<div style="margin-top:6px;color:var(--mut);font-size:11px">${t('consentDate')}: ${fmtDate(c.consented_at)} (v${esc(c.consent_version)})</div>`+
       '</div>';
 }
 
 // ═══════════════════════ 2. 등록·수강 ═══════════════════════
 function renderEnrollment(){
   const items = _state.full.enrollments || [];
-  if (items.length === 0) { $('enrollmentBox').innerHTML = '<div class="empty">등록·수강 이력이 없습니다.</div>'; return; }
-  $('enrollmentBox').innerHTML = '<table class="list"><thead><tr><th>패키지</th><th>시작</th><th>종료</th><th>월 수강료</th><th>상태</th><th>비고</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('enrollmentBox').innerHTML = '<div class="empty">'+t('emptyEnroll')+'</div>'; return; }
+  $('enrollmentBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thPackage')+'</th><th>'+t('thStart')+'</th><th>'+t('thEnd')+'</th><th>'+t('thMonthly')+'</th><th>'+t('thStatus')+'</th><th>'+t('thNotes')+'</th></tr></thead><tbody>'+
     items.map(e=>`<tr>
       <td>${esc(e.package)||'—'}</td>
       <td>${fmtDay(e.started_at)}</td>
@@ -651,16 +837,16 @@ function renderEnrollment(){
 // ═══════════════════════ 3. 수업료 ═══════════════════════
 function renderPayment(){
   const items = _state.full.payments || [];
-  if (items.length === 0) { $('paymentBox').innerHTML = '<div class="empty">결제 내역이 없습니다. 위 폼으로 추가하세요.</div>'; return; }
+  if (items.length === 0) { $('paymentBox').innerHTML = '<div class="empty">'+t('emptyPayment')+'</div>'; return; }
   const total = items.filter(p=>p.status==='paid').reduce((s,p)=>s+(p.amount_krw||0), 0);
   const overdue = items.filter(p=>p.status==='overdue').reduce((s,p)=>s+(p.amount_krw||0), 0);
   $('paymentBox').innerHTML =
     `<div class="kpi-grid">
-      <div class="kpi green"><div class="lab">총 납부</div><div class="val">${fmtKrw(total)}</div></div>
-      <div class="kpi red"><div class="lab">미납</div><div class="val">${fmtKrw(overdue)}</div></div>
-      <div class="kpi blue"><div class="lab">결제 횟수</div><div class="val">${items.length}회</div></div>
+      <div class="kpi green"><div class="lab">${t('totalPaid')}</div><div class="val">${fmtKrw(total)}</div></div>
+      <div class="kpi red"><div class="lab">${t('kpiOverdue')}</div><div class="val">${fmtKrw(overdue)}</div></div>
+      <div class="kpi blue"><div class="lab">${t('paymentTimes')}</div><div class="val">${items.length}${_lang==='en'?'':'회'}</div></div>
     </div>`+
-    '<table class="list"><thead><tr><th>결제일</th><th>기간</th><th>금액</th><th>방식</th><th>상태</th><th>메모</th></tr></thead><tbody>'+
+    '<table class="list"><thead><tr><th>'+t('thPaidDate')+'</th><th>'+t('thPeriod')+'</th><th>'+t('thAmount')+'</th><th>'+t('thMethod')+'</th><th>'+t('thStatus')+'</th><th>'+t('thMemo')+'</th></tr></thead><tbody>'+
     items.map(p=>`<tr>
       <td>${fmtDay(p.paid_at)}</td>
       <td>${esc(p.period_start)||'—'} ~ ${esc(p.period_end)||'—'}</td>
@@ -673,7 +859,7 @@ function renderPayment(){
 
 $('payAddBtn').addEventListener('click', async () => {
   const amount = parseInt($('payAmount').value, 10);
-  if (!amount) { toast('금액을 입력하세요', true); return; }
+  if (!amount) { toast(t('payAmountReq'), true); return; }
   const body = {
     paid_at: $('payDate').value ? new Date($('payDate').value).getTime() : Date.now(),
     period_start: $('payPeriodStart').value || null,
@@ -682,7 +868,7 @@ $('payAddBtn').addEventListener('click', async () => {
     method: $('payMethod').value,
     memo: $('payMemo').value || null
   };
-  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/payments', body, '결제');
+  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/payments', body, _lang==='en'?'Payment':'결제');
   ['payAmount','payMemo','payPeriodStart','payPeriodEnd','payDate'].forEach(id=>$(id).value='');
 });
 
@@ -693,16 +879,16 @@ function renderClasses(){
   const erp = _state.full.erp || {};
 
   $('classKpis').innerHTML = `
-    <div class="kpi blue"><div class="lab">수업 횟수 (기간)</div><div class="val">${sessions.length}</div></div>
-    <div class="kpi green"><div class="lab">활동 일수</div><div class="val">${sm.active_days||0}</div></div>
-    <div class="kpi yellow"><div class="lab">주당 목표</div><div class="val">${erp.classes_per_week||'—'}</div></div>
-    <div class="kpi purple"><div class="lab">전체 누적</div><div class="val">${(_state.full.profile||{}).total_sessions_all_time||0}</div></div>
+    <div class="kpi blue"><div class="lab">${t('classCount')}</div><div class="val">${sessions.length}</div></div>
+    <div class="kpi green"><div class="lab">${t('kpiActiveDays')}</div><div class="val">${sm.active_days||0}</div></div>
+    <div class="kpi yellow"><div class="lab">${t('goalPW')}</div><div class="val">${erp.classes_per_week||'—'}</div></div>
+    <div class="kpi purple"><div class="lab">${t('totalClasses')}</div><div class="val">${(_state.full.profile||{}).total_sessions_all_time||0}</div></div>
   `;
 
   if (sessions.length === 0) {
-    $('classBox').innerHTML += '<div class="empty">기간 내 수업 기록이 없습니다.</div>'; return;
+    $('classBox').innerHTML += '<div class="empty">'+t('emptyClass')+'</div>'; return;
   }
-  $('classBox').innerHTML = '<table class="list"><thead><tr><th>일자</th><th>방 ID</th><th>입장</th><th>퇴장</th><th>전체 시간</th><th>활동</th><th>활동 비율</th><th>끊김</th><th>집중도</th><th>상태</th></tr></thead><tbody>'+
+  $('classBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDay')+'</th><th>'+t('thRoom')+'</th><th>'+t('thIn')+'</th><th>'+t('thOut')+'</th><th>'+t('thDuration')+'</th><th>'+t('thActive')+'</th><th>'+t('thRatio')+'</th><th>'+t('thDC')+'</th><th>'+t('thFocusCol')+'</th><th>'+t('thStatus')+'</th></tr></thead><tbody>'+
     sessions.slice(0,100).map(s=>`<tr>
       <td>${esc(s.date)}</td>
       <td><a href="javascript:void(0)" onclick="showRoom('${esc(s.room_id)}')">${esc(s.room_id)}</a></td>
@@ -723,10 +909,10 @@ function renderEngagement(){
   const sm = _state.full.summary || {};
   const sessions = _state.full.sessions || [];
   $('engKpis').innerHTML = `
-    <div class="kpi yellow"><div class="lab">평균 집중도</div><div class="val">${sm.avg_gaze_score!=null?Math.round(sm.avg_gaze_score*10)/10:'—'}</div><div class="sub">${sm.gaze_score_count||0} 샘플</div></div>
-    <div class="kpi green"><div class="lab">총 활동 시간</div><div class="val">${fmtMs(sm.total_active_ms)}</div></div>
-    <div class="kpi blue"><div class="lab">활동 비율 평균</div><div class="val">${sm.total_session_ms?Math.round(sm.total_active_ms/sm.total_session_ms*100):0}%</div></div>
-    <div class="kpi red"><div class="lab">끊김 평균</div><div class="val">${sm.session_count?Math.round(sm.disconnect_sum/sm.session_count*10)/10:0}</div></div>
+    <div class="kpi yellow"><div class="lab">${t('kpiAvgGaze')}</div><div class="val">${sm.avg_gaze_score!=null?Math.round(sm.avg_gaze_score*10)/10:'—'}</div><div class="sub">${sm.gaze_score_count||0} ${t('kpiSamples')}</div></div>
+    <div class="kpi green"><div class="lab">${t('kpiActive')}</div><div class="val">${fmtMs(sm.total_active_ms)}</div></div>
+    <div class="kpi blue"><div class="lab">${t('avgRatio')}</div><div class="val">${sm.total_session_ms?Math.round(sm.total_active_ms/sm.total_session_ms*100):0}%</div></div>
+    <div class="kpi red"><div class="lab">${t('avgDC')}</div><div class="val">${sm.session_count?Math.round(sm.disconnect_sum/sm.session_count*10)/10:0}</div></div>
   `;
 
   // gaze chart
@@ -757,8 +943,8 @@ function renderEngagement(){
 // ═══════════════════════ 6. 평가서 ═══════════════════════
 function renderEvaluation(){
   const items = _state.full.evaluations || [];
-  if (items.length === 0) { $('evalBox').innerHTML = '<div class="empty">평가서가 없습니다. 위 폼으로 작성하세요.</div>'; return; }
-  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>평가일</th><th>유형</th><th>레벨</th><th>총점</th><th>스피킹</th><th>리스닝</th><th>문법</th><th>집중도</th><th>평가자</th><th>다음 목표</th><th>코멘트</th><th>리포트</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('evalBox').innerHTML = '<div class="empty">'+t('emptyEval')+'</div>'; return; }
+  $('evalBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDate')+'</th><th>'+t('thType')+'</th><th>'+t('thLevel')+'</th><th>'+t('thTotal')+'</th><th>'+t('thSpeak')+'</th><th>'+t('thList')+'</th><th>'+t('thGrammar')+'</th><th>'+t('thFocus')+'</th><th>'+t('thEvaluator')+'</th><th>'+t('thNextGoal')+'</th><th>'+t('thComment')+'</th><th>'+t('thReport')+'</th></tr></thead><tbody>'+
     items.map(e=>`<tr>
       <td>${fmtDay(e.eval_at)}</td>
       <td>${esc(e.eval_type)||'—'}</td>
@@ -771,7 +957,7 @@ function renderEvaluation(){
       <td>${esc(e.evaluator)||'—'}</td>
       <td>${esc(e.next_goal)||'—'}</td>
       <td style="white-space:pre-wrap;max-width:300px">${esc(e.comment)||'—'}</td>
-      <td><button class="btn-mini" onclick="openReport(${e.id})" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1e293b;border:0;font-weight:700">📋 평가서 보기</button></td>
+      <td><button class="btn-mini" onclick="openReport(${e.id})" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#1e293b;border:0;font-weight:700">${t('thReportBtn')}</button></td>
     </tr>`).join('')+'</tbody></table>';
 }
 
@@ -789,15 +975,15 @@ $('evAddBtn').addEventListener('click', async () => {
     comment: $('evComment').value || null,
     next_goal: $('evGoal').value || null
   };
-  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/evaluations', body, '평가서');
+  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/evaluations', body, _lang==='en'?'Evaluation':'평가서');
   ['evLevel','evSpeak','evList','evRead','evWrite','evTotal','evComment','evGoal'].forEach(id=>$(id).value='');
 });
 
 // ═══════════════════════ 7. 교사 피드백 ═══════════════════════
 function renderFeedback(){
   const items = _state.full.feedbacks || [];
-  if (items.length === 0) { $('feedbackBox').innerHTML = '<div class="empty">피드백이 없습니다.</div>'; return; }
-  $('feedbackBox').innerHTML = '<table class="list"><thead><tr><th>수업일</th><th>교사</th><th>방</th><th>평점</th><th>요약</th><th>상세</th><th>액션</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('feedbackBox').innerHTML = '<div class="empty">'+t('emptyFeedback')+'</div>'; return; }
+  $('feedbackBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thClassDate')+'</th><th>'+t('thTeacher')+'</th><th>'+t('thRoom')+'</th><th>'+t('thRating')+'</th><th>'+t('thSummary')+'</th><th>'+t('thDetail')+'</th><th>'+t('thAction')+'</th></tr></thead><tbody>'+
     items.map(f=>`<tr>
       <td>${fmtDay(f.class_at)}</td>
       <td>${esc(f.teacher_name)||'—'}</td>
@@ -819,16 +1005,16 @@ $('fbAddBtn').addEventListener('click', async () => {
     content: $('fbContent').value || null,
     action_items: $('fbActions').value || null
   };
-  if (!body.summary) { toast('요약을 입력하세요', true); return; }
-  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/feedbacks', body, '피드백');
+  if (!body.summary) { toast(t('fbSummaryReq'), true); return; }
+  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/feedbacks', body, _lang==='en'?'Feedback':'피드백');
   ['fbTeacher','fbRoom','fbRating','fbSummary','fbContent','fbActions'].forEach(id=>$(id).value='');
 });
 
 // ═══════════════════════ 8. 상담 내역 ═══════════════════════
 function renderConsult(){
   const items = _state.full.consultations || [];
-  if (items.length === 0) { $('consultBox').innerHTML = '<div class="empty">상담 내역이 없습니다.</div>'; return; }
-  $('consultBox').innerHTML = '<table class="list"><thead><tr><th>일시</th><th>채널</th><th>상담자</th><th>주제</th><th>내용</th><th>후속</th><th>상태</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('consultBox').innerHTML = '<div class="empty">'+t('emptyConsult')+'</div>'; return; }
+  $('consultBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDay')+'</th><th>'+t('thChannel')+'</th><th>'+t('thCounselor')+'</th><th>'+t('thTopic')+'</th><th>'+t('thContent')+'</th><th>'+t('thFollow')+'</th><th>'+t('thStatus')+'</th></tr></thead><tbody>'+
     items.map(c=>`<tr>
       <td>${fmtDate(c.consult_at)}</td>
       <td>${esc(c.channel)||'—'}</td>
@@ -850,8 +1036,8 @@ $('csAddBtn').addEventListener('click', async () => {
     follow_up_at: $('csFollow').value ? new Date($('csFollow').value).getTime() : null,
     status: $('csStatus').value
   };
-  if (!body.content && !body.topic) { toast('주제 또는 내용을 입력하세요', true); return; }
-  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/consultations', body, '상담');
+  if (!body.content && !body.topic) { toast(t('csContentReq'), true); return; }
+  await postSave('/api/admin/student/'+encodeURIComponent(uid)+'/consultations', body, _lang==='en'?'Consultation':'상담');
   ['csCounselor','csTopic','csContent','csFollow'].forEach(id=>$(id).value='');
 });
 
@@ -890,17 +1076,17 @@ $('cSaveBtn').addEventListener('click', async () => {
       headers: {'Content-Type':'application/json'}, body: JSON.stringify(body)
     });
     const j = await r.json();
-    if (r.ok && j.ok) toast('학생 정보가 저장되었습니다 ('+(j.updated_fields||0)+'개 필드).');
-    else toast('저장 실패: '+(j.error||r.status), true);
-  } catch (e) { toast('네트워크 오류', true); }
+    if (r.ok && j.ok) toast(t('contactSaved') + ' (' + (j.updated_fields||0) + t('contactFields') + ')');
+    else toast(t('saveFailed') + ': ' + (j.error||r.status), true);
+  } catch (e) { toast(t('netError'), true); }
   finally { btn.disabled = false; }
 });
 
 // ═══════════════════════ 10. 교재 ═══════════════════════
 function renderTextbook(){
   const items = _state.full.textbooks || [];
-  if (items.length === 0) { $('textbookBox').innerHTML = '<div class="empty">배정된 교재가 없습니다.</div>'; return; }
-  $('textbookBox').innerHTML = '<table class="list"><thead><tr><th>교재</th><th>레벨</th><th>시작</th><th>종료</th><th>진도</th><th>상태</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('textbookBox').innerHTML = '<div class="empty">'+t('emptyTextbook')+'</div>'; return; }
+  $('textbookBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thTextbook')+'</th><th>'+t('thLevel')+'</th><th>'+t('thStart')+'</th><th>'+t('thEnd')+'</th><th>'+t('thProgress')+'</th><th>'+t('thStatus')+'</th></tr></thead><tbody>'+
     items.map(t=>`<tr>
       <td>${esc(t.textbook_name)||'—'}</td>
       <td>${esc(t.level)||'—'}</td>
@@ -919,8 +1105,8 @@ function renderTextbook(){
 // ═══════════════════════ 11. 녹화 영상 ═══════════════════════
 function renderRecording(){
   const items = _state.full.recordings || [];
-  if (items.length === 0) { $('recordingBox').innerHTML = '<div class="empty">녹화 영상이 없습니다.</div>'; return; }
-  $('recordingBox').innerHTML = '<table class="list"><thead><tr><th>일시</th><th>방</th><th>교사</th><th>파일</th><th>길이</th><th>크기</th><th>상태</th><th>액션</th></tr></thead><tbody>'+
+  if (items.length === 0) { $('recordingBox').innerHTML = '<div class="empty">'+t('emptyRecording')+'</div>'; return; }
+  $('recordingBox').innerHTML = '<table class="list"><thead><tr><th>'+t('thDay')+'</th><th>'+t('thRoom')+'</th><th>'+t('thTeacher')+'</th><th>'+t('thFile')+'</th><th>'+t('thLength')+'</th><th>'+t('thSize')+'</th><th>'+t('thStatus')+'</th><th>'+t('thAction')+'</th></tr></thead><tbody>'+
     items.map(r=>`<tr>
       <td>${fmtDate(r.started_at)}</td>
       <td>${esc(r.room_id)}</td>
@@ -930,7 +1116,7 @@ function renderRecording(){
       <td>${r.size_bytes?(Math.round(r.size_bytes/1024/1024*10)/10)+' MB':'—'}</td>
       <td>${statusBadge(r.status)}</td>
       <td>
-        <button class="btn-mini" onclick="window.open('/api/recordings/blob/'+${r.id}+'?stream=1','_blank')">▶ 재생</button>
+        <button class="btn-mini" onclick="window.open('/api/recordings/blob/'+${r.id}+'?stream=1','_blank')">${t('thPlay')}</button>
       </td>
     </tr>`).join('')+'</tbody></table>';
 }
@@ -944,12 +1130,12 @@ async function postSave(url, body, label){
     });
     const j = await r.json();
     if (r.ok && j.ok) {
-      toast(label+' 저장 완료');
+      toast(label + ' ' + t('saved'));
       await loadFull();
     } else {
-      toast(label+' 저장 실패: '+(j.error||r.status), true);
+      toast(label + ' ' + t('saveFailed') + ': ' + (j.error||r.status), true);
     }
-  } catch (e) { toast('네트워크 오류', true); }
+  } catch (e) { toast(t('netError'), true); }
 }
 
 // ═══════════════════════ 📋 평가서 보기 — 종합 리포트 카드 ═══════════════════════
@@ -958,7 +1144,7 @@ let _rpCharts = {};
 window.openReport = function(evalId){
   const f = _state.full || {};
   const ev = (f.evaluations || []).find(x => x.id === evalId);
-  if (!ev) { toast('평가서를 찾을 수 없습니다', true); return; }
+  if (!ev) { toast(t('notFound'), true); return; }
 
   const erp = f.erp || {};
   const sm  = f.summary || {};
@@ -971,12 +1157,12 @@ window.openReport = function(evalId){
 
   // ── 헤더 ──
   const studentName = erp.username || (f.profile||{}).username || uid;
-  $('rpName').textContent = '🎓 ' + studentName + ' — 학습 리포트';
+  $('rpName').textContent = '🎓 ' + studentName + ' — ' + t('rpReport');
   $('rpMeta').textContent =
-    fmtDay(ev.eval_at) + ' · ' + (ev.eval_type||'평가') +
-    (ev.level ? ' · ' + ev.level + ' 레벨' : '') +
-    (ev.evaluator ? ' · 평가자: ' + ev.evaluator : '');
-  $('rpPrintDate').textContent = new Date().toLocaleString('ko-KR');
+    fmtDay(ev.eval_at) + ' · ' + (ev.eval_type || t('rpEval')) +
+    (ev.level ? ' · ' + ev.level + (_lang==='en'?' Level':' 레벨') : '') +
+    (ev.evaluator ? ' · ' + (_lang==='en'?'Evaluator: ':'평가자: ') + ev.evaluator : '');
+  $('rpPrintDate').textContent = new Date().toLocaleString(_lang==='en'?'en-US':'ko-KR');
 
   // ── 결석일수 계산: enrollment 시작~오늘 사이의 expected vs actual ──
   // 1) 현재까지 진행된 일수 (시그업일 ~ 오늘) 중 평일 기준으로 expected
@@ -1000,15 +1186,15 @@ window.openReport = function(evalId){
 
   // ── 핵심 지표 9개 ──
   $('rpStats').innerHTML = `
-    <div class="stat-card green"><div class="lab">총점</div><div class="val">${ev.score_total!=null?ev.score_total:'—'}</div><div class="sub">/100점</div></div>
-    <div class="stat-card blue"><div class="lab">레벨</div><div class="val">${esc(ev.level)||'—'}</div><div class="sub">${esc(ev.eval_type)||'평가'}</div></div>
-    <div class="stat-card yellow"><div class="lab">평균 집중도</div><div class="val">${avgGaze}</div><div class="sub">${sm.gaze_score_count||0}회 측정</div></div>
-    <div class="stat-card purple"><div class="lab">활동 비율</div><div class="val">${activePct}%</div><div class="sub">발화·참여</div></div>
-    <div class="stat-card green"><div class="lab">출석 일수</div><div class="val">${totalAttendDays}</div><div class="sub">${_state.days}일 기준</div></div>
-    <div class="stat-card red"><div class="lab">결석 일수</div><div class="val">${absent}</div><div class="sub">예상 ${expected}회 중</div></div>
-    <div class="stat-card yellow"><div class="lab">보상 점수</div><div class="val">${totalRewards}개</div><div class="sub">${totalRewardValue>0?(totalRewardValue+'점'):'—'}</div></div>
-    <div class="stat-card blue"><div class="lab">총 학습 시간</div><div class="val">${fmtMs(totalActive)}</div><div class="sub">활동 시간</div></div>
-    <div class="stat-card purple"><div class="lab">납부 완료</div><div class="val">${fmtKrw(totalPaid)}</div><div class="sub">${payments.length}회 결제</div></div>
+    <div class="stat-card green"><div class="lab">${t('thTotal')}</div><div class="val">${ev.score_total!=null?ev.score_total:'—'}</div><div class="sub">${t('rpScore')}</div></div>
+    <div class="stat-card blue"><div class="lab">${t('thLevel')}</div><div class="val">${esc(ev.level)||'—'}</div><div class="sub">${esc(ev.eval_type)||t('rpEval')}</div></div>
+    <div class="stat-card yellow"><div class="lab">${t('kpiAvgGaze')}</div><div class="val">${avgGaze}</div><div class="sub">${sm.gaze_score_count||0}${t('rpMeasured')}</div></div>
+    <div class="stat-card purple"><div class="lab">${t('avgRatio')}</div><div class="val">${activePct}%</div><div class="sub">${t('rpPartake')}</div></div>
+    <div class="stat-card green"><div class="lab">${t('rpAttended')}</div><div class="val">${totalAttendDays}</div><div class="sub">${_state.days}${_lang==='en'?'-day':'일 기준'}</div></div>
+    <div class="stat-card red"><div class="lab">${t('rpAbsent')}</div><div class="val">${absent}</div><div class="sub">${t('rpExpect')} ${expected}${_lang==='en'?'':'회 중'}</div></div>
+    <div class="stat-card yellow"><div class="lab">${t('rpRewards')}</div><div class="val">${totalRewards}${_lang==='en'?'':'개'}</div><div class="sub">${totalRewardValue>0?(totalRewardValue+(_lang==='en'?' pts':'점')):'—'}</div></div>
+    <div class="stat-card blue"><div class="lab">${t('rpStudyTime')}</div><div class="val">${fmtMs(totalActive)}</div><div class="sub">${t('rpStudyMs')}</div></div>
+    <div class="stat-card purple"><div class="lab">${t('rpPaid')}</div><div class="val">${fmtKrw(totalPaid)}</div><div class="sub">${payments.length}${t('kpiPaymentCount')}</div></div>
   `;
 
   // ── 방사형 차트 (4영역) ──
@@ -1016,7 +1202,7 @@ window.openReport = function(evalId){
   _rpCharts.radar = new Chart($('rpRadar').getContext('2d'), {
     type: 'radar',
     data: {
-      labels: ['스피킹', '리스닝', '문법', '집중도'],
+      labels: [t('thSpeak'), t('thList'), t('thGrammar'), t('thFocus')],
       datasets: [{
         label: studentName + ' (' + fmtDay(ev.eval_at) + ')',
         data: [
@@ -1044,7 +1230,7 @@ window.openReport = function(evalId){
       },
       plugins: {
         legend: { labels: { color: '#222', font: { size: 12 } } },
-        title: { display: true, text: '4 영역 학습 능력', color: '#666', font: { size: 12, weight: '700' } }
+        title: { display: true, text: t('rpRadarTitle'), color: '#666', font: { size: 12, weight: '700' } }
       }
     }
   });
@@ -1058,14 +1244,14 @@ window.openReport = function(evalId){
       labels: recentSess.map(s => fmtDay(s.joined_at)),
       datasets: [
         {
-          label: '시선 집중도',
+          label: t('chartLegendFocus'),
           data: recentSess.map(s => s.gaze_score),
           borderColor: '#f59e0b',
           backgroundColor: 'rgba(245,158,11,0.18)',
           tension: 0.3, fill: true, yAxisID: 'y'
         },
         {
-          label: '활동 비율 (%)',
+          label: t('chartActivityRatio'),
           data: recentSess.map(s => s.total_session_ms ? Math.round(s.total_active_ms/s.total_session_ms*100) : null),
           borderColor: '#16a34a',
           backgroundColor: 'rgba(22,163,74,0.15)',
@@ -1076,12 +1262,12 @@ window.openReport = function(evalId){
     options: {
       responsive: true, maintainAspectRatio: false,
       scales: {
-        y: { beginAtZero: true, max: 100, ticks: { color: '#666' }, grid: { color: '#e0e0e0' }, title: { display: true, text: '점수 / %', color: '#666' } },
+        y: { beginAtZero: true, max: 100, ticks: { color: '#666' }, grid: { color: '#e0e0e0' }, title: { display: true, text: t('rpScale'), color: '#666' } },
         x: { ticks: { color: '#666', maxRotation: 60, minRotation: 30, font: { size: 10 } }, grid: { color: '#e0e0e0' } }
       },
       plugins: {
         legend: { labels: { color: '#222' } },
-        title: { display: true, text: '시선 집중도 + 발화 활동 추이', color: '#666', font: { size: 12, weight: '700' } }
+        title: { display: true, text: t('rpEngageTitle'), color: '#666', font: { size: 12, weight: '700' } }
       }
     }
   });
@@ -1089,11 +1275,11 @@ window.openReport = function(evalId){
   // ── 코멘트 ──
   const cm = $('rpComment');
   if (ev.comment) { cm.textContent = ev.comment; cm.classList.remove('empty'); }
-  else { cm.textContent = '평가자 코멘트가 입력되지 않았습니다.'; cm.classList.add('empty'); }
+  else { cm.textContent = t('rpEvalEmpty'); cm.classList.add('empty'); }
 
   const gl = $('rpGoal');
   if (ev.next_goal) { gl.textContent = ev.next_goal; gl.classList.remove('empty'); }
-  else { gl.textContent = '다음 학습 목표가 입력되지 않았습니다.'; gl.classList.add('empty'); }
+  else { gl.textContent = t('rpGoalEmpty'); gl.classList.add('empty'); }
 
   // ── 출석 캘린더 (최근 30일 점) ──
   const cal = $('rpAttendCal');
@@ -1117,10 +1303,10 @@ window.openReport = function(evalId){
     }).join('') +
     '</div>' +
     '<div style="margin-top:8px;font-size:11px;color:#888">' +
-    '<span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;vertical-align:middle"></span> 우수(70+) ' +
-    '<span style="display:inline-block;width:10px;height:10px;background:#fbbf24;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 보통(40~70) ' +
-    '<span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 저조(40-) ' +
-    '<span style="display:inline-block;width:10px;height:10px;background:#f0f0f0;border-radius:2px;margin-left:8px;vertical-align:middle"></span> 결석' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#16a34a;border-radius:2px;vertical-align:middle"></span> '+t('rpExcellent')+' ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#fbbf24;border-radius:2px;margin-left:8px;vertical-align:middle"></span> '+t('rpAvg')+' ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#dc2626;border-radius:2px;margin-left:8px;vertical-align:middle"></span> '+t('rpLow')+' ' +
+    '<span style="display:inline-block;width:10px;height:10px;background:#f0f0f0;border-radius:2px;margin-left:8px;vertical-align:middle"></span> '+t('rpAbsentLgd')+
     '</div>';
 
   // ── 모달 열기 ──
@@ -1142,8 +1328,10 @@ document.addEventListener('keydown', (ev) => {
 // ═══════════════════════ 컨트롤 ═══════════════════════
 $('refreshBtn').addEventListener('click', loadFull);
 $('period').addEventListener('change', loadFull);
+$('langBtn').addEventListener('click', toggleLang);
 
-// 시작
+// 시작 — 저장된 언어 즉시 적용 후 데이터 로드
+applyLangAttrs();
 loadFull();
 </script>
 

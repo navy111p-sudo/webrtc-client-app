@@ -890,6 +890,64 @@
         .vp-floating-body { flex:1; background:#000; position:relative; min-height:0; }
         .vp-floating-body iframe, .vp-floating-body video { width:100%; height:100%; border:0; }
 
+        /* 📌 PIP — 참가자 비디오를 콘텐츠(동영상·iframe·PDF·칠판) 위에 띄우는 오버레이.
+           "다른 사람들이 잘 보이지 않아" 문제 해결 — 영상을 작게만 줄이지 않고,
+           콘텐츠는 그대로 두면서 참가자만 위에 떠다니게.
+           드래그·리사이즈 가능. localStorage 위치 저장. */
+        .vc-pip-overlay {
+            position: fixed;
+            top: 100px; right: 24px;
+            width: 320px; height: 220px;
+            background: rgba(15,23,42,0.96);
+            border: 2px solid rgba(245,158,11,0.6);
+            border-radius: 10px;
+            z-index: 850;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px rgba(245,158,11,.2);
+            resize: both; overflow: hidden;
+            min-width: 220px; min-height: 160px;
+        }
+        .vc-pip-overlay.show { display: flex; }
+        .vc-pip-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 5px 10px;
+            background: rgba(245,158,11,0.15);
+            font-size: 12px; color: #fcd34d; font-weight: 600;
+            cursor: move; user-select: none;
+            border-bottom: 1px solid rgba(245,158,11,0.25);
+        }
+        .vc-pip-header button {
+            background: none; border: 0; color: #fca5a5;
+            cursor: pointer; font-size: 14px; padding: 0 6px;
+        }
+        .vc-pip-body {
+            flex: 1; padding: 6px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            grid-auto-rows: 1fr;
+            gap: 4px;
+            min-height: 0;
+            background: #000;
+        }
+        .vc-pip-body .video-box {
+            position: relative; background:#111; border-radius:6px; overflow:hidden;
+            min-height: 0;
+        }
+        .vc-pip-body .video-box video {
+            width: 100%; height: 100%; object-fit: cover; display:block;
+        }
+        .vc-pip-body .video-label {
+            position:absolute; bottom:4px; left:4px;
+            background: rgba(0,0,0,0.7); color:#fff;
+            font-size: 10px; padding: 2px 6px; border-radius: 3px;
+        }
+        .vc-pip-empty {
+            grid-column: 1 / -1;
+            display: flex; align-items: center; justify-content: center;
+            color: #64748b; font-size: 12px; padding: 20px;
+        }
+
         /* ── 반응형: 태블릿/모바일 ──
            수업은 가로(landscape)로 진행하도록 설계.
            좌측=영상 / 우측=칠판·PDF·동영상 분할을 모바일에서도 유지. */
@@ -1310,14 +1368,15 @@
     </div>
 
     <!-- 좌(영상) / 우(칠판·PDF) 2분할 -->
-    <div class="vc-main-row video-quarter" id="vc-main-row">
+    <div class="vc-main-row video-half" id="vc-main-row">
         <!-- 좌측: 영상 패널 -->
         <div class="video-pane" id="vc-video-pane">
             <div class="video-size-bar">
-                <button onclick="vcSetVideoSize('quarter', this)" class="active" title="화면의 1/4">1/4</button>
-                <button onclick="vcSetVideoSize('half', this)" title="화면의 1/2">1/2</button>
+                <button onclick="vcSetVideoSize('quarter', this)" title="화면의 1/4">1/4</button>
+                <button onclick="vcSetVideoSize('half', this)" class="active" title="화면의 1/2">1/2</button>
                 <button onclick="vcSetVideoSize('threequarter', this)" title="화면의 3/4">3/4</button>
                 <button onclick="vcSetVideoSize('full', this)" title="전체화면" data-ko="전체" data-en="Full">전체</button>
+                <button onclick="vcTogglePip(this)" id="vc-pip-btn" title="참가자 비디오 띄우기 (콘텐츠 위에 오버레이)" data-ko="📌 PIP" data-en="📌 PIP" style="background:rgba(245,158,11,.25);color:#fcd34d">📌 PIP</button>
             </div>
             <div class="video-strip" id="vc-video-grid">
                 <div class="video-box" id="vc-local-box">
@@ -1457,6 +1516,17 @@
             <button onclick="vpFloatingClose()" title="닫기">✕</button>
         </div>
         <div class="vp-floating-body" id="vp-floating-body"></div>
+    </div>
+
+    <!-- 📌 PIP 오버레이 — 참가자 비디오를 콘텐츠 위에 띄우기 -->
+    <div class="vc-pip-overlay" id="vc-pip-overlay">
+        <div class="vc-pip-header" id="vc-pip-header">
+            <span data-ko="👥 참가자 (드래그 이동 · 모서리 크기 조절)" data-en="👥 Participants (Drag · Resize)">👥 참가자 (드래그 이동 · 모서리 크기 조절)</span>
+            <button onclick="vcTogglePip()" title="닫기">✕</button>
+        </div>
+        <div class="vc-pip-body" id="vc-pip-body">
+            <div class="vc-pip-empty" data-ko="다른 참가자가 들어오면 여기에 표시됩니다" data-en="Other participants appear here">다른 참가자가 들어오면 여기에 표시됩니다</div>
+        </div>
     </div>
 
     <!-- 채팅 사이드 패널 -->
@@ -2857,10 +2927,156 @@ function vcSetVideoSize(size, btn) {
     if (!row) return;
     row.classList.remove('video-quarter', 'video-half', 'video-threequarter', 'video-full');
     row.classList.add('video-' + size);
-    document.querySelectorAll('.video-size-bar button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.video-size-bar button').forEach(b => {
+      // PIP 버튼은 active 토글에서 제외
+      if (b.id !== 'vc-pip-btn') b.classList.remove('active');
+    });
     if (btn) btn.classList.add('active');
     // 칠판 캔버스가 보이면 새 폭에 맞춰 크기 조정
     setTimeout(() => { if (typeof wbResize === 'function') wbResize(); }, 280);
+}
+
+/* 📌 PIP — 참가자 비디오를 콘텐츠 위에 띄우는 오버레이 토글.
+   "다른 사람들이 잘 보이지 않아" 문제 해결.
+   - 좌측 영상 패널의 모든 비디오 트랙을 참조하여 srcObject 만 복제 (별도 스트림 X)
+   - 새 참가자가 들어와도 vcSyncPipVideos() 가 자동 동기화 (1초 폴링)
+   - 헤더 드래그 이동 + 모서리 리사이즈 (CSS resize:both)
+   - localStorage 위치·크기 저장 → 다음 입장 시 복원 */
+let _vcPipActive = false;
+let _vcPipSyncTimer = null;
+function vcTogglePip(btn) {
+  const overlay = document.getElementById('vc-pip-overlay');
+  if (!overlay) return;
+  _vcPipActive = !_vcPipActive;
+  overlay.classList.toggle('show', _vcPipActive);
+  if (btn) btn.classList.toggle('active', _vcPipActive);
+  else {
+    const b = document.getElementById('vc-pip-btn');
+    if (b) b.classList.toggle('active', _vcPipActive);
+  }
+  if (_vcPipActive) {
+    vcRestorePipPos();
+    vcSyncPipVideos();
+    if (_vcPipSyncTimer) clearInterval(_vcPipSyncTimer);
+    _vcPipSyncTimer = setInterval(vcSyncPipVideos, 1500);
+    vcAttachPipDrag();
+  } else {
+    if (_vcPipSyncTimer) { clearInterval(_vcPipSyncTimer); _vcPipSyncTimer = null; }
+    // 비디오 정리 — srcObject 참조 끊어 메모리 회수
+    document.querySelectorAll('#vc-pip-body video').forEach(v => v.srcObject = null);
+  }
+}
+
+/* 좌측 video-pane 의 모든 비디오를 PIP 영역에 복제 (참조만, 스트림 추가 안 함) */
+function vcSyncPipVideos() {
+  const body = document.getElementById('vc-pip-body');
+  if (!body) return;
+  const sources = document.querySelectorAll('#vc-video-grid video');
+  if (sources.length === 0) {
+    body.innerHTML = '<div class="vc-pip-empty">'
+      + (typeof currentLang !== 'undefined' && currentLang === 'en'
+          ? 'Other participants appear here'
+          : '다른 참가자가 들어오면 여기에 표시됩니다')
+      + '</div>';
+    return;
+  }
+  // 기존 비디오 box 의 id 모음
+  const existing = new Map();
+  body.querySelectorAll('.video-box').forEach(b => existing.set(b.dataset.src, b));
+  // 새로운 set 만들기
+  const liveIds = new Set();
+  sources.forEach(srcVideo => {
+    const id = srcVideo.id || srcVideo.parentElement?.id || ('v_' + Math.random().toString(36).slice(2,8));
+    liveIds.add(id);
+    let box = existing.get(id);
+    if (!box) {
+      box = document.createElement('div');
+      box.className = 'video-box';
+      box.dataset.src = id;
+      const v = document.createElement('video');
+      v.autoplay = true; v.playsInline = true; v.muted = srcVideo.muted;
+      box.appendChild(v);
+      const labelSrc = srcVideo.parentElement?.querySelector('.video-label');
+      const lbl = document.createElement('span');
+      lbl.className = 'video-label';
+      lbl.textContent = labelSrc ? labelSrc.textContent : (srcVideo.id || '참가자');
+      box.appendChild(lbl);
+      // empty placeholder 제거
+      const empty = body.querySelector('.vc-pip-empty');
+      if (empty) empty.remove();
+      body.appendChild(box);
+    }
+    // srcObject 동기화 (참조 같으면 무동작)
+    const v = box.querySelector('video');
+    if (v.srcObject !== srcVideo.srcObject) v.srcObject = srcVideo.srcObject;
+  });
+  // 사라진 트랙 box 제거
+  existing.forEach((box, id) => { if (!liveIds.has(id)) box.remove(); });
+  // 모두 사라졌으면 empty
+  if (body.children.length === 0) {
+    body.innerHTML = '<div class="vc-pip-empty">'
+      + (typeof currentLang !== 'undefined' && currentLang === 'en'
+          ? 'Other participants appear here'
+          : '다른 참가자가 들어오면 여기에 표시됩니다')
+      + '</div>';
+  }
+}
+
+/* 헤더 드래그 + 위치/크기 저장 */
+function vcAttachPipDrag() {
+  const overlay = document.getElementById('vc-pip-overlay');
+  const header = document.getElementById('vc-pip-header');
+  if (!overlay || !header || header.dataset.dragBound) return;
+  header.dataset.dragBound = '1';
+  let dragging = false, sx=0, sy=0, ox=0, oy=0;
+  header.addEventListener('mousedown', (e) => {
+    if (e.target.tagName === 'BUTTON') return;
+    dragging = true;
+    sx = e.clientX; sy = e.clientY;
+    const rect = overlay.getBoundingClientRect();
+    ox = rect.left; oy = rect.top;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const nx = Math.max(8, Math.min(window.innerWidth - 80, ox + (e.clientX - sx)));
+    const ny = Math.max(8, Math.min(window.innerHeight - 80, oy + (e.clientY - sy)));
+    overlay.style.right = 'auto'; overlay.style.bottom = 'auto';
+    overlay.style.left = nx + 'px'; overlay.style.top = ny + 'px';
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return;
+    dragging = false;
+    vcSavePipPos();
+  });
+  // 리사이즈는 CSS resize:both 가 처리 — ResizeObserver 로 저장만
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => vcSavePipPos()).observe(overlay);
+  }
+}
+function vcSavePipPos() {
+  const overlay = document.getElementById('vc-pip-overlay');
+  if (!overlay) return;
+  try {
+    localStorage.setItem('mangoi_pip_pos', JSON.stringify({
+      left: overlay.style.left, top: overlay.style.top,
+      width: overlay.style.width, height: overlay.style.height
+    }));
+  } catch {}
+}
+function vcRestorePipPos() {
+  const overlay = document.getElementById('vc-pip-overlay');
+  if (!overlay) return;
+  try {
+    const raw = localStorage.getItem('mangoi_pip_pos');
+    if (!raw) return;
+    const p = JSON.parse(raw);
+    if (p.left)   overlay.style.left   = p.left;
+    if (p.top)    overlay.style.top    = p.top;
+    if (p.width)  overlay.style.width  = p.width;
+    if (p.height) overlay.style.height = p.height;
+    if (p.left || p.top) { overlay.style.right = 'auto'; overlay.style.bottom = 'auto'; }
+  } catch {}
 }
 
 function updateUserCount(count) {
