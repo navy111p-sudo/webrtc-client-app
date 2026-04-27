@@ -830,10 +830,9 @@
     50%      { transform: translate(-25px, 4px) rotate(-3deg); }
     75%      { transform: translate(-10px, 10px) rotate(6deg); }
   }
-  /* 캐릭터 이미지 — SVG feColorMatrix 필터로 흰 배경 → 투명 변환
-     · 매트릭스 마지막 행 (-1,-1,-1,1,0) 이 알파를 (1 − R − G − B) 로 만들어
-       흰색(R+G+B≈3) 은 알파 0 (투명), 어두운 색은 알파 1 (불투명)
-     · 노란 캐릭터는 R·G 합이 크지만 B 가 적어 알파 약 0.6~0.8 (반투명) → 우주 배경 살짝 비침 */
+  /* 캐릭터 이미지 — 원래 색상 그대로 보존 (필터 제거)
+     흰 배경은 그대로 두되, 부드러운 라디얼 mask 로 가장자리 페이드해서
+     우주 배경과 자연스럽게 섞이게 함 (사각 박스 흔적 사라짐) */
   .hero-character-frame img {
     position: relative; z-index: 2;
     width: 100%;
@@ -842,7 +841,12 @@
     height: auto;
     object-fit: contain;
     border-radius: 24px;
-    filter: url(#whiteToTransparent) drop-shadow(0 0 12px rgba(251, 191, 36, 0.6));
+    /* 원형 마스크 — 흰 배경의 사각 모서리만 페이드, 캐릭터는 솔리드 */
+    -webkit-mask-image: radial-gradient(ellipse 75% 80% at center,
+                                        #000 60%, rgba(0,0,0,0.7) 78%, transparent 100%);
+            mask-image: radial-gradient(ellipse 75% 80% at center,
+                                        #000 60%, rgba(0,0,0,0.7) 78%, transparent 100%);
+    filter: drop-shadow(0 0 16px rgba(251, 191, 36, 0.45));
     display: block;
   }
   @keyframes heroBob {
@@ -1169,16 +1173,6 @@
       </div>
       <div class="hero-character">
         <div class="hero-character-frame">
-          <!-- 🌌 SVG 필터: 흰색 픽셀 → 투명 (luminance to alpha) -->
-          <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-            <filter id="whiteToTransparent" color-interpolation-filters="sRGB">
-              <feColorMatrix type="matrix" values="
-                1 0 0 0 0
-                0 1 0 0 0
-                0 0 1 0 0
-                -0.7 -0.7 -0.7 1.4 0" />
-            </filter>
-          </svg>
           <img src="/img/Mangoi_Character.jpg" alt="Mangoi"
                onerror="this.onerror=null;this.style.background='linear-gradient(135deg,#fbbf24,#f59e0b)';this.style.padding='40px';this.style.fontSize='120px';this.alt='🥭';" />
         </div>
