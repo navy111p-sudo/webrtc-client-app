@@ -6,7 +6,7 @@
 <title>망고아이 관리 대시보드</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;800;900&family=Black+Han+Sans&family=Jua&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -411,17 +411,42 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 그라데이션 텍스트 — 화이트→앰버→코랄→딥브라운 */
+  /* 🎈 3D 풍선 텍스트 — 망고 시그니처 스타일
+     - 둥글둥글한 디스플레이 폰트 (Jua)
+     - 노란 풍선 + 진한 갈색 테두리 + 5단 입체 그림자
+     - ::after 광택 레이어 (위쪽 흰빛)
+  */
   .hero h1 {
     margin: 0 0 14px;
-    font-size: 64px; font-weight: 900;
-    background: linear-gradient(135deg, #7c2d12 0%, #c2410c 35%, #ea580c 65%, #f59e0b 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    letter-spacing: -0.035em;
-    line-height: 1.05;
-    filter: drop-shadow(0 2px 4px rgba(124, 45, 18, 0.18));
+    font-family: 'Jua', 'Black Han Sans', 'Noto Sans KR', sans-serif;
+    font-size: 76px; font-weight: 400;
+    color: #fde047;                       /* 베이스 노란색 */
+    -webkit-text-stroke: 5px #7c2d12;     /* 진한 갈색 외곽선 */
+    paint-order: stroke fill;             /* stroke 가 fill 침범 안 하도록 */
+    letter-spacing: 1px;
+    line-height: 1.1;
+    /* 5단 입체 그림자 — 점점 진해지며 아래로 내려가다가 마지막은 부드러운 외광 */
+    text-shadow:
+      0 2px 0 #facc15,
+      0 4px 0 #ea580c,
+      0 6px 0 #c2410c,
+      0 8px 0 #92400e,
+      0 10px 0 #78350f,
+      0 14px 18px rgba(120, 53, 15, 0.45);
+    position: relative;
+    display: inline-block;
+  }
+  /* 위쪽 흰색 광택 — 상단 30% 만 흰빛 오버레이 */
+  .hero h1::before {
+    content: attr(data-text);
+    position: absolute; top: 0; left: 0;
+    color: rgba(255, 255, 255, 0.55);
+    -webkit-text-stroke: 0;
+    pointer-events: none;
+    clip-path: polygon(0 0, 100% 0, 100% 35%, 0 50%);
+    text-shadow: none;
+    font-family: inherit; font-size: inherit; font-weight: inherit;
+    letter-spacing: inherit; line-height: inherit;
   }
   .hero .hero-sub {
     font-size: 22px; color: #78350f; margin-bottom: 36px;
@@ -740,7 +765,8 @@
   /* 모바일 대응 */
   @media (max-width: 900px) {
     .hero { grid-template-columns: 1fr; padding: 50px 28px; gap: 30px; min-height: 0; border-radius: 24px; }
-    .hero h1 { font-size: 38px; text-align: center; }
+    .hero h1 { font-size: 44px; text-align: center; -webkit-text-stroke-width: 4px; text-shadow:
+      0 2px 0 #facc15, 0 3px 0 #ea580c, 0 4px 0 #c2410c, 0 5px 0 #92400e, 0 6px 0 #78350f, 0 9px 12px rgba(120,53,15,0.4); }
     .hero .hero-sub { text-align: center; font-size: 17px; margin-bottom: 24px; }
     .hero .hero-search input { padding: 20px 110px 20px 64px; font-size: 18px; }
     .hero .hero-search-clear { width: 32px; height: 32px; right: 60px; font-size: 14px; }
@@ -970,7 +996,7 @@
     <!-- 🥭 히어로 랜딩 (망고 캐릭터 + 거대 검색창) -->
     <section class="hero">
       <div class="hero-text">
-        <h1 data-ko="안녕하세요, 망고아이!" data-en="Hello, Mangoi!">안녕하세요, 망고아이!</h1>
+        <h1 data-ko="안녕하세요, 망고아이!" data-en="Hello, Mangoi!" data-text="안녕하세요, 망고아이!">안녕하세요, 망고아이!</h1>
         <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
         <div class="hero-search">
           <span class="hero-search-icon" aria-hidden="true">
@@ -1949,7 +1975,11 @@ function toggleAdminLang() {
   // textContent
   document.querySelectorAll('[data-ko]').forEach(function(el){
     var txt = el.getAttribute('data-' + adminLang);
-    if (txt !== null) el.textContent = txt;
+    if (txt !== null) {
+      el.textContent = txt;
+      // 풍선 텍스트 광택 레이어 (::before content: attr(data-text)) 동기화
+      if (el.hasAttribute('data-text')) el.setAttribute('data-text', txt);
+    }
   });
   // placeholder
   document.querySelectorAll('[data-ko-placeholder]').forEach(function(el){
