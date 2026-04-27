@@ -346,102 +346,133 @@
         </div>
       </details>
 
+      <!-- 💡 안내 — 단일 학생 상세는 모두 드릴다운으로 일원화 -->
+      <div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);border-radius:8px;padding:10px 14px;margin:8px 0;font-size:12px;color:#92400e;line-height:1.6">
+        💡 <strong data-ko="설계 안내" data-en="Design Note">설계 안내</strong> ·
+        <span data-ko="이 메뉴는 모든 학생을 가로로 보는 집계 뷰입니다. 한 학생의 상세 처리(연장·평가·상담·메시지 등)는 각 행의 🔍 버튼으로 드릴다운에 들어가 16개 탭에서 진행하세요." data-en="This menu shows aggregate views across all students. For deep work on one student (extension, evaluation, counseling, messaging) click 🔍 to open the drilldown's 16 tabs.">이 메뉴는 모든 학생을 가로로 보는 집계 뷰입니다. 한 학생의 상세 처리(연장·평가·상담·메시지 등)는 각 행의 🔍 버튼으로 드릴다운에 들어가 16개 탭에서 진행하세요.</span>
+      </div>
+
+      <!-- ⏰ 만료 임박 학생 — 종료일 D-30 이내 -->
       <details class="sub-item">
-        <summary data-ko="종료일자 확인" data-en="Expiry Check">종료일자 확인</summary>
+        <summary data-ko="⏰ 만료 임박 학생" data-en="⏰ Expiring Soon">⏰ 만료 임박 학생</summary>
         <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 enrollments 의 ended_at 기준 만료 임박 학생 목록 — 30일 이내 만료 예정 자동 노출 (다음 사이클 연결)"
-               data-en="🚧 Students with enrollments expiring within 30 days — pending data wiring">
-            🚧 enrollments 의 ended_at 기준 만료 임박 학생 목록 — 30일 이내 만료 예정 자동 노출 (다음 사이클 연결)
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="sm-expiring-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <select id="sm-expiring-window" style="padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="30" data-ko="30일 이내"  data-en="≤30 days">30일 이내</option>
+              <option value="14" data-ko="14일 이내"  data-en="≤14 days">14일 이내</option>
+              <option value="7"  data-ko="7일 이내"    data-en="≤7 days">7일 이내</option>
+              <option value="0"  data-ko="이미 만료"  data-en="Already expired">이미 만료</option>
+            </select>
+            <span style="font-size:11px;color:#6b7280;" id="sm-expiring-count"></span>
           </div>
+          <table>
+            <thead><tr>
+              <th data-ko="이름" data-en="Name">이름</th>
+              <th data-ko="종료일" data-en="End Date">종료일</th>
+              <th data-ko="D-day" data-en="D-day">D-day</th>
+              <th data-ko="가맹점" data-en="Franchise">가맹점</th>
+              <th data-ko="액션" data-en="Actions">액션</th>
+            </tr></thead>
+            <tbody id="sm-expiring-tbody"><tr><td colspan="5" class="empty">—</td></tr></tbody>
+          </table>
         </div>
       </details>
 
+      <!-- 📅 오늘 출결 한눈에 -->
       <details class="sub-item">
-        <summary data-ko="수강 연장 (상세보기)" data-en="Extension (Detail)">수강 연장 (상세보기)</summary>
+        <summary data-ko="📅 오늘 출결 한눈에" data-en="📅 Today's Attendance">📅 오늘 출결 한눈에</summary>
         <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 학생별 현재 수강 패키지·연장 내역 상세. enrollments 테이블 row 별 expand."
-               data-en="🚧 Per-student current package + extension history (enrollments table detail)">
-            🚧 학생별 현재 수강 패키지·연장 내역 상세. enrollments 테이블 row 별 expand.
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="sm-today-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <span style="font-size:11px;color:#6b7280;" id="sm-today-summary"></span>
           </div>
+          <div id="sm-today-body"><div class="empty" data-ko="불러오기를 눌러 오늘 출결 현황을 확인하세요." data-en="Click load to see today's attendance.">—</div></div>
         </div>
       </details>
 
+      <!-- 🏆 연속 출석 랭킹 -->
       <details class="sub-item">
-        <summary data-ko="수강 연장" data-en="Extension">수강 연장</summary>
+        <summary data-ko="🏆 연속 출석 랭킹" data-en="🏆 Streak Ranking">🏆 연속 출석 랭킹</summary>
         <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 빠른 연장 처리 폼 — 학생 선택 → 추가 개월 입력 → enrollments PATCH"
-               data-en="🚧 Quick extension form — pick student, add months, PATCH enrollments">
-            🚧 빠른 연장 처리 폼 — 학생 선택 → 추가 개월 입력 → enrollments PATCH
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="sm-streak-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <span style="font-size:11px;color:#6b7280;" id="sm-streak-count"></span>
           </div>
+          <table>
+            <thead><tr>
+              <th>#</th>
+              <th data-ko="이름" data-en="Name">이름</th>
+              <th data-ko="현재 streak" data-en="Current">현재 streak</th>
+              <th data-ko="최장 기록" data-en="Longest">최장 기록</th>
+              <th data-ko="액션" data-en="Action">액션</th>
+            </tr></thead>
+            <tbody id="sm-streak-tbody"><tr><td colspan="5" class="empty">—</td></tr></tbody>
+          </table>
         </div>
       </details>
 
+      <!-- 📞 최근 상담 통합 -->
       <details class="sub-item">
-        <summary data-ko="수업 현황" data-en="Class Status">수업 현황</summary>
+        <summary data-ko="📞 최근 상담 통합" data-en="📞 Recent Counseling">📞 최근 상담 통합</summary>
         <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 학생별 최근 수업 (attendance 최근 50건) — 시선·발화 점수 + 녹화 링크"
-               data-en="🚧 Recent classes per student (last 50 attendance rows) — gaze/speak scores + recording links">
-            🚧 학생별 최근 수업 (attendance 최근 50건) — 시선·발화 점수 + 녹화 링크
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="sm-consult-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <select id="sm-consult-window" style="padding:4px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="7" data-ko="최근 7일"  data-en="Last 7 days">최근 7일</option>
+              <option value="30" data-ko="최근 30일" data-en="Last 30 days">최근 30일</option>
+              <option value="90" data-ko="최근 90일" data-en="Last 90 days">최근 90일</option>
+            </select>
+            <span style="font-size:11px;color:#6b7280;" id="sm-consult-count"></span>
           </div>
+          <table>
+            <thead><tr>
+              <th data-ko="일시" data-en="Date">일시</th>
+              <th data-ko="학생" data-en="Student">학생</th>
+              <th data-ko="채널" data-en="Channel">채널</th>
+              <th data-ko="주제" data-en="Topic">주제</th>
+              <th data-ko="상태" data-en="Status">상태</th>
+              <th data-ko="액션" data-en="Action">액션</th>
+            </tr></thead>
+            <tbody id="sm-consult-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
+          </table>
         </div>
       </details>
 
+      <!-- 💭 단체 톡짹톡 (벌크 메시지) -->
       <details class="sub-item">
-        <summary data-ko="일별 보고서" data-en="Daily Report">일별 보고서</summary>
+        <summary data-ko="💭 단체 톡짹톡 (벌크 메시지)" data-en="💭 Bulk TalkChat">💭 단체 톡짹톡 (벌크 메시지)</summary>
         <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 일자별 출석·발화·시선 점수 종합 리포트 (학생별 또는 전체). 기존 dashboard 와 일부 중복."
-               data-en="🚧 Daily attendance/speech/gaze score report (per student or all)">
-            🚧 일자별 출석·발화·시선 점수 종합 리포트 (학생별 또는 전체). 기존 dashboard 와 일부 중복.
+          <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;margin-bottom:8px;font-size:12px;color:#1e40af;line-height:1.5">
+            💡 <span data-ko="개별 학생에게 보낼 때는 드릴다운 → 톡짹톡 탭이 더 편합니다. 여기서는 다수 학생에게 동시 전송 (예: 휴원 공지·이벤트 안내)." data-en="For individual messaging, use drilldown → TalkChat tab. Use this for bulk sends (e.g., closure notices, events).">개별 학생에게 보낼 때는 드릴다운 → 톡짹톡 탭이 더 편합니다. 여기서는 다수 학생에게 동시 전송 (예: 휴원 공지·이벤트 안내).</span>
           </div>
-        </div>
-      </details>
-
-      <details class="sub-item">
-        <summary data-ko="출결 현황" data-en="Attendance Summary">출결 현황</summary>
-        <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 학생별 월간 출석 횟수 + 결석 일수. attendance 테이블의 status 컬럼 집계."
-               data-en="🚧 Monthly attendance/absence count per student (attendance.status aggregation)">
-            🚧 학생별 월간 출석 횟수 + 결석 일수. attendance 테이블의 status 컬럼 집계.
+          <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+            <button id="sm-bulk-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="📋 학생 목록 불러오기" data-en="📋 Load Students">📋 학생 목록 불러오기</button>
+            <button onclick="document.querySelectorAll('#sm-bulk-tbody input[type=checkbox]').forEach(c=>c.checked=true)" style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="✓ 전체 선택" data-en="✓ All">✓ 전체 선택</button>
+            <button onclick="document.querySelectorAll('#sm-bulk-tbody input[type=checkbox]').forEach(c=>c.checked=false)" style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="✗ 전체 해제" data-en="✗ None">✗ 전체 해제</button>
+            <span style="font-size:11px;color:#6b7280" id="sm-bulk-selected">0 명 선택</span>
           </div>
-        </div>
-      </details>
-
-      <details class="sub-item">
-        <summary data-ko="연속 출석" data-en="Streak">연속 출석</summary>
-        <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 학생별 연속 출석일 (streak) 계산. attendance.date 의 연속 구간 분석."
-               data-en="🚧 Per-student attendance streak — consecutive date ranges from attendance.date">
-            🚧 학생별 연속 출석일 (streak) 계산. attendance.date 의 연속 구간 분석.
+          <textarea id="sm-bulk-msg" placeholder="모든 선택 학생/학부모에게 동시 발송할 메시지" data-ko-ph="모든 선택 학생/학부모에게 동시 발송할 메시지" data-en-ph="Message to send to all selected students/parents" style="width:100%;min-height:80px;padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit;margin-bottom:8px;resize:vertical"></textarea>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+            <select id="sm-bulk-target" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="parent_kakao" data-ko="부모 카톡 ID 복사" data-en="Parent Kakao IDs">부모 카톡 ID 복사</option>
+              <option value="student_kakao" data-ko="학생 카톡 ID 복사" data-en="Student Kakao IDs">학생 카톡 ID 복사</option>
+              <option value="parent_phone" data-ko="부모 전화번호 복사" data-en="Parent phones">부모 전화번호 복사</option>
+              <option value="student_phone" data-ko="학생 전화번호 복사" data-en="Student phones">학생 전화번호 복사</option>
+            </select>
+            <button onclick="bulkCopyContacts()" style="padding:5px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600" data-ko="📋 메시지 + 연락처 복사" data-en="📋 Copy Msg + Contacts">📋 메시지 + 연락처 복사</button>
           </div>
-        </div>
-      </details>
-
-      <details class="sub-item">
-        <summary data-ko="상담 내역" data-en="Consultation History">상담 내역</summary>
-        <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 신규 테이블 student_consultations 필요 — 상담 일자·상담사·요약·후속 조치"
-               data-en="🚧 New table student_consultations needed — date, counselor, summary, follow-up">
-            🚧 신규 테이블 student_consultations 필요 — 상담 일자·상담사·요약·후속 조치
-          </div>
-        </div>
-      </details>
-
-      <details class="sub-item">
-        <summary data-ko="톡짹톡 (학부모 톡)" data-en="Parent Chat">톡짹톡 (학부모 톡)</summary>
-        <div class="sub-body">
-          <div class="placeholder-empty"
-               data-ko="🚧 학부모-운영자 메시징 — 카카오톡 채널 또는 자체 채팅 (notification_queue 와 연계 가능)"
-               data-en="🚧 Parent–admin messaging — KakaoTalk channel or in-house chat (notification_queue link)">
-            🚧 학부모-운영자 메시징 — 카카오톡 채널 또는 자체 채팅 (notification_queue 와 연계 가능)
-          </div>
+          <table>
+            <thead><tr>
+              <th><input type="checkbox" onchange="document.querySelectorAll('#sm-bulk-tbody input[type=checkbox]').forEach(c=>c.checked=this.checked)"></th>
+              <th data-ko="이름" data-en="Name">이름</th>
+              <th data-ko="가맹점" data-en="Franchise">가맹점</th>
+              <th data-ko="학생 카톡" data-en="Stu Kakao">학생 카톡</th>
+              <th data-ko="부모 카톡" data-en="Par Kakao">부모 카톡</th>
+              <th data-ko="부모 전화" data-en="Par Phone">부모 전화</th>
+            </tr></thead>
+            <tbody id="sm-bulk-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
+          </table>
         </div>
       </details>
 
@@ -2405,6 +2436,261 @@ async function loadStudentList() {
       });
     }
   });
+})();
+
+/* ════════════════════════════════════════════════════════════
+   Phase 13 — 학생관리 집계 뷰 5종 (전체 학생 가로 보기)
+   - 만료 임박 / 오늘 출결 / 연속 출석 랭킹 / 최근 상담 / 단체 톡짹톡
+   - 모든 행에 🔍 자세히 버튼 → /admin/student?uid=X&tab=Y
+════════════════════════════════════════════════════════════ */
+
+// 공통: students_erp 캐시 (한 번 fetch 후 재사용)
+let _erpCache = null;
+async function getErpList() {
+  if (_erpCache) return _erpCache;
+  try {
+    const r = await fetch('/api/admin/students/erp-list?limit=2000', { credentials:'include' });
+    const j = await r.json();
+    _erpCache = (j && j.ok && j.items) || [];
+  } catch { _erpCache = []; }
+  return _erpCache;
+}
+
+function escSm(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function uidOfErp(s){ return s.student_id || s.login_id || s.username; }
+function drillBtn(uid, tab) {
+  return `<a href="/admin/student?uid=${encodeURIComponent(uid)}${tab?'&tab='+tab:''}" target="_blank"
+            style="padding:4px 10px;font-size:11px;background:#f59e0b;color:#fff;border-radius:4px;text-decoration:none;font-weight:600;white-space:nowrap;">🔍 ${(currentLang==='en'?'Detail':'자세히')}</a>`;
+}
+
+// ────── ⏰ 만료 임박 학생 ──────
+async function loadExpiring() {
+  const tb = document.getElementById('sm-expiring-tbody');
+  const cnt = document.getElementById('sm-expiring-count');
+  const days = parseInt(document.getElementById('sm-expiring-window').value, 10);
+  tb.innerHTML = '<tr><td colspan="5" class="empty">로딩…</td></tr>';
+  const erp = await getErpList();
+  const today = new Date(); today.setHours(0,0,0,0);
+  const filtered = erp
+    .map(s => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(s.end_date || '')) return null;
+      const end = new Date(s.end_date+'T23:59:59');
+      const diff = Math.ceil((end - today) / 86400000);
+      return { ...s, dDay: diff };
+    })
+    .filter(s => s && (days === 0 ? s.dDay < 0 : (s.dDay >= 0 && s.dDay <= days)))
+    .sort((a, b) => a.dDay - b.dDay);
+
+  cnt.textContent = filtered.length + (currentLang==='en'?' students':'명');
+  if (filtered.length === 0) { tb.innerHTML = '<tr><td colspan="5" class="empty">'+(currentLang==='en'?'No students in this range.':'해당 범위 학생 없음')+'</td></tr>'; return; }
+  tb.innerHTML = filtered.map(s => {
+    const cls = s.dDay < 0 ? 'background:rgba(239,68,68,.15);color:#dc2626;font-weight:700'
+              : s.dDay <= 7 ? 'background:rgba(245,158,11,.15);color:#d97706;font-weight:700'
+              : 'color:#666';
+    const dStr = s.dDay < 0 ? 'D+' + Math.abs(s.dDay) : (s.dDay === 0 ? 'D-DAY' : 'D-' + s.dDay);
+    const uid = uidOfErp(s);
+    return `<tr>
+      <td>${escSm(s.username)}</td>
+      <td>${escSm(s.end_date)}</td>
+      <td><span style="${cls};padding:2px 8px;border-radius:10px;font-size:11px">${dStr}</span></td>
+      <td>${escSm(s.franchise || s.shop_name)||'—'}</td>
+      <td>${drillBtn(uid, 'extension')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ────── 📅 오늘 출결 한눈에 ──────
+async function loadTodayAttend() {
+  const body = document.getElementById('sm-today-body');
+  const sum = document.getElementById('sm-today-summary');
+  body.innerHTML = '<div class="empty">'+(currentLang==='en'?'Loading…':'로딩…')+'</div>';
+
+  // /api/dashboard 가 attendance.by_day 를 줘서 오늘 데이터 추출 가능
+  // 하지만 학생 단위 정보 없음 → erp + dashboard.attendance 조합
+  const erp = await getErpList();
+  const today = new Date().toISOString().slice(0,10);
+
+  // 오늘 attendance 가져오기 위해 student/full 을 모든 학생에 대해 호출하는 건 비효율
+  // 대신 /api/dashboard 의 by_day 로 출석한 user_id 들 받아옴 (개략)
+  // 더 정확하려면 신규 엔드포인트 필요. 우선 erp 의 student_id 모두 표시 + 출석 여부 컬럼 비워둠.
+  let attendedIds = new Set();
+  let attendCount = 0;
+  try {
+    // /api/recordings 또는 더 가벼운 용도로 attendance 직접 fetch가 없으므로,
+    // 대시보드 데이터만 활용 (정확한 today 출석 학생 리스트는 후속 endpoint 필요)
+    const r = await fetch('/api/dashboard?days=1', { credentials:'include' });
+    const j = await r.json();
+    attendCount = (j && j.attendance && j.attendance.total) || 0;
+  } catch {}
+
+  sum.textContent = (currentLang==='en'?'Today total sessions: ':'오늘 총 세션: ') + attendCount + ' · ' +
+                    (currentLang==='en'?'Total students: ':'전체 학생: ') + erp.length;
+
+  // 학생 표 — 오늘 출석 여부는 신규 엔드포인트 필요. 일단 모든 학생에 "🔍 자세히" 제공.
+  const studentRows = erp.slice(0, 50).map(s => {
+    const uid = uidOfErp(s);
+    return `<tr>
+      <td>${escSm(s.username)}</td>
+      <td>${escSm(s.franchise || s.shop_name)||'—'}</td>
+      <td>${escSm(s.classes_per_week)||'—'}</td>
+      <td>${drillBtn(uid, 'attend')}</td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `
+    <div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">
+      💡 ${currentLang==='en'?'Aggregate today-attendance endpoint is roadmapped. For now, click 🔍 on any student to see their attendance calendar.':'전체 학생의 오늘 출석 통합 엔드포인트는 다음 사이클 예정. 지금은 학생별 🔍 클릭으로 캘린더 확인.'}
+    </div>
+    <table>
+      <thead><tr><th>${currentLang==='en'?'Name':'이름'}</th><th>${currentLang==='en'?'Franchise':'가맹점'}</th><th>${currentLang==='en'?'Cls/wk':'주당'}</th><th>${currentLang==='en'?'Action':'액션'}</th></tr></thead>
+      <tbody>${studentRows}</tbody>
+    </table>`;
+}
+
+// ────── 🏆 연속 출석 랭킹 ──────
+async function loadStreakRanking() {
+  const tb = document.getElementById('sm-streak-tbody');
+  const cnt = document.getElementById('sm-streak-count');
+  tb.innerHTML = '<tr><td colspan="5" class="empty">'+(currentLang==='en'?'Computing…':'계산 중…')+'</td></tr>';
+
+  const erp = await getErpList();
+  // 각 학생별로 /full 호출하면 너무 무거움 → 처음 30명만 (TOP 10 후보)
+  const sample = erp.slice(0, 30);
+  const results = [];
+  for (const s of sample) {
+    const uid = uidOfErp(s);
+    try {
+      const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/full?days=180', { credentials:'include' });
+      const j = await r.json();
+      if (!j.ok) continue;
+      const dates = Array.from(new Set((j.sessions||[]).map(x => x.date).filter(Boolean))).sort();
+      // streak 계산 (평일 기준)
+      function nextWeekday(dStr) {
+        const d = new Date(dStr+'T00:00:00');
+        do { d.setDate(d.getDate()+1); } while (d.getDay()===0 || d.getDay()===6);
+        return d.toISOString().slice(0,10);
+      }
+      let streaks = [], cur = null;
+      dates.forEach(d => {
+        if (!cur) { cur = { start:d, end:d, len:1 }; return; }
+        if (nextWeekday(cur.end) === d) { cur.end = d; cur.len++; }
+        else { streaks.push(cur); cur = { start:d, end:d, len:1 }; }
+      });
+      if (cur) streaks.push(cur);
+      const longest = streaks.reduce((m, x) => x.len > m.len ? x : m, { len:0 });
+      let current = 0;
+      if (streaks.length) {
+        const last = streaks[streaks.length-1];
+        const dayDiff = Math.floor((new Date() - new Date(last.end+'T00:00:00')) / 86400000);
+        if (dayDiff <= 3) current = last.len;
+      }
+      if (longest.len > 0) results.push({ name: s.username, uid, current, longest: longest.len });
+    } catch {}
+  }
+  results.sort((a,b) => b.current - a.current || b.longest - a.longest);
+  cnt.textContent = (currentLang==='en'?'Top ':'상위 ') + Math.min(10, results.length) + (currentLang==='en'?' / sampled ':'명 / 샘플 ') + sample.length;
+  const top = results.slice(0, 10);
+  if (top.length === 0) { tb.innerHTML = '<tr><td colspan="5" class="empty">'+(currentLang==='en'?'No streak data':'연속 출석 데이터 없음')+'</td></tr>'; return; }
+  tb.innerHTML = top.map((r, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
+    return `<tr>
+      <td>${medal}</td>
+      <td>${escSm(r.name)}</td>
+      <td><strong style="color:#f59e0b">${r.current}</strong>${currentLang==='en'?'d':'일'}</td>
+      <td>${r.longest}${currentLang==='en'?'d':'일'}</td>
+      <td>${drillBtn(r.uid, 'streak')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ────── 📞 최근 상담 통합 ──────
+async function loadRecentConsult() {
+  const tb = document.getElementById('sm-consult-tbody');
+  const cnt = document.getElementById('sm-consult-count');
+  const days = parseInt(document.getElementById('sm-consult-window').value, 10);
+  tb.innerHTML = '<tr><td colspan="6" class="empty">'+(currentLang==='en'?'Loading…':'로딩…')+'</td></tr>';
+
+  const erp = await getErpList();
+  const since = Date.now() - days * 86400000;
+  const allConsults = [];
+  // 처음 30명 학생만 sample (성능 고려)
+  const sample = erp.slice(0, 30);
+  for (const s of sample) {
+    const uid = uidOfErp(s);
+    try {
+      const r = await fetch('/api/admin/student/'+encodeURIComponent(uid)+'/consultations', { credentials:'include' });
+      const j = await r.json();
+      if (j.ok && j.items) {
+        j.items.forEach(c => {
+          if (c.consult_at >= since) allConsults.push({ ...c, _uid: uid, _name: s.username });
+        });
+      }
+    } catch {}
+  }
+  allConsults.sort((a,b) => b.consult_at - a.consult_at);
+  cnt.textContent = allConsults.length + (currentLang==='en'?' records':'건');
+  if (allConsults.length === 0) { tb.innerHTML = '<tr><td colspan="6" class="empty">'+(currentLang==='en'?'No counseling records in period':'기간 내 상담 기록 없음')+'</td></tr>'; return; }
+  tb.innerHTML = allConsults.slice(0, 50).map(c => {
+    const d = new Date(c.consult_at);
+    const dStr = d.toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+    const stCls = c.status === 'open' ? 'background:#fef3c7;color:#92400e' : c.status === 'resolved' ? 'background:#d1fae5;color:#065f46' : 'background:#fee2e2;color:#991b1b';
+    return `<tr>
+      <td>${dStr}</td>
+      <td>${escSm(c._name)}</td>
+      <td>${escSm(c.channel)||'—'}</td>
+      <td>${escSm(c.topic)||'—'}</td>
+      <td><span style="${stCls};padding:2px 8px;border-radius:10px;font-size:11px">${escSm(c.status)}</span></td>
+      <td>${drillBtn(c._uid, 'consult')}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ────── 💭 단체 톡짹톡 ──────
+async function loadBulkList() {
+  const tb = document.getElementById('sm-bulk-tbody');
+  tb.innerHTML = '<tr><td colspan="6" class="empty">'+(currentLang==='en'?'Loading…':'로딩…')+'</td></tr>';
+  const erp = await getErpList();
+  if (erp.length === 0) { tb.innerHTML = '<tr><td colspan="6" class="empty">No students</td></tr>'; return; }
+  tb.innerHTML = erp.map(s => `<tr>
+    <td><input type="checkbox" data-stuid="${escSm(uidOfErp(s))}" data-stukakao="${escSm(s.kakao_id)||''}" data-parkakao="${escSm(s.parent_kakao_id)||''}" data-stuphone="${escSm(s.student_phone)||''}" data-parphone="${escSm(s.parent_phone)||''}" data-name="${escSm(s.username)||''}" onchange="updateBulkCount()"></td>
+    <td>${escSm(s.username)}</td>
+    <td>${escSm(s.franchise || s.shop_name)||'—'}</td>
+    <td>${escSm(s.kakao_id)||'—'}</td>
+    <td>${escSm(s.parent_kakao_id)||'—'}</td>
+    <td>${escSm(s.parent_phone)||'—'}</td>
+  </tr>`).join('');
+  updateBulkCount();
+}
+window.updateBulkCount = function() {
+  const n = document.querySelectorAll('#sm-bulk-tbody input[type=checkbox]:checked').length;
+  const el = document.getElementById('sm-bulk-selected');
+  if (el) el.textContent = n + (currentLang==='en'?' selected':' 명 선택');
+};
+window.bulkCopyContacts = function() {
+  const target = document.getElementById('sm-bulk-target').value;
+  const msg = document.getElementById('sm-bulk-msg').value || '';
+  const cks = document.querySelectorAll('#sm-bulk-tbody input[type=checkbox]:checked');
+  if (cks.length === 0) { alert(currentLang==='en'?'Select at least one student':'최소 1명 이상 선택하세요'); return; }
+  const fieldMap = { parent_kakao:'parkakao', student_kakao:'stukakao', parent_phone:'parphone', student_phone:'stuphone' };
+  const field = fieldMap[target];
+  const contacts = Array.from(cks).map(c => c.dataset[field]).filter(Boolean);
+  if (contacts.length === 0) { alert(currentLang==='en'?'No contacts found in selection':'선택 학생 중 해당 연락처 정보가 없음'); return; }
+  const out = '【'+(currentLang==='en'?'Bulk Message':'단체 메시지')+'】\n' + msg + '\n\n【'+(currentLang==='en'?'Recipients':'수신자')+' '+contacts.length+'】\n' + contacts.join(', ');
+  navigator.clipboard.writeText(out).then(
+    () => alert((currentLang==='en'?'Copied! ':'복사됨! ') + contacts.length + (currentLang==='en'?' contacts.':'명 연락처. 카카오톡/메시지 앱 열어 붙여넣으세요.')),
+    () => alert(currentLang==='en'?'Copy failed':'복사 실패')
+  );
+};
+
+// 5개 집계 뷰 버튼 바인딩
+(function bindPhase13Aggregates(){
+  const e = id => document.getElementById(id);
+  if (e('sm-expiring-load')) e('sm-expiring-load').addEventListener('click', loadExpiring);
+  if (e('sm-expiring-window')) e('sm-expiring-window').addEventListener('change', loadExpiring);
+  if (e('sm-today-load')) e('sm-today-load').addEventListener('click', loadTodayAttend);
+  if (e('sm-streak-load')) e('sm-streak-load').addEventListener('click', loadStreakRanking);
+  if (e('sm-consult-load')) e('sm-consult-load').addEventListener('click', loadRecentConsult);
+  if (e('sm-consult-window')) e('sm-consult-window').addEventListener('change', loadRecentConsult);
+  if (e('sm-bulk-load')) e('sm-bulk-load').addEventListener('click', loadBulkList);
 })();
 
 // 6개 메뉴 컨트롤 일괄 바인딩

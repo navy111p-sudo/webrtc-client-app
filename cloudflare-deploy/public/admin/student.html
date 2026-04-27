@@ -1804,6 +1804,17 @@ $('langBtn').addEventListener('click', toggleLang);
 
 // 시작 — 저장된 언어 즉시 적용 후 데이터 로드
 applyLangAttrs();
+
+// ?tab= 파라미터로 특정 탭 자동 오픈 (admin.html 집계 뷰에서 딥링크 진입)
+//   예: /admin/student?uid=KES001&tab=extension → 종료·연장 탭 활성화
+const _initTab = new URLSearchParams(location.search).get('tab');
+if (_initTab) {
+  setTimeout(() => {
+    const btn = document.querySelector('.tab[data-tab="' + _initTab + '"]');
+    if (btn) btn.click();
+  }, 100);
+}
+
 loadFull();
 </script>
 
