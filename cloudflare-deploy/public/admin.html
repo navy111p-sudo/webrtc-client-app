@@ -5472,7 +5472,34 @@ async function askAI(command) {
 
   if (res.intent === 'navigate') {
     ct.innerHTML = '<div class="ai-answer">' + _aiEsc(res.answer || '페이지로 이동합니다…') + '</div>';
-    setTimeout(() => { window.location.href = res.url || '/admin.html'; }, 600);
+    // 🥭 Phase 21h — 3가지 navigate 방식 분기:
+    //   ① external_url → 새 탭에서 열기 (window.open)
+    //   ② menu_id      → 같은 페이지의 메뉴 카드로 스크롤
+    //   ③ url          → 같은 탭에서 이동 (window.location)
+    if (res.external_url) {
+      setTimeout(() => { window.open(res.external_url, '_blank', 'noopener'); }, 600);
+    } else if (res.menu_id) {
+      setTimeout(() => {
+        // legacy-cards 가 숨겨져 있으면 펼침
+        const lc = document.getElementById('legacy-cards');
+        if (lc && !lc.classList.contains('legacy-show')) {
+          if (typeof toggleLegacyCards === 'function') toggleLegacyCards();
+        }
+        const card = document.getElementById(res.menu_id);
+        if (card) {
+          if (card.tagName === 'DETAILS') card.open = true;
+          card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // 시각 강조 — 노란 펄스 애니메이션
+          card.style.transition = 'box-shadow 0.6s';
+          card.style.boxShadow = '0 0 0 4px rgba(245, 158, 11, 0.5)';
+          setTimeout(() => { card.style.boxShadow = ''; }, 1800);
+        } else {
+          console.warn('[ai-navigate] menu_id not found:', res.menu_id);
+        }
+      }, 400);
+    } else {
+      setTimeout(() => { window.location.href = res.url || '/admin.html'; }, 600);
+    }
     return;
   }
 
