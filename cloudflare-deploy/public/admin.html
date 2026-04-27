@@ -31,15 +31,15 @@
   select, button { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; background: #fff; cursor: pointer; font-size: 14px; }
   button.primary { background: #f59e0b; color: #fff; border-color: #f59e0b; font-weight: 600; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
-  .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .card { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-radius: 14px; padding: 20px; box-shadow: 0 6px 16px -6px rgba(120,53,15,0.12), 0 1px 3px rgba(0,0,0,0.03); border: 0; }
   .card-label { font-size: 13px; color: #6b7280; margin-bottom: 8px; font-weight: 500; }
   .card-value { font-size: 32px; font-weight: 700; color: #111827; }
   .card-sub { font-size: 12px; color: #9ca3af; margin-top: 4px; }
   .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
-  .chart-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .chart-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-radius: 14px; padding: 20px; box-shadow: 0 6px 16px -6px rgba(120,53,15,0.12), 0 1px 3px rgba(0,0,0,0.03); border: 0; }
   .chart-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
   .chart-wrapper { position: relative; height: 280px; }
-  .table-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .table-card { background: rgba(255,255,255,0.85); backdrop-filter: blur(8px); border-radius: 14px; padding: 20px; box-shadow: 0 6px 16px -6px rgba(120,53,15,0.12), 0 1px 3px rgba(0,0,0,0.03); border: 0; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #f3f4f6; }
   th { background: #f9fafb; font-weight: 600; color: #6b7280; font-size: 12px; text-transform: uppercase; }
@@ -72,14 +72,13 @@
       linear-gradient(180deg, rgba(255,251,235,0.7) 0%, rgba(255,237,213,0.55) 50%, rgba(254,215,170,0.45) 100%);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 0;                        /* 보더 제거 */
     border-radius: 24px;
     padding: 18px 12px;
     max-height: calc(100vh - 40px); overflow-y: auto;
     box-shadow:
-      0 16px 40px -12px rgba(120, 53, 15, 0.18),
-      0 4px 12px -4px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      0 16px 40px -14px rgba(120, 53, 15, 0.14),
+      0 4px 12px -4px rgba(0, 0, 0, 0.04);
     position: sticky;
   }
   /* 사이드바 자체에도 미세한 컬러 블롭 */
@@ -359,24 +358,22 @@
     grid-template-columns: 1fr 460px;
     gap: 56px;
     align-items: center;
-    /* 🎨 Phase 19g — 조화로운 따뜻한 메시 그라데이션
-       배너의 핑크-피치-옐로 톤에 맞춰 라벤더·민트 빠지고 모두 따뜻한 색으로 통일 */
+    /* 🎨 Phase 19h — 테두리 제거, 부드럽게 페이드 */
     background:
       radial-gradient(circle at 15% 20%, rgba(252, 165, 165, 0.45) 0%, transparent 38%),
       radial-gradient(circle at 85% 15%, rgba(254, 215, 170, 0.55) 0%, transparent 42%),
       radial-gradient(circle at 75% 85%, rgba(254, 240, 138, 0.5) 0%, transparent 40%),
       radial-gradient(circle at 12% 88%, rgba(253, 186, 116, 0.4) 0%, transparent 36%),
       linear-gradient(135deg, #fff8f3 0%, #fef3e6 45%, #fed7aa 100%);
-    border: 1px solid rgba(255, 255, 255, 0.75);
+    border: 0;                        /* 테두리 제거 */
     border-radius: 40px;
     padding: 80px 64px;
     margin-bottom: 32px;
     min-height: 520px;
+    /* 외부 그림자만 유지, inset 보더 라인 제거 */
     box-shadow:
-      0 36px 72px -20px rgba(154, 52, 18, 0.22),
-      0 10px 22px -8px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9),
-      inset 0 -1px 0 rgba(154, 52, 18, 0.06);
+      0 32px 64px -22px rgba(154, 52, 18, 0.18),
+      0 8px 18px -8px rgba(0, 0, 0, 0.04);
     position: relative;
     overflow: hidden;
     isolation: isolate;
@@ -411,7 +408,7 @@
   }
   .hero-text { position: relative; z-index: 2; }
 
-  /* 🥭 Phase 19f/g — 히어로 배너 이미지 (drag-drop 업로드한 PNG/JPG) */
+  /* 🥭 Phase 19f/g/h — 히어로 배너 이미지 + 가장자리 페이드 */
   .hero-banner-img {
     display: block;
     width: 100%;
@@ -420,7 +417,14 @@
     margin: 0 0 20px;
     object-fit: contain;
     object-position: left center;
-    filter: drop-shadow(0 12px 24px rgba(154, 52, 18, 0.25));
+    filter: drop-shadow(0 12px 24px rgba(154, 52, 18, 0.18));
+    /* 가장자리 부드럽게 페이드 — 배경과 자연스럽게 섞임 */
+    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%),
+                        linear-gradient(180deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+            mask-image: linear-gradient(90deg, transparent 0%, #000 4%, #000 96%, transparent 100%),
+                        linear-gradient(180deg, transparent 0%, #000 5%, #000 95%, transparent 100%);
+    -webkit-mask-composite: source-in;
+            mask-composite: intersect;
   }
   @media (max-width: 900px) {
     .hero-banner-img { max-height: 110px; margin: 0 auto 14px; object-position: center; }
@@ -520,30 +524,28 @@
     text-shadow: 0 1px 2px rgba(255, 255, 255, 0.7);
   }
 
-  /* ━━ 글래스모피즘 검색창 (배너 톤 매칭) ━━ */
+  /* ━━ 글래스모피즘 검색창 (테두리 페이드, 배너 톤 매칭) ━━ */
   .hero .hero-search {
     position: relative;
-    background: rgba(255, 248, 240, 0.7);
-    backdrop-filter: blur(20px) saturate(170%);
-    -webkit-backdrop-filter: blur(20px) saturate(170%);
-    border: 1.5px solid rgba(255, 255, 255, 0.9);
+    background: rgba(255, 248, 240, 0.65);
+    backdrop-filter: blur(22px) saturate(170%);
+    -webkit-backdrop-filter: blur(22px) saturate(170%);
+    border: 0;                        /* 보더 제거 */
     border-radius: 26px;
     box-shadow:
-      0 18px 42px -10px rgba(154, 52, 18, 0.18),
-      0 5px 14px -4px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.95),
-      inset 0 -1px 0 rgba(245, 158, 11, 0.1);
+      0 22px 48px -14px rgba(154, 52, 18, 0.14),
+      0 6px 14px -4px rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
     transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 3;
   }
   .hero .hero-search:focus-within {
-    background: rgba(255, 252, 247, 0.92);
-    border-color: rgba(251, 146, 60, 0.55);
+    background: rgba(255, 252, 247, 0.88);
     box-shadow:
-      0 24px 56px -14px rgba(251, 146, 60, 0.35),
-      0 10px 22px -6px rgba(0, 0, 0, 0.07),
-      inset 0 1px 0 rgba(255, 255, 255, 1),
-      0 0 0 4px rgba(254, 215, 170, 0.5);
+      0 26px 60px -16px rgba(251, 146, 60, 0.3),
+      0 10px 22px -6px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9),
+      0 0 0 4px rgba(254, 215, 170, 0.4);
     transform: translateY(-2px) scale(1.005);
   }
   .hero .hero-search input {
@@ -741,17 +743,16 @@
     display: flex; align-items: center; justify-content: center;
     position: relative; z-index: 2;
   }
-  /* 그라데이션 링 — 배너 톤 매칭 (앰버 → 코랄 핑크, 보라 제거) */
+  /* 그라데이션 링 — 배경과 자연스럽게 섞이도록 부드럽게 */
   .hero-character-frame {
     position: relative;
     padding: 10px;
     background: linear-gradient(135deg, #fbbf24 0%, #fb923c 45%, #fb7185 100%);
     border-radius: 32px;
+    /* 보더 라인 제거, 외부 글로우만 유지 */
     box-shadow:
-      0 30px 56px -14px rgba(251, 146, 60, 0.4),
-      0 -8px 28px -8px rgba(251, 113, 133, 0.28),
-      0 0 60px rgba(254, 215, 170, 0.4),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+      0 28px 56px -16px rgba(251, 146, 60, 0.35),
+      0 0 80px rgba(254, 215, 170, 0.5);
     animation: heroBob 4s ease-in-out infinite;
   }
   .hero-character-frame::after {
@@ -788,14 +789,14 @@
   }
   .menu-toggle-bar button {
     padding: 11px 24px; font-size: 13px; font-weight: 600;
-    border: 1px solid rgba(255, 255, 255, 0.7); border-radius: 999px;
+    border: 0; border-radius: 999px;
     background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     color: #7c2d12; cursor: pointer;
     box-shadow:
-      0 4px 12px -2px rgba(120, 53, 15, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      0 4px 12px -2px rgba(120, 53, 15, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.6);
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
   .menu-toggle-bar button:hover {
@@ -858,16 +859,15 @@
     background: rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
-    border: 1px solid rgba(255, 255, 255, 0.7);
+    border: 0;                        /* 보더 제거 */
     border-radius: 20px;
     padding: 14px 22px;
     display: flex; align-items: center; justify-content: space-between;
     flex-wrap: wrap; gap: 12px;
     margin-bottom: 24px;
     box-shadow:
-      0 12px 32px -8px rgba(120, 53, 15, 0.18),
-      0 4px 8px -2px rgba(0, 0, 0, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      0 12px 32px -10px rgba(120, 53, 15, 0.14),
+      0 4px 8px -2px rgba(0, 0, 0, 0.03);
   }
   .th-brand { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; min-width: 0; }
   .th-logo {
