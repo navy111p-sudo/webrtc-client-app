@@ -2443,8 +2443,11 @@ function vcHandleMessage(msg) {
             pdfClearRemote();
             break;
 
-        // 동영상 공유
-        case 'video-sync': {
+        // 동영상 공유 — 양쪽 타입 모두 수신 (sender='video-share' 였음)
+        // ⚠ 옛 코드는 sender 가 'video-share' 인데 receiver 는 'video-sync' 만 처리해서
+        //    참가자 화면에 URL 이 영영 도달하지 못한 버그. 양쪽 다 받아 호환성 보장.
+        case 'video-sync':
+        case 'video-share': {
             const vUrl = msg.data.url;
             if (vUrl) {
                 document.getElementById('vp-url').value = vUrl;
