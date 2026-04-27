@@ -29,7 +29,53 @@
     .top-user {
       display:flex; align-items:center; gap:8px;
       background:#f59e0b; color:#fff; padding:6px 12px; border-radius:20px;
-      font-weight:700; font-size:12px;
+      font-weight:700; font-size:12px; cursor:pointer; user-select:none;
+      position:relative;
+    }
+    .top-user:hover { background:#d97706; }
+    .top-icons span { padding:6px; cursor:pointer; position:relative; transition:color 0.15s; }
+    .top-icons span:hover { color:#0ea5e9; }
+
+    /* 헤더 검색 드롭다운 */
+    .top-search { position:relative; }
+    .top-search-dropdown {
+      position:absolute; top:100%; left:0; right:0; margin-top:6px;
+      background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:200;
+      max-height:380px; overflow-y:auto; display:none;
+    }
+    .top-search-dropdown.show { display:block; }
+    .top-sd-item {
+      padding:8px 12px; cursor:pointer; font-size:12px; color:#334155;
+      display:flex; align-items:center; gap:6px; border-bottom:1px solid #f1f5f9;
+    }
+    .top-sd-item:last-child { border-bottom:none; }
+    .top-sd-item:hover, .top-sd-item.active { background:#eff6ff; color:#1e40af; }
+    .top-sd-item mark { background:#e5e7eb; color:#0f172a; padding:0 3px; border-radius:3px; font-weight:700; }
+    .top-sd-empty { padding:14px; color:#94a3b8; font-size:12px; text-align:center; }
+    .top-sd-kind {
+      display:inline-block; min-width:74px; font-size:9px; font-weight:700; color:#64748b;
+      background:#f1f5f9; padding:2px 6px; border-radius:9px; text-align:center;
+    }
+
+    /* 우측 상단 드롭다운 (알림·설정·사용자 공용) */
+    .top-popup {
+      position:absolute; top:42px; right:0; min-width:200px;
+      background:#fff; border:1px solid #e2e8f0; border-radius:8px;
+      box-shadow:0 8px 24px rgba(0,0,0,0.15); z-index:200;
+      display:none; padding:6px 0;
+    }
+    .top-popup.show { display:block; }
+    .top-popup a, .top-popup button {
+      display:flex; align-items:center; gap:8px; padding:9px 14px;
+      width:100%; border:none; background:transparent; color:#334155;
+      font-size:12px; cursor:pointer; text-align:left; text-decoration:none;
+    }
+    .top-popup a:hover, .top-popup button:hover { background:#f8fafc; color:#0f172a; }
+    .top-popup .divider { height:1px; background:#e2e8f0; margin:4px 0; }
+    .top-popup .header {
+      padding:10px 14px; font-size:11px; font-weight:700; color:#9ca3af;
+      text-transform:uppercase; letter-spacing:0.6px;
     }
 
     /* === 레이아웃 === */
@@ -243,13 +289,42 @@
     <div>🇵🇭 PH TIME : <span id="ph-time">--:--:--</span></div>
   </div>
   <div class="top-search">
-    <input type="search" placeholder="🔍 메뉴 및 강사명 검색" />
+    <input id="top-search-input" type="search" autocomplete="off"
+           placeholder="🔍 학생·교사·메뉴·교재 무엇이든 검색" />
+    <div id="top-search-dropdown" class="top-search-dropdown"></div>
   </div>
   <div class="top-icons">
-    <span title="알림">🔔</span>
-    <span title="설정">⚙️</span>
+    <span title="알림" id="bell-btn">🔔
+      <div class="top-popup" id="bell-popup">
+        <div class="header">📣 알림</div>
+        <a href="/admin.html" target="_blank">📥 알림 큐 (전체 보기)</a>
+        <a href="/admin/health" target="_blank">🩺 셀프 진단 (시스템 상태)</a>
+        <div class="divider"></div>
+        <a href="/admin.html" target="_blank">↩ 대시보드로 돌아가기</a>
+      </div>
+    </span>
+    <span title="설정" id="gear-btn">⚙️
+      <div class="top-popup" id="gear-popup">
+        <div class="header">⚙️ 설정</div>
+        <a href="/admin/health" target="_blank">🩺 셀프 진단</a>
+        <a href="/admin.html" target="_blank">📊 메인 대시보드</a>
+        <div class="divider"></div>
+        <button onclick="seedDemoStudents()">🌱 데모 22명 시드</button>
+        <button onclick="downloadAllStudentsCSV()">📥 학생 전체 CSV</button>
+      </div>
+    </span>
   </div>
-  <div class="top-user">👤 정우영1</div>
+  <div class="top-user" id="user-btn">
+    👤 정우영1
+    <div class="top-popup" id="user-popup">
+      <div class="header">👤 정우영1 (관리자)</div>
+      <a href="/admin.html" target="_blank">📊 메인 대시보드</a>
+      <a href="/admin/health" target="_blank">🩺 셀프 진단</a>
+      <div class="divider"></div>
+      <button onclick="alert('프로필 편집 — 다음 사이클')">🪪 프로필</button>
+      <button onclick="if(confirm('정말 로그아웃 하시겠습니까?')) location.href='/admin.html'">🚪 로그아웃</button>
+    </div>
+  </div>
 </div>
 
 <div class="erp-layout">
@@ -878,10 +953,224 @@ async function submitNewStudent() {
 })();
 
 // === 모달 바깥 클릭 닫기 ===
-['summary-modal-bg','msg-modal-bg'].forEach(id => {
+['summary-modal-bg','msg-modal-bg','new-modal-bg'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('click', (e) => { if (e.target.id === id) el.classList.remove('show'); });
 });
+
+// ============================================================================
+// 🔍 상단 통합 검색 — 학생·교사·가맹점·센터·교재·공지·메뉴·녹화 모두
+// ============================================================================
+const STUDENTS_PAGE_MENUS = [
+  // 학생관리 sub-items
+  { ko:'학생 목록',           en:'Student List',     hint:'/admin/students' },
+  { ko:'종료일자 확인',        en:'Expiry Check',     hint:'/admin.html#menu-학생관리' },
+  { ko:'수강 연장(상세보기)',   en:'Extension Detail', hint:'/admin.html#menu-학생관리' },
+  { ko:'수강 연장',           en:'Extension',        hint:'/admin.html#menu-학생관리' },
+  { ko:'수업 현황',           en:'Class Status',     hint:'/admin.html#menu-학생관리' },
+  { ko:'일별 보고서',          en:'Daily Report',     hint:'/admin.html#menu-학생관리' },
+  { ko:'출결 현황',           en:'Attendance',       hint:'/admin.html#menu-학생관리' },
+  { ko:'연속 출석',           en:'Streak',           hint:'/admin.html#menu-학생관리' },
+  { ko:'상담 내역',           en:'Consultation',     hint:'/admin.html#menu-학생관리' },
+  { ko:'톡짹톡',              en:'Parent Chat',      hint:'/admin.html#menu-학생관리' },
+  // 메인 메뉴
+  { ko:'일자별 차트',          en:'Daily Charts',     hint:'/admin.html' },
+  { ko:'발화시간 TOP 10',      en:'Speaking TOP 10',  hint:'/admin.html' },
+  { ko:'보관기간 자동 파기',     en:'Retention',        hint:'/admin.html' },
+  { ko:'실시간 수업 현황',       en:'Live Classes',     hint:'/admin.html' },
+  { ko:'저장소·비용 통계',      en:'Storage Stats',    hint:'/admin.html' },
+  { ko:'Mangoi 강사 급여·평가', en:'Teacher Payroll',  hint:'/admin.html' },
+  { ko:'데이터 내보내기 (CSV)', en:'Data Export',      hint:'/admin.html' },
+  { ko:'알림 큐',              en:'Notification Queue', hint:'/admin.html' },
+  { ko:'녹화 목록',            en:'Recordings',       hint:'/admin.html' },
+  { ko:'가맹점 관리',          en:'Franchises',       hint:'/admin.html' },
+  { ko:'교육센터',             en:'Centers',          hint:'/admin.html' },
+  { ko:'레벨 테스트',          en:'Level Tests',      hint:'/admin.html' },
+  { ko:'수강신청 관리',         en:'Enrollments',      hint:'/admin.html' },
+  { ko:'커뮤니티',             en:'Community',        hint:'/admin.html' },
+  { ko:'교재 콘텐츠 관리',      en:'Textbooks',        hint:'/admin.html' },
+  { ko:'셀프 진단',            en:'Self-Health',      hint:'/admin/health' },
+  { ko:'대시보드',             en:'Dashboard',        hint:'/admin.html' },
+];
+
+let _topIndex = []; // [{kind, kindKo, kindEn, label, sub, action}]
+let _topActiveIdx = -1;
+let _topHits = [];
+
+function buildTopIndex() {
+  _topIndex = [];
+  // 1. 메뉴
+  STUDENTS_PAGE_MENUS.forEach(m => {
+    _topIndex.push({
+      kindKo:'📋 메뉴', kindEn:'📋 Menu',
+      label: m.ko, labelEn: m.en, sub: m.hint,
+      action: () => window.open(m.hint, '_blank')
+    });
+  });
+  // 2. 현재 페이지에 로드된 학생들 (이미 _students 에 있음)
+  (_students || []).forEach(s => {
+    _topIndex.push({
+      kindKo:'👨‍🎓 학생', kindEn:'👨‍🎓 Student',
+      label: s.username || s.login_id || '',
+      labelEn: s.login_id || s.username || '',
+      sub: (s.student_phone || s.student_id || ''),
+      action: () => openSummary(s.id)
+    });
+  });
+  // 3. 다른 카테고리 비동기 fetch
+  Promise.allSettled([
+    fetch('/api/admin/teachers',     {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/franchises',   {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/centers',      {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/textbooks',    {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/community-posts', {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/level-tests?limit=500',  {credentials:'include'}).then(r => r.json()).catch(()=>null),
+    fetch('/api/admin/enrollments?limit=500',  {credentials:'include'}).then(r => r.json()).catch(()=>null),
+  ]).then(([t,f,c,tb,p,l,en]) => {
+    if (t.value && t.value.ok) t.value.items.forEach(x => _topIndex.push({
+      kindKo:'🧑‍🏫 교사', kindEn:'🧑‍🏫 Teacher', label:x.name, labelEn:x.name,
+      sub:`${x.status||'-'} · ${x.years||'-'}y · rate ${x.rate_per_10min_php||'-'}`,
+      action:() => window.open('/admin.html', '_blank')
+    }));
+    if (f.value && f.value.ok) f.value.items.forEach(x => _topIndex.push({
+      kindKo:'🏬 가맹점', kindEn:'🏬 Franchise', label:x.name, labelEn:x.name,
+      sub:x.owner_name||'', action:() => window.open('/admin.html', '_blank')
+    }));
+    if (c.value && c.value.ok) c.value.items.forEach(x => _topIndex.push({
+      kindKo:'🏫 교육센터', kindEn:'🏫 Center', label:x.name, labelEn:x.name,
+      sub:x.country||'', action:() => window.open('/admin.html', '_blank')
+    }));
+    if (tb.value && tb.value.ok) tb.value.items.forEach(x => _topIndex.push({
+      kindKo:'📖 교재', kindEn:'📖 Textbook', label:x.title, labelEn:x.title,
+      sub:`${x.level||'-'} · ${x.publisher||''}`, action:() => window.open('/admin.html', '_blank')
+    }));
+    if (p.value && p.value.ok) p.value.items.forEach(x => _topIndex.push({
+      kindKo:'📢 공지', kindEn:'📢 Post', label:x.title, labelEn:x.title,
+      sub:x.author||'', action:() => window.open('/admin.html', '_blank')
+    }));
+    if (l.value && l.value.ok) l.value.items.forEach(x => _topIndex.push({
+      kindKo:'📝 레벨테스트', kindEn:'📝 Level Test', label:x.student_name, labelEn:x.student_name,
+      sub:`${x.level||'-'} · ${x.score!=null?x.score:'-'}`, action:() => window.open('/admin.html', '_blank')
+    }));
+    if (en.value && en.value.ok) en.value.items.forEach(x => _topIndex.push({
+      kindKo:'📚 수강신청', kindEn:'📚 Enrollment', label:x.student_name, labelEn:x.student_name,
+      sub:`${x.package} · ${x.status}`, action:() => window.open('/admin.html', '_blank')
+    }));
+  });
+}
+
+function _topHl(text, q) {
+  if (!q) return escHtml(text);
+  const lower = (text||'').toLowerCase();
+  const pos = lower.indexOf(q.toLowerCase());
+  if (pos < 0) return escHtml(text);
+  return escHtml(text.slice(0, pos)) + '<mark>' + escHtml(text.slice(pos, pos+q.length)) + '</mark>' + escHtml(text.slice(pos+q.length));
+}
+
+function searchTopFor(q) {
+  const ql = q.toLowerCase().trim();
+  if (!ql) return [];
+  const hits = _topIndex.filter(it =>
+    (it.label||'').toLowerCase().includes(ql) ||
+    (it.labelEn||'').toLowerCase().includes(ql) ||
+    (it.sub||'').toLowerCase().includes(ql)
+  );
+  return hits.sort((a,b) => {
+    if (a.kindKo === '📋 메뉴' && b.kindKo !== '📋 메뉴') return -1;
+    if (a.kindKo !== '📋 메뉴' && b.kindKo === '📋 메뉴') return 1;
+    const ai = (a.label.toLowerCase().indexOf(ql) + 1) || 999;
+    const bi = (b.label.toLowerCase().indexOf(ql) + 1) || 999;
+    return ai - bi;
+  }).slice(0, 30);
+}
+
+function renderTopDropdown(q) {
+  const dd = document.getElementById('top-search-dropdown');
+  if (!dd) return;
+  if (!q) { dd.classList.remove('show'); dd.innerHTML = ''; _topHits = []; _topActiveIdx = -1; return; }
+  const hits = searchTopFor(q);
+  _topHits = hits;
+  if (hits.length === 0) {
+    dd.innerHTML = '<div class="top-sd-empty">일치 결과 없음</div>';
+    dd.classList.add('show'); _topActiveIdx = -1; return;
+  }
+  dd.innerHTML = hits.map((h, i) => `
+    <div class="top-sd-item${i===0?' active':''}" data-idx="${i}">
+      <span class="top-sd-kind">${escHtml(h.kindKo)}</span>
+      <span style="flex:1;">${_topHl(h.label, q)}</span>
+      ${h.sub?`<span style="font-size:10px;color:#94a3b8;">${escHtml(h.sub)}</span>`:''}
+    </div>`).join('');
+  dd.classList.add('show'); _topActiveIdx = 0;
+}
+
+(function bindTopSearch(){
+  const input = document.getElementById('top-search-input');
+  const dd = document.getElementById('top-search-dropdown');
+  if (!input || !dd) return;
+  let timer;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => renderTopDropdown(input.value), 80);
+  });
+  input.addEventListener('focus', () => { if (input.value) renderTopDropdown(input.value); });
+  input.addEventListener('keydown', e => {
+    const items = dd.querySelectorAll('.top-sd-item');
+    if (e.key === 'ArrowDown') { e.preventDefault(); _topActiveIdx = Math.min(items.length-1, _topActiveIdx+1); items.forEach((el,i)=>el.classList.toggle('active', i===_topActiveIdx)); items[_topActiveIdx]?.scrollIntoView({block:'nearest'}); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); _topActiveIdx = Math.max(0, _topActiveIdx-1); items.forEach((el,i)=>el.classList.toggle('active', i===_topActiveIdx)); items[_topActiveIdx]?.scrollIntoView({block:'nearest'}); }
+    else if (e.key === 'Enter') { e.preventDefault(); const h = _topHits[_topActiveIdx>=0?_topActiveIdx:0]; if (h && h.action) { h.action(); dd.classList.remove('show'); input.blur(); } }
+    else if (e.key === 'Escape') { dd.classList.remove('show'); input.blur(); }
+  });
+  dd.addEventListener('click', e => {
+    const it = e.target.closest('.top-sd-item');
+    if (!it) return;
+    const h = _topHits[parseInt(it.dataset.idx,10)];
+    if (h && h.action) { h.action(); dd.classList.remove('show'); input.value = ''; }
+  });
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target) && !dd.contains(e.target)) dd.classList.remove('show');
+  });
+})();
+
+// ============================================================================
+// 🔔 ⚙️ 👤 우측 상단 드롭다운 토글
+// ============================================================================
+(function bindTopPopups(){
+  const popups = [
+    { btn:'bell-btn', popup:'bell-popup' },
+    { btn:'gear-btn', popup:'gear-popup' },
+    { btn:'user-btn', popup:'user-popup' },
+  ];
+  popups.forEach(({btn, popup}) => {
+    const b = document.getElementById(btn);
+    const p = document.getElementById(popup);
+    if (!b || !p) return;
+    b.addEventListener('click', e => {
+      // 자식(<a>, <button>) 클릭은 그대로 작동하게 — popup 자체 클릭은 토글 안 함
+      if (e.target !== b && b.contains(e.target) && e.target.tagName !== 'SPAN') return;
+      e.stopPropagation();
+      // 다른 popup 닫기
+      popups.forEach(({popup: o}) => { if (o !== popup) document.getElementById(o)?.classList.remove('show'); });
+      p.classList.toggle('show');
+    });
+  });
+  // 외부 클릭 시 모든 popup 닫음
+  document.addEventListener('click', e => {
+    popups.forEach(({btn, popup}) => {
+      const b = document.getElementById(btn);
+      const p = document.getElementById(popup);
+      if (b && p && !b.contains(e.target)) p.classList.remove('show');
+    });
+  });
+})();
+
+// 페이지 로드 후 색인 빌드 (학생 데이터 받은 뒤)
+setTimeout(buildTopIndex, 1500);
+// 학생 새로고침 후 색인 재빌드
+const _origLoadStudents = loadStudents;
+loadStudents = async function() {
+  await _origLoadStudents();
+  buildTopIndex();
+};
 
 // 키워드 Enter
 document.getElementById('f-keyword').addEventListener('keydown', e => {
