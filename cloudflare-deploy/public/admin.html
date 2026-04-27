@@ -141,6 +141,141 @@
     border: 1px dashed #d1d5db;
     line-height: 1.6;
   }
+
+  /* ════════════════════════════════════════════════════════════
+     🥭 Phase 14 — 히어로 랜딩 (망고 캐릭터 + 거대 검색창)
+     - 좌측 사이드바 + 통합 검색만으로 모든 메뉴 접근
+     - 기존 카드/KPI 들은 .legacy-cards 로 묶어 기본 숨김
+     - "📋 모든 메뉴 보기" 토글로 펼쳐볼 수 있음
+  ════════════════════════════════════════════════════════════ */
+  .hero {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 30px;
+    align-items: center;
+    background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 24px;
+    padding: 48px 40px;
+    margin-bottom: 24px;
+    box-shadow: 0 8px 28px rgba(245, 158, 11, 0.12), 0 1px 4px rgba(0,0,0,0.04);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; top: -50px; right: -50px;
+    width: 240px; height: 240px;
+    background: radial-gradient(circle, rgba(245,158,11,0.18) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .hero-text { position: relative; z-index: 2; }
+  .hero h1 {
+    margin: 0 0 6px;
+    font-size: 38px; font-weight: 800;
+    color: #78350f;
+    letter-spacing: -0.02em;
+  }
+  .hero .hero-sub {
+    font-size: 16px; color: #92400e; margin-bottom: 22px;
+    line-height: 1.6;
+  }
+  .hero .hero-search {
+    position: relative;
+    background: #fff;
+    border: 2px solid rgba(245, 158, 11, 0.4);
+    border-radius: 16px;
+    box-shadow: 0 4px 18px rgba(245, 158, 11, 0.15), 0 1px 4px rgba(0,0,0,0.03);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    z-index: 3;
+  }
+  .hero .hero-search:focus-within {
+    border-color: #f59e0b;
+    box-shadow: 0 6px 24px rgba(245, 158, 11, 0.28), 0 2px 6px rgba(0,0,0,0.05);
+  }
+  .hero .hero-search input {
+    width: 100%;
+    padding: 18px 56px 18px 24px;
+    background: transparent;
+    border: 0;
+    font-size: 17px;
+    color: #1f2937;
+    border-radius: 16px;
+    outline: none;
+  }
+  .hero .hero-search input::placeholder { color: #9ca3af; }
+  .hero .hero-search-clear {
+    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+    background: rgba(245, 158, 11, 0.12); border: 0; border-radius: 50%;
+    width: 32px; height: 32px;
+    color: #92400e; font-size: 14px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+  }
+  .hero .hero-search input:not(:placeholder-shown) ~ .hero-search-clear { display: flex; }
+  .hero .hero-search-dropdown {
+    position: absolute; left: 0; right: 0; top: 100%; margin-top: 8px;
+    background: #fff; border: 1px solid #fcd34d; border-radius: 14px;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12);
+    z-index: 200;
+    max-height: 420px; overflow-y: auto;
+    display: none;
+  }
+  .hero .hero-search-dropdown.show { display: block; }
+
+  .hero-tips {
+    margin-top: 16px;
+    display: flex; flex-wrap: wrap; gap: 8px;
+  }
+  .hero-tips span {
+    font-size: 12px; color: #92400e;
+    background: rgba(255,255,255,0.6); padding: 5px 12px; border-radius: 20px;
+    border: 1px solid rgba(245, 158, 11, 0.25);
+  }
+
+  .hero-character {
+    display: flex; align-items: center; justify-content: center;
+    position: relative; z-index: 2;
+  }
+  .hero-character img {
+    width: 100%;
+    max-width: 320px;
+    height: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 28px rgba(245, 158, 11, 0.32));
+    animation: heroBob 4s ease-in-out infinite;
+  }
+  @keyframes heroBob {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50%      { transform: translateY(-12px) rotate(2deg); }
+  }
+
+  /* 기존 카드 영역 — 기본 숨김. legacy-show 클래스 토글로 보이기 */
+  .legacy-cards { display: none; }
+  .legacy-cards.legacy-show { display: block; }
+
+  .menu-toggle-bar {
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+    margin: 0 auto 24px; max-width: 700px; flex-wrap: wrap;
+  }
+  .menu-toggle-bar button {
+    padding: 10px 22px; font-size: 13px; font-weight: 600;
+    border: 1px solid #d1d5db; border-radius: 22px;
+    background: #fff; color: #374151; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .menu-toggle-bar button:hover { border-color: #f59e0b; color: #92400e; background: #fffbeb; }
+  .menu-toggle-bar button.primary { background: #f59e0b; color: #fff; border-color: #f59e0b; }
+  .menu-toggle-bar button.primary:hover { background: #d97706; }
+
+  /* 모바일 대응 */
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; padding: 32px 22px; gap: 22px; }
+    .hero h1 { font-size: 28px; text-align: center; }
+    .hero .hero-sub { text-align: center; }
+    .hero-character img { max-width: 220px; }
+    .hero-character { order: -1; }
+  }
 </style>
 </head>
 <body>
@@ -195,22 +330,41 @@
 
   <!-- 메인 영역 -->
   <div>
-    <!-- 구글식 검색창 -->
-    <div class="menu-search-wrap">
-      <input id="menu-search" class="menu-search-input" type="search" autocomplete="off"
-             placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
-             data-ko-placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
-             data-en-placeholder="🔍 Search anything — students, teachers, franchises, menus" />
-      <button class="menu-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
-      <div class="menu-search-dropdown" id="menu-search-dropdown"></div>
+    <!-- 🥭 히어로 랜딩 (망고 캐릭터 + 거대 검색창) -->
+    <section class="hero">
+      <div class="hero-text">
+        <h1 data-ko="안녕하세요, 망고아이!" data-en="Hello, Mangoi!">안녕하세요, 망고아이!</h1>
+        <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
+        <div class="hero-search">
+          <input id="menu-search" type="search" autocomplete="off"
+                 placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+                 data-ko-placeholder="🔍 통합 검색 — 학생·교사·가맹점·메뉴 무엇이든"
+                 data-en-placeholder="🔍 Search anything — students, teachers, franchises, menus" />
+          <button class="hero-search-clear" id="menu-search-clear" type="button" title="지우기">✕</button>
+          <div class="hero-search-dropdown menu-search-dropdown" id="menu-search-dropdown"></div>
+        </div>
+        <div class="hero-tips">
+          <span data-ko="💡 학생 이름 / ID" data-en="💡 Student name / ID">💡 학생 이름 / ID</span>
+          <span data-ko="💡 가맹점·센터" data-en="💡 Franchise / Center">💡 가맹점·센터</span>
+          <span data-ko="💡 교재·평가" data-en="💡 Textbook / Eval">💡 교재·평가</span>
+          <span data-ko="💡 메뉴 이름" data-en="💡 Menu name">💡 메뉴 name</span>
+        </div>
+      </div>
+      <div class="hero-character">
+        <img src="/img/Mangoi_Character.jpg" alt="Mangoi"
+             onerror="this.onerror=null;this.style.borderRadius='32px';this.style.background='linear-gradient(135deg,#fbbf24,#f59e0b)';this.style.padding='40px';this.style.fontSize='120px';this.alt='🥭';" />
+      </div>
+    </section>
+
+    <!-- 메뉴 토글 바 — legacy-cards 보이기/숨기기 + 펼치기/접기 -->
+    <div class="menu-toggle-bar">
+      <button id="legacy-toggle" class="primary" type="button" data-ko="📋 모든 메뉴 보기" data-en="📋 Show all menus">📋 모든 메뉴 보기</button>
+      <button onclick="toggleAllMenuCards(true)"  type="button" data-ko="↧ 모두 펼치기" data-en="↧ Expand all">↧ 모두 펼치기</button>
+      <button onclick="toggleAllMenuCards(false)" type="button" data-ko="↥ 모두 접기"   data-en="↥ Collapse all">↥ 모두 접기</button>
     </div>
 
-    <!-- 📋 전체 펼치기/접기 컨트롤 (검색창 바로 아래 가운데) -->
-    <div style="display:flex;gap:8px;align-items:center;justify-content:center;margin:0 auto 20px;max-width:600px;flex-wrap:wrap;">
-      <span style="font-size:13px;color:#6b7280;font-weight:600;" data-ko="📋 메뉴판" data-en="📋 Menu">📋 메뉴판</span>
-      <button onclick="toggleAllMenuCards(true)"  style="padding:6px 14px;font-size:12px;border:1px solid #3b82f6;border-radius:20px;background:#fff;color:#1e40af;cursor:pointer;font-weight:600;" data-ko="↧ 모두 펼치기" data-en="↧ Expand all">↧ 모두 펼치기</button>
-      <button onclick="toggleAllMenuCards(false)" style="padding:6px 14px;font-size:12px;border:1px solid #d1d5db;border-radius:20px;background:#fff;color:#374151;cursor:pointer;font-weight:600;" data-ko="↥ 모두 접기"   data-en="↥ Collapse all">↥ 모두 접기</button>
-    </div>
+<!-- 기존 카드 영역 — 기본 숨김. "📋 모든 메뉴 보기" 토글로 표시 -->
+<div class="legacy-cards" id="legacy-cards">
 
 <div class="grid" id="kpi"></div>
 
@@ -961,6 +1115,8 @@
   </table>
   </div>
 </details>
+
+</div><!-- /.legacy-cards (Phase 14: 기본 숨김 영역 종료) -->
 
 <!-- 녹화 재생 모달 -->
 <div id="playback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
@@ -2378,10 +2534,41 @@ async function addTextbook() {
   if (d) { ['tb-title','tb-units','tb-publisher','tb-isbn'].forEach(id=>e(id).value=''); e('tb-level').value=''; loadTextbooks(); }
 }
 
-// 메뉴 카드 전체 펼치기/접기
+// 메뉴 카드 전체 펼치기/접기 — 자동으로 legacy 영역도 보이게 처리
 function toggleAllMenuCards(open) {
+  // legacy 영역이 숨겨져 있으면 펼칠 때 자동으로 보이게
+  if (open) {
+    const lc = document.getElementById('legacy-cards');
+    if (lc && !lc.classList.contains('legacy-show')) lc.classList.add('legacy-show');
+    syncLegacyToggleLabel();
+  }
   document.querySelectorAll('details.menu-card').forEach(d => { d.open = !!open; });
 }
+
+// 🥭 Phase 14 — legacy-cards 보이기/숨기기 토글 (히어로 랜딩 ↔ 모든 메뉴)
+function toggleLegacyCards() {
+  const lc = document.getElementById('legacy-cards');
+  if (!lc) return;
+  lc.classList.toggle('legacy-show');
+  syncLegacyToggleLabel();
+  if (lc.classList.contains('legacy-show')) {
+    // 펼침 — 부드럽게 스크롤
+    setTimeout(() => lc.scrollIntoView({ behavior:'smooth', block:'start' }), 30);
+  }
+}
+function syncLegacyToggleLabel() {
+  const btn = document.getElementById('legacy-toggle');
+  if (!btn) return;
+  const lc = document.getElementById('legacy-cards');
+  const showing = lc && lc.classList.contains('legacy-show');
+  if (adminLang === 'en') {
+    btn.textContent = showing ? '🙈 Hide all menus' : '📋 Show all menus';
+  } else {
+    btn.textContent = showing ? '🙈 메뉴 숨기기' : '📋 모든 메뉴 보기';
+  }
+  btn.classList.toggle('primary', !showing);
+}
+document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacyCards);
 
 // 👨‍🎓 학생 목록 (학생관리 → 학생 목록)
 async function loadStudentList() {
@@ -3108,6 +3295,12 @@ function _escSb(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function jumpToMenu(id, opts) {
   const el = document.getElementById(id);
   if (!el) return;
+  // Phase 14: 대상 카드가 .legacy-cards 안이면 먼저 영역 자동 표시
+  const lc = document.getElementById('legacy-cards');
+  if (lc && lc.contains(el) && !lc.classList.contains('legacy-show')) {
+    lc.classList.add('legacy-show');
+    if (typeof syncLegacyToggleLabel === 'function') syncLegacyToggleLabel();
+  }
   el.open = true;
   el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   // 시각적 강조 — 잠깐 노란 테두리
