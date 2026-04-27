@@ -1679,6 +1679,314 @@ export async function handleMangoApi(
       });
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // 🎓 Phase 12 — 학생 드릴다운 풀 멀티탭
+    //   GET  /api/admin/student/:uid/full           — 모든 탭 데이터 한 번에
+    //   GET  /api/admin/student/:uid/consultations  — 상담 내역
+    //   POST /api/admin/student/:uid/consultations  — 상담 기록 추가
+    //   GET  /api/admin/student/:uid/evaluations    — 평가서 (시험 점수·종합 평가)
+    //   POST /api/admin/student/:uid/evaluations    — 평가서 작성
+    //   GET  /api/admin/student/:uid/feedbacks      — 교사 피드백 (수업별)
+    //   POST /api/admin/student/:uid/feedbacks      — 피드백 작성
+    //   GET  /api/admin/student/:uid/payments       — 수업료 결제 내역
+    //   POST /api/admin/student/:uid/payments       — 수업료 기록 추가
+    //   PATCH /api/admin/student/:uid/contact       — 연락처·학교 등 students_erp 업데이트
+    //   GET  /api/admin/student/:uid/recordings     — 학생 참여 녹화 영상
+    //   GET  /api/admin/student/:uid/textbooks      — 배정된 교재
+    // ════════════════════════════════════════════════════════════════
+
+    // 스키마 보장 — 5개 테이블 (idempotent)
+    const ensureStudentDetailSchema = async () => {
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_consultations (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, consult_at INTEGER NOT NULL, channel TEXT, counselor TEXT, topic TEXT, content TEXT, follow_up_at INTEGER, status TEXT DEFAULT 'open', created_at INTEGER NOT NULL);`);
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_evaluations (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, eval_at INTEGER NOT NULL, eval_type TEXT, level TEXT, score_speaking REAL, score_listening REAL, score_reading REAL, score_writing REAL, score_total REAL, evaluator TEXT, comment TEXT, next_goal TEXT, created_at INTEGER NOT NULL);`);
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS teacher_feedbacks (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, room_id TEXT, attendance_id INTEGER, teacher_name TEXT, class_at INTEGER NOT NULL, rating INTEGER, summary TEXT, content TEXT, action_items TEXT, created_at INTEGER NOT NULL);`);
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_payments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, paid_at INTEGER, period_start TEXT, period_end TEXT, amount_krw INTEGER NOT NULL, method TEXT, memo TEXT, status TEXT DEFAULT 'paid', created_at INTEGER NOT NULL);`);
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS student_textbook_assignments (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id TEXT NOT NULL, textbook_id INTEGER, textbook_name TEXT, level TEXT, started_at INTEGER, ended_at INTEGER, progress_pct INTEGER DEFAULT 0, status TEXT DEFAULT 'active', created_at INTEGER NOT NULL);`);
+      // students_erp 에 학교·카톡 컬럼 추가 (이미 있으면 무시)
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN school TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN grade TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN kakao_id TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN parent_kakao_id TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN address TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN birth_date TEXT;`); } catch {}
+      try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN notes TEXT;`); } catch {}
+    };
+
+    // /api/admin/student/:uid/full — 한 번에 모든 탭 데이터 적재 (Promise.allSettled)
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/full$/);
+      if (m && method === 'GET') {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        const days = Math.max(1, Math.min(365, parseInt(url.searchParams.get('days') || '30', 10)));
+        const since = Date.now() - days * 24 * 3600 * 1000;
+
+        const queries = await Promise.allSettled([
+          // 1. erp 정보 (학생 마스터)
+          env.DB.prepare(`SELECT * FROM students_erp WHERE student_id = ? OR login_id = ? OR username = ? LIMIT 1`).bind(uid, uid, uid).first(),
+          // 2. 출석 프로필 + 요약
+          env.DB.prepare(
+            `SELECT user_id, COALESCE(MAX(username), user_id) AS username, COALESCE(MAX(role),'student') AS role,
+                    MIN(joined_at) AS first_seen, MAX(joined_at) AS last_seen,
+                    COUNT(*) AS total_sessions_all_time
+             FROM attendance WHERE user_id = ?`
+          ).bind(uid).first(),
+          env.DB.prepare(
+            `SELECT COUNT(*) AS session_count,
+                    COALESCE(SUM(total_session_ms),0) AS total_session_ms,
+                    COALESCE(SUM(total_active_ms),0)  AS total_active_ms,
+                    COALESCE(SUM(disconnect_count),0) AS disconnect_sum,
+                    AVG(CASE WHEN gaze_score IS NOT NULL THEN gaze_score END) AS avg_gaze_score,
+                    COUNT(CASE WHEN gaze_score IS NOT NULL THEN 1 END) AS gaze_score_count,
+                    COUNT(DISTINCT date) AS active_days
+             FROM attendance WHERE user_id = ? AND joined_at >= ?`
+          ).bind(uid, since).first(),
+          // 3. 일자별 (차트)
+          env.DB.prepare(
+            `SELECT date, COUNT(*) AS session_count,
+                    COALESCE(SUM(total_session_ms),0) AS total_session_ms,
+                    COALESCE(SUM(total_active_ms),0)  AS total_active_ms,
+                    AVG(CASE WHEN gaze_score IS NOT NULL THEN gaze_score END) AS avg_gaze_score
+             FROM attendance WHERE user_id = ? AND joined_at >= ?
+             GROUP BY date ORDER BY date ASC`
+          ).bind(uid, since).all(),
+          // 4. 세션 (최근 200건)
+          env.DB.prepare(
+            `SELECT id, room_id, joined_at, left_at, status, date,
+                    total_session_ms, total_active_ms, disconnect_count,
+                    gaze_score, gaze_samples, gaze_forward_samples
+             FROM attendance WHERE user_id = ? AND joined_at >= ?
+             ORDER BY joined_at DESC LIMIT 200`
+          ).bind(uid, since).all(),
+          // 5. 수강 이력
+          env.DB.prepare(`SELECT * FROM enrollments WHERE student_user_id = ? ORDER BY created_at DESC LIMIT 50`).bind(uid).all(),
+          // 6. 수업료 결제
+          env.DB.prepare(`SELECT * FROM student_payments WHERE user_id = ? ORDER BY paid_at DESC LIMIT 50`).bind(uid).all(),
+          // 7. 평가서
+          env.DB.prepare(`SELECT * FROM student_evaluations WHERE user_id = ? ORDER BY eval_at DESC LIMIT 50`).bind(uid).all(),
+          // 8. 교사 피드백
+          env.DB.prepare(`SELECT * FROM teacher_feedbacks WHERE user_id = ? ORDER BY class_at DESC LIMIT 50`).bind(uid).all(),
+          // 9. 상담 내역
+          env.DB.prepare(`SELECT * FROM student_consultations WHERE user_id = ? ORDER BY consult_at DESC LIMIT 50`).bind(uid).all(),
+          // 10. 보상(스티커·쿠폰)
+          env.DB.prepare(`SELECT * FROM rewards WHERE student_id = ? ORDER BY issued_at DESC LIMIT 50`).bind(uid).all(),
+          // 11. 녹화 영상 (이 학생이 참여한)
+          env.DB.prepare(
+            `SELECT id, room_id, teacher_name, filename, started_at, ended_at, duration_ms, size_bytes, status
+             FROM recordings
+             WHERE participant_ids LIKE ? OR consented_user_ids LIKE ?
+             ORDER BY started_at DESC LIMIT 50`
+          ).bind('%' + uid + '%', '%' + uid + '%').all(),
+          // 12. 배정 교재
+          env.DB.prepare(`SELECT * FROM student_textbook_assignments WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`).bind(uid).all(),
+          // 13. 동의 현황
+          env.DB.prepare(`SELECT * FROM consents WHERE user_id = ? AND withdrawn_at IS NULL ORDER BY consented_at DESC LIMIT 1`).bind(uid).first(),
+        ]);
+
+        const pick = (i: number) => {
+          const r = queries[i];
+          if (r.status !== 'fulfilled') return null;
+          return r.value;
+        };
+        const pickList = (i: number) => {
+          const v = pick(i) as any;
+          if (!v) return [];
+          if (Array.isArray(v.results)) return v.results;
+          if (Array.isArray(v)) return v;
+          return [];
+        };
+
+        return json({
+          ok: true,
+          user_id: uid,
+          period_days: days,
+          erp: pick(0),
+          profile: pick(1),
+          summary: pick(2) || {},
+          by_day: pickList(3),
+          sessions: pickList(4),
+          enrollments: pickList(5),
+          payments: pickList(6),
+          evaluations: pickList(7),
+          feedbacks: pickList(8),
+          consultations: pickList(9),
+          rewards: pickList(10),
+          recordings: pickList(11),
+          textbooks: pickList(12),
+          consent: pick(13),
+        });
+      }
+    }
+
+    // /api/admin/student/:uid/consultations
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/consultations$/);
+      if (m) {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        if (method === 'GET') {
+          const rs = await env.DB.prepare(
+            `SELECT * FROM student_consultations WHERE user_id = ? ORDER BY consult_at DESC LIMIT 100`
+          ).bind(uid).all();
+          return json({ ok: true, items: rs.results || [] });
+        }
+        if (method === 'POST') {
+          const b = await parseJsonBody(request);
+          if (!b) return invalidBody(['content or topic']);
+          const now = Date.now();
+          const r = await env.DB.prepare(
+            `INSERT INTO student_consultations (user_id, consult_at, channel, counselor, topic, content, follow_up_at, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            uid,
+            b.consult_at || now,
+            b.channel || 'phone',
+            b.counselor || null,
+            b.topic || null,
+            b.content || '',
+            b.follow_up_at || null,
+            b.status || 'open',
+            now
+          ).run();
+          return json({ ok: true, id: r.meta.last_row_id });
+        }
+      }
+    }
+
+    // /api/admin/student/:uid/evaluations
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/evaluations$/);
+      if (m) {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        if (method === 'GET') {
+          const rs = await env.DB.prepare(
+            `SELECT * FROM student_evaluations WHERE user_id = ? ORDER BY eval_at DESC LIMIT 100`
+          ).bind(uid).all();
+          return json({ ok: true, items: rs.results || [] });
+        }
+        if (method === 'POST') {
+          const b = await parseJsonBody(request);
+          if (!b) return invalidBody(['eval_type or score_total']);
+          const now = Date.now();
+          const r = await env.DB.prepare(
+            `INSERT INTO student_evaluations (user_id, eval_at, eval_type, level, score_speaking, score_listening, score_reading, score_writing, score_total, evaluator, comment, next_goal, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            uid,
+            b.eval_at || now,
+            b.eval_type || 'monthly',
+            b.level || null,
+            b.score_speaking ?? null,
+            b.score_listening ?? null,
+            b.score_reading ?? null,
+            b.score_writing ?? null,
+            b.score_total ?? null,
+            b.evaluator || null,
+            b.comment || null,
+            b.next_goal || null,
+            now
+          ).run();
+          return json({ ok: true, id: r.meta.last_row_id });
+        }
+      }
+    }
+
+    // /api/admin/student/:uid/feedbacks
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/feedbacks$/);
+      if (m) {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        if (method === 'GET') {
+          const rs = await env.DB.prepare(
+            `SELECT * FROM teacher_feedbacks WHERE user_id = ? ORDER BY class_at DESC LIMIT 100`
+          ).bind(uid).all();
+          return json({ ok: true, items: rs.results || [] });
+        }
+        if (method === 'POST') {
+          const b = await parseJsonBody(request);
+          if (!b) return invalidBody(['summary']);
+          const now = Date.now();
+          const r = await env.DB.prepare(
+            `INSERT INTO teacher_feedbacks (user_id, room_id, attendance_id, teacher_name, class_at, rating, summary, content, action_items, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            uid,
+            b.room_id || null,
+            b.attendance_id || null,
+            b.teacher_name || null,
+            b.class_at || now,
+            b.rating ?? null,
+            b.summary || '',
+            b.content || null,
+            b.action_items || null,
+            now
+          ).run();
+          return json({ ok: true, id: r.meta.last_row_id });
+        }
+      }
+    }
+
+    // /api/admin/student/:uid/payments
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/payments$/);
+      if (m) {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        if (method === 'GET') {
+          const rs = await env.DB.prepare(
+            `SELECT * FROM student_payments WHERE user_id = ? ORDER BY paid_at DESC LIMIT 100`
+          ).bind(uid).all();
+          return json({ ok: true, items: rs.results || [] });
+        }
+        if (method === 'POST') {
+          const b = await parseJsonBody(request);
+          if (!b || b.amount_krw == null) return invalidBody(['amount_krw']);
+          const now = Date.now();
+          const r = await env.DB.prepare(
+            `INSERT INTO student_payments (user_id, paid_at, period_start, period_end, amount_krw, method, memo, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          ).bind(
+            uid,
+            b.paid_at || now,
+            b.period_start || null,
+            b.period_end || null,
+            Math.round(Number(b.amount_krw) || 0),
+            b.method || null,
+            b.memo || null,
+            b.status || 'paid',
+            now
+          ).run();
+          return json({ ok: true, id: r.meta.last_row_id });
+        }
+      }
+    }
+
+    // /api/admin/student/:uid/contact (PATCH — students_erp 업데이트)
+    {
+      const m = path.match(/^\/api\/admin\/student\/([^\/]+)\/contact$/);
+      if (m && method === 'PATCH') {
+        await ensureStudentDetailSchema();
+        const uid = decodeURIComponent(m[1]);
+        const b = await parseJsonBody(request);
+        if (!b) return invalidBody(['<any contact field>']);
+        const allowed = ['student_phone','parent_phone','teacher_phone','school','grade','kakao_id','parent_kakao_id','address','birth_date','notes','shop_name','franchise'];
+        const sets: string[] = []; const vals: any[] = [];
+        for (const k of allowed) {
+          if (b[k] !== undefined) { sets.push(`${k} = ?`); vals.push(b[k]); }
+        }
+        if (sets.length === 0) return json({ ok: false, error: 'nothing_to_update' }, 400);
+        sets.push('updated_at = ?'); vals.push(Date.now());
+        // student_id 우선, 없으면 login_id, 없으면 username 으로 매칭
+        vals.push(uid, uid, uid);
+        await env.DB.prepare(
+          `UPDATE students_erp SET ${sets.join(', ')} WHERE student_id = ? OR login_id = ? OR username = ?`
+        ).bind(...vals).run();
+        return json({ ok: true, updated_fields: sets.length - 1 });
+      }
+    }
+
     // ===== 녹화(Recording) =====
     if (path === '/api/recordings/start' && method === 'POST') {
       const b = await request.json() as any;
