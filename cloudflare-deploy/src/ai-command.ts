@@ -34,7 +34,17 @@ Allowed navigate URLs (same-tab): /admin.html, /admin/students.html, /admin/stud
 
 Allowed external_url (new tab): https://mangoi-speech.pages.dev/practice (발음교정·발음 연습)
 
-Allowed menu_id (scroll to card on /admin.html): card-pronunciation (발음교정), card-daily-charts (일자별 차트), card-recordings (녹화), card-payroll (강사 급여), card-students-erp (학생 ERP)
+Allowed menu_id (scroll to card on /admin.html):
+- card-daily-charts    (일자별 차트·매출·학생수·탈락·증가)
+- card-rankings        (학생 랭킹·발화·시선·집중도)
+- card-payroll         (강사 급여·평가 대시보드)
+- card-franchises      (가맹점 관리)
+- card-centers         (교육센터)
+- card-level-tests     (레벨 테스트·레벨테스트)
+- card-enrollments     (수강신청 관리)
+- card-community       (커뮤니티·공지·게시판)
+- card-textbooks       (교재 콘텐츠)
+- card-pronunciation   (발음교정 메뉴 카드 — 발음교정 도구는 external_url 우선 사용)
 
 Allowed query tools:
 - today_stats        (오늘 매출·학생수·결석률·신규)
@@ -96,8 +106,32 @@ Output: {"intent":"navigate","external_url":"https://mangoi-speech.pages.dev/pra
 User: "강사 급여 보여줘"
 Output: {"intent":"navigate","menu_id":"card-payroll","answer":"강사 급여 카드로 이동합니다."}
 
-User: "녹화 목록"
-Output: {"intent":"navigate","menu_id":"card-recordings","answer":"녹화 목록 카드로 이동합니다."}
+User: "레벨테스트 열어줘"
+Output: {"intent":"navigate","menu_id":"card-level-tests","answer":"레벨 테스트 카드로 이동합니다."}
+
+User: "레벨 테스트"
+Output: {"intent":"navigate","menu_id":"card-level-tests","answer":"레벨 테스트 카드로 이동합니다."}
+
+User: "가맹점 관리 열어줘"
+Output: {"intent":"navigate","menu_id":"card-franchises","answer":"가맹점 관리 카드로 이동합니다."}
+
+User: "교육센터 보여줘"
+Output: {"intent":"navigate","menu_id":"card-centers","answer":"교육센터 카드로 이동합니다."}
+
+User: "수강신청 열어줘"
+Output: {"intent":"navigate","menu_id":"card-enrollments","answer":"수강신청 관리 카드로 이동합니다."}
+
+User: "커뮤니티"
+Output: {"intent":"navigate","menu_id":"card-community","answer":"커뮤니티 카드로 이동합니다."}
+
+User: "교재 콘텐츠"
+Output: {"intent":"navigate","menu_id":"card-textbooks","answer":"교재 콘텐츠 카드로 이동합니다."}
+
+User: "일자별 차트"
+Output: {"intent":"navigate","menu_id":"card-daily-charts","answer":"일자별 차트 카드로 이동합니다."}
+
+User: "학생 랭킹"
+Output: {"intent":"navigate","menu_id":"card-rankings","answer":"학생 랭킹 카드로 이동합니다."}
 
 Output rule: Only one valid JSON object. No "Output:" prefix, no markdown fences, no commentary.`;
 
