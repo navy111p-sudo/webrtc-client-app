@@ -10,6 +10,7 @@ import { handleMangoApi } from './api-mango';
 import { purgeExpired } from './retention';
 import { handleLivekit, ensureLivekitSchema } from './livekit-bridge';
 import { handleRecordingUpload as handleR2MultipartUpload } from './recordings-r2';
+import { handleAdminAuthApi, checkAdminSession } from './auth-admin';
 
 interface Env {
   SIGNALING_ROOM: DurableObjectNamespace;
@@ -57,12 +58,26 @@ export default {
       });
     }
 
-    // 🔒 관리자 Basic Auth 미들웨어 (admin.html + 관리자 전용 API 보호)
-    //   - ADMIN_PASSWORD 시크릿 설정 시에만 활성화 (fail-open)
-    //   - 학생 녹화 업로드·출석 POST 같은 일반 학생용 API 는 건드리지 않음
-    if (isAdminPath(path, request.method)) {
-      const authResp = checkAdminAuth(request, env);
-      if (authResp) return authResp;
+    // 🔒 관리자 세션 쿠키 미들웨어 (Phase 11)
+    //   - HttpOnly 쿠키 mango_admin_session 으로 인증
+    //   - 미인증 페이지 요청 → 302 /admin/login 리다이렉트
+    //   - 미인증 API  요청 → 401 JSON
+    //   - /admin/login, /api/admin/login, /api/admin/logout 은 항상 통과
+    if (isAdminPath(path, request.method) && !isAuthPublicPath(path)) {
+      const sess = await checkAdminSession(request, env);
+      if (!sess.ok) {
+        // HTML 페이지 → 로그인 화면으로 리다이렉트 (next 파라미터로 원래 경로 보존)
+        if (path === '/admin' || path === '/admin/' || path === '/admin.html'
+            || path.startsWith('/admin/')) {
+          const next = encodeURIComponent(path + url.search);
+          return Response.redirect(new URL(`/admin/login?next=${next}`, request.url).toString(), 302);
+        }
+        // API → 401 JSON
+        return new Response(
+          JSON.stringify({ ok: false, error: 'auth_required' }),
+          { status: 401, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } }
+        );
+      }
     }
 
     // Health check endpoint
@@ -175,6 +190,21 @@ export default {
       return await handleRecordingDelete(path, env);
     }
 
+    // 🔐 Phase 11 — 관리자 인증·세션 API
+    //    /api/admin/login·logout 은 isAuthPublicPath 로 미들웨어 우회됨.
+    //    그 외 (me·profile·change-password·login-history·sessions/*) 는 위 미들웨어가 인증 강제.
+    if (path === '/api/admin/login' ||
+        path === '/api/admin/logout' ||
+        path === '/api/admin/me' ||
+        path === '/api/admin/profile' ||
+        path === '/api/admin/change-password' ||
+        path === '/api/admin/login-history' ||
+        path === '/api/admin/sessions' ||
+        path === '/api/admin/sessions/revoke') {
+      const authRes = await handleAdminAuthApi(request, url, env);
+      if (authRes) return authRes;
+    }
+
     // v3 명세서 신규 API (출석/보상/카카오/대시보드)
     // ⚠ 새 API 경로를 api-mango.ts 에 추가했을 때는 반드시 이 게이트에도 등록할 것.
     //    여기 목록에 없으면 index.html 로 fallthrough → CF Assets 가 POST 에 405 반환.
@@ -252,6 +282,18 @@ export default {
     // 👨‍🎓 /admin/students — 학생 목록 ERP 풀페이지 (Phase 10)
     if (path === '/admin/students' || path === '/admin/students/') {
       const r = new Request(new URL('/admin/students.html' + url.search, request.url).toString(), request);
+      return env.ASSETS.fetch(r);
+    }
+
+    // 🔐 /admin/login — 로그인 페이지 (Phase 11) — 비인증 허용
+    if (path === '/admin/login' || path === '/admin/login/') {
+      const r = new Request(new URL('/admin/login.html' + url.search, request.url).toString(), request);
+      return env.ASSETS.fetch(r);
+    }
+
+    // 👤 /admin/mypage — 마이페이지 (Phase 11)
+    if (path === '/admin/mypage' || path === '/admin/mypage/') {
+      const r = new Request(new URL('/admin/mypage.html' + url.search, request.url).toString(), request);
       return env.ASSETS.fetch(r);
     }
 
@@ -911,6 +953,13 @@ function isAdminPath(path: string, method: string): boolean {
   if (path.startsWith('/api/admin/student/')) return true;
   // 👨‍🎓 /admin/students ERP 풀페이지 (Phase 10)
   if (path === '/admin/students' || path === '/admin/students/' || path === '/admin/students.html') return true;
+  // 👤 /admin/mypage — 마이페이지 (Phase 11)
+  if (path === '/admin/mypage' || path === '/admin/mypage/' || path === '/admin/mypage.html') return true;
+  // 🔐 Phase 11 — 인증·세션 API (login·logout 만 isAuthPublicPath 로 예외)
+  if (path === '/api/admin/me' || path === '/api/admin/profile') return true;
+  if (path === '/api/admin/change-password') return true;
+  if (path === '/api/admin/login-history') return true;
+  if (path === '/api/admin/sessions' || path === '/api/admin/sessions/revoke') return true;
   // 🛑 관리자 개입 액션 (Phase 4) — 강제 종료 등 쓰기 작업
   if (path.startsWith('/api/admin/room/')) return true;
   // PATCH /api/recordings/{id}/status 도 관리자 전용 (복원·삭제 상태 변경)
@@ -953,6 +1002,19 @@ function isAdminPath(path: string, method: string): boolean {
   // DELETE /api/recordings/{숫자ID} (Mango DB 레코드 삭제) — 관리자
   // 단, /api/recordings/blob/* 는 위에서 이미 처리됐고, /start·/stop 은 POST 라 method 체크로 통과
   if (method === 'DELETE' && /^\/api\/recordings\/\d+$/.test(path)) return true;
+  return false;
+}
+
+/**
+ * Phase 11 — 비인증으로 접근 가능한 관리자 경로.
+ *   - /admin/login (HTML)        : 로그인 페이지 자체
+ *   - /api/admin/login (POST)    : 로그인 처리
+ *   - /api/admin/logout (POST)   : 로그아웃 (인증 안 돼도 쿠키만 지우면 끝)
+ */
+function isAuthPublicPath(path: string): boolean {
+  if (path === '/admin/login' || path === '/admin/login/' || path === '/admin/login.html') return true;
+  if (path === '/api/admin/login') return true;
+  if (path === '/api/admin/logout') return true;
   return false;
 }
 

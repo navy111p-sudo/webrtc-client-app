@@ -165,6 +165,24 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
       <span id="admin-lang-label">EN</span>
     </button>
+
+    <!-- 👤 Phase 11 — 사용자 메뉴 (마이페이지·로그아웃) -->
+    <div id="topUserBtn"
+         style="position:relative;background:rgba(245,158,11,0.18);border:1px solid #f59e0b;border-radius:8px;padding:6px 12px;color:#fde68a;font-size:13px;font-weight:600;cursor:pointer;user-select:none;"
+         data-ko="👤 관리자" data-en="👤 Admin">
+      <span id="topUserLabel">👤 관리자</span>
+      <div id="topUserPopup"
+           style="display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:220px;background:#fff;color:#222;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 12px 28px rgba(0,0,0,.18);padding:6px;z-index:200;font-weight:400;">
+        <div id="topUserHeader" style="padding:10px 12px;font-size:12px;color:#666;border-bottom:1px solid #f0f0f0;">로딩 중…</div>
+        <a href="/admin/mypage" style="display:block;padding:9px 12px;color:#222;text-decoration:none;font-size:13px;border-radius:6px;">🪪 마이페이지</a>
+        <a href="/admin/health" target="_blank" style="display:block;padding:9px 12px;color:#222;text-decoration:none;font-size:13px;border-radius:6px;">🩺 셀프 진단</a>
+        <div style="height:1px;background:#f0f0f0;margin:4px 0;"></div>
+        <button id="topLogoutBtn" type="button"
+                style="display:block;width:100%;text-align:left;background:transparent;border:0;padding:9px 12px;color:#c33;font-size:13px;cursor:pointer;border-radius:6px;">
+          🚪 로그아웃
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2977,6 +2995,46 @@ window.rebuildGlobalSearchIndex = function() {
     // 메뉴 인덱스도 다시 빌드해서 통합 색인의 메뉴 라벨이 최신 언어로 갱신되게
     if (typeof buildMenuIndex === 'function') buildMenuIndex();
   };
+})();
+
+// ───── Phase 11 — 우상단 사용자 메뉴 (마이페이지·로그아웃) ─────
+(function initTopUserMenu(){
+  const btn   = document.getElementById('topUserBtn');
+  const popup = document.getElementById('topUserPopup');
+  const label = document.getElementById('topUserLabel');
+  const head  = document.getElementById('topUserHeader');
+  const logoutBtn = document.getElementById('topLogoutBtn');
+  if (!btn || !popup) return;
+
+  // /me 로 로그인 정보 채우기
+  fetch('/api/admin/me', { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      if (!j || !j.ok || !j.user) return;
+      const u = j.user;
+      const display = (u.name || u.username || '관리자') + (u.username ? ' (@' + u.username + ')' : '');
+      if (label) label.textContent = '👤 ' + (u.name || u.username || '관리자');
+      if (head)  head.textContent  = display;
+    })
+    .catch(()=>{});
+
+  // 클릭으로 펼치기·접기
+  btn.addEventListener('click', (ev) => {
+    if (ev.target.closest('a, button')) return;   // 메뉴 항목 클릭은 통과
+    popup.style.display = (popup.style.display === 'block') ? 'none' : 'block';
+    ev.stopPropagation();
+  });
+  document.addEventListener('click', (ev) => {
+    if (!btn.contains(ev.target)) popup.style.display = 'none';
+  });
+
+  // 로그아웃
+  if (logoutBtn) logoutBtn.addEventListener('click', async (ev) => {
+    ev.preventDefault();
+    if (!confirm('정말 로그아웃 하시겠습니까?')) return;
+    try { await fetch('/api/admin/logout', { method:'POST', credentials:'include' }); } catch {}
+    location.replace('/admin/login');
+  });
 })();
 </script>
 
