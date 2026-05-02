@@ -309,7 +309,6 @@
         <a href="/admin/health" target="_blank">🩺 셀프 진단</a>
         <a href="/admin.html" target="_blank">📊 메인 대시보드</a>
         <div class="divider"></div>
-        <button onclick="seedDemoStudents()">🌱 데모 22명 시드</button>
         <button onclick="downloadAllStudentsCSV()">📥 학생 전체 CSV</button>
       </div>
     </span>
@@ -383,7 +382,6 @@
       <input id="f-referral" type="text" placeholder="추천인아이디" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:160px;" />
       <button class="erp-btn-search" onclick="loadStudents()">검색</button>
       <input id="f-phone" type="tel" placeholder="학생/부모님 전화번호" style="padding:6px 10px;border:1px solid #cbd5e1;border-radius:6px;font-size:12px;width:200px;" />
-      <button onclick="seedDemoStudents()" style="margin-left:auto;padding:6px 14px;font-size:11px;background:#a855f7;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;">🌱 데모 22명 시드</button>
     </div>
 
     <!-- 22 컬럼 테이블 -->
@@ -702,7 +700,20 @@ async function loadStudents() {
       status: s.status || '정상'
     }));
     if (_students.length === 0) {
-      tb.innerHTML = '<tr class="empty-row"><td colspan="23">학생 데이터 없음 — 우측 [🌱 데모 22명 시드] 버튼을 눌러보세요</td></tr>';
+      // 🥭 Phase 36 — 자동 시드: 학생 데이터가 없으면 자동으로 가짜 20명 생성
+      tb.innerHTML = '<tr class="empty-row"><td colspan="23">📦 가짜 학생 20명을 자동 생성 중…</td></tr>';
+      try {
+        const sr = await fetch('/api/admin/students/erp-seed', { method:'POST', credentials:'include' });
+        const sd = await sr.json();
+        if (sd.ok && sd.created > 0) {
+          // 시드 성공 → 다시 로드
+          setTimeout(() => loadStudents(), 300);
+        } else {
+          tb.innerHTML = '<tr class="empty-row"><td colspan="23">자동 시드 실패. 새로고침 해보세요.</td></tr>';
+        }
+      } catch (e) {
+        tb.innerHTML = '<tr class="empty-row"><td colspan="23">자동 시드 에러: ' + e.message + '</td></tr>';
+      }
       return;
     }
     applyFilters();

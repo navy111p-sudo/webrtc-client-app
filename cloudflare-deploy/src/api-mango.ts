@@ -1936,30 +1936,29 @@ export async function handleMangoApi(
       await _addCol('branch2_name', 'TEXT');
       await _addCol('franchise', 'TEXT');
       await _addCol('updated_at', 'INTEGER');
+      // 🥭 Phase 36 — 가짜 학생 20명 (테스트 전용, 다양한 패턴)
       // [student_id, username, login_id, pay, end_date, signup, classes, points, stu_ph, par_ph, t_ph, shop, hq, b1, b2, fran]
       const SEED = [
-        ['28220','구도아','SLPSSO_gda0226',     'B2C 결제', null,         '2026-04-23', null, 0,  '010-7588-1544', null, null, '청주SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28219','이태린','SLPSSO_slp13813',    'B2C 결제', null,         '2026-04-23', null, 0,  '010-4640-2555', null, null, '세종slp',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28218','권시연','wwes021',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28217','조유진','wwes023',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28216','정기태','wwes026',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28215','박서윤','wwes031',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28214','김나은','wwes036',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28213','유준민','wwes010',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28212','양서우','wwes012',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28211','손태헌','wwes019',            'B2B 결제', null,         '2026-04-23', null, 0,  '010-8928-0738', null, null, '킹스캐피영어교습소','에듀비전 본사','제퍼슨','캐피 송파','에듀비전'],
-        ['28210','김세형','SLPSSO_ksh0424',     'B2C 결제', null,         '2026-04-22', null, 0,  '010-3523-3573', null, null, '동작SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28209','김이룸','SLPSSO_yirumlove',   'B2C 결제', null,         '2026-04-22', null, 0,  '010-9872-1388', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28208','양승희','ah388',              'B2C 결제', '미설정',     '2026-04-22', 1,    0,  '010-6272-4060', '010-6272-4060', '010--', 'N 안산 SLP 가정망고', '에듀비전 본사','망고아이','망고아이 지사 (기본)','에듀비전'],
-        ['28207','김서우','Luna119',            'B2C 결제', null,         '2026-04-21', null, 10, '010-9229-6963', null, null, '고래영어교습소',  '에듀비전 본사','망고아이','율곡교육(광주2지사)','에듀비전'],
-        ['28206','이은우','SLPSSO_Eunwoo521',   'B2C 결제', null,         '2026-04-21', null, 0,  '010-5711-5864', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28205','박지훈','SLPSSO_jihoon0808',  'B2C 결제', null,         '2026-04-21', null, 0,  '010-5182-3359', null, null, '평택SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28204','박서윤','unisj415',           'B2C 결제', '2026-06-03', '2026-04-20', 1,    0,  '010-5395-3456', null, null, 'N PDI 상주캠퍼스','에듀비전 본사','망고파이','pdi본사','에듀비전'],
-        ['28203','김재이','SLPSSO_jaykim0709',  'B2C 결제', null,         '2026-04-19', null, 0,  '010-9590-0722', null, null, '북인천SLP',       '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28202','마서윤','SLPSSO_elly0528elly','B2C 결제', null,         '2026-04-19', null, 0,  '010-9537-9766', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28201','이도하','SLPSSO_doha19',      'B2C 결제', null,         '2026-04-17', null, 0,  '010-3805-0224', null, null, '강서SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28200','하서연','SLPSSO_daisy0702',   'B2C 결제', null,         '2026-04-17', null, 0,  '010-4849-4562', null, null, '망고아이 SSO진영','에듀비전 본사','slpmangoi','SLP','에듀비전'],
-        ['28199','조유찬','SLPSSO_spurxxx2',    'B2C 결제', null,         '2026-04-16', null, 0,  '010-2082-5104', null, null, '영등포SLP',       '에듀비전 본사','slpmangoi','SLP','에듀비전'],
+        ['MG001','김민수','mango_minsu',    'B2C 결제', '2026-12-31', '2026-03-01', 2, 150, '010-1111-1001', '010-2001-1001', '010-3001-1001', '망고아이 강남센터', '망고아이 본사', '강남지사', '강남캠퍼스', '망고아이'],
+        ['MG002','이지은','mango_jieun',    'B2C 결제', '2026-09-30', '2026-03-05', 2, 80,  '010-1111-1002', '010-2001-1002', null,             '망고아이 서초센터', '망고아이 본사', '서초지사', '서초캠퍼스', '망고아이'],
+        ['MG003','박서준','mango_seojun',   'B2C 결제', null,         '2026-03-10', 3, 220, '010-1111-1003', '010-2001-1003', '010-3001-1003', '망고아이 송파센터', '망고아이 본사', '송파지사', '송파캠퍼스', '망고아이'],
+        ['MG004','최예린','mango_yerin',    'B2B 결제', '2027-03-31', '2026-03-12', 2, 50,  '010-1111-1004', '010-2001-1004', null,             '킹스영어 분당',     '에듀비전 본사', '제퍼슨',   '분당캠퍼스', '에듀비전'],
+        ['MG005','정태현','mango_taehyun',  'B2C 결제', null,         '2026-03-15', 1, 30,  '010-1111-1005', '010-2001-1005', null,             '망고아이 안양센터', '망고아이 본사', '안양지사', '안양캠퍼스', '망고아이'],
+        ['MG006','강유진','mango_yujin',    'B2C 결제', '2026-08-15', '2026-03-18', 2, 180, '010-1111-1006', '010-2001-1006', '010-3001-1006', '망고아이 일산센터', '망고아이 본사', '고양지사', '일산캠퍼스', '망고아이'],
+        ['MG007','조현우','mango_hyunwoo',  'B2B 결제', null,         '2026-03-20', 3, 90,  '010-1111-1007', '010-2001-1007', null,             '에듀파인 부산',     '에듀비전 본사', 'SLP',      '부산캠퍼스', '에듀비전'],
+        ['MG008','윤수아','mango_sua',      'B2C 결제', '2026-11-20', '2026-03-22', 2, 120, '010-1111-1008', '010-2001-1008', null,             '망고아이 수원센터', '망고아이 본사', '수원지사', '수원캠퍼스', '망고아이'],
+        ['MG009','임도윤','mango_doyoon',   'B2C 결제', null,         '2026-03-25', 1, 0,   '010-1111-1009', '010-2001-1009', null,             '망고아이 인천센터', '망고아이 본사', '인천지사', '연수캠퍼스', '망고아이'],
+        ['MG010','한지호','mango_jiho',     'B2C 결제', '2026-10-31', '2026-03-28', 3, 250, '010-1111-1010', '010-2001-1010', '010-3001-1010', '망고아이 대전센터', '망고아이 본사', '대전지사', '둔산캠퍼스', '망고아이'],
+        ['MG011','송하연','mango_hayeon',   'B2C 결제', null,         '2026-04-01', 2, 60,  '010-1111-1011', '010-2001-1011', null,             '망고아이 광주센터', '망고아이 본사', '광주지사', '광주캠퍼스', '망고아이'],
+        ['MG012','오시우','mango_siwoo',    'B2B 결제', '2027-01-31', '2026-04-03', 2, 110, '010-1111-1012', '010-2001-1012', null,             '리딩스타 대구',     '에듀비전 본사', '제퍼슨',   '대구캠퍼스', '에듀비전'],
+        ['MG013','신아라','mango_ara',      'B2C 결제', null,         '2026-04-05', 1, 40,  '010-1111-1013', '010-2001-1013', null,             '망고아이 천안센터', '망고아이 본사', '천안지사', '천안캠퍼스', '망고아이'],
+        ['MG014','배준영','mango_junyoung', 'B2C 결제', '2026-12-15', '2026-04-08', 2, 200, '010-1111-1014', '010-2001-1014', '010-3001-1014', '망고아이 청주센터', '망고아이 본사', '청주지사', '청주캠퍼스', '망고아이'],
+        ['MG015','황소희','mango_sohee',    'B2C 결제', null,         '2026-04-10', 3, 75,  '010-1111-1015', '010-2001-1015', null,             '망고아이 울산센터', '망고아이 본사', '울산지사', '남구캠퍼스', '망고아이'],
+        ['MG016','노지민','mango_jimin',    'B2B 결제', '2027-04-30', '2026-04-12', 2, 95,  '010-1111-1016', '010-2001-1016', null,             '잉글리쉬타운 분당', '에듀비전 본사', 'SLP',      '판교캠퍼스', '에듀비전'],
+        ['MG017','서다은','mango_daeun',    'B2C 결제', null,         '2026-04-15', 1, 20,  '010-1111-1017', '010-2001-1017', null,             '망고아이 세종센터', '망고아이 본사', '세종지사', '세종캠퍼스', '망고아이'],
+        ['MG018','권현서','mango_hyunseo',  'B2C 결제', '2026-09-15', '2026-04-18', 2, 130, '010-1111-1018', '010-2001-1018', '010-3001-1018', '망고아이 창원센터', '망고아이 본사', '창원지사', '창원캠퍼스', '망고아이'],
+        ['MG019','류재희','mango_jaehee',   'B2C 결제', null,         '2026-04-20', 2, 55,  '010-1111-1019', '010-2001-1019', null,             '망고아이 전주센터', '망고아이 본사', '전주지사', '전주캠퍼스', '망고아이'],
+        ['MG020','안민서','mango_minseo',   'B2C 결제', '2026-11-30', '2026-04-22', 3, 170, '010-1111-1020', '010-2001-1020', '010-3001-1020', '망고아이 제주센터', '망고아이 본사', '제주지사', '제주시캠퍼스', '망고아이']
       ];
       const now = Date.now();
       let created = 0, skipped = 0;
@@ -1981,7 +1980,68 @@ export async function handleMangoApi(
           errors.push(sid + ': ' + (e?.message || e));
         }
       }
-      return json({ ok: true, total: SEED.length, created, skipped, errors: errors.length ? errors : undefined });
+
+      // 🥭 Phase 36 — 수강신청도 함께 시드 (📅 스케줄 캘린더 즉시 테스트 가능)
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS enrollments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          student_name TEXT NOT NULL, student_user_id TEXT,
+          package TEXT, monthly_fee_krw INTEGER, started_at INTEGER, end_date TEXT,
+          days_of_week TEXT, time TEXT, class_size TEXT, type TEXT, teacher_name TEXT,
+          status TEXT DEFAULT 'active', created_at INTEGER NOT NULL
+        );`);
+      } catch {}
+      // enrollments 누락 컬럼 보강
+      const _addEnrCol = async (col: string, type: string) => {
+        try { await env.DB.exec(`ALTER TABLE enrollments ADD COLUMN ${col} ${type}`); } catch {}
+      };
+      await _addEnrCol('days_of_week', 'TEXT');
+      await _addEnrCol('time', 'TEXT');
+      await _addEnrCol('class_size', 'TEXT');
+      await _addEnrCol('type', 'TEXT');
+      await _addEnrCol('teacher_name', 'TEXT');
+      await _addEnrCol('end_date', 'TEXT');
+
+      // 다양한 패턴 (요일·시간·인원·강사) — 학생 20명에 분배
+      const patterns = [
+        { days:'월수금', time:'10:30', size:'1:1', type:'정규수업', teacher:'Teacher Belle' },
+        { days:'화목',   time:'15:00', size:'1:1', type:'체험수업', teacher:'Teacher Anna' },
+        { days:'월수금', time:'월 7:00, 수 8:30, 금 6:00', size:'1:1', type:'정규수업', teacher:'Teacher David' },
+        { days:'화목',   time:'17:30', size:'1:3', type:'정규수업', teacher:'Teacher Sarah' },
+        { days:'월수',   time:'19:00', size:'1:2', type:'레벨테스트', teacher:'Teacher Mike' },
+        { days:'토',     time:'09:00', size:'1:1', type:'체험수업', teacher:'Teacher Belle' },
+        { days:'월화수목금', time:'08:00', size:'1:1', type:'정규수업', teacher:'Teacher Anna' },
+        { days:'화금',   time:'14:30', size:'1:2', type:'정규수업', teacher:'Teacher David' },
+        { days:'수금',   time:'수 16:00, 금 17:30', size:'1:1', type:'정규수업', teacher:'Teacher Sarah' },
+        { days:'월목',   time:'18:00', size:'1:3', type:'정규수업', teacher:'Teacher Mike' }
+      ];
+      let enrollCreated = 0;
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0,10);
+      const startMs = today.getTime() - 14 * 86400000; // 2주 전부터
+      for (let i = 0; i < SEED.length; i++) {
+        const sid = SEED[i][0]; const name = SEED[i][1]; const lid = SEED[i][2];
+        const endDate = SEED[i][4]; const fee = (i % 4 === 0) ? 0 : (200000 + (i % 6) * 30000);
+        const p = patterns[i % patterns.length];
+        try {
+          // 같은 학생의 enrollment 가 이미 있으면 skip
+          const exEnr: any = await env.DB.prepare(`SELECT rowid FROM enrollments WHERE student_user_id = ? LIMIT 1`).bind(lid).first();
+          if (exEnr) continue;
+          const pkg = p.type === '정규수업' ? '정규반' : (p.type === '체험수업' ? '체험반' : '레벨테스트반');
+          await env.DB.prepare(
+            `INSERT INTO enrollments
+             (student_name, student_user_id, package, monthly_fee_krw, started_at, end_date,
+              days_of_week, time, class_size, type, teacher_name, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?)`
+          ).bind(
+            name, lid, pkg, fee || null, startMs, endDate || null,
+            p.days, p.time, p.size, p.type, p.teacher, now
+          ).run();
+          enrollCreated++;
+        } catch {}
+      }
+
+      return json({ ok: true, total: SEED.length, created, skipped, enrollments_created: enrollCreated, errors: errors.length ? errors : undefined });
     }
 
     // ===== 👨‍🎓 학생 목록 (Phase 9 학생관리 메뉴 — 학생 목록) =====
