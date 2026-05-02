@@ -4247,27 +4247,39 @@ function downloadEmptyEnrollmentTemplateExcel() {
   // 평문 CSV 가 아닌 Excel 이 직접 렌더링하는 SpreadsheetML/HTML 결합 양식
   // 망고아이 브랜드 톤: 헤더 앰버, 예시 크림, 빈 칸 점선
   const today = new Date().toISOString().slice(0,10);
+  // 🥭 Phase 33 — 주간 스케줄 그리드: 7개 요일 컬럼
   const headers = [
-    {label:'학생 이름',     hint:'(필수)',                           width:90 },
-    {label:'UID',          hint:'(선택)',                           width:80 },
-    {label:'수업 유형',     hint:'체크박스 ☑',                        width:170},
-    {label:'패키지',        hint:'예: 1년 정규반',                    width:130},
-    {label:'월 수강료',     hint:'KRW',                              width:90 },
-    {label:'요일',          hint:'월/화/수/목/금/토/일',              width:90 },
-    {label:'시간',          hint:'HH:MM 또는 요일별',                 width:130},
-    {label:'인원 방식',     hint:'1:1, 1:2, 1:3, 1:N',               width:80 },
-    {label:'시작일',        hint:'YYYY-MM-DD',                        width:90 }
+    {label:'학생 이름',     hint:'(필수)',           width:90,  group:'info'},
+    {label:'UID',          hint:'(선택)',           width:80,  group:'info'},
+    {label:'수업 유형',     hint:'체크박스 ☑',       width:170, group:'info'},
+    {label:'패키지',        hint:'예: 1년 정규반',    width:130, group:'info'},
+    {label:'월 수강료',     hint:'KRW',              width:90,  group:'info'},
+    // 📅 주간 스케줄 — 7개 요일 컬럼 (시간을 직접 셀에 입력)
+    {label:'월',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'화',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'수',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'목',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'금',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'토',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'일',           hint:'HH:MM',            width:55,  group:'sched'},
+    {label:'인원 방식',     hint:'1:1, 1:2, 1:3, 1:N', width:80, group:'info'},
+    {label:'시작일',        hint:'YYYY-MM-DD',        width:90, group:'info'}
   ];
-  // 🥭 Phase 31 — 체크박스 헬퍼 (☑ 체크 / ☐ 빈 칸)
+  // 체크박스 헬퍼
   const typeChk = (lvl, tri, reg) =>
     (lvl ? '☑' : '☐') + '레벨  ' + (tri ? '☑' : '☐') + '체험  ' + (reg ? '☑' : '☐') + '정규';
+  // 시간 그리드 헬퍼 — { mon: '07:00', wed: '08:30', fri: '06:00' } → ['07:00','','08:30','','06:00','','']
+  const tg = (sched) => ['mon','tue','wed','thu','fri','sat','sun'].map(d => sched[d] || '');
   const examples = [
-    // 단일 시간 예시
-    ['홍길동', 'user001', typeChk(true, true, true),   '1년 정규반',     350000, '월수금', '10:30',                     '1:1', '2026-05-01'],
-    // 단일 요일 단일 시간
-    ['김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트',     0, '화',    '16:20',                     '1:1', '2026-05-03'],
-    // 🥭 Phase 32 — 요일별 다른 시간 예시
-    ['박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반',     220000, '월수금','월 7:30, 수 8:00, 금 8:00', '1:3', '2026-05-04']
+    // 홍길동: 풀패키지, 월 7:00 / 수 8:30 / 금 6:00 (요일별 다른 시간 시연)
+    ['홍길동', 'user001', typeChk(true, true, true),   '1년 정규반', 350000,
+     ...tg({mon:'07:00', wed:'08:30', fri:'06:00'}), '1:1', '2026-05-01'],
+    // 김민수: 레벨만, 화 16:20
+    ['김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트', 0,
+     ...tg({tue:'16:20'}), '1:1', '2026-05-03'],
+    // 박지영: 체험+정규, 화·목 17:30 (요일별 같은 시간)
+    ['박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반', 220000,
+     ...tg({tue:'17:30', thu:'17:30'}), '1:3', '2026-05-04']
   ];
   const emptyTypeChk = typeChk(false, false, false);
 
@@ -4320,7 +4332,7 @@ function downloadEmptyEnrollmentTemplateExcel() {
       'background: #fef3c7; ' +
       'border-bottom: 1pt solid #fde68a; ' +
     '}' +
-    /* 헤더 (행 4) */
+    /* 헤더 — 정보 컬럼 (앰버) */
     '.header-cell { ' +
       'background: #f59e0b; color: #ffffff; ' +
       'font-weight: bold; font-size: 11pt; ' +
@@ -4328,9 +4340,42 @@ function downloadEmptyEnrollmentTemplateExcel() {
       'border: 1pt solid #b45309; ' +
       'mso-pattern: solid #f59e0b; ' +
     '}' +
+    /* 헤더 — 주간 스케줄 7개 요일 (파랑) */
+    '.header-sched { ' +
+      'background: #3b82f6; color: #ffffff; ' +
+      'font-weight: bold; font-size: 12pt; ' +
+      'text-align: center; padding: 10pt 4pt; ' +
+      'border: 1pt solid #1e40af; ' +
+      'mso-pattern: solid #3b82f6; ' +
+    '}' +
+    '.header-sched-weekend { ' +
+      'background: #ef4444; color: #ffffff; ' +
+      'mso-pattern: solid #ef4444; ' +
+      'border: 1pt solid #991b1b; ' +
+    '}' +
     '.header-hint { ' +
       'font-size: 8pt; font-weight: normal; color: rgba(255,255,255,0.85); ' +
       'display: block; margin-top: 2pt; ' +
+    '}' +
+    /* 스케줄 셀 — 시간 입력 (예시·빈 행 모두) */
+    '.sched-cell { ' +
+      'background: #eff6ff; color: #1e40af; ' +
+      'text-align: center; font-weight: bold; ' +
+      'font-size: 10pt; padding: 8pt 4pt; ' +
+      'border: 1pt solid #bfdbfe; ' +
+      'mso-pattern: solid #eff6ff; ' +
+    '}' +
+    '.sched-empty { ' +
+      'background: #f9fafb; ' +
+      'border: 1pt solid #e5e7eb; ' +
+      'mso-pattern: solid #f9fafb; ' +
+      'text-align: center; padding: 8pt 4pt; ' +
+    '}' +
+    '.sched-empty-alt { ' +
+      'background: #ffffff; ' +
+      'border: 1pt solid #e5e7eb; ' +
+      'mso-pattern: solid #ffffff; ' +
+      'text-align: center; padding: 8pt 4pt; ' +
     '}' +
     /* 예시 행 (행 5~7) */
     '.example-cell { ' +
@@ -4399,18 +4444,35 @@ function downloadEmptyEnrollmentTemplateExcel() {
           '• 굵게 표시된 노란 행은 <b>예시</b>입니다 (참고만, 그대로 두셔도 무방). ' +
           '아래 흰색 빈 행에 학생 정보를 채워주세요.<br>' +
           '• <b>수업 유형</b>: 해당 항목의 ☐ 를 ☑ 로 바꿔주세요. (예: ☑레벨 ☐체험 ☑정규 = 레벨+정규)<br>' +
-          '• <b>시간</b>: 단일은 <code>10:30</code>, 요일별 다르면 <code>월 7:30, 수 8:00</code> 형식<br>' +
-          '• 요일은 한글 1글자 (예: 월수금) · 인원은 1:1 ~ 1:N<br>' +
+          '• <b>📅 주간 스케줄 (파란 영역)</b>: 수업 있는 요일 칸에 시간을 직접 입력 (HH:MM 24시간제)<br>' +
+          '• 같은 학생도 요일마다 시간이 달라도 됩니다 (예: 홍길동 → 월 07:00, 수 08:30, 금 06:00)<br>' +
+          '• 빈 칸 = 그 요일에 수업 없음 · 인원은 1:1 ~ 1:N<br>' +
           '• 작성 완료 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
           '</td></tr>';
 
   // 4. 헤더 라벨 (예시 라벨)
   html += '<tr><td class="label-example" colspan="' + colCount + '">▼ 예시 (참고용 — 실제 학생 데이터는 아래 빈 행에 입력)</td></tr>';
 
-  // 5. 컬럼 헤더
+  // 5. 컬럼 헤더 — 정보 컬럼은 앰버, 주간 스케줄 컬럼은 파랑(주말은 빨강)
+  // 🥭 Phase 33 — 시각적으로 그룹 구분 (위쪽에 그룹 라벨)
   html += '<tr>';
-  headers.forEach(h => {
-    html += '<td class="header-cell" style="width:' + h.width + 'pt">' +
+  let infoCount = 0, schedCount = 0;
+  headers.forEach(h => { if (h.group === 'info') infoCount++; else schedCount++; });
+  // 그룹 라벨 행 (정보 / 주간 스케줄 / 정보 — 시작일·인원은 마지막 정보 그룹)
+  // 더 단순하게: 학생정보(5) | 주간 스케줄(7) | 등록정보(2)
+  html += '<td colspan="5" style="background:#fef3c7;color:#92400e;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #fde68a">👤 학생 정보</td>';
+  html += '<td colspan="7" style="background:#dbeafe;color:#1e40af;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #93c5fd">📅 주간 스케줄 (요일별 시간 입력)</td>';
+  html += '<td colspan="2" style="background:#fce7f3;color:#9f1239;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #fbcfe8">📋 등록 정보</td>';
+  html += '</tr>';
+  // 실제 컬럼 헤더
+  html += '<tr>';
+  headers.forEach((h, i) => {
+    let cls = 'header-cell';
+    if (h.group === 'sched') {
+      cls = 'header-sched';
+      if (h.label === '토' || h.label === '일') cls += ' header-sched-weekend';
+    }
+    html += '<td class="' + cls + '" style="width:' + h.width + 'pt">' +
             h.label + '<span class="header-hint">' + h.hint + '</span></td>';
   });
   html += '</tr>';
@@ -4419,8 +4481,12 @@ function downloadEmptyEnrollmentTemplateExcel() {
   examples.forEach(row => {
     html += '<tr>';
     row.forEach((cell, i) => {
-      const cls = i === 0 ? 'example-cell example-name' : 'example-cell';
-      const val = (i === 4 && cell) ? Number(cell).toLocaleString('ko-KR') : cell;
+      const h = headers[i];
+      let cls = '';
+      if (h.group === 'sched') cls = 'sched-cell';
+      else if (i === 0) cls = 'example-cell example-name';
+      else cls = 'example-cell';
+      const val = (i === 4 && cell) ? Number(cell).toLocaleString('ko-KR') : (cell || '　');
       html += '<td class="' + cls + '">' + val + '</td>';
     });
     html += '</tr>';
@@ -4429,22 +4495,37 @@ function downloadEmptyEnrollmentTemplateExcel() {
   // 7. 빈 행 라벨
   html += '<tr><td class="label-empty" colspan="' + colCount + '">▼ 학생 정보 입력 (빈 행에 채워 주세요)</td></tr>';
 
-  // 8. 컬럼 헤더 (한 번 더 — 입력 영역 위)
+  // 8. 컬럼 헤더 (한 번 더 — 입력 영역 위, 그룹 라벨 포함)
   html += '<tr>';
-  headers.forEach(h => {
-    html += '<td class="header-cell">' + h.label + '</td>';
+  html += '<td colspan="5" style="background:#fef3c7;color:#92400e;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #fde68a">👤 학생 정보</td>';
+  html += '<td colspan="7" style="background:#dbeafe;color:#1e40af;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #93c5fd">📅 주간 스케줄</td>';
+  html += '<td colspan="2" style="background:#fce7f3;color:#9f1239;font-weight:bold;text-align:center;padding:6pt;border:1pt solid #fbcfe8">📋 등록 정보</td>';
+  html += '</tr>';
+  html += '<tr>';
+  headers.forEach((h, i) => {
+    let cls = 'header-cell';
+    if (h.group === 'sched') {
+      cls = 'header-sched';
+      if (h.label === '토' || h.label === '일') cls += ' header-sched-weekend';
+    }
+    html += '<td class="' + cls + '">' + h.label + '</td>';
   });
   html += '</tr>';
 
   // 9. 빈 입력 행 12개 (alt 컬러로 가독성)
-  // 🥭 Phase 31 — 수업 유형(인덱스 2) 빈 셀에 체크박스 안내 텍스트
+  // 수업 유형(2) 셀에 체크박스 힌트, 스케줄 셀(5~11)은 옅은 파랑/흰
   for (let r = 0; r < 12; r++) {
     html += '<tr>';
     for (let c = 0; c < colCount; c++) {
-      const cls = (r % 2 === 0 ? 'empty-cell' : 'empty-cell-alt');
+      const h = headers[c];
+      let cls;
+      if (h.group === 'sched') {
+        cls = (r % 2 === 0) ? 'sched-empty' : 'sched-empty-alt';
+      } else {
+        cls = (r % 2 === 0) ? 'empty-cell' : 'empty-cell-alt';
+      }
       let content = '　';
       if (c === 2) {
-        // 수업 유형 컬럼 — 체크박스 힌트 (옅은 회색 글자, 사용자가 ☐ → ☑ 로 바꾸도록)
         content = '<span style="color:#cbd5e1;font-size:9pt">' + emptyTypeChk + '</span>';
       }
       html += '<td class="' + cls + '">' + content + '</td>';
@@ -4469,16 +4550,26 @@ function downloadEmptyEnrollmentTemplateWord() {
   const typeChk = (lvl, tri, reg) =>
     (lvl ? '☑' : '☐') + '레벨  ' + (tri ? '☑' : '☐') + '체험  ' + (reg ? '☑' : '☐') + '정규';
   const emptyTypeChk = typeChk(false, false, false);
+  // 🥭 Phase 33 — 주간 스케줄 그리드: 7개 요일 컬럼 (월~일)
+  // 시간 그리드 헬퍼 — 객체 → ['07:00','','08:30','','06:00','','']
+  const tg = (sched) => ['mon','tue','wed','thu','fri','sat','sun'].map(d => sched[d] || '');
   const examples = [
-    ['1', '홍길동', 'user001', typeChk(true, true, true),   '1년 정규반',       '350,000', '월수금', '10:30',                     '1:1', '2026-05-01'],
-    ['2', '김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트',       '0', '화',    '16:20',                     '1:1', '2026-05-03'],
-    // 🥭 Phase 32 — 요일별 다른 시간 예시
-    ['3', '박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반',    '220,000', '월수금', '월 7:30, 수 8:00, 금 8:00', '1:3', '2026-05-04']
+    // 홍길동: 풀패키지, 월 7:00 / 수 8:30 / 금 6:00 (요일별 다른 시간 시연 — 사용자 예시)
+    ['1', '홍길동', 'user001', typeChk(true, true, true),   '1년 정규반', '350,000',
+     ...tg({mon:'07:00', wed:'08:30', fri:'06:00'}), '1:1', '2026-05-01'],
+    // 김민수: 레벨만, 화 16:20
+    ['2', '김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트', '0',
+     ...tg({tue:'16:20'}), '1:1', '2026-05-03'],
+    // 박지영: 체험+정규, 화·목 17:30 (같은 시간)
+    ['3', '박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반', '220,000',
+     ...tg({tue:'17:30', thu:'17:30'}), '1:3', '2026-05-04']
   ];
-  const headers = ['#', '학생 이름*', 'UID', '수업 유형* (☑ 체크)', '패키지', '월 수강료(KRW)', '요일', '시간 (요일별 가능)', '인원 방식', '시작일'];
-  const widths  = [4,    10,          8,     17,                    12,        10,                7,     14,                  7,         11];
+  // 컬럼: # 학생 UID 유형 패키지 수강료 [월화수목금토일] 인원 시작일 = 15개
+  const headers = ['#', '학생 이름*', 'UID', '수업 유형* (☑)', '패키지', '월 수강료', '월','화','수','목','금','토','일', '인원', '시작일'];
+  const widths  = [3,    9,           7,     14,              11,        9,           5,   5,   5,   5,   5,   5,   5,    6,      11];
+  const groups  = ['info','info','info','info','info','info', 'sched','sched','sched','sched','sched','sched','sched', 'info','info'];
 
-  // 빈 입력 행 생성 — 수업 유형 컬럼은 체크박스 힌트 표시
+  // 빈 입력 행 생성 — 유형 컬럼(인덱스 3)은 체크박스 힌트, 스케줄 컬럼(6~12)은 옅은 파랑
   let emptyRows = '';
   for (let i = 1; i <= 15; i++) {
     const altClass = (i % 2 === 0) ? 'data-row-alt' : 'data-row';
@@ -4486,8 +4577,10 @@ function downloadEmptyEnrollmentTemplateWord() {
       '<td class="data-num">' + i + '</td>';
     for (let c = 1; c < headers.length; c++) {
       if (c === 3) {
-        // 수업 유형 — 체크박스 힌트 (옅은 회색 글자, 사용자가 ☐ → ☑ 로 변경)
         emptyRows += '<td><span style="color:#cbd5e1;font-size:9pt">' + emptyTypeChk + '</span></td>';
+      } else if (groups[c] === 'sched') {
+        // 스케줄 셀 — 옅은 파랑 배경
+        emptyRows += '<td class="sched-empty">　</td>';
       } else {
         emptyRows += '<td>　</td>';
       }
@@ -4495,15 +4588,34 @@ function downloadEmptyEnrollmentTemplateWord() {
     emptyRows += '</tr>';
   }
 
-  // 헤더 셀 HTML
-  const headerCells = headers.map((h, i) =>
-    '<th style="width:' + widths[i] + '%">' + h + '</th>'
-  ).join('');
+  // 헤더 셀 HTML — 그룹별 색상 (정보 앰버, 스케줄 파랑, 주말 빨강)
+  const headerCells = headers.map((h, i) => {
+    let cls = '';
+    if (groups[i] === 'sched') {
+      cls = 'sched-header';
+      if (h === '토' || h === '일') cls = 'sched-header-weekend';
+    }
+    return '<th' + (cls ? ' class="' + cls + '"' : '') + ' style="width:' + widths[i] + '%">' + h + '</th>';
+  }).join('');
+
+  // 그룹 라벨 행 (헤더 위)
+  const groupHeaderRow =
+    '<tr class="group-row">' +
+      '<th colspan="6" class="group-info">👤 학생 정보</th>' +
+      '<th colspan="7" class="group-sched">📅 주간 스케줄 (요일별 시간)</th>' +
+      '<th colspan="2" class="group-extra">📋 등록 정보</th>' +
+    '</tr>';
 
   // 예시 행 HTML
   const exampleRows = examples.map(row =>
     '<tr class="example-row">' +
-      row.map((cell, i) => '<td' + (i === 1 ? ' class="example-name"' : '') + '>' + cell + '</td>').join('') +
+      row.map((cell, i) => {
+        let cls = '';
+        if (i === 1) cls = 'example-name';
+        if (groups[i] === 'sched' && cell) cls += ' sched-cell-filled';
+        else if (groups[i] === 'sched') cls += ' sched-cell-empty-row';
+        return '<td' + (cls ? ' class="' + cls.trim() + '"' : '') + '>' + (cell || '　') + '</td>';
+      }).join('') +
     '</tr>'
   ).join('');
 
@@ -4540,13 +4652,25 @@ function downloadEmptyEnrollmentTemplateWord() {
       'th { background: #f59e0b; color: #ffffff; font-size: 10pt; font-weight: bold; ' +
         'text-align: center; padding: 8pt 4pt; border: 0.75pt solid #b45309; }' +
       'td { padding: 8pt 6pt; border: 0.75pt solid #d6d3d1; vertical-align: middle; font-size: 9pt; }' +
+      // 🥭 Phase 33 — 그룹 헤더 (학생 정보 / 주간 스케줄 / 등록 정보)
+      '.group-row th { padding: 5pt; font-size: 10pt; }' +
+      '.group-info { background: #fef3c7; color: #92400e; border-color: #fde68a; }' +
+      '.group-sched { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }' +
+      '.group-extra { background: #fce7f3; color: #9f1239; border-color: #fbcfe8; }' +
+      // 주간 스케줄 헤더 (요일)
+      '.sched-header { background: #3b82f6; color: #ffffff; border-color: #1e40af; }' +
+      '.sched-header-weekend { background: #ef4444; color: #ffffff; border-color: #991b1b; }' +
       // 예시 행
       '.example-row td { background: #fffbeb; color: #78350f; font-style: italic; text-align: center; }' +
       '.example-name { font-weight: bold; color: #9a3412 !important; font-style: normal !important; }' +
+      '.sched-cell-filled { background: #eff6ff !important; color: #1e40af !important; ' +
+        'font-weight: bold !important; font-style: normal !important; font-size: 10pt !important; }' +
+      '.sched-cell-empty-row { background: #fafafa !important; }' +
       // 빈 입력 행 (alt 컬러)
       '.data-row td { background: #ffffff; height: 22pt; text-align: center; }' +
       '.data-row-alt td { background: #f9fafb; height: 22pt; text-align: center; }' +
       '.data-num { color: #9ca3af; font-weight: bold; font-size: 9pt; }' +
+      '.sched-empty { background: #f0f9ff !important; border-color: #bfdbfe !important; }' +
       // 푸터
       '.footer { margin-top: 18pt; font-size: 8pt; color: #9ca3af; text-align: center; ' +
         'padding-top: 10pt; border-top: 0.5pt solid #e5e7eb; }' +
@@ -4562,18 +4686,19 @@ function downloadEmptyEnrollmentTemplateWord() {
       '💡 <b>작성 안내</b><br>' +
       '• 한 학생당 한 행씩 채워주세요. <b>학생 이름</b>과 <b>수업 유형</b>은 필수.<br>' +
       '• <b>수업 유형</b>: 해당 항목의 ☐ 를 ☑ 로 변경 (예: <code>☑레벨 ☐체험 ☑정규</code> = 레벨+정규)<br>' +
-      '• <b>요일</b>: 한글 1글자 (예: 월수금)　·　<b>시간</b>: 단일 <code>10:30</code> 또는 요일별 <code>월 7:30, 수 8:00</code><br>' +
-      '• <b>인원 방식</b>: 1:1 (개인) / 1:2 / 1:3 / 1:4 / 1:5 / 1:6 / 1:N (대형) 중 선택<br>' +
+      '• <b>📅 주간 스케줄 (파란 영역)</b>: 수업 있는 요일 칸에 시간 직접 입력 (HH:MM 24시간)<br>' +
+      '• 같은 학생도 요일마다 시간이 달라도 됩니다 (예: 홍길동 → 월 07:00, 수 08:30, 금 06:00)<br>' +
+      '• 빈 칸 = 그 요일에 수업 없음　·　<b>인원 방식</b>: 1:1 ~ 1:N 중 선택<br>' +
       '• 작성 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
     '</div>' +
 
     // 예시 섹션
     '<div class="section-label">▼ 예시 (참고용 — 실제 학생 데이터는 아래 입력 영역에)</div>' +
-    '<table><thead><tr>' + headerCells + '</tr></thead><tbody>' + exampleRows + '</tbody></table>' +
+    '<table><thead>' + groupHeaderRow + '<tr>' + headerCells + '</tr></thead><tbody>' + exampleRows + '</tbody></table>' +
 
     // 입력 섹션
     '<div class="section-label section-label-blue">▼ 학생 정보 입력 (한 학생당 한 행, 최대 15명)</div>' +
-    '<table><thead><tr>' + headerCells + '</tr></thead><tbody>' + emptyRows + '</tbody></table>' +
+    '<table><thead>' + groupHeaderRow + '<tr>' + headerCells + '</tr></thead><tbody>' + emptyRows + '</tbody></table>' +
 
     // 푸터
     '<div class="footer">© Mangoi · 망고아이 영어 화상수업 · 양식 자동 발급 ' + today + '</div>' +
@@ -5395,14 +5520,31 @@ function _parseWordEnrollments(html) {
           }
           return '';
         };
+        // 🥭 Phase 33 — 7개 요일 컬럼 (월/화/수/목/금/토/일) 감지
+        // 각 요일 컬럼이 별도로 존재하면 시간을 거기서 읽어서 "월 7:00, 수 8:30" 형식으로 합성
+        const dayColMap = [['월','mon'],['화','tue'],['수','wed'],['목','thu'],['금','fri'],['토','sat'],['일','sun']];
+        const perDayParts = [];
+        let perDayDays = '';
+        dayColMap.forEach(([ko, en]) => {
+          // 헤더가 정확히 "월" 같은 단일 글자면 매칭 (긴 라벨은 부분 매칭 안 함)
+          for (const h of Object.keys(rec)) {
+            if (h === ko && rec[h] && /\d/.test(rec[h])) {
+              const t = rec[h].replace(/\s/g, '');
+              perDayParts.push(ko + ' ' + t);
+              perDayDays += ko;
+              break;
+            }
+          }
+        });
         const enr = _normalizeEnrollment({
           student_name: findKey(['학생 이름','학생','이름']),
           student_user_id: findKey(['UID','user']),
           types_raw: findKey(['수업 유형','유형','과목']),
           package: findKey(['패키지','상품','코스']),
           monthly_fee_krw: findKey(['월 수강료','수강료','학비']),
-          days_raw: findKey(['요일']),
-          time: findKey(['시간']),
+          // 7-컬럼 형식 발견 시 그쪽 우선, 없으면 기존 단일 컬럼 fallback
+          days_raw: perDayDays || findKey(['요일']),
+          time: perDayParts.length > 0 ? perDayParts.join(', ') : findKey(['시간']),
           class_size: findKey(['인원 방식','인원','class']),
           started_at: findKey(['시작일','개강일'])
         });
