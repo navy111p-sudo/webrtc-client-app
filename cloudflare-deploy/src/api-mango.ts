@@ -1903,16 +1903,39 @@ export async function handleMangoApi(
 
     // 22명 데모 시드 (스크린샷 데이터 기반)
     if (path === '/api/admin/students/erp-seed' && method === 'POST') {
-      await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT, username TEXT NOT NULL, login_id TEXT,
-        payment_type TEXT, end_date TEXT, signup_date TEXT,
-        classes_per_week INTEGER, points INTEGER DEFAULT 0,
-        student_phone TEXT, parent_phone TEXT, teacher_phone TEXT,
-        shop_name TEXT, hq_name TEXT, branch1_name TEXT, branch2_name TEXT,
-        franchise TEXT, status TEXT DEFAULT '정상',
-        created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL
-      );`);
+      // 🥭 Phase 35b — 스키마 충돌 대비 (Phase 20d 의 다른 스키마와 호환)
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          student_id TEXT, username TEXT, login_id TEXT,
+          payment_type TEXT, end_date TEXT, signup_date TEXT,
+          classes_per_week INTEGER, points INTEGER DEFAULT 0,
+          student_phone TEXT, parent_phone TEXT, teacher_phone TEXT,
+          shop_name TEXT, hq_name TEXT, branch1_name TEXT, branch2_name TEXT,
+          franchise TEXT, status TEXT DEFAULT '정상',
+          created_at INTEGER, updated_at INTEGER,
+          korean_name TEXT, english_name TEXT, user_id TEXT
+        );`);
+      } catch {}
+      // 누락 컬럼 보강 — ALTER TABLE ADD COLUMN (이미 있으면 throw, 개별 try/catch)
+      const _addCol = async (col: string, type: string) => {
+        try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN ${col} ${type}`); } catch {}
+      };
+      await _addCol('student_id', 'TEXT');
+      await _addCol('username', 'TEXT');
+      await _addCol('login_id', 'TEXT');
+      await _addCol('payment_type', 'TEXT');
+      await _addCol('classes_per_week', 'INTEGER');
+      await _addCol('points', 'INTEGER DEFAULT 0');
+      await _addCol('student_phone', 'TEXT');
+      await _addCol('parent_phone', 'TEXT');
+      await _addCol('teacher_phone', 'TEXT');
+      await _addCol('shop_name', 'TEXT');
+      await _addCol('hq_name', 'TEXT');
+      await _addCol('branch1_name', 'TEXT');
+      await _addCol('branch2_name', 'TEXT');
+      await _addCol('franchise', 'TEXT');
+      await _addCol('updated_at', 'INTEGER');
       // [student_id, username, login_id, pay, end_date, signup, classes, points, stu_ph, par_ph, t_ph, shop, hq, b1, b2, fran]
       const SEED = [
         ['28220','구도아','SLPSSO_gda0226',     'B2C 결제', null,         '2026-04-23', null, 0,  '010-7588-1544', null, null, '청주SLP',         '에듀비전 본사','slpmangoi','SLP','에듀비전'],
@@ -1940,19 +1963,25 @@ export async function handleMangoApi(
       ];
       const now = Date.now();
       let created = 0, skipped = 0;
+      const errors: string[] = [];
       for (const row of SEED) {
         const [sid, name, lid, pay, end_dt, signup, cw, pts, sp, pp, tp, shop, hq, b1, b2, fr] = row;
-        const exists: any = await env.DB.prepare(`SELECT id FROM students_erp WHERE student_id = ? LIMIT 1`).bind(sid).first();
-        if (exists && exists.id) { skipped++; continue; }
-        await env.DB.prepare(
-          `INSERT INTO students_erp (student_id, username, login_id, payment_type, end_date, signup_date,
-                                      classes_per_week, points, student_phone, parent_phone, teacher_phone,
-                                      shop_name, hq_name, branch1_name, branch2_name, franchise, status, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '정상', ?, ?)`
-        ).bind(sid, name, lid, pay, end_dt, signup, cw, pts, sp, pp, tp, shop, hq, b1, b2, fr, now, now).run();
-        created++;
+        try {
+          // 중복 체크 — rowid 사용 (id 컬럼 없는 스키마에서도 동작)
+          const exists: any = await env.DB.prepare(`SELECT rowid FROM students_erp WHERE student_id = ? LIMIT 1`).bind(sid).first();
+          if (exists) { skipped++; continue; }
+          await env.DB.prepare(
+            `INSERT INTO students_erp (student_id, username, login_id, payment_type, end_date, signup_date,
+                                        classes_per_week, points, student_phone, parent_phone, teacher_phone,
+                                        shop_name, hq_name, branch1_name, branch2_name, franchise, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '정상', ?, ?)`
+          ).bind(sid, name, lid, pay, end_dt, signup, cw, pts, sp, pp, tp, shop, hq, b1, b2, fr, now, now).run();
+          created++;
+        } catch (e: any) {
+          errors.push(sid + ': ' + (e?.message || e));
+        }
       }
-      return json({ ok: true, total: SEED.length, created, skipped });
+      return json({ ok: true, total: SEED.length, created, skipped, errors: errors.length ? errors : undefined });
     }
 
     // ===== 👨‍🎓 학생 목록 (Phase 9 학생관리 메뉴 — 학생 목록) =====
