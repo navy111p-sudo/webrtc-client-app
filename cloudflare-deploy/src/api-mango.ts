@@ -2124,13 +2124,32 @@ export async function handleMangoApi(
     // ─── 수강신청 ─────────────────────────────────────────────────────────
     if ((method === 'GET' || method === 'POST') && path === '/api/admin/enrollments') {
       await env.DB.exec(`CREATE TABLE IF NOT EXISTS enrollments (id INTEGER PRIMARY KEY AUTOINCREMENT, student_user_id TEXT, student_name TEXT NOT NULL, package TEXT, started_at INTEGER, ended_at INTEGER, monthly_fee_krw INTEGER, status TEXT DEFAULT 'pending', notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+      // 🥭 Phase 37b — 누락 컬럼 자동 보강 (Phase 36 seed 가 사용하는 컬럼들)
+      const _addEnrCol2 = async (col: string, type: string) => {
+        try { await env.DB.exec(`ALTER TABLE enrollments ADD COLUMN ${col} ${type}`); } catch {}
+      };
+      await _addEnrCol2('days_of_week', 'TEXT');
+      await _addEnrCol2('time', 'TEXT');
+      await _addEnrCol2('class_size', 'TEXT');
+      await _addEnrCol2('type', 'TEXT');
+      await _addEnrCol2('teacher_name', 'TEXT');
+      await _addEnrCol2('end_date', 'TEXT');
       if (method === 'GET') {
+        // 🥭 Phase 37b — user_id 필터 추가 (학생별 스케줄 fetch)
         const statusF = url.searchParams.get('status');
+        const userIdF = url.searchParams.get('user_id');
         const lim = Math.max(1, Math.min(500, parseInt(url.searchParams.get('limit') || '100', 10)));
-        const rs = statusF
-          ? await env.DB.prepare(`SELECT * FROM enrollments WHERE status = ? ORDER BY created_at DESC LIMIT ?`).bind(statusF, lim).all()
-          : await env.DB.prepare(`SELECT * FROM enrollments ORDER BY created_at DESC LIMIT ?`).bind(lim).all();
-        return json({ ok: true, items: rs.results || [] });
+        const where: string[] = []; const binds: any[] = [];
+        if (statusF) { where.push('status = ?'); binds.push(statusF); }
+        if (userIdF) { where.push('student_user_id = ?'); binds.push(userIdF); }
+        const sql = `SELECT * FROM enrollments${where.length ? ' WHERE ' + where.join(' AND ') : ''} ORDER BY created_at DESC LIMIT ?`;
+        binds.push(lim);
+        try {
+          const rs = await env.DB.prepare(sql).bind(...binds).all<any>();
+          return json({ ok: true, items: rs.results || [] });
+        } catch (e: any) {
+          return json({ ok: true, items: [], warning: String(e?.message || e) });
+        }
       }
       const b = await parseJsonBody(request);
       if (!b || !b.student_name || !b.package) return invalidBody(['student_name', 'package']);
