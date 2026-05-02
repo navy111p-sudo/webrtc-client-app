@@ -2397,22 +2397,135 @@
 <details class="table-card menu-card" id="card-textbooks">
   <summary><span data-ko="📖 교재 콘텐츠 관리" data-en="📖 Textbooks">📖 교재 콘텐츠 관리</span></summary>
   <div class="menu-body">
-    <details>
-      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
-      <div class="menu-form">
-        <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
-        <select id="tb-level" style="width:90px;">
-          <option value="">level…</option>
-          <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
-        </select>
-        <input id="tb-units"     type="number" placeholder="단원 수" data-ko-placeholder="단원 수" data-en-placeholder="Units" style="width:90px;" />
-        <input id="tb-publisher" placeholder="출판사"     data-ko-placeholder="출판사"     data-en-placeholder="Publisher" style="width:140px;" />
-        <input id="tb-isbn"      placeholder="ISBN"        style="width:140px;" />
-        <button id="tb-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-      </div>
-    </details>
-    <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="교재명" data-en="Title">교재명</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="단원" data-en="Units">단원</th><th data-ko="출판사" data-en="Publisher">출판사</th><th>ISBN</th></tr></thead>
-      <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+
+    <!-- 🥭 Phase 38 — 2개 그룹 × 5개 하위 항목 -->
+
+    <!-- ━━ 그룹 1 — 콘텐츠 교재 관리 ━━ -->
+    <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:14px 0 8px;padding:6px 10px;background:linear-gradient(90deg,#f1f5f9,transparent);border-left:3px solid #3b82f6;border-radius:4px">
+      📁 콘텐츠 교재 관리
+    </div>
+    <div class="sub-menu">
+
+      <!-- 1-1) 컨텐츠 교재 관리 -->
+      <details class="sub-item" open>
+        <summary data-ko="📚 컨텐츠 교재 관리" data-en="📚 Content Textbook Management">📚 컨텐츠 교재 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
+            <div class="menu-form">
+              <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
+              <select id="tb-level" style="width:90px;">
+                <option value="">level…</option>
+                <option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option>
+              </select>
+              <input id="tb-units"     type="number" placeholder="단원 수" data-ko-placeholder="단원 수" data-en-placeholder="Units" style="width:90px;" />
+              <input id="tb-publisher" placeholder="출판사"     data-ko-placeholder="출판사"     data-en-placeholder="Publisher" style="width:140px;" />
+              <input id="tb-isbn"      placeholder="ISBN"        style="width:140px;" />
+              <button id="tb-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="교재명" data-en="Title">교재명</th><th data-ko="레벨" data-en="Level">레벨</th><th data-ko="단원" data-en="Units">단원</th><th data-ko="출판사" data-en="Publisher">출판사</th><th>ISBN</th></tr></thead>
+            <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 1-2) 컨텐츠 교재그룹 관리 -->
+      <details class="sub-item">
+        <summary data-ko="📂 컨텐츠 교재그룹 관리" data-en="📂 Content Textbook Group Management">📂 컨텐츠 교재그룹 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 그룹 등록" data-en="＋ Add Textbook Group">＋ 교재 그룹 등록</summary>
+            <div class="menu-form">
+              <input id="tcg-name" placeholder="그룹 이름 (필수, 예: 초등 정규반)" style="width:240px;" />
+              <input id="tcg-level-range" placeholder="레벨 범위 (예: A1~B1)" style="width:140px;" />
+              <textarea id="tcg-desc" placeholder="설명 (구성 교재·대상 학습자 등)" style="width:300px;height:32px;resize:vertical"></textarea>
+              <button id="tcg-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>그룹명</th><th>레벨 범위</th><th>포함 교재</th><th>설명</th><th>액션</th></tr></thead>
+            <tbody id="tcg-table"><tr><td colspan="6" class="empty">데이터 없음 — 위에서 등록</td></tr></tbody></table>
+        </div>
+      </details>
+
+    </div>
+
+    <!-- ━━ 그룹 2 — 판매 교재 관리 ━━ -->
+    <div style="font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:0.05em;margin:18px 0 8px;padding:6px 10px;background:linear-gradient(90deg,#fef3c7,transparent);border-left:3px solid #f59e0b;border-radius:4px">
+      💰 판매 교재 관리
+    </div>
+    <div class="sub-menu">
+
+      <!-- 2-1) 판매 교재 관리 -->
+      <details class="sub-item">
+        <summary data-ko="🛒 판매 교재 관리" data-en="🛒 Sales Textbook Management">🛒 판매 교재 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 판매 교재 등록" data-en="＋ Add Sales Textbook">＋ 판매 교재 등록</summary>
+            <div class="menu-form">
+              <input id="ts-title" placeholder="교재명 (필수)" style="width:200px;" />
+              <select id="ts-category" style="width:120px;">
+                <option value="">카테고리…</option>
+                <option>정규</option><option>체험</option><option>레벨테스트</option><option>워크북</option><option>부교재</option>
+              </select>
+              <input id="ts-price" type="number" placeholder="판매가 (KRW)" style="width:130px;" />
+              <input id="ts-stock" type="number" placeholder="재고 수량" style="width:100px;" />
+              <select id="ts-status" style="width:100px;">
+                <option value="active">🟢 판매중</option>
+                <option value="paused">⏸️ 일시중지</option>
+                <option value="discontinued">🚪 단종</option>
+              </select>
+              <button id="ts-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>교재명</th><th>카테고리</th><th>판매가</th><th>재고</th><th>상태</th><th>액션</th></tr></thead>
+            <tbody id="ts-table"><tr><td colspan="7" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 2-2) 판매 교재 그룹 관리 -->
+      <details class="sub-item">
+        <summary data-ko="📦 판매 교재 그룹 관리" data-en="📦 Sales Textbook Group">📦 판매 교재 그룹 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 판매 그룹 등록</summary>
+            <div class="menu-form">
+              <input id="tsg-name" placeholder="그룹 이름 (예: 초등 풀패키지)" style="width:240px;" />
+              <input id="tsg-bundle-price" type="number" placeholder="패키지 가격 (KRW)" style="width:160px;" />
+              <input id="tsg-discount" type="number" step="0.1" placeholder="할인율 %" style="width:110px;" />
+              <textarea id="tsg-desc" placeholder="설명·구성 교재 목록" style="width:300px;height:32px;resize:vertical"></textarea>
+              <button id="tsg-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>그룹명</th><th>구성 교재</th><th>패키지 가격</th><th>할인율</th><th>액션</th></tr></thead>
+            <tbody id="tsg-table"><tr><td colspan="6" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 2-3) 판매 구분관리 -->
+      <details class="sub-item">
+        <summary data-ko="🏷️ 판매 구분 관리" data-en="🏷️ Sales Category Management">🏷️ 판매 구분 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 판매 구분 등록</summary>
+            <div class="menu-form">
+              <input id="tsc-name" placeholder="구분 이름 (예: 학년별)" style="width:200px;" />
+              <input id="tsc-code" placeholder="코드 (영문, 예: GRADE)" style="width:140px;" />
+              <select id="tsc-type" style="width:140px;">
+                <option value="">타입…</option>
+                <option value="grade">학년</option><option value="level">레벨</option>
+                <option value="subject">과목</option><option value="age">연령</option><option value="other">기타</option>
+              </select>
+              <input id="tsc-sort" type="number" placeholder="정렬 순서" style="width:100px;" />
+              <button id="tsc-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>구분 이름</th><th>코드</th><th>타입</th><th>정렬</th><th>액션</th></tr></thead>
+            <tbody id="tsc-table"><tr><td colspan="6" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+    </div>
+
   </div>
 </details>
 
