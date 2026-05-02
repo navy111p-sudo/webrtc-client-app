@@ -3018,9 +3018,40 @@ const _GAME_WORDS = [
   { en:'school', ko:'학교' }, { en:'water', ko:'물' }, { en:'sun', ko:'태양' },
   { en:'moon', ko:'달' }, { en:'star', ko:'별' }, { en:'love', ko:'사랑' }
 ];
-const _gameState = { mode: 'brick', score: 0, correct: 0, wrong: 0, current: null, started: false };
+const _gameState = { mode: 'brick', score: 0, correct: 0, wrong: 0, current: null, started: false, balloonTimer: null };
+
+// 🥭 Phase 48 — 수업 중(2명 이상) 인지 체크 → 게임 차단
+function _gameIsClassActive() {
+  const el = document.getElementById('vc-user-count');
+  const count = el ? parseInt(el.textContent, 10) || 0 : 0;
+  // 2명 이상 = 나 + 교사 (또는 다른 참가자) 가 있음
+  return count >= 2;
+}
+
+function _gameRenderBlocked() {
+  // 풍선 등 진행 중이던 타이머 정리
+  if (_gameState.balloonTimer) { clearInterval(_gameState.balloonTimer); _gameState.balloonTimer = null; }
+  const html =
+    '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:380px;text-align:center;padding:30px">' +
+      '<div style="font-size:88px;margin-bottom:18px;animation:pulse 2s ease-in-out infinite">🚫</div>' +
+      '<div style="font-size:22px;font-weight:700;color:#ef4444;margin-bottom:14px" data-ko="수업시간에는 할 수 없습니다." data-en="Cannot play during class.">수업시간에는 할 수 없습니다.</div>' +
+      '<div style="font-size:16px;color:#cbd5e1;margin-bottom:24px;line-height:1.6" data-ko="수업 전이나 후에 해주세요." data-en="Please play before or after class.">수업 전이나 후에 해주세요.</div>' +
+      '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:14px 20px;font-size:13px;color:#fca5a5;max-width:420px">' +
+        '💡 <span data-ko="현재 수업이 진행 중이에요. 게임은 교사가 없을 때만 플레이할 수 있습니다." data-en="A class is in progress. Games can only be played when no teacher is present.">현재 수업이 진행 중이에요. 게임은 교사가 없을 때만 플레이할 수 있습니다.</span>' +
+      '</div>' +
+      '<div style="margin-top:18px;font-size:11px;color:#64748b">🟢 <span data-ko="현재 참여자" data-en="Participants">현재 참여자</span>: ' +
+        (document.getElementById('vc-user-count')?.textContent || '?') + '<span data-ko="명" data-en="">명</span></div>' +
+    '</div>' +
+    '<style>@keyframes pulse { 0%,100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }</style>';
+  const area = document.getElementById('game-area');
+  if (area) area.innerHTML = html;
+  const fb = document.getElementById('game-feedback');
+  if (fb) fb.innerHTML = '<span style="color:#ef4444">🚫 수업 중 — 게임 잠금</span>';
+}
 
 function gameInit() {
+  // 🥭 Phase 48 — 수업 중이면 차단
+  if (_gameIsClassActive()) { _gameRenderBlocked(); return; }
   _gameState.started = true;
   _gameState.score = 0; _gameState.correct = 0; _gameState.wrong = 0;
   _gameUpdateScore();
@@ -3038,10 +3069,14 @@ function gameSwitchMode(mode) {
     btn.style.background = mode === m ? '#10b981' : 'transparent';
     btn.style.color = mode === m ? '#fff' : '#94a3b8';
   });
+  // 🥭 Phase 48 — 수업 중이면 차단
+  if (_gameIsClassActive()) { _gameRenderBlocked(); return; }
   gameNextRound();
 }
 
 function gameNextRound() {
+  // 🥭 Phase 48 — 수업 중이면 차단
+  if (_gameIsClassActive()) { _gameRenderBlocked(); return; }
   document.getElementById('game-feedback').textContent = '';
   if (_gameState.mode === 'brick') gameRenderBrick();
   else if (_gameState.mode === 'match') gameRenderMatch();
@@ -3498,6 +3533,16 @@ function vcRestorePipPos() {
 
 function updateUserCount(count) {
     document.getElementById('vc-user-count').textContent = count || 0;
+    // 🥭 Phase 48 — 게임 탭이 열려있고 수업이 시작되면 즉시 차단 화면
+    const gameTab = document.getElementById('tab-game');
+    if (gameTab && gameTab.classList.contains('active')) {
+      if ((count || 0) >= 2 && typeof _gameRenderBlocked === 'function') {
+        _gameRenderBlocked();
+      } else if ((count || 0) < 2 && typeof gameInit === 'function' && typeof _gameState !== 'undefined') {
+        // 수업 종료 (혼자 남음) → 게임 자동 재시작 (선택사항: 사용자 의도일 가능성)
+        if (_gameState.started === false) gameInit();
+      }
+    }
 }
 
 
