@@ -1710,6 +1710,69 @@
   .eval-row label { font-size:13px; font-weight:600; color:#374151; }
   .eval-row input[type=number] { padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:13px; text-align:right; }
   .eval-row .desc { font-size:11px; color:#6b7280; }
+
+  /* ── 📖 교재 콘텐츠 하위 메뉴 ─────────────────────────────── */
+  .tb-submenu { display:flex; flex-direction:column; gap:12px; padding:8px 0 4px; }
+  .tb-group { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px 14px; }
+  .tb-group-title { font-size:13px; font-weight:700; color:#374151; margin-bottom:8px; }
+  .tb-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+  .tb-btn {
+    padding:6px 14px; font-size:13px; font-weight:600;
+    background:#fff; color:#1f2937;
+    border:1px solid #d1d5db; border-radius:6px; cursor:pointer;
+    transition:all 0.15s;
+  }
+  .tb-btn:hover { background:#3b82f6; color:#fff; border-color:#3b82f6; box-shadow:0 2px 6px rgba(59,130,246,0.25); }
+
+  /* ── 📖 교재 콘텐츠 모달 ─────────────────────────────────── */
+  .tb-modal-bg {
+    position:fixed; inset:0; background:rgba(0,0,0,0.55);
+    z-index:9999; display:none; align-items:center; justify-content:center;
+  }
+  .tb-modal-bg.show { display:flex; }
+  .tb-modal {
+    background:#fff; border-radius:10px; width:92%; max-width:760px; max-height:88vh;
+    display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 8px 40px rgba(0,0,0,0.3);
+  }
+  .tb-modal-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px; border-bottom:1px solid #e5e7eb; background:#f9fafb;
+  }
+  .tb-modal-header h3 { margin:0; font-size:16px; font-weight:700; color:#1f2937; }
+  .tb-modal-close {
+    border:none; background:transparent; font-size:18px; color:#6b7280;
+    cursor:pointer; padding:4px 10px; border-radius:6px;
+  }
+  .tb-modal-close:hover { background:#fee2e2; color:#991b1b; }
+  .tb-modal-body { padding:18px 20px; overflow-y:auto; flex:1 1 auto; font-size:13px; color:#1f2937; }
+  .tb-modal-body table { width:100%; border-collapse:collapse; margin-top:8px; font-size:12px; }
+  .tb-modal-body table th, .tb-modal-body table td {
+    border:1px solid #e5e7eb; padding:6px 8px; text-align:left;
+  }
+  .tb-modal-body table th { background:#f3f4f6; font-weight:600; }
+  .tb-modal-body .tb-form {
+    display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;
+    background:#f9fafb; padding:10px; border-radius:6px; border:1px solid #e5e7eb;
+  }
+  .tb-modal-body .tb-form input,
+  .tb-modal-body .tb-form select {
+    padding:6px 8px; border:1px solid #d1d5db; border-radius:6px; font-size:12px;
+  }
+  .tb-modal-footer {
+    display:flex; justify-content:flex-end; gap:8px;
+    padding:12px 20px; border-top:1px solid #e5e7eb; background:#fafafa;
+  }
+  .tb-btn-secondary {
+    padding:7px 16px; font-size:13px; background:#fff; color:#374151;
+    border:1px solid #d1d5db; border-radius:6px; cursor:pointer;
+  }
+  .tb-btn-secondary:hover { background:#f3f4f6; }
+  .tb-btn-primary {
+    padding:7px 16px; font-size:13px; background:#3b82f6; color:#fff;
+    border:1px solid #3b82f6; border-radius:6px; cursor:pointer; font-weight:600;
+  }
+  .tb-btn-primary:hover { background:#2563eb; }
 </style>
 
 <!-- 👨‍🎓 학생관리 (상위 메뉴 + 10개 하위 토글) -->
@@ -2397,7 +2460,33 @@
 <details class="table-card menu-card" id="card-textbooks">
   <summary><span data-ko="📖 교재 콘텐츠 관리" data-en="📖 Textbooks">📖 교재 콘텐츠 관리</span></summary>
   <div class="menu-body">
-    <details>
+
+    <!-- ▼▼ 교재 콘텐츠 하위 메뉴 (모달 트리거) ▼▼ -->
+    <div class="tb-submenu">
+      <div class="tb-group">
+        <div class="tb-group-title" data-ko="📚 콘텐츠 교재 관리" data-en="📚 Content Textbooks">📚 콘텐츠 교재 관리</div>
+        <div class="tb-buttons">
+          <button type="button" class="tb-btn" onclick="openTbModal('content-textbook')"
+                  data-ko="컨텐츠 교재 관리" data-en="Content Textbook">컨텐츠 교재 관리</button>
+          <button type="button" class="tb-btn" onclick="openTbModal('content-textbook-group')"
+                  data-ko="컨텐츠 교재그룹 관리" data-en="Content Textbook Group">컨텐츠 교재그룹 관리</button>
+        </div>
+      </div>
+      <div class="tb-group">
+        <div class="tb-group-title" data-ko="💰 판매 교재 관리" data-en="💰 Sale Textbooks">💰 판매 교재 관리</div>
+        <div class="tb-buttons">
+          <button type="button" class="tb-btn" onclick="openTbModal('sale-textbook')"
+                  data-ko="판매 교재 관리" data-en="Sale Textbook">판매 교재 관리</button>
+          <button type="button" class="tb-btn" onclick="openTbModal('sale-textbook-group')"
+                  data-ko="판매 교재 그룹 관리" data-en="Sale Textbook Group">판매 교재 그룹 관리</button>
+          <button type="button" class="tb-btn" onclick="openTbModal('sale-category')"
+                  data-ko="판매 구분관리" data-en="Sale Category">판매 구분관리</button>
+        </div>
+      </div>
+    </div>
+    <!-- ▲▲ 교재 콘텐츠 하위 메뉴 끝 ▲▲ -->
+
+    <details style="margin-top:14px;">
       <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 교재 등록" data-en="＋ Add Textbook">＋ 교재 등록</summary>
       <div class="menu-form">
         <input id="tb-title"     placeholder="교재명 (필수)" data-ko-placeholder="교재명 (필수)" data-en-placeholder="Title (required)" style="width:200px;" />
@@ -2415,6 +2504,24 @@
       <tbody id="textbooks-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
   </div>
 </details>
+
+<!-- ============================================================ -->
+<!-- 📖 교재 콘텐츠 모달 (하위 메뉴 클릭 시 표시) -->
+<!-- ============================================================ -->
+<div class="tb-modal-bg" id="tb-modal-bg" role="dialog" aria-modal="true" aria-labelledby="tb-modal-title">
+  <div class="tb-modal">
+    <div class="tb-modal-header">
+      <h3 id="tb-modal-title">제목</h3>
+      <button type="button" class="tb-modal-close" onclick="closeTbModal()" aria-label="Close">✕</button>
+    </div>
+    <div class="tb-modal-body" id="tb-modal-body">
+      <!-- 하위 모달별 동적 컨텐츠 -->
+    </div>
+    <div class="tb-modal-footer">
+      <button type="button" class="tb-btn-secondary" onclick="closeTbModal()" data-ko="닫기" data-en="Close">닫기</button>
+    </div>
+  </div>
+</div>
 
 <!-- 평가 폼 모달 -->
 <div class="eval-modal-bg" id="eval-modal-bg">
@@ -4855,7 +4962,139 @@ function downloadEmptyEnrollmentTemplateExcel() {
   // 10. 푸터
   html += '<tr><td class="footer-cell" colspan="' + colCount + '">© Mangoi · 망고아이 영어 화상수업 · 양식 자동 발급 ' + today + '</td></tr>';
 
-  html += '</table></body></html>';
+  html += '</table>
+<script>
+/* ============================================================
+ * 📖 교재 콘텐츠 모달 (하위 메뉴 5종)
+ * ============================================================ */
+(function () {
+  const _LANG = () => (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en' : 'ko';
+
+  const TB_MODAL_DEFS = {
+    'content-textbook': {
+      ko: '📚 컨텐츠 교재 관리',
+      en: '📚 Content Textbook Management',
+      body: () => `
+        <div class="tb-form">
+          <input type="text" placeholder="교재명" style="flex:1; min-width:160px;">
+          <select><option>레벨 선택</option><option>A1</option><option>A2</option><option>B1</option><option>B2</option><option>C1</option><option>C2</option></select>
+          <input type="number" placeholder="단원 수" style="width:90px;">
+          <input type="text" placeholder="출판사" style="width:130px;">
+          <input type="text" placeholder="ISBN" style="width:130px;">
+          <button type="button" class="tb-btn-primary">+ 등록</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>교재명</th><th>레벨</th><th>단원</th><th>출판사</th><th>액션</th></tr></thead>
+          <tbody><tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:18px;">데이터가 없습니다.</td></tr></tbody>
+        </table>
+      `
+    },
+    'content-textbook-group': {
+      ko: '📚 컨텐츠 교재그룹 관리',
+      en: '📚 Content Textbook Group Management',
+      body: () => `
+        <div class="tb-form">
+          <input type="text" placeholder="그룹명" style="flex:1; min-width:160px;">
+          <input type="text" placeholder="설명">
+          <button type="button" class="tb-btn-primary">+ 그룹 등록</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>그룹명</th><th>설명</th><th>교재 수</th><th>액션</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:18px;">데이터가 없습니다.</td></tr></tbody>
+        </table>
+      `
+    },
+    'sale-textbook': {
+      ko: '💰 판매 교재 관리',
+      en: '💰 Sale Textbook Management',
+      body: () => `
+        <div class="tb-form">
+          <input type="text" placeholder="판매 교재명" style="flex:1; min-width:160px;">
+          <input type="number" placeholder="가격(₩)" style="width:120px;">
+          <input type="number" placeholder="재고" style="width:90px;">
+          <select><option>구분 선택</option><option>일반</option><option>할인</option><option>이벤트</option></select>
+          <button type="button" class="tb-btn-primary">+ 등록</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>판매 교재명</th><th>가격</th><th>재고</th><th>구분</th><th>액션</th></tr></thead>
+          <tbody><tr><td colspan="6" style="text-align:center;color:#9ca3af;padding:18px;">데이터가 없습니다.</td></tr></tbody>
+        </table>
+      `
+    },
+    'sale-textbook-group': {
+      ko: '💰 판매 교재 그룹 관리',
+      en: '💰 Sale Textbook Group Management',
+      body: () => `
+        <div class="tb-form">
+          <input type="text" placeholder="판매 그룹명" style="flex:1; min-width:160px;">
+          <input type="text" placeholder="설명">
+          <button type="button" class="tb-btn-primary">+ 그룹 등록</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>판매 그룹명</th><th>설명</th><th>판매 교재 수</th><th>액션</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:18px;">데이터가 없습니다.</td></tr></tbody>
+        </table>
+      `
+    },
+    'sale-category': {
+      ko: '🏷️ 판매 구분 관리',
+      en: '🏷️ Sale Category Management',
+      body: () => `
+        <div class="tb-form">
+          <input type="text" placeholder="구분명 (예: 일반/할인/이벤트)" style="flex:1; min-width:200px;">
+          <input type="text" placeholder="설명">
+          <button type="button" class="tb-btn-primary">+ 구분 등록</button>
+        </div>
+        <table>
+          <thead><tr><th>ID</th><th>구분명</th><th>설명</th><th>액션</th></tr></thead>
+          <tbody><tr><td colspan="4" style="text-align:center;color:#9ca3af;padding:18px;">데이터가 없습니다.</td></tr></tbody>
+        </table>
+      `
+    }
+  };
+
+  window.openTbModal = function (key) {
+    const def = TB_MODAL_DEFS[key];
+    if (!def) { console.warn('[tb-modal] unknown key', key); return; }
+    const lang = _LANG();
+    const bg    = document.getElementById('tb-modal-bg');
+    const title = document.getElementById('tb-modal-title');
+    const body  = document.getElementById('tb-modal-body');
+    if (!bg || !title || !body) return;
+    title.textContent = (lang === 'en' ? def.en : def.ko);
+    body.innerHTML = def.body();
+    bg.dataset.activeKey = key;
+    bg.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  };
+
+  window.closeTbModal = function () {
+    const bg = document.getElementById('tb-modal-bg');
+    if (!bg) return;
+    bg.classList.remove('show');
+    document.body.style.overflow = '';
+    bg.dataset.activeKey = '';
+  };
+
+  // 배경 클릭 닫기
+  document.addEventListener('DOMContentLoaded', () => {
+    const bg = document.getElementById('tb-modal-bg');
+    if (!bg) return;
+    bg.addEventListener('click', (ev) => {
+      if (ev.target.id === 'tb-modal-bg') window.closeTbModal();
+    });
+  });
+
+  // ESC 키 닫기
+  document.addEventListener('keydown', (ev) => {
+    if (ev.key !== 'Escape') return;
+    const bg = document.getElementById('tb-modal-bg');
+    if (bg && bg.classList.contains('show')) window.closeTbModal();
+  });
+})();
+</script>
+
+</body></html>';
 
   _downloadBlob(new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' }),
     '수강신청_빈양식_' + today + '.xls');
