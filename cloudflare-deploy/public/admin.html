@@ -4250,19 +4250,26 @@ function downloadEmptyEnrollmentTemplateExcel() {
   const headers = [
     {label:'학생 이름',     hint:'(필수)',                           width:90 },
     {label:'UID',          hint:'(선택)',                           width:80 },
-    {label:'수업 유형',     hint:'레벨/체험/정규',                    width:150},
+    {label:'수업 유형',     hint:'체크박스 ☑',                        width:170},
     {label:'패키지',        hint:'예: 1년 정규반',                    width:130},
     {label:'월 수강료',     hint:'KRW',                              width:90 },
     {label:'요일',          hint:'월/화/수/목/금/토/일',              width:90 },
-    {label:'시간',          hint:'HH:MM (10분 단위)',                 width:70 },
+    {label:'시간',          hint:'HH:MM 또는 요일별',                 width:130},
     {label:'인원 방식',     hint:'1:1, 1:2, 1:3, 1:N',               width:80 },
     {label:'시작일',        hint:'YYYY-MM-DD',                        width:90 }
   ];
+  // 🥭 Phase 31 — 체크박스 헬퍼 (☑ 체크 / ☐ 빈 칸)
+  const typeChk = (lvl, tri, reg) =>
+    (lvl ? '☑' : '☐') + '레벨  ' + (tri ? '☑' : '☐') + '체험  ' + (reg ? '☑' : '☐') + '정규';
   const examples = [
-    ['홍길동', 'user001', '레벨+체험+정규', '1년 정규반',     350000, '월수금', '10:30', '1:1', '2026-05-01'],
-    ['김민수', 'user002', '레벨',           '무료 레벨테스트',     0, '화',    '16:20', '1:1', '2026-05-03'],
-    ['박지영', 'user003', '체험+정규',     '6개월 그룹반',     220000, '화목',  '17:30', '1:3', '2026-05-04']
+    // 단일 시간 예시
+    ['홍길동', 'user001', typeChk(true, true, true),   '1년 정규반',     350000, '월수금', '10:30',                     '1:1', '2026-05-01'],
+    // 단일 요일 단일 시간
+    ['김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트',     0, '화',    '16:20',                     '1:1', '2026-05-03'],
+    // 🥭 Phase 32 — 요일별 다른 시간 예시
+    ['박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반',     220000, '월수금','월 7:30, 수 8:00, 금 8:00', '1:3', '2026-05-04']
   ];
+  const emptyTypeChk = typeChk(false, false, false);
 
   const colCount = headers.length;
   const colWidthsXml = headers.map(h => '<x:Column x:Width="' + h.width + '"/>').join('');
@@ -4391,8 +4398,9 @@ function downloadEmptyEnrollmentTemplateExcel() {
           '💡 <b>작성 안내</b><br>' +
           '• 굵게 표시된 노란 행은 <b>예시</b>입니다 (참고만, 그대로 두셔도 무방). ' +
           '아래 흰색 빈 행에 학생 정보를 채워주세요.<br>' +
-          '• 수업 유형은 "레벨", "체험", "정규" 중 하나 이상을 + 로 연결 (예: 레벨+체험+정규)<br>' +
-          '• 요일은 한글 1글자로 (예: 월수금) · 시간은 HH:MM 24시간제 · 인원은 1:1 ~ 1:N<br>' +
+          '• <b>수업 유형</b>: 해당 항목의 ☐ 를 ☑ 로 바꿔주세요. (예: ☑레벨 ☐체험 ☑정규 = 레벨+정규)<br>' +
+          '• <b>시간</b>: 단일은 <code>10:30</code>, 요일별 다르면 <code>월 7:30, 수 8:00</code> 형식<br>' +
+          '• 요일은 한글 1글자 (예: 월수금) · 인원은 1:1 ~ 1:N<br>' +
           '• 작성 완료 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
           '</td></tr>';
 
@@ -4429,10 +4437,17 @@ function downloadEmptyEnrollmentTemplateExcel() {
   html += '</tr>';
 
   // 9. 빈 입력 행 12개 (alt 컬러로 가독성)
+  // 🥭 Phase 31 — 수업 유형(인덱스 2) 빈 셀에 체크박스 안내 텍스트
   for (let r = 0; r < 12; r++) {
     html += '<tr>';
     for (let c = 0; c < colCount; c++) {
-      html += '<td class="' + (r % 2 === 0 ? 'empty-cell' : 'empty-cell-alt') + '">　</td>';
+      const cls = (r % 2 === 0 ? 'empty-cell' : 'empty-cell-alt');
+      let content = '　';
+      if (c === 2) {
+        // 수업 유형 컬럼 — 체크박스 힌트 (옅은 회색 글자, 사용자가 ☐ → ☑ 로 바꾸도록)
+        content = '<span style="color:#cbd5e1;font-size:9pt">' + emptyTypeChk + '</span>';
+      }
+      html += '<td class="' + cls + '">' + content + '</td>';
     }
     html += '</tr>';
   }
@@ -4450,21 +4465,33 @@ function downloadEmptyEnrollmentTemplateWord() {
   // 🥭 Phase 30 — 다중 학생 동시 작성 가능한 표 형식 (Excel 양식과 동일 구조)
   // A4 가로 방향, 한 양식에 최대 15명까지 입력 가능
   const today = new Date().toISOString().slice(0,10);
+  // 🥭 Phase 31 — 체크박스 헬퍼
+  const typeChk = (lvl, tri, reg) =>
+    (lvl ? '☑' : '☐') + '레벨  ' + (tri ? '☑' : '☐') + '체험  ' + (reg ? '☑' : '☐') + '정규';
+  const emptyTypeChk = typeChk(false, false, false);
   const examples = [
-    ['1', '홍길동', 'user001', '레벨+체험+정규', '1년 정규반', '350,000', '월수금', '10:30', '1:1', '2026-05-01'],
-    ['2', '김민수', 'user002', '레벨',           '무료 레벨테스트',     '0', '화',    '16:20', '1:1', '2026-05-03'],
-    ['3', '박지영', 'user003', '체험+정규',     '6개월 그룹반',     '220,000', '화목',  '17:30', '1:3', '2026-05-04']
+    ['1', '홍길동', 'user001', typeChk(true, true, true),   '1년 정규반',       '350,000', '월수금', '10:30',                     '1:1', '2026-05-01'],
+    ['2', '김민수', 'user002', typeChk(true, false, false), '무료 레벨테스트',       '0', '화',    '16:20',                     '1:1', '2026-05-03'],
+    // 🥭 Phase 32 — 요일별 다른 시간 예시
+    ['3', '박지영', 'user003', typeChk(false, true, true),  '6개월 그룹반',    '220,000', '월수금', '월 7:30, 수 8:00, 금 8:00', '1:3', '2026-05-04']
   ];
-  const headers = ['#', '학생 이름*', 'UID', '수업 유형*', '패키지', '월 수강료(KRW)', '요일', '시간', '인원 방식', '시작일'];
-  const widths  = [4,    11,          9,     16,          14,        12,                9,     6,    8,          11];
+  const headers = ['#', '학생 이름*', 'UID', '수업 유형* (☑ 체크)', '패키지', '월 수강료(KRW)', '요일', '시간 (요일별 가능)', '인원 방식', '시작일'];
+  const widths  = [4,    10,          8,     17,                    12,        10,                7,     14,                  7,         11];
 
-  // 빈 입력 행 생성
+  // 빈 입력 행 생성 — 수업 유형 컬럼은 체크박스 힌트 표시
   let emptyRows = '';
   for (let i = 1; i <= 15; i++) {
     const altClass = (i % 2 === 0) ? 'data-row-alt' : 'data-row';
     emptyRows += '<tr class="' + altClass + '">' +
       '<td class="data-num">' + i + '</td>';
-    for (let c = 1; c < headers.length; c++) emptyRows += '<td>　</td>';
+    for (let c = 1; c < headers.length; c++) {
+      if (c === 3) {
+        // 수업 유형 — 체크박스 힌트 (옅은 회색 글자, 사용자가 ☐ → ☑ 로 변경)
+        emptyRows += '<td><span style="color:#cbd5e1;font-size:9pt">' + emptyTypeChk + '</span></td>';
+      } else {
+        emptyRows += '<td>　</td>';
+      }
+    }
     emptyRows += '</tr>';
   }
 
@@ -4534,8 +4561,8 @@ function downloadEmptyEnrollmentTemplateWord() {
     '<div class="guide">' +
       '💡 <b>작성 안내</b><br>' +
       '• 한 학생당 한 행씩 채워주세요. <b>학생 이름</b>과 <b>수업 유형</b>은 필수.<br>' +
-      '• <b>수업 유형</b>: "레벨", "체험", "정규" 중 다수를 + 로 연결 (예: 레벨+체험+정규)<br>' +
-      '• <b>요일</b>: 한글 1글자로 (예: 월수금)　·　<b>시간</b>: HH:MM 24시간제 (10분 단위)<br>' +
+      '• <b>수업 유형</b>: 해당 항목의 ☐ 를 ☑ 로 변경 (예: <code>☑레벨 ☐체험 ☑정규</code> = 레벨+정규)<br>' +
+      '• <b>요일</b>: 한글 1글자 (예: 월수금)　·　<b>시간</b>: 단일 <code>10:30</code> 또는 요일별 <code>월 7:30, 수 8:00</code><br>' +
       '• <b>인원 방식</b>: 1:1 (개인) / 1:2 / 1:3 / 1:4 / 1:5 / 1:6 / 1:N (대형) 중 선택<br>' +
       '• 작성 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
     '</div>' +
@@ -4563,14 +4590,12 @@ function copyEmptyEnrollmentTemplateKakao() {
 '━━━━━━━━━━━━━━━\n' +
 '학생: \n' +
 'UID: \n' +
-'수업 유형: (레벨 / 체험 / 정규 중 다수 가능)\n' +
-'   ☐ 레벨테스트만\n' +
-'   ☐ 레벨+체험+정규 모두\n' +
-'   ☐ 부분 (예: 체험+정규)\n' +
+'수업 유형: (해당 항목 ☐ → ☑ 로 변경)\n' +
+'   ☐ 레벨   ☐ 체험   ☐ 정규\n' +
 '패키지: \n' +
 '월 수강료: \n' +
 '요일: (월/화/수/목/금/토/일)\n' +
-'시간: (예: 10:30, 10분 단위)\n' +
+'시간: (단일: 10:30 / 요일별: 월 7:30, 수 8:00)\n' +
 '인원 방식: (1:1, 1:2, 1:3, 1:N 중 선택)\n' +
 '시작일: (YYYY-MM-DD)\n' +
 '━━━━━━━━━━━━━━━';
@@ -4607,9 +4632,6 @@ function _addEnrollmentRow(prefill) {
   const v = prefill || {};
   const types = v.types || [];
   const days = v.days || [];
-  // 시간 select 옵션
-  const timeOpts = '<option value="">—</option>' +
-    _EN_TIME_OPTIONS.map(t => '<option value="' + t + '"' + (v.time === t ? ' selected' : '') + '>' + t + '</option>').join('');
   // 🥭 Phase 26 — 수업 인원 방식 select (1:1, 1:2, 1:3, 1:4, 1:5, 1:6, 1:N)
   const sizeOptionsList = ['1:1', '1:2', '1:3', '1:4', '1:5', '1:6', '1:N'];
   const sizeOpts = '<option value="">—</option>' +
@@ -4634,7 +4656,13 @@ function _addEnrollmentRow(prefill) {
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-package" placeholder="1년 정규반" value="' + (v.package||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-fee" type="number" placeholder="350000" value="' + (v.fee||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb;white-space:nowrap">' + dayChecks + '</td>' +
-    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><select class="en-row-time" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px">' + timeOpts + '</select></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb;white-space:nowrap">' +
+      '<input class="en-row-time" type="text" placeholder="10:30 또는 월7:30,수8:00" value="' + (v.time||'') + '" ' +
+        'title="단일 시간(예: 10:30) 또는 요일별 시간(예: 월 7:30, 수 8:00)" ' +
+        'style="width:calc(100% - 28px);padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" />' +
+      '<button type="button" class="en-row-time-builder" title="요일별 시간 다르게 설정" ' +
+        'style="width:24px;height:24px;margin-left:2px;padding:0;background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;cursor:pointer;font-size:12px;vertical-align:middle">⏰</button>' +
+    '</td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><select class="en-row-size" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px">' + sizeOpts + '</select></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-start" type="date" value="' + (v.start||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb;text-align:center"><button type="button" class="en-row-del" title="이 행 삭제" style="background:transparent;border:0;color:#ef4444;font-size:14px;cursor:pointer;padding:0 6px">✕</button></td>';
@@ -4650,9 +4678,129 @@ function _addEnrollmentRow(prefill) {
       _renumberEnrollmentRows();
     }
   });
+  // 🥭 Phase 32 — ⏰ 버튼 클릭 시 요일별 시간 빌더 모달 오픈
+  tr.querySelector('.en-row-time-builder').addEventListener('click', () => {
+    _openTimeBuilder(tr);
+  });
   if (prefill === undefined) {
     setTimeout(() => { const inp = tr.querySelector('.en-row-name'); if (inp) inp.focus(); }, 0);
   }
+}
+
+// 🥭 Phase 32 — 요일별 시간 빌더 모달
+function _openTimeBuilder(tr) {
+  const dayCodes = ['mon','tue','wed','thu','fri','sat','sun'];
+  const dayLabels = ['월','화','수','목','금','토','일'];
+  // 현재 행의 요일 체크 상태
+  const checkedDays = Array.from(tr.querySelectorAll('.en-row-day:checked')).map(c => c.value);
+  // 현재 시간 입력값 파싱
+  const currentTime = (tr.querySelector('.en-row-time')?.value || '').trim();
+  const parsed = _parseScheduleText(currentTime);
+  // 모달 생성
+  const overlay = document.createElement('div');
+  overlay.id = 'time-builder-overlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)';
+  let html =
+    '<div style="background:#fff;border-radius:14px;padding:22px 26px;width:380px;max-width:90vw;box-shadow:0 24px 60px -10px rgba(0,0,0,0.3)">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">' +
+        '<span style="font-size:24px">⏰</span>' +
+        '<div>' +
+          '<div style="font-weight:700;font-size:15px;color:#1f2937">요일별 시간 설정</div>' +
+          '<div style="font-size:11px;color:#6b7280">각 요일에 다른 시간 적용</div>' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#fef3c7;padding:8px 12px;border-radius:6px;font-size:11px;color:#78350f;margin-bottom:12px">' +
+        '💡 시간 비워두면 그 요일은 제외됩니다' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:60px 1fr;gap:6px;align-items:center">';
+  dayCodes.forEach((code, i) => {
+    const isChecked = checkedDays.includes(code) || parsed[code];
+    const t = parsed[code] || '';
+    html +=
+      '<label style="font-weight:700;color:#1f2937;display:flex;align-items:center;gap:6px;cursor:pointer">' +
+        '<input type="checkbox" class="tb-day" data-code="' + code + '" ' + (isChecked?'checked':'') + ' style="margin:0;cursor:pointer">' +
+        dayLabels[i] +
+      '</label>' +
+      '<input type="time" step="600" class="tb-time" data-code="' + code + '" value="' + t + '" placeholder="시간" ' +
+        'style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" />';
+  });
+  html += '</div>' +
+      '<div style="display:flex;gap:8px;margin-top:18px">' +
+        '<button id="tb-same-time" type="button" style="flex:1;padding:8px 14px;font-size:12px;background:#fff;border:1px dashed #3b82f6;color:#3b82f6;border-radius:8px;cursor:pointer">📋 모두 같은 시간</button>' +
+        '<button id="tb-cancel" type="button" style="flex:1;padding:8px 14px;font-size:13px;background:#e5e7eb;color:#374151;border:0;border-radius:8px;cursor:pointer">취소</button>' +
+        '<button id="tb-confirm" type="button" style="flex:1;padding:8px 14px;font-size:13px;background:#10b981;color:#fff;border:0;border-radius:8px;cursor:pointer;font-weight:700">적용</button>' +
+      '</div>' +
+    '</div>';
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+  const close = () => { if (overlay.parentNode) overlay.parentNode.removeChild(overlay); };
+  // 모두 같은 시간 — prompt 로 시간 입력 받아 모든 체크된 요일에 적용
+  overlay.querySelector('#tb-same-time').addEventListener('click', () => {
+    const t = prompt('모든 체크된 요일에 적용할 시간 (HH:MM):', '10:30');
+    if (!t) return;
+    overlay.querySelectorAll('.tb-day:checked').forEach(chk => {
+      const code = chk.dataset.code;
+      const tin = overlay.querySelector('.tb-time[data-code="' + code + '"]');
+      if (tin) tin.value = t;
+    });
+  });
+  overlay.querySelector('#tb-cancel').addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  // 적용 — 결과를 행의 요일 체크박스 + 시간 텍스트에 반영
+  overlay.querySelector('#tb-confirm').addEventListener('click', () => {
+    const dayLabelMap = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
+    const result = []; // [{day:'mon', time:'07:30'}, ...]
+    overlay.querySelectorAll('.tb-day').forEach(chk => {
+      if (!chk.checked) return;
+      const code = chk.dataset.code;
+      const tin = overlay.querySelector('.tb-time[data-code="' + code + '"]');
+      const t = (tin?.value || '').trim();
+      if (t) result.push({ day: code, time: t });
+    });
+    // 행의 요일 체크박스 갱신
+    tr.querySelectorAll('.en-row-day').forEach(chk => {
+      chk.checked = result.some(r => r.day === chk.value);
+    });
+    // 시간 필드 갱신
+    const timeInput = tr.querySelector('.en-row-time');
+    if (timeInput) {
+      if (result.length === 0) {
+        timeInput.value = '';
+      } else if (result.length === 1) {
+        timeInput.value = result[0].time;
+      } else {
+        // 모든 시간이 같으면 단일, 다르면 요일별
+        const sameTime = result.every(r => r.time === result[0].time);
+        if (sameTime) {
+          timeInput.value = result[0].time;
+        } else {
+          timeInput.value = result.map(r => dayLabelMap[r.day] + ' ' + r.time).join(', ');
+        }
+      }
+    }
+    close();
+  });
+}
+
+// 시간 텍스트 파싱 — "10:30" 또는 "월 7:30, 수 8:00" 형식
+// 반환: { mon:'07:30', wed:'08:00', _common:'10:30' } 형태
+function _parseScheduleText(text) {
+  const out = {};
+  if (!text) return out;
+  const dayMap = { '월':'mon','화':'tue','수':'wed','목':'thu','금':'fri','토':'sat','일':'sun' };
+  // 요일별 패턴: "월 7:30" 또는 "월7:30"
+  const perDayRe = /([월화수목금토일])\s*(\d{1,2}\s*:\s*\d{2})/g;
+  let m, found = false;
+  while ((m = perDayRe.exec(text)) !== null) {
+    found = true;
+    out[dayMap[m[1]]] = m[2].replace(/\s/g, '').padStart(5, '0');
+  }
+  if (!found) {
+    // 단일 시간
+    const single = text.match(/(\d{1,2}\s*:\s*\d{2})/);
+    if (single) out._common = single[1].replace(/\s/g, '');
+  }
+  return out;
 }
 
 function _renumberEnrollmentRows() {
@@ -5045,7 +5193,8 @@ function _extractKoFields(text) {
     package: get(/(?:패키지|상품|코스|과정)\s*[:：]?\s*([^\n,;]+)/),
     monthly_fee: get(/(?:월\s*수강료|수강료|학비|fee)\s*[:：]?\s*([0-9,]+)/i),
     days_raw: get(/(?:요일|days?)\s*[:：]?\s*([^\n,;]+)/i),
-    time: get(/(?:시간|time)\s*[:：]?\s*([0-9:]+)/i),
+    // 🥭 Phase 32 — 시간 필드는 단일 "10:30" 또는 요일별 "월 7:30, 수 8:00" 모두 캡처
+    time: get(/(?:시간|time)\s*[:：]?\s*([0-9:월화수목금토일,\s]+?)(?=\n|$|인원|시작일|class|started|개강)/i),
     class_size: get(/(?:인원\s*방식|인원|class\s*size|수업\s*인원)\s*[:：]?\s*(1\s*[:대]\s*[0-9N]+)/i),
     started_at: get(/(?:시작일|개강일|등록일|started?)\s*[:：]?\s*([0-9./-]+)/i)
   };
@@ -5053,12 +5202,23 @@ function _extractKoFields(text) {
 
 function _normalizeEnrollment(raw) {
   const name = (raw.student_name || '').trim();
-  // 유형 텍스트에서 레벨/체험/정규 추출
-  const typesRaw = String(raw.types_raw || raw.types || '').toLowerCase();
+  // 🥭 Phase 31 — 유형 추출: 체크박스 (☑/✓/✔) 우선 감지, 없으면 단어 매칭
+  const typesRaw = String(raw.types_raw || raw.types || '');
   const types = [];
-  if (/레벨|level/i.test(typesRaw)) types.push('level');
-  if (/체험|trial/i.test(typesRaw)) types.push('trial');
-  if (/정규|regular/i.test(typesRaw)) types.push('regular');
+  // 체크된 표시(☑✓✔)가 어디든 있으면 체크박스 모드로 동작
+  const hasCheckmark = /[☑✓✔]/.test(typesRaw);
+  if (hasCheckmark) {
+    // 체크된 항목만 추출 — ☑ 가 단어 앞 또는 뒤에 인접한 경우만
+    if (/[☑✓✔][\s]*레벨|레벨[\s]*[☑✓✔]/i.test(typesRaw)) types.push('level');
+    if (/[☑✓✔][\s]*체험|체험[\s]*[☑✓✔]/i.test(typesRaw)) types.push('trial');
+    if (/[☑✓✔][\s]*정규|정규[\s]*[☑✓✔]/i.test(typesRaw)) types.push('regular');
+  } else {
+    // 체크박스 없음 — 단어 매칭 (텍스트 형식 호환)
+    const lower = typesRaw.toLowerCase();
+    if (/레벨|level/i.test(lower)) types.push('level');
+    if (/체험|trial/i.test(lower)) types.push('trial');
+    if (/정규|regular/i.test(lower)) types.push('regular');
+  }
   // 요일 추출
   const daysRaw = String(raw.days_raw || raw.days || '').toLowerCase();
   const days = [];
@@ -5066,6 +5226,15 @@ function _normalizeEnrollment(raw) {
   dayMap.forEach(([ko, en]) => {
     if (daysRaw.includes(ko) || daysRaw.includes(en)) days.push(en);
   });
+  // 🥭 Phase 32 — 시간 필드에 요일별 시간 ("월 7:30, 수 8:00") 이 있으면 거기서 요일도 추출
+  const timeRaw = String(raw.time || '').trim();
+  if (timeRaw && /[월화수목금토일]\s*\d/.test(timeRaw)) {
+    dayMap.forEach(([ko, en]) => {
+      if (new RegExp(ko + '\\s*\\d').test(timeRaw) && !days.includes(en)) {
+        days.push(en);
+      }
+    });
+  }
   // 패키지 — 비어있으면 유형으로 자동 채움
   let pkg = (raw.package || '').trim();
   if (!pkg && types.length > 0) {
