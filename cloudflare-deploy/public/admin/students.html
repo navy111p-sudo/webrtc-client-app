@@ -618,12 +618,17 @@
       <span class="modal-close" onclick="closeScheduleCalendar()" style="cursor:pointer;font-size:22px">✕</span>
     </div>
     <div class="modal-body" style="padding:18px 20px;background:#f8fafc;max-height:78vh;overflow-y:auto">
-      <!-- 상단 컨트롤 — 월 이동 + 추가 정보 -->
+      <!-- 상단 컨트롤 — 월/주 이동 + 뷰 토글 -->
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0">
         <button id="sched-prev" type="button" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;font-size:14px">◀</button>
         <h3 id="sched-month-label" style="margin:0;flex:1;text-align:center;font-size:18px;color:#0f172a;font-weight:700">2026년 5월</h3>
         <button id="sched-next" type="button" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;font-size:14px">▶</button>
         <button id="sched-today" type="button" style="padding:6px 14px;border:1px solid #f59e0b;background:#fef3c7;color:#92400e;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">오늘</button>
+        <!-- 🥭 Phase 37 — 뷰 토글 -->
+        <div style="display:inline-flex;border:1px solid #cbd5e1;border-radius:6px;overflow:hidden;margin-left:8px">
+          <button id="sched-view-week" type="button" style="padding:6px 14px;background:#3b82f6;color:#fff;border:0;cursor:pointer;font-size:12px;font-weight:600">📅 주간</button>
+          <button id="sched-view-month" type="button" style="padding:6px 14px;background:#fff;color:#475569;border:0;border-left:1px solid #cbd5e1;cursor:pointer;font-size:12px;font-weight:600">🗓 월간</button>
+        </div>
       </div>
       <!-- 안내 문구 -->
       <div style="font-size:11px;color:#64748b;text-align:right;margin-bottom:6px">※ 종료일자는 정규 종료일자 입니다. 연기/보강/변경 등은 종료일자 이후로도 수업이 진행됩니다.</div>
@@ -869,8 +874,9 @@ function openMsg(id) {
 function closeMsg() {
   document.getElementById('msg-modal-bg').classList.remove('show');
 }
-// 🥭 Phase 35 — 학생 스케줄 배치표 (월간 캘린더 모달)
-let _schedState = { studentId: null, studentName: '', uid: '', year: 0, month: 0, enrollments: [] };
+// 🥭 Phase 35/37 — 학생 스케줄 배치표 (월간/주간 캘린더 모달)
+let _schedState = { studentId: null, studentName: '', uid: '', year: 0, month: 0,
+                    weekStart: null, view: 'week', enrollments: [] };
 
 function openScheduleCalendar(studentId, studentName, uid) {
   _schedState.studentId = studentId;
@@ -878,11 +884,16 @@ function openScheduleCalendar(studentId, studentName, uid) {
   _schedState.uid = uid || '';
   const now = new Date();
   _schedState.year = now.getFullYear();
-  _schedState.month = now.getMonth(); // 0~11
+  _schedState.month = now.getMonth();
+  // 주간 뷰 — 이번 주의 일요일을 weekStart 로
+  const ws = new Date(now);
+  ws.setDate(now.getDate() - now.getDay()); // 일요일로 이동
+  ws.setHours(0,0,0,0);
+  _schedState.weekStart = ws;
+  _schedState.view = 'week'; // 기본은 주간 뷰
   document.getElementById('sched-title-name').textContent = _schedState.studentName;
   document.getElementById('sched-student-uid').textContent = _schedState.uid || '—';
   document.getElementById('schedule-modal-bg').classList.add('show');
-  // 학생의 수강신청 정보 fetch (있으면 사용, 없으면 데모 스케줄)
   loadStudentEnrollments(uid).then(() => renderScheduleCalendar());
 }
 
@@ -901,6 +912,11 @@ async function loadStudentEnrollments(uid) {
 }
 
 function renderScheduleCalendar() {
+  if (_schedState.view === 'week') return renderWeekView();
+  return renderMonthView();
+}
+
+function renderMonthView() {
   const y = _schedState.year, m = _schedState.month;
   document.getElementById('sched-month-label').textContent = y + '년 ' + (m + 1) + '월';
   // 해당 월 1일의 요일 (0=Sun) + 마지막 날짜
@@ -938,6 +954,127 @@ function renderScheduleCalendar() {
   });
   html += '</div>';
   document.getElementById('sched-calendar').innerHTML = html;
+}
+
+// 🥭 Phase 37 — 주간 타임 그리드 뷰 (좌측 시간 09:00~24:00, 10분 단위)
+function renderWeekView() {
+  const ws = _schedState.weekStart;
+  // 주간 라벨: "2026년 5월 3일~9일"
+  const we = new Date(ws); we.setDate(ws.getDate() + 6);
+  const label = ws.getFullYear() + '년 ' + (ws.getMonth()+1) + '월 ' + ws.getDate() + '일 ~ ' +
+                (we.getMonth()+1) + '월 ' + we.getDate() + '일';
+  document.getElementById('sched-month-label').textContent = label;
+
+  // 시간 슬롯: 09:00 ~ 24:00 (15시간 × 6 = 90슬롯)
+  const HOUR_START = 9, HOUR_END = 24;
+  const slots = [];
+  for (let h = HOUR_START; h < HOUR_END; h++) {
+    for (let m = 0; m < 60; m += 10) slots.push({ h, m });
+  }
+  // CSS grid 행 높이 = 12px → 총 ~1080px 스크롤 영역
+  const ROW_H = 12;
+
+  const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(ws); d.setDate(ws.getDate() + i);
+    days.push(d);
+  }
+
+  // 헤더 (요일·날짜)
+  let html = '<div style="display:grid;grid-template-columns:60px repeat(7, 1fr);background:#f8fafc;border-bottom:2px solid #cbd5e1;position:sticky;top:0;z-index:5">';
+  html += '<div style="padding:8px 4px;border-right:1px solid #e2e8f0;font-size:10px;color:#94a3b8;text-align:center">시간</div>';
+  days.forEach((d, i) => {
+    const isToday = d.toDateString() === new Date().toDateString();
+    const wColor = i === 0 ? '#dc2626' : (i === 6 ? '#2563eb' : '#334155');
+    const bg = isToday ? '#fef3c7' : 'transparent';
+    html += '<div style="padding:6px 4px;text-align:center;font-size:11px;font-weight:600;color:' + wColor + ';border-right:1px solid #e2e8f0;background:' + bg + '">' +
+      dayNames[i] + '<br><span style="font-size:14px">' + d.getDate() + '</span></div>';
+  });
+  html += '</div>';
+
+  // 그리드 본체 — 90행 × 8컬럼
+  html += '<div style="display:grid;grid-template-columns:60px repeat(7, 1fr);grid-auto-rows:' + ROW_H + 'px;position:relative">';
+  // 시간 라벨 + 빈 셀
+  slots.forEach((s, idx) => {
+    const isHourMark = s.m === 0;
+    const isHalfMark = s.m === 30;
+    // 시간 라벨 (정시에만 표시)
+    html += '<div style="grid-column:1;font-size:10px;color:#64748b;text-align:right;padding:0 6px;line-height:' + ROW_H + 'px;' +
+      (isHourMark ? 'border-top:1px solid #cbd5e1;font-weight:700' : '') + '">' +
+      (isHourMark ? String(s.h).padStart(2,'0') + ':00' : '') + '</div>';
+    // 7개 요일 빈 셀
+    for (let i = 0; i < 7; i++) {
+      const borderTop = isHourMark ? '1px solid #cbd5e1' : (isHalfMark ? '1px dashed #e2e8f0' : 'none');
+      html += '<div style="grid-column:' + (i + 2) + ';border-right:1px solid #f1f5f9;border-top:' + borderTop + '"></div>';
+    }
+  });
+
+  // 클래스 블록 — enrollment 데이터에서 추출
+  const dayCodes = ['sun','mon','tue','wed','thu','fri','sat'];
+  const dayKoMap = ['일','월','화','수','목','금','토'];
+  const enrolls = _schedState.enrollments;
+
+  for (const enr of enrolls) {
+    const startMs = enr.started_at;
+    const startDate = startMs ? new Date(typeof startMs === 'number' ? startMs : startMs) : null;
+    if (startDate && we < startDate) continue;
+    if (enr.end_date) {
+      const endDate = new Date(enr.end_date);
+      if (endDate < ws) continue;
+    }
+    const daysField = String(enr.days_of_week || enr.package || '');
+    const timeField = String(enr.time || '');
+    // 각 요일 검사
+    for (let i = 0; i < 7; i++) {
+      const ko = dayKoMap[i];
+      const cd = dayCodes[i];
+      if (!daysField.includes(ko) && !daysField.toLowerCase().includes(cd)) continue;
+      // 해당 요일의 시간 추출
+      let timeStr = timeField;
+      const perDay = timeField.match(new RegExp(ko + '\\s*(\\d{1,2}:\\d{2})'));
+      if (perDay) timeStr = perDay[1];
+      const tm = timeStr.match(/(\d{1,2}):(\d{2})/);
+      if (!tm) continue;
+      const hh = parseInt(tm[1], 10), mm = parseInt(tm[2], 10);
+      if (hh < HOUR_START || hh >= HOUR_END) continue;
+      // 슬롯 인덱스 (0 ~ 89)
+      const slotIdx = (hh - HOUR_START) * 6 + Math.floor(mm / 10);
+      // 20분 길이 = 2슬롯
+      const durSlots = 2;
+      // 이 날짜의 클래스 블록 렌더
+      const dayDate = days[i];
+      // 시작/종료 검증
+      if (startDate && dayDate < startDate) continue;
+      if (enr.end_date) {
+        const endDate = new Date(enr.end_date);
+        if (dayDate > endDate) continue;
+      }
+      const colors = _typeColors(enr.type || '정규수업');
+      const top = (slotIdx + 1) * ROW_H; // +1 offset (헤더 행)
+      const height = durSlots * ROW_H - 2;
+      html += '<div style="position:absolute;grid-column:' + (i + 2) + ';left:calc(60px + ' + (i / 7 * 100) + '%);width:calc((100% - 60px) / 7 - 4px);' +
+        'top:' + top + 'px;height:' + height + 'px;' +
+        'background:' + colors.bg + ';border-left:3px solid ' + colors.border + ';border-radius:3px;padding:2px 5px;' +
+        'font-size:10px;color:' + colors.text + ';line-height:1.2;overflow:hidden;cursor:pointer;z-index:2" ' +
+        'title="' + (enr.teacher_name || 'Teacher') + ' / ' + (enr.type || '정규수업') + ' / ' + timeStr + ' / 20분">' +
+        '<div style="font-weight:700;font-size:9px">' + (enr.type || '정규수업').substring(0,4) + '</div>' +
+        '<div style="font-weight:600">' + (enr.teacher_name || 'TBD') + '</div>' +
+        '<div style="font-size:9px">' + timeStr + ' (' + (enr.class_size || '1:1') + ')</div>' +
+        '</div>';
+    }
+  }
+  html += '</div>';
+  document.getElementById('sched-calendar').innerHTML = html;
+}
+
+function _typeColors(type) {
+  const map = {
+    '레벨테스트': { bg:'#dbeafe', border:'#3b82f6', text:'#1e40af' },
+    '체험수업':   { bg:'#dcfce7', border:'#10b981', text:'#166534' },
+    '정규수업':   { bg:'#fef3c7', border:'#f59e0b', text:'#92400e' }
+  };
+  return map[type] || map['정규수업'];
 }
 
 function _renderDayClasses(date) {
@@ -1017,19 +1154,47 @@ function _renderClassCard(c) {
     if (prev.dataset.bound) return;
     prev.dataset.bound = '1';
     prev.addEventListener('click', () => {
-      _schedState.month--;
-      if (_schedState.month < 0) { _schedState.month = 11; _schedState.year--; }
+      if (_schedState.view === 'week') {
+        // 일주일 이전
+        _schedState.weekStart = new Date(_schedState.weekStart.getTime() - 7 * 86400000);
+      } else {
+        _schedState.month--;
+        if (_schedState.month < 0) { _schedState.month = 11; _schedState.year--; }
+      }
       renderScheduleCalendar();
     });
     document.getElementById('sched-next').addEventListener('click', () => {
-      _schedState.month++;
-      if (_schedState.month > 11) { _schedState.month = 0; _schedState.year++; }
+      if (_schedState.view === 'week') {
+        _schedState.weekStart = new Date(_schedState.weekStart.getTime() + 7 * 86400000);
+      } else {
+        _schedState.month++;
+        if (_schedState.month > 11) { _schedState.month = 0; _schedState.year++; }
+      }
       renderScheduleCalendar();
     });
     document.getElementById('sched-today').addEventListener('click', () => {
       const now = new Date();
       _schedState.year = now.getFullYear();
       _schedState.month = now.getMonth();
+      const ws = new Date(now); ws.setDate(now.getDate() - now.getDay()); ws.setHours(0,0,0,0);
+      _schedState.weekStart = ws;
+      renderScheduleCalendar();
+    });
+    // 🥭 Phase 37 — 뷰 토글
+    document.getElementById('sched-view-week').addEventListener('click', () => {
+      _schedState.view = 'week';
+      document.getElementById('sched-view-week').style.background = '#3b82f6';
+      document.getElementById('sched-view-week').style.color = '#fff';
+      document.getElementById('sched-view-month').style.background = '#fff';
+      document.getElementById('sched-view-month').style.color = '#475569';
+      renderScheduleCalendar();
+    });
+    document.getElementById('sched-view-month').addEventListener('click', () => {
+      _schedState.view = 'month';
+      document.getElementById('sched-view-month').style.background = '#3b82f6';
+      document.getElementById('sched-view-month').style.color = '#fff';
+      document.getElementById('sched-view-week').style.background = '#fff';
+      document.getElementById('sched-view-week').style.color = '#475569';
       renderScheduleCalendar();
     });
   };
