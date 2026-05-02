@@ -1400,6 +1400,24 @@
              onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block';" />
         <h1 data-ko="안녕하세요💛 망고아이!" data-en="Hello💛 Mangoi!" data-text="안녕하세요💛 망고아이!" style="display:none">안녕하세요💛 망고아이!</h1>
         <p class="hero-sub" data-ko="무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에." data-en="Search anything — students, teachers, franchises, menus, recordings, stats.">무엇이든 검색해보세요 — 학생·교사·가맹점·메뉴·녹화·통계까지 한 번에.</p>
+
+        <!-- 🥭 Phase 49 — 음성+자막 인사 버블 (페이지 로드 시 자동 표시·재생) -->
+        <div id="ai-greeting-bubble" style="display:none;margin:0 auto 14px;padding:12px 22px;background:linear-gradient(135deg,rgba(251,191,36,0.92),rgba(251,146,60,0.92));color:#1f2937;border-radius:18px;font-size:16px;font-weight:700;box-shadow:0 8px 24px -6px rgba(245,158,11,0.5);max-width:fit-content;position:relative;animation:greetingBubbleIn 0.5s cubic-bezier(0.34,1.56,0.64,1)">
+          <span style="font-size:22px;vertical-align:middle">🤖</span>
+          <span id="ai-greeting-text" style="vertical-align:middle;margin-left:6px">무엇을 도와 드릴까요?</span>
+          <button onclick="document.getElementById('ai-greeting-bubble').style.display='none'" type="button"
+                  style="background:transparent;border:0;color:#92400e;font-size:14px;cursor:pointer;margin-left:10px;padding:0 4px;vertical-align:middle"
+                  title="닫기" aria-label="닫기">✕</button>
+          <!-- 말풍선 꼬리 (아래쪽으로) -->
+          <span style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;border-top:9px solid rgba(251,158,32,0.92)"></span>
+        </div>
+        <style>
+          @keyframes greetingBubbleIn {
+            from { opacity: 0; transform: translateY(-8px) scale(0.9); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+          }
+        </style>
+
         <div class="hero-search">
           <span class="hero-search-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
@@ -7963,6 +7981,99 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
   ev.preventDefault();
   jumpToMenu(a.dataset.menuId);
 });
+
+// 🥭 Phase 49 — 페이지 진입 시 음성+자막 인사 ("무엇을 도와 드릴까요?")
+(function setupAiGreeting() {
+  const showGreeting = () => {
+    const lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en' : 'ko';
+    const text = lang === 'en' ? 'How can I help you?' : '무엇을 도와 드릴까요?';
+    const bubble = document.getElementById('ai-greeting-bubble');
+    const span = document.getElementById('ai-greeting-text');
+    if (bubble && span) {
+      span.textContent = text;
+      bubble.style.display = 'block';
+      // 8초 후 자동 페이드아웃 (선택사항 — 사용자가 닫기 가능)
+      setTimeout(() => {
+        if (bubble.style.display !== 'none') {
+          bubble.style.transition = 'opacity 0.6s, transform 0.6s';
+          bubble.style.opacity = '0';
+          bubble.style.transform = 'translateY(-6px)';
+          setTimeout(() => { bubble.style.display = 'none'; }, 700);
+        }
+      }, 8000);
+    }
+    // TTS 음성 재생 — Web Speech API (브라우저 내장)
+    speakGreeting(text, lang);
+  };
+
+  const speakGreeting = (text, lang) => {
+    if (!('speechSynthesis' in window)) {
+      console.info('[ai-greeting] TTS not supported');
+      return;
+    }
+    try {
+      // 진행 중인 발화 정리
+      window.speechSynthesis.cancel();
+      const utt = new SpeechSynthesisUtterance(text);
+      utt.lang = lang === 'en' ? 'en-US' : 'ko-KR';
+      utt.rate = 1.0;
+      utt.pitch = 1.05;
+      utt.volume = 0.85;
+      // 한국어 음성 우선 선택
+      const voices = window.speechSynthesis.getVoices();
+      if (voices && voices.length) {
+        const target = utt.lang.split('-')[0];
+        const matched = voices.find(v => v.lang.startsWith(target));
+        if (matched) utt.voice = matched;
+      }
+      window.speechSynthesis.speak(utt);
+    } catch (e) {
+      console.warn('[ai-greeting] TTS error:', e);
+    }
+  };
+
+  // 자막은 즉시 표시
+  const triggerOnce = () => {
+    if (sessionStorage.getItem('ai_greeting_shown') === '1') {
+      // 같은 세션에서 한 번만 — 재방문/탭 새로고침 시 다시
+      // 자막만 짧게, TTS 는 생략 (사용자 방해 X)
+      return;
+    }
+    showGreeting();
+    sessionStorage.setItem('ai_greeting_shown', '1');
+  };
+
+  // voices 가 로드될 때까지 잠깐 대기 (Chrome 의 비동기 로드)
+  if ('speechSynthesis' in window) {
+    if (window.speechSynthesis.getVoices().length === 0) {
+      window.speechSynthesis.addEventListener('voiceschanged', () => {}, { once: true });
+    }
+  }
+
+  // 페이지 로드 후 0.8초 뒤 인사 (여유 — 다른 UI 가 자리 잡은 후)
+  // TTS 는 user gesture 가 없으면 일부 브라우저(Chrome) 가 차단할 수 있음 → 조용히 실패
+  setTimeout(triggerOnce, 800);
+
+  // 첫 사용자 클릭 시 다시 시도 (TTS 제스처 요구 우회)
+  let unlocked = false;
+  const unlock = () => {
+    if (unlocked) return;
+    unlocked = true;
+    // 자막은 이미 보여졌고, 음성만 재시도
+    if ('speechSynthesis' in window && window.speechSynthesis.speaking === false) {
+      const lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en' : 'ko';
+      const text = lang === 'en' ? 'How can I help you?' : '무엇을 도와 드릴까요?';
+      // 첫 페이지 진입 후 user 가 어떤 클릭이든 하면 음성 한 번 재생 (이미 sessionStorage 에 한 번 표시됐어도)
+      // — sessionStorage 검사 없이 한 번 더 시도 (이전 시도가 차단됐을 수도 있으므로)
+      try { speakGreeting(text, lang); } catch {}
+    }
+    document.removeEventListener('click', unlock);
+    document.removeEventListener('keydown', unlock);
+  };
+  // 첫 사용자 인터랙션 시 unlock (단, 자막이 이미 보였다면 음성만 시도)
+  document.addEventListener('click', unlock, { once: false });
+  document.addEventListener('keydown', unlock, { once: false });
+})();
 
 // 페이지 로드 시 메뉴 인덱스 빌드 + 통합 색인 비동기로 빌드
 buildMenuIndex();
