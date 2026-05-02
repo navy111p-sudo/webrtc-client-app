@@ -612,6 +612,38 @@
   </div>
 </div>
 
+<!-- 🥭 Phase 35 — 학생 스케줄 배치표 (월간 캘린더 모달) -->
+<div class="stu-modal-bg" id="schedule-modal-bg">
+  <div class="stu-modal" style="max-width:1100px;width:95vw">
+    <div class="modal-header" style="background:linear-gradient(135deg,#3b82f6,#10b981);color:#fff;padding:14px 20px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:17px;font-weight:700">📅 <span id="sched-title-name">—</span> 스케줄 배치표</span>
+      <span class="modal-close" onclick="closeScheduleCalendar()" style="cursor:pointer;font-size:22px">✕</span>
+    </div>
+    <div class="modal-body" style="padding:18px 20px;background:#f8fafc;max-height:78vh;overflow-y:auto">
+      <!-- 상단 컨트롤 — 월 이동 + 추가 정보 -->
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;background:#fff;padding:10px 14px;border-radius:10px;border:1px solid #e2e8f0">
+        <button id="sched-prev" type="button" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;font-size:14px">◀</button>
+        <h3 id="sched-month-label" style="margin:0;flex:1;text-align:center;font-size:18px;color:#0f172a;font-weight:700">2026년 5월</h3>
+        <button id="sched-next" type="button" style="padding:6px 14px;border:1px solid #cbd5e1;background:#fff;border-radius:6px;cursor:pointer;font-size:14px">▶</button>
+        <button id="sched-today" type="button" style="padding:6px 14px;border:1px solid #f59e0b;background:#fef3c7;color:#92400e;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">오늘</button>
+      </div>
+      <!-- 안내 문구 -->
+      <div style="font-size:11px;color:#64748b;text-align:right;margin-bottom:6px">※ 종료일자는 정규 종료일자 입니다. 연기/보강/변경 등은 종료일자 이후로도 수업이 진행됩니다.</div>
+      <!-- 캘린더 -->
+      <div id="sched-calendar" style="background:#fff;border-radius:10px;border:1px solid #cbd5e1;overflow:hidden">
+        <!-- JS 가 동적 생성: 7열 헤더 (SUN~SAT) + 6주 그리드 -->
+      </div>
+      <!-- 범례 -->
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:#475569">
+        <span><span style="display:inline-block;width:14px;height:14px;background:#dbeafe;border:1px solid #93c5fd;border-radius:3px;vertical-align:middle"></span> 레벨테스트</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#dcfce7;border:1px solid #86efac;border-radius:3px;vertical-align:middle"></span> 체험수업</span>
+        <span><span style="display:inline-block;width:14px;height:14px;background:#fef3c7;border:1px solid #fde68a;border-radius:3px;vertical-align:middle"></span> 정규수업</span>
+        <span style="margin-left:auto;color:#94a3b8">학생 ID: <code id="sched-student-uid">—</code></span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // === 시계 (KST + PHT) ===
 function tickClocks() {
@@ -740,7 +772,7 @@ function renderPage() {
       <td><span class="pay-type">${escHtml(s.payment_type || '-')}</span></td>
       <td class="center" style="color:${s.end_date === '미설정' ? '#dc2626' : '#475569'};">${escHtml(s.end_date || '-')}</td>
       <td class="center"><span class="icon-btn" title="요약" onclick="openSummary(${s.id})">👤</span></td>
-      <td class="center"><span class="icon-btn" title="스케줄">📅</span></td>
+      <td class="center"><span class="icon-btn" title="스케줄 배치표 보기" onclick="openScheduleCalendar(${s.id}, '${escHtml(s.username || '')}', '${drillUid}')" style="cursor:pointer">📅</span></td>
       <td class="center">${escHtml(s.signup_date || '-')}</td>
       <td class="right">${s.classes_per_week != null ? s.classes_per_week : '-'}</td>
       <td class="center"><span class="icon-btn" title="상담">👤</span></td>
@@ -826,6 +858,173 @@ function openMsg(id) {
 function closeMsg() {
   document.getElementById('msg-modal-bg').classList.remove('show');
 }
+// 🥭 Phase 35 — 학생 스케줄 배치표 (월간 캘린더 모달)
+let _schedState = { studentId: null, studentName: '', uid: '', year: 0, month: 0, enrollments: [] };
+
+function openScheduleCalendar(studentId, studentName, uid) {
+  _schedState.studentId = studentId;
+  _schedState.studentName = studentName || '학생';
+  _schedState.uid = uid || '';
+  const now = new Date();
+  _schedState.year = now.getFullYear();
+  _schedState.month = now.getMonth(); // 0~11
+  document.getElementById('sched-title-name').textContent = _schedState.studentName;
+  document.getElementById('sched-student-uid').textContent = _schedState.uid || '—';
+  document.getElementById('schedule-modal-bg').classList.add('show');
+  // 학생의 수강신청 정보 fetch (있으면 사용, 없으면 데모 스케줄)
+  loadStudentEnrollments(uid).then(() => renderScheduleCalendar());
+}
+
+function closeScheduleCalendar() {
+  document.getElementById('schedule-modal-bg').classList.remove('show');
+}
+
+async function loadStudentEnrollments(uid) {
+  _schedState.enrollments = [];
+  if (!uid) return;
+  try {
+    const r = await fetch('/api/admin/enrollments?user_id=' + encodeURIComponent(uid), { credentials: 'include' });
+    const d = await r.json().catch(() => ({}));
+    if (d.ok && d.items) _schedState.enrollments = d.items;
+  } catch (e) { console.warn('[sched] enrollments fetch failed:', e); }
+}
+
+function renderScheduleCalendar() {
+  const y = _schedState.year, m = _schedState.month;
+  document.getElementById('sched-month-label').textContent = y + '년 ' + (m + 1) + '월';
+  // 해당 월 1일의 요일 (0=Sun) + 마지막 날짜
+  const first = new Date(y, m, 1);
+  const startWday = first.getDay();
+  const lastDay = new Date(y, m + 1, 0).getDate();
+  // 6주 × 7일 그리드
+  const cells = [];
+  for (let i = 0; i < startWday; i++) cells.push({ blank: true });
+  for (let d = 1; d <= lastDay; d++) cells.push({ blank: false, day: d, date: new Date(y, m, d) });
+  while (cells.length < 42) cells.push({ blank: true });
+
+  // 요일 헤더 + 셀 렌더링
+  const dayNames = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+  let html = '<div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f1f5f9">';
+  dayNames.forEach((dn, i) => {
+    const color = i === 0 ? '#dc2626' : (i === 6 ? '#2563eb' : '#475569');
+    html += '<div style="text-align:center;padding:10px 0;font-weight:700;font-size:13px;color:' + color + ';border-bottom:1px solid #cbd5e1">' + dn + '</div>';
+  });
+  html += '</div>';
+  // 6주 셀
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr)">';
+  cells.forEach((c, idx) => {
+    const wday = idx % 7;
+    const numColor = c.blank ? '#cbd5e1' : (wday === 0 ? '#dc2626' : (wday === 6 ? '#2563eb' : '#1e293b'));
+    const today = !c.blank && c.date.toDateString() === new Date().toDateString();
+    const bg = today ? '#fef3c7' : '#fff';
+    html += '<div style="min-height:120px;padding:6px 8px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;background:' + bg + '">';
+    if (!c.blank) {
+      html += '<div style="font-size:13px;font-weight:600;color:' + numColor + ';margin-bottom:4px">' + c.day + '</div>';
+      // 이 날짜에 수업 있는지 enrollments 에서 조회
+      html += _renderDayClasses(c.date);
+    }
+    html += '</div>';
+  });
+  html += '</div>';
+  document.getElementById('sched-calendar').innerHTML = html;
+}
+
+function _renderDayClasses(date) {
+  // 수강신청 데이터에서 이 날짜에 해당하는 수업 카드들 생성
+  const dayCodes = ['sun','mon','tue','wed','thu','fri','sat'];
+  const dayCode = dayCodes[date.getDay()];
+  const dayKo   = ['일','월','화','수','목','금','토'][date.getDay()];
+  const dateStr = date.toISOString().slice(0,10);
+  const enrolls = _schedState.enrollments;
+  const cards = [];
+  // 등록된 수강신청 데이터가 있으면 사용
+  for (const enr of enrolls) {
+    if (!enr.started_at) continue;
+    const startDate = new Date(typeof enr.started_at === 'number' ? enr.started_at : enr.started_at);
+    if (date < startDate) continue;
+    if (enr.end_date) {
+      const endDate = new Date(enr.end_date);
+      if (date > endDate) continue;
+    }
+    // package 필드에서 요일·시간 추출 (Phase 25/32 형식)
+    const pkg = String(enr.package || '');
+    const time = enr.time || '';
+    // 요일 매칭 — pkg 또는 days_of_week 필드에서
+    const daysField = String(enr.days_of_week || enr.package || '');
+    if (!daysField.includes(dayKo) && !daysField.toLowerCase().includes(dayCode)) continue;
+    // 시간 — 단일 또는 요일별
+    let cardTime = time;
+    const perDayMatch = String(time).match(new RegExp(dayKo + '\\s*(\\d{1,2}:\\d{2})'));
+    if (perDayMatch) cardTime = perDayMatch[1];
+    cards.push({
+      type: enr.type || '정규수업',
+      teacher: enr.teacher_name || 'Teacher TBD',
+      size: enr.class_size || '1:1',
+      time: cardTime || '미정',
+      duration: 20
+    });
+  }
+  // 데모: 데이터 없을 때 예시 카드 (월/수/금 첫 주에만)
+  if (cards.length === 0 && _schedState.enrollments.length === 0) {
+    const day = date.getDate();
+    if ((dayCode === 'thu' && (day === 7 || day === 14))) {
+      cards.push({
+        type: day === 7 ? '레벨테스트' : '체험수업',
+        teacher: 'Teacher Belle',
+        size: '1:1', time: 'pm 07:10', duration: 20
+      });
+    }
+  }
+  return cards.map(c => _renderClassCard(c)).join('');
+}
+
+function _renderClassCard(c) {
+  const typeColors = {
+    '레벨테스트': { bg:'#dbeafe', border:'#93c5fd', text:'#1e40af' },
+    '체험수업':   { bg:'#dcfce7', border:'#86efac', text:'#166534' },
+    '정규수업':   { bg:'#fef3c7', border:'#fde68a', text:'#92400e' }
+  };
+  const colors = typeColors[c.type] || typeColors['정규수업'];
+  return '<div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin-bottom:4px;font-size:11px;line-height:1.4">' +
+    '<div style="display:inline-block;background:' + colors.bg + ';border:1px solid ' + colors.border + ';color:' + colors.text + ';padding:1px 6px;border-radius:4px;font-size:10px;font-weight:600;margin-bottom:3px">' + c.type + '</div>' +
+    '<div style="color:#3b82f6;font-weight:700">' + c.teacher + ' <span style="font-size:9px">📋</span></div>' +
+    '<div style="color:#64748b;font-size:10px">(' + c.size + ')</div>' +
+    '<div style="color:#1e293b;font-weight:600;font-size:11px">' + c.time + '</div>' +
+    '<div style="color:#64748b;font-size:10px">' + c.duration + ' min</div>' +
+    '<div style="display:flex;gap:3px;margin-top:4px">' +
+      '<button style="flex:1;background:#3b82f6;color:#fff;border:0;border-radius:3px;padding:2px 0;font-size:10px;cursor:pointer;font-weight:600">예정</button>' +
+      '<button style="flex:1;background:#10b981;color:#fff;border:0;border-radius:3px;padding:2px 0;font-size:10px;cursor:pointer;font-weight:600" onclick="alert(\'일정 변경 기능은 준비 중\')">일정변경</button>' +
+    '</div>' +
+  '</div>';
+}
+
+// 월 이동 / 오늘 버튼 핸들러 — 모달이 열린 후 한 번만 바인딩
+(function bindScheduleNav() {
+  const tryBind = () => {
+    const prev = document.getElementById('sched-prev');
+    if (!prev) { setTimeout(tryBind, 200); return; }
+    if (prev.dataset.bound) return;
+    prev.dataset.bound = '1';
+    prev.addEventListener('click', () => {
+      _schedState.month--;
+      if (_schedState.month < 0) { _schedState.month = 11; _schedState.year--; }
+      renderScheduleCalendar();
+    });
+    document.getElementById('sched-next').addEventListener('click', () => {
+      _schedState.month++;
+      if (_schedState.month > 11) { _schedState.month = 0; _schedState.year++; }
+      renderScheduleCalendar();
+    });
+    document.getElementById('sched-today').addEventListener('click', () => {
+      const now = new Date();
+      _schedState.year = now.getFullYear();
+      _schedState.month = now.getMonth();
+      renderScheduleCalendar();
+    });
+  };
+  tryBind();
+})();
+
 async function doSendMessage() {
   const s = _students.find(x => x.id === _msgTargetId);
   if (!s) return;
