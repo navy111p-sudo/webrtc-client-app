@@ -2209,7 +2209,7 @@
           <!-- 업로드 1: 파일 -->
           <div class="enroll-up-row">
             <label for="en-import-file" class="enroll-up-label">📎 파일</label>
-            <input id="en-import-file" type="file" accept=".csv,.doc,.docx,.html,.txt" class="enroll-up-file" />
+            <input id="en-import-file" type="file" accept=".csv,.xls,.xlsx,.doc,.docx,.html,.txt" class="enroll-up-file" />
             <button id="en-import-file-btn" type="button" class="enroll-up-btn">등록</button>
           </div>
           <!-- 구분선 -->
@@ -4243,63 +4243,316 @@ async function loadEnrollments() {
 //   3종: Excel(.csv), Word(.doc), 카톡 텍스트(클립보드)
 //   양식에 적힌 그대로 채워서 Phase 23 import 영역에 다시 업로드하면 자동 등록
 function downloadEmptyEnrollmentTemplateExcel() {
-  const csv =
-    '﻿학생 이름,UID,수업 유형 (레벨+체험+정규 중 하나 이상),패키지,월 수강료(KRW),요일 (월화수목금토일 중 다수),시간 (HH:MM 10분 단위),인원 방식 (1:1, 1:2, 1:3, 1:N),시작일 (YYYY-MM-DD)\n' +
-    '"예시: 홍길동","user001","레벨+체험+정규","1년 정규반","350000","월수금","10:30","1:1","2026-05-01"\n' +
-    '"예시: 김민수","user002","레벨","무료 레벨테스트","0","화","16:20","1:1","2026-05-03"\n' +
-    '"예시: 박지영","user003","체험+정규","6개월 그룹반","220000","화목","17:30","1:3","2026-05-04"\n' +
-    '"","","","","","","","",""\n' +
-    '"","","","","","","","",""\n' +
-    '"","","","","","","","",""\n';
-  _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
-    '수강신청_빈양식_' + new Date().toISOString().slice(0,10) + '.csv');
+  // 🥭 Phase 29 — Excel 호환 HTML+XML 양식 (.xls)
+  // 평문 CSV 가 아닌 Excel 이 직접 렌더링하는 SpreadsheetML/HTML 결합 양식
+  // 망고아이 브랜드 톤: 헤더 앰버, 예시 크림, 빈 칸 점선
+  const today = new Date().toISOString().slice(0,10);
+  const headers = [
+    {label:'학생 이름',     hint:'(필수)',                           width:90 },
+    {label:'UID',          hint:'(선택)',                           width:80 },
+    {label:'수업 유형',     hint:'레벨/체험/정규',                    width:150},
+    {label:'패키지',        hint:'예: 1년 정규반',                    width:130},
+    {label:'월 수강료',     hint:'KRW',                              width:90 },
+    {label:'요일',          hint:'월/화/수/목/금/토/일',              width:90 },
+    {label:'시간',          hint:'HH:MM (10분 단위)',                 width:70 },
+    {label:'인원 방식',     hint:'1:1, 1:2, 1:3, 1:N',               width:80 },
+    {label:'시작일',        hint:'YYYY-MM-DD',                        width:90 }
+  ];
+  const examples = [
+    ['홍길동', 'user001', '레벨+체험+정규', '1년 정규반',     350000, '월수금', '10:30', '1:1', '2026-05-01'],
+    ['김민수', 'user002', '레벨',           '무료 레벨테스트',     0, '화',    '16:20', '1:1', '2026-05-03'],
+    ['박지영', 'user003', '체험+정규',     '6개월 그룹반',     220000, '화목',  '17:30', '1:3', '2026-05-04']
+  ];
+
+  const colCount = headers.length;
+  const colWidthsXml = headers.map(h => '<x:Column x:Width="' + h.width + '"/>').join('');
+
+  let html =
+'<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+      'xmlns:x="urn:schemas-microsoft-com:office:excel" ' +
+      'xmlns="http://www.w3.org/TR/REC-html40">' +
+'<head>' +
+  '<meta charset="UTF-8">' +
+  '<meta http-equiv="Content-Type" content="application/vnd.ms-excel; charset=UTF-8">' +
+  '<title>망고아이 수강신청서</title>' +
+  '<!--[if gte mso 9]>' +
+  '<xml>' +
+    '<x:ExcelWorkbook>' +
+      '<x:ExcelWorksheets>' +
+        '<x:ExcelWorksheet>' +
+          '<x:Name>수강신청서</x:Name>' +
+          '<x:WorksheetOptions>' +
+            '<x:DefaultRowHeight>360</x:DefaultRowHeight>' +
+            '<x:DisplayGridlines/>' +
+            '<x:FreezePanes/>' +
+            '<x:FrozenNoSplit/>' +
+            '<x:SplitHorizontal>5</x:SplitHorizontal>' +
+            '<x:TopRowBottomPane>5</x:TopRowBottomPane>' +
+            '<x:ActivePane>2</x:ActivePane>' +
+          '</x:WorksheetOptions>' +
+          colWidthsXml +
+        '</x:ExcelWorksheet>' +
+      '</x:ExcelWorksheets>' +
+    '</x:ExcelWorkbook>' +
+  '</xml>' +
+  '<![endif]-->' +
+  '<style>' +
+    'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; }' +
+    'table { border-collapse: collapse; mso-table-overlap: never; mso-table-lspace: 0; mso-table-rspace: 0; }' +
+    'td { font-family: "맑은 고딕", sans-serif; mso-number-format: "\\@"; vertical-align: middle; }' +
+    /* 제목 */
+    '.title-cell { ' +
+      'font-size: 22pt; font-weight: bold; color: #9a3412; ' +
+      'text-align: center; padding: 18pt; height: 50pt; ' +
+      'background: #fed7aa; ' +
+      'border-bottom: 3pt solid #f59e0b; ' +
+    '}' +
+    '.subtitle-cell { ' +
+      'font-size: 10pt; color: #78350f; ' +
+      'text-align: center; padding: 8pt; ' +
+      'background: #fef3c7; ' +
+      'border-bottom: 1pt solid #fde68a; ' +
+    '}' +
+    /* 헤더 (행 4) */
+    '.header-cell { ' +
+      'background: #f59e0b; color: #ffffff; ' +
+      'font-weight: bold; font-size: 11pt; ' +
+      'text-align: center; padding: 10pt 8pt; ' +
+      'border: 1pt solid #b45309; ' +
+      'mso-pattern: solid #f59e0b; ' +
+    '}' +
+    '.header-hint { ' +
+      'font-size: 8pt; font-weight: normal; color: rgba(255,255,255,0.85); ' +
+      'display: block; margin-top: 2pt; ' +
+    '}' +
+    /* 예시 행 (행 5~7) */
+    '.example-cell { ' +
+      'background: #fffbeb; color: #78350f; ' +
+      'font-size: 10pt; padding: 10pt 8pt; ' +
+      'text-align: center; ' +
+      'border: 1pt solid #fde68a; ' +
+      'mso-pattern: solid #fffbeb; ' +
+    '}' +
+    '.example-name { font-weight: bold; color: #9a3412; }' +
+    /* 빈 행 (입력 영역) */
+    '.empty-cell { ' +
+      'background: #ffffff; ' +
+      'height: 26pt; padding: 8pt; ' +
+      'border: 1pt solid #e5e7eb; ' +
+      'mso-pattern: solid #ffffff; ' +
+    '}' +
+    '.empty-cell-alt { ' +
+      'background: #fafafa; ' +
+      'height: 26pt; padding: 8pt; ' +
+      'border: 1pt solid #e5e7eb; ' +
+      'mso-pattern: solid #fafafa; ' +
+    '}' +
+    /* 안내 박스 */
+    '.note-cell { ' +
+      'background: #f0fdf4; color: #14532d; ' +
+      'font-size: 9pt; padding: 10pt 14pt; ' +
+      'border: 1pt solid #bbf7d0; ' +
+      'border-left: 4pt solid #10b981; ' +
+      'mso-pattern: solid #f0fdf4; ' +
+      'text-align: left; ' +
+    '}' +
+    /* 라벨 (예시) */
+    '.label-example { ' +
+      'background: #fde68a; color: #92400e; ' +
+      'font-size: 9pt; font-weight: bold; ' +
+      'text-align: center; padding: 4pt; ' +
+      'mso-pattern: solid #fde68a; ' +
+    '}' +
+    '.label-empty { ' +
+      'background: #e0f2fe; color: #075985; ' +
+      'font-size: 9pt; font-weight: bold; ' +
+      'text-align: center; padding: 4pt; ' +
+      'mso-pattern: solid #e0f2fe; ' +
+    '}' +
+    /* 푸터 */
+    '.footer-cell { ' +
+      'background: #f9fafb; color: #6b7280; ' +
+      'font-size: 8pt; text-align: center; padding: 8pt; ' +
+      'border-top: 1pt solid #e5e7eb; ' +
+      'mso-pattern: solid #f9fafb; ' +
+    '}' +
+  '</style>' +
+'</head>' +
+'<body>' +
+'<table border="0" cellspacing="0" cellpadding="0">';
+
+  // 1. 제목
+  html += '<tr><td class="title-cell" colspan="' + colCount + '">🥭 망고아이 수강신청서</td></tr>';
+  // 2. 부제
+  html += '<tr><td class="subtitle-cell" colspan="' + colCount + '">발급일: ' + today +
+          ' · 학원·학부모 작성용 · 작성 후 학원에 다시 제출해 주세요</td></tr>';
+  // 3. 안내 박스
+  html += '<tr><td class="note-cell" colspan="' + colCount + '">' +
+          '💡 <b>작성 안내</b><br>' +
+          '• 굵게 표시된 노란 행은 <b>예시</b>입니다 (참고만, 그대로 두셔도 무방). ' +
+          '아래 흰색 빈 행에 학생 정보를 채워주세요.<br>' +
+          '• 수업 유형은 "레벨", "체험", "정규" 중 하나 이상을 + 로 연결 (예: 레벨+체험+정규)<br>' +
+          '• 요일은 한글 1글자로 (예: 월수금) · 시간은 HH:MM 24시간제 · 인원은 1:1 ~ 1:N<br>' +
+          '• 작성 완료 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
+          '</td></tr>';
+
+  // 4. 헤더 라벨 (예시 라벨)
+  html += '<tr><td class="label-example" colspan="' + colCount + '">▼ 예시 (참고용 — 실제 학생 데이터는 아래 빈 행에 입력)</td></tr>';
+
+  // 5. 컬럼 헤더
+  html += '<tr>';
+  headers.forEach(h => {
+    html += '<td class="header-cell" style="width:' + h.width + 'pt">' +
+            h.label + '<span class="header-hint">' + h.hint + '</span></td>';
+  });
+  html += '</tr>';
+
+  // 6. 예시 행
+  examples.forEach(row => {
+    html += '<tr>';
+    row.forEach((cell, i) => {
+      const cls = i === 0 ? 'example-cell example-name' : 'example-cell';
+      const val = (i === 4 && cell) ? Number(cell).toLocaleString('ko-KR') : cell;
+      html += '<td class="' + cls + '">' + val + '</td>';
+    });
+    html += '</tr>';
+  });
+
+  // 7. 빈 행 라벨
+  html += '<tr><td class="label-empty" colspan="' + colCount + '">▼ 학생 정보 입력 (빈 행에 채워 주세요)</td></tr>';
+
+  // 8. 컬럼 헤더 (한 번 더 — 입력 영역 위)
+  html += '<tr>';
+  headers.forEach(h => {
+    html += '<td class="header-cell">' + h.label + '</td>';
+  });
+  html += '</tr>';
+
+  // 9. 빈 입력 행 12개 (alt 컬러로 가독성)
+  for (let r = 0; r < 12; r++) {
+    html += '<tr>';
+    for (let c = 0; c < colCount; c++) {
+      html += '<td class="' + (r % 2 === 0 ? 'empty-cell' : 'empty-cell-alt') + '">　</td>';
+    }
+    html += '</tr>';
+  }
+
+  // 10. 푸터
+  html += '<tr><td class="footer-cell" colspan="' + colCount + '">© Mangoi · 망고아이 영어 화상수업 · 양식 자동 발급 ' + today + '</td></tr>';
+
+  html += '</table></body></html>';
+
+  _downloadBlob(new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8' }),
+    '수강신청_빈양식_' + today + '.xls');
 }
 
 function downloadEmptyEnrollmentTemplateWord() {
+  // 🥭 Phase 30 — 다중 학생 동시 작성 가능한 표 형식 (Excel 양식과 동일 구조)
+  // A4 가로 방향, 한 양식에 최대 15명까지 입력 가능
   const today = new Date().toISOString().slice(0,10);
+  const examples = [
+    ['1', '홍길동', 'user001', '레벨+체험+정규', '1년 정규반', '350,000', '월수금', '10:30', '1:1', '2026-05-01'],
+    ['2', '김민수', 'user002', '레벨',           '무료 레벨테스트',     '0', '화',    '16:20', '1:1', '2026-05-03'],
+    ['3', '박지영', 'user003', '체험+정규',     '6개월 그룹반',     '220,000', '화목',  '17:30', '1:3', '2026-05-04']
+  ];
+  const headers = ['#', '학생 이름*', 'UID', '수업 유형*', '패키지', '월 수강료(KRW)', '요일', '시간', '인원 방식', '시작일'];
+  const widths  = [4,    11,          9,     16,          14,        12,                9,     6,    8,          11];
+
+  // 빈 입력 행 생성
+  let emptyRows = '';
+  for (let i = 1; i <= 15; i++) {
+    const altClass = (i % 2 === 0) ? 'data-row-alt' : 'data-row';
+    emptyRows += '<tr class="' + altClass + '">' +
+      '<td class="data-num">' + i + '</td>';
+    for (let c = 1; c < headers.length; c++) emptyRows += '<td>　</td>';
+    emptyRows += '</tr>';
+  }
+
+  // 헤더 셀 HTML
+  const headerCells = headers.map((h, i) =>
+    '<th style="width:' + widths[i] + '%">' + h + '</th>'
+  ).join('');
+
+  // 예시 행 HTML
+  const exampleRows = examples.map(row =>
+    '<tr class="example-row">' +
+      row.map((cell, i) => '<td' + (i === 1 ? ' class="example-name"' : '') + '>' + cell + '</td>').join('') +
+    '</tr>'
+  ).join('');
+
   const docHtml =
-    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+          'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+          'xmlns="http://www.w3.org/TR/REC-html40">' +
     '<head><meta charset="UTF-8"><title>망고아이 수강신청서</title>' +
-    '<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11pt;padding:30px;line-height:1.6}' +
-    'h1{color:#9a3412;border-bottom:3px solid #f59e0b;padding-bottom:8px}' +
-    'h2{color:#78350f;font-size:13pt;margin-top:24px;border-left:4px solid #f59e0b;padding-left:10px}' +
-    'table{border-collapse:collapse;width:100%;margin-top:12px}' +
-    'th{background:#fef3c7;color:#78350f;text-align:left;padding:10px 14px;border:1px solid #d6d3d1;width:30%}' +
-    'td{padding:10px 14px;border:1px solid #d6d3d1}' +
-    '.checkbox-row{display:inline-block;margin-right:14px}' +
-    '.note{background:#fef9c3;padding:10px 14px;border-left:4px solid #f59e0b;margin:14px 0;font-size:10pt}' +
-    '.footer{margin-top:30px;font-size:10pt;color:#9ca3af;text-align:right}' +
-    '</style></head><body>' +
-    '<h1>📚 망고아이 수강신청서</h1>' +
-    '<div class="note">아래 양식을 작성하신 후 학원 관리자에게 다시 보내주세요. (Excel·카톡·Word 어떤 형식이든 가능)</div>' +
-    '<h2>📌 수업 유형 (해당 항목에 ☑ 표시)</h2>' +
-    '<p>' +
-      '<span class="checkbox-row">☐ 🔍 레벨테스트만 (Test Only)</span>' +
-      '<span class="checkbox-row">☐ 🎯 체험수업 (Trial)</span>' +
-      '<span class="checkbox-row">☐ 🌟 정규수업 (Regular)</span>' +
-    '</p>' +
-    '<h2>👤 학생 정보</h2>' +
-    '<table>' +
-      '<tr><th>학생 이름</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
-      '<tr><th>학생 UID (선택)</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
-      '<tr><th>수업 유형</th><td>(레벨 / 체험 / 정규 중 표시)</td></tr>' +
-      '<tr><th>패키지</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
-      '<tr><th>월 수강료</th><td>　　　　　　　　　　　　　 원</td></tr>' +
-      '<tr><th>희망 요일</th><td>☐ 월　☐ 화　☐ 수　☐ 목　☐ 금　☐ 토　☐ 일</td></tr>' +
-      '<tr><th>희망 시간 (10분 단위)</th><td>　　 시　　 분 (예: 10시 30분)</td></tr>' +
-      '<tr><th>수업 인원 방식</th><td>☐ 1:1 (개인)　☐ 1:2　☐ 1:3　☐ 1:4　☐ 1:5　☐ 1:6　☐ 1:N (대형)</td></tr>' +
-      '<tr><th>시작일 (YYYY-MM-DD)</th><td>　　　　　　　　　　　　　　　　　</td></tr>' +
-    '</table>' +
-    '<h2>🔍 학생 분류</h2>' +
-    '<p>' +
-      '<span class="checkbox-row">☐ 레벨테스트만 보는 학생</span>' +
-      '<span class="checkbox-row">☐ 레벨+체험+정규 모두 진행</span>' +
-      '<span class="checkbox-row">☐ 부분 (레벨+체험 / 체험+정규 등)</span>' +
-    '</p>' +
-    '<h2>📝 추가 메모</h2>' +
-    '<p style="border:1px solid #d6d3d1;min-height:80px;padding:10px"></p>' +
-    '<div class="footer">© Mangoi · 양식 발급일: ' + today + '</div>' +
+    '<!--[if gte mso 9]><xml>' +
+    '<w:WordDocument>' +
+      '<w:View>Print</w:View>' +
+      '<w:Zoom>100</w:Zoom>' +
+      '<w:DoNotOptimizeForBrowser/>' +
+    '</w:WordDocument></xml><![endif]-->' +
+    '<style>' +
+      // A4 가로 방향
+      '@page { size: A4 landscape; margin: 1.4cm; mso-page-orientation: landscape; }' +
+      'body { font-family: "맑은 고딕", "Malgun Gothic", sans-serif; font-size: 10pt; color: #1f2937; line-height: 1.5; }' +
+      // 제목
+      '.doc-title { font-size: 22pt; font-weight: bold; color: #9a3412; text-align: center; padding: 8pt 0; margin: 0; ' +
+        'border-bottom: 3pt solid #f59e0b; }' +
+      '.doc-subtitle { font-size: 10pt; color: #78350f; text-align: center; padding: 4pt 0; margin: 0 0 14pt 0; ' +
+        'background: #fef3c7; }' +
+      // 안내 박스
+      '.guide { background: #f0fdf4; border-left: 4pt solid #10b981; padding: 10pt 14pt; ' +
+        'font-size: 9pt; color: #14532d; margin-bottom: 14pt; }' +
+      '.guide b { color: #065f46; }' +
+      // 섹션 라벨
+      '.section-label { background: #fef3c7; color: #92400e; font-size: 11pt; font-weight: bold; ' +
+        'padding: 6pt 10pt; margin: 14pt 0 6pt 0; border-left: 4pt solid #f59e0b; }' +
+      '.section-label-blue { background: #e0f2fe; color: #075985; border-left-color: #0284c7; }' +
+      // 표 공통
+      'table { border-collapse: collapse; width: 100%; }' +
+      'th { background: #f59e0b; color: #ffffff; font-size: 10pt; font-weight: bold; ' +
+        'text-align: center; padding: 8pt 4pt; border: 0.75pt solid #b45309; }' +
+      'td { padding: 8pt 6pt; border: 0.75pt solid #d6d3d1; vertical-align: middle; font-size: 9pt; }' +
+      // 예시 행
+      '.example-row td { background: #fffbeb; color: #78350f; font-style: italic; text-align: center; }' +
+      '.example-name { font-weight: bold; color: #9a3412 !important; font-style: normal !important; }' +
+      // 빈 입력 행 (alt 컬러)
+      '.data-row td { background: #ffffff; height: 22pt; text-align: center; }' +
+      '.data-row-alt td { background: #f9fafb; height: 22pt; text-align: center; }' +
+      '.data-num { color: #9ca3af; font-weight: bold; font-size: 9pt; }' +
+      // 푸터
+      '.footer { margin-top: 18pt; font-size: 8pt; color: #9ca3af; text-align: center; ' +
+        'padding-top: 10pt; border-top: 0.5pt solid #e5e7eb; }' +
+    '</style></head>' +
+    '<body>' +
+
+    // 제목
+    '<div class="doc-title">🥭 망고아이 수강신청서</div>' +
+    '<div class="doc-subtitle">발급일: ' + today + ' · 학원·학부모 작성용 · 한 양식에 최대 15명까지 작성 가능</div>' +
+
+    // 작성 가이드
+    '<div class="guide">' +
+      '💡 <b>작성 안내</b><br>' +
+      '• 한 학생당 한 행씩 채워주세요. <b>학생 이름</b>과 <b>수업 유형</b>은 필수.<br>' +
+      '• <b>수업 유형</b>: "레벨", "체험", "정규" 중 다수를 + 로 연결 (예: 레벨+체험+정규)<br>' +
+      '• <b>요일</b>: 한글 1글자로 (예: 월수금)　·　<b>시간</b>: HH:MM 24시간제 (10분 단위)<br>' +
+      '• <b>인원 방식</b>: 1:1 (개인) / 1:2 / 1:3 / 1:4 / 1:5 / 1:6 / 1:N (대형) 중 선택<br>' +
+      '• 작성 후 이 파일을 그대로 학원의 [📥 양식 등록] 영역에 업로드하면 자동 등록됩니다.' +
+    '</div>' +
+
+    // 예시 섹션
+    '<div class="section-label">▼ 예시 (참고용 — 실제 학생 데이터는 아래 입력 영역에)</div>' +
+    '<table><thead><tr>' + headerCells + '</tr></thead><tbody>' + exampleRows + '</tbody></table>' +
+
+    // 입력 섹션
+    '<div class="section-label section-label-blue">▼ 학생 정보 입력 (한 학생당 한 행, 최대 15명)</div>' +
+    '<table><thead><tr>' + headerCells + '</tr></thead><tbody>' + emptyRows + '</tbody></table>' +
+
+    // 푸터
+    '<div class="footer">© Mangoi · 망고아이 영어 화상수업 · 양식 자동 발급 ' + today + '</div>' +
+
     '</body></html>';
+
   _downloadBlob(new Blob([docHtml], { type: 'application/msword;charset=utf-8' }),
     '수강신청_빈양식_' + today + '.doc');
 }
@@ -4907,48 +5160,89 @@ function _parseWordEnrollments(html) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const result = [];
-  // 망고아이 단일 record 표 (th/td 쌍)
-  const trs = doc.querySelectorAll('table tr');
-  if (trs.length > 0) {
-    // 표가 여러 개일 수 있고, 헤더 행이 있을 수도 있음
-    // 먼저 단일 record (th/td 쌍 위주) 시도
-    const obj = {};
-    let hasThTd = false;
-    trs.forEach(tr => {
-      const th = tr.querySelector('th');
-      const td = tr.querySelector('td');
-      if (th && td) { obj[th.textContent.trim()] = td.textContent.trim(); hasThTd = true; }
+  const trs = Array.from(doc.querySelectorAll('table tr'));
+
+  // 헤더 행 후보: "학생 이름" 또는 "학생" 셀이 들어있는 행
+  // (Phase 29 양식은 헤더가 두 번 등장 — 예시 위/빈 행 위)
+  const isHeaderRow = (tr) => {
+    const cellTexts = Array.from(tr.querySelectorAll('th,td')).map(c => c.textContent.trim());
+    if (cellTexts.length < 3) return false;
+    const joined = cellTexts.join('|');
+    return /학생\s*이름|학생/.test(joined) && (/패키지|수업\s*유형|상품/.test(joined));
+  };
+
+  // 단일 record 표 (th/td 쌍) — 망고아이 발급 단일 형식
+  const obj = {};
+  let hasThTd = false;
+  trs.forEach(tr => {
+    const th = tr.querySelector('th');
+    const td = tr.querySelector('td');
+    if (th && td) { obj[th.textContent.trim()] = td.textContent.trim(); hasThTd = true; }
+  });
+  if (hasThTd) {
+    const enr = _normalizeEnrollment({
+      student_name: obj['학생 이름'] || obj['학생'] || obj['이름'],
+      student_user_id: obj['학생 UID'] || obj['UID'],
+      types_raw: obj['수업 유형'] || obj['유형'],
+      package: obj['패키지'] || obj['상품'],
+      monthly_fee_krw: obj['월 수강료'] || obj['수강료'],
+      days_raw: obj['요일'],
+      time: obj['시간'],
+      class_size: obj['인원 방식'] || obj['인원'],
+      started_at: obj['시작일'] || obj['개강일']
     });
-    if (hasThTd) {
-      const enr = _normalizeEnrollment({
-        student_name: obj['학생 이름'] || obj['학생'] || obj['이름'],
-        student_user_id: obj['학생 UID'] || obj['UID'],
-        package: obj['패키지'] || obj['상품'],
-        monthly_fee_krw: obj['월 수강료'] || obj['수강료'],
-        started_at: obj['개강일'] || obj['시작일']
-      });
-      if (enr) result.push(enr);
+    if (enr) result.push(enr);
+  }
+
+  // 헤더 + 다행 표 — 모든 헤더 행을 찾아 그 뒤 데이터 행을 파싱
+  if (result.length === 0 && trs.length >= 2) {
+    const headerIndices = trs.map((tr, i) => isHeaderRow(tr) ? i : -1).filter(i => i >= 0);
+    if (headerIndices.length === 0) {
+      // fallback: 첫 행을 헤더로 가정
+      headerIndices.push(0);
     }
-    // 헤더 + 다행 표도 시도
-    if (result.length === 0 && trs.length >= 2) {
-      const headerCells = trs[0].querySelectorAll('th,td');
-      const headers = Array.from(headerCells).map(c => c.textContent.trim());
-      for (let i = 1; i < trs.length; i++) {
-        const cells = Array.from(trs[i].querySelectorAll('td')).map(c => c.textContent.trim());
+    const seenStart = new Set();
+    headerIndices.forEach((startIdx) => {
+      if (seenStart.has(startIdx)) return;
+      seenStart.add(startIdx);
+      const headerCells = trs[startIdx].querySelectorAll('th,td');
+      const headers = Array.from(headerCells).map(c => c.textContent.replace(/\s+/g,' ').trim());
+      for (let i = startIdx + 1; i < trs.length; i++) {
+        // 다음 헤더 행을 만나면 중단
+        if (isHeaderRow(trs[i])) break;
+        // colspan 이 너비 이상인 행 (제목/안내/구분선) 은 데이터 아님 — 스킵
+        const tds = Array.from(trs[i].querySelectorAll('td'));
+        if (tds.length === 0) continue;
+        if (tds.length === 1 && tds[0].getAttribute('colspan')) continue;
+        const cells = tds.map(c => c.textContent.replace(/\s+/g,' ').trim());
         const rec = {};
         headers.forEach((h, idx) => { rec[h] = cells[idx] || ''; });
+        // 헤더 키 변형도 함께 시도 (긴 라벨들)
+        const findKey = (keys) => {
+          for (const k of keys) {
+            for (const h of Object.keys(rec)) {
+              if (h.includes(k)) return rec[h];
+            }
+          }
+          return '';
+        };
         const enr = _normalizeEnrollment({
-          student_name: rec['학생 이름'] || rec['학생'] || rec['이름'],
-          student_user_id: rec['UID'] || rec['학생 UID'],
-          package: rec['패키지'] || rec['상품'],
-          monthly_fee_krw: rec['월 수강료(KRW)'] || rec['월 수강료'] || rec['수강료'],
-          started_at: rec['개강일'] || rec['시작일']
+          student_name: findKey(['학생 이름','학생','이름']),
+          student_user_id: findKey(['UID','user']),
+          types_raw: findKey(['수업 유형','유형','과목']),
+          package: findKey(['패키지','상품','코스']),
+          monthly_fee_krw: findKey(['월 수강료','수강료','학비']),
+          days_raw: findKey(['요일']),
+          time: findKey(['시간']),
+          class_size: findKey(['인원 방식','인원','class']),
+          started_at: findKey(['시작일','개강일'])
         });
         if (enr) result.push(enr);
       }
-    }
+    });
   }
-  // 표가 없으면 본문 텍스트에서 라벨 추출 시도
+
+  // 표가 없으면 본문 텍스트에서 라벨 추출
   if (result.length === 0) {
     const fields = _extractKoFields(doc.body.textContent || '');
     const enr = _normalizeEnrollment(fields);
@@ -5062,14 +5356,16 @@ async function importEnrollmentFromFile() {
   try { text = await file.text(); }
   catch (e) { alert('파일 읽기 실패: ' + e.message); return; }
   let records = [];
-  if (ext === 'csv' || ext === 'txt') {
+  // 자동 감지 우선 — HTML 태그가 있으면 어떤 확장자든 표 파서로 처리
+  // (망고아이가 발급한 .xls 는 HTML+XML 형식, .doc 도 HTML)
+  if (text.includes('<table') || text.includes('<html') || text.includes('<TABLE')) {
+    records = _parseWordEnrollments(text);
+  } else if (ext === 'csv' || ext === 'txt') {
     records = _parseCsvEnrollments(text);
-  } else if (ext === 'doc' || ext === 'docx' || ext === 'html') {
+  } else if (ext === 'xls' || ext === 'xlsx' || ext === 'doc' || ext === 'docx' || ext === 'html') {
     records = _parseWordEnrollments(text);
   } else {
-    // 자동 감지 — HTML 태그 있으면 Word, 아니면 CSV 시도
-    if (text.includes('<table') || text.includes('<html')) records = _parseWordEnrollments(text);
-    else records = _parseCsvEnrollments(text);
+    records = _parseCsvEnrollments(text);
   }
   _renderImportPreview(records, file.name);
 }
