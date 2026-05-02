@@ -2006,6 +2006,47 @@
         <button id="en-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
       </div>
     </details>
+
+    <!-- 🥭 Phase 23 — 역방향 자동화: 파일/카톡 → 수강신청 일괄 등록 -->
+    <details style="margin-top:8px">
+      <summary style="cursor:pointer;font-size:13px;color:#10b981;font-weight:600"
+               data-ko="📥 파일·카톡으로 일괄 등록 (Excel·Word·카톡)"
+               data-en="📥 Bulk import (Excel·Word·KakaoTalk)">📥 파일·카톡으로 일괄 등록 (Excel·Word·카톡)</summary>
+      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(59,130,246,0.06));border:1px dashed rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-top:8px">
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
+               data-ko="① 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드"
+               data-en="① 📊 Excel(.csv) / 📄 Word(.doc) file upload">① 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드</div>
+          <input id="en-import-file" type="file" accept=".csv,.doc,.docx,.html,.txt"
+                 style="font-size:12px;margin-right:8px" />
+          <button id="en-import-file-btn"
+                  style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600"
+                  data-ko="📥 파일 가져오기" data-en="📥 Import file">📥 파일 가져오기</button>
+          <div style="font-size:11px;color:#6b7280;margin-top:4px"
+               data-ko="망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원"
+               data-en="Mangoi-issued single record OR multi-row CSV with headers">망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원</div>
+        </div>
+        <div>
+          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
+               data-ko="② 📱 카톡 메시지 붙여넣기"
+               data-en="② 📱 Paste KakaoTalk message">② 📱 카톡 메시지 붙여넣기</div>
+          <textarea id="en-kakao-text" rows="6"
+                    placeholder="예시:&#10;학생: 홍길동&#10;UID: user001&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;개강일: 2026-05-01"
+                    data-ko-placeholder="학생: 홍길동&#10;UID: user001&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;개강일: 2026-05-01"
+                    style="width:100%;font-size:12px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-family:'Malgun Gothic',monospace;line-height:1.5;resize:vertical"></textarea>
+          <div style="margin-top:6px">
+            <button id="en-import-kakao-btn"
+                    style="padding:6px 14px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600"
+                    data-ko="📥 카톡 가져오기" data-en="📥 Import KakaoTalk">📥 카톡 가져오기</button>
+            <span style="font-size:11px;color:#6b7280;margin-left:8px"
+                  data-ko="여러 명도 한 번에 가능 (각 학생을 빈 줄로 구분)"
+                  data-en="Multiple students supported (separate by blank lines)">여러 명도 한 번에 가능 (각 학생을 빈 줄로 구분)</span>
+          </div>
+        </div>
+        <!-- 미리보기 영역 -->
+        <div id="en-import-preview" style="display:none;margin-top:12px;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px"></div>
+      </div>
+    </details>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
       <select id="en-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
         <option value="" data-ko="전체" data-en="All">전체</option>
@@ -4147,6 +4188,277 @@ async function setEnrollmentStatus(id, status) {
   loadEnrollments();
 }
 
+/* ════════════════════════════════════════════════════════════
+   🥭 Phase 23 — 역방향 자동화: 파일/카톡 → 수강신청 일괄 등록
+   - importFromFile(file)   : .csv / .doc / .docx / .html 파싱
+   - importFromKakaoText(t) : 카톡 형식 텍스트 파싱 (다중 학생 지원)
+   - 모든 파서는 표준화된 enrollment 객체 배열 반환
+   - 미리보기 → 사용자 확인 → 일괄 POST
+════════════════════════════════════════════════════════════ */
+
+// CSV 한 줄 안전 파싱 (따옴표·콤마 처리)
+function _parseCsvLine(line) {
+  const out = []; let cur = ''; let q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') q = false;
+      else cur += c;
+    } else {
+      if (c === '"') q = true;
+      else if (c === ',') { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  out.push(cur);
+  return out;
+}
+
+// 텍스트(붙여넣기)에서 한국어 라벨 추출
+function _extractKoFields(text) {
+  const get = (re) => { const m = text.match(re); return m ? m[1].trim() : ''; };
+  return {
+    student_name: get(/(?:학생\s*이름|학생|이름)\s*[:：]?\s*([^\n,;]+)/),
+    student_user_id: get(/(?:학생\s*UID|UID|user[_\s]*id|아이디)\s*[:：]?\s*([^\n,;]+)/i),
+    package: get(/(?:패키지|상품|코스|과정)\s*[:：]?\s*([^\n,;]+)/),
+    monthly_fee: get(/(?:월\s*수강료|수강료|학비|fee)\s*[:：]?\s*([0-9,]+)/i),
+    started_at: get(/(?:개강일|시작일|등록일|started?)\s*[:：]?\s*([0-9./-]+)/i)
+  };
+}
+
+function _normalizeEnrollment(raw) {
+  const name = (raw.student_name || '').trim();
+  const pkg = (raw.package || '').trim();
+  if (!name || !pkg) return null;
+  let feeNum = null;
+  if (raw.monthly_fee_krw) feeNum = parseInt(String(raw.monthly_fee_krw).replace(/[^0-9]/g, ''), 10) || null;
+  else if (raw.monthly_fee) feeNum = parseInt(String(raw.monthly_fee).replace(/[^0-9]/g, ''), 10) || null;
+  let startMs = null;
+  if (raw.started_at) {
+    const s = String(raw.started_at).replace(/\./g, '-').replace(/\//g, '-').trim();
+    const d = new Date(s);
+    if (!isNaN(d.getTime())) startMs = d.getTime();
+  }
+  return {
+    student_name: name,
+    student_user_id: (raw.student_user_id || '').trim() || null,
+    package: pkg,
+    monthly_fee_krw: feeNum,
+    started_at: startMs
+  };
+}
+
+// CSV 파서 — 단일/다행 모두 지원
+function _parseCsvEnrollments(text) {
+  text = text.replace(/^﻿/, ''); // BOM 제거
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (lines.length === 0) return [];
+
+  // 케이스 1: "항목,값" 단일 record (망고아이가 발급한 형식)
+  if (/^"?항목"?\s*,\s*"?값"?/i.test(lines[0])) {
+    const obj = {};
+    for (let i = 1; i < lines.length; i++) {
+      const f = _parseCsvLine(lines[i]);
+      if (f.length >= 2) obj[f[0]] = f[1];
+    }
+    const enr = _normalizeEnrollment({
+      student_name: obj['학생 이름'],
+      student_user_id: obj['학생 UID'],
+      package: obj['패키지'],
+      monthly_fee_krw: obj['월 수강료(KRW)'] || obj['월 수강료'],
+      started_at: obj['개강일']
+    });
+    return enr ? [enr] : [];
+  }
+
+  // 케이스 2: 헤더 + 다행 record
+  const headers = _parseCsvLine(lines[0]).map(h => h.trim());
+  const records = [];
+  for (let i = 1; i < lines.length; i++) {
+    const f = _parseCsvLine(lines[i]);
+    const rec = {};
+    headers.forEach((h, idx) => { rec[h] = (f[idx] || '').trim(); });
+    const enr = _normalizeEnrollment({
+      student_name: rec['학생 이름'] || rec['학생'] || rec['이름'] || rec.student_name || rec.name,
+      student_user_id: rec['학생 UID'] || rec['UID'] || rec.user_id || rec.uid,
+      package: rec['패키지'] || rec['상품'] || rec.package,
+      monthly_fee_krw: rec['월 수강료(KRW)'] || rec['월 수강료'] || rec['수강료'] || rec.fee,
+      started_at: rec['개강일'] || rec['시작일'] || rec.start || rec.started_at
+    });
+    if (enr) records.push(enr);
+  }
+  return records;
+}
+
+// Word(.doc HTML) 파서 — 망고아이가 발급한 표 형식
+function _parseWordEnrollments(html) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const result = [];
+  // 망고아이 단일 record 표 (th/td 쌍)
+  const trs = doc.querySelectorAll('table tr');
+  if (trs.length > 0) {
+    // 표가 여러 개일 수 있고, 헤더 행이 있을 수도 있음
+    // 먼저 단일 record (th/td 쌍 위주) 시도
+    const obj = {};
+    let hasThTd = false;
+    trs.forEach(tr => {
+      const th = tr.querySelector('th');
+      const td = tr.querySelector('td');
+      if (th && td) { obj[th.textContent.trim()] = td.textContent.trim(); hasThTd = true; }
+    });
+    if (hasThTd) {
+      const enr = _normalizeEnrollment({
+        student_name: obj['학생 이름'] || obj['학생'] || obj['이름'],
+        student_user_id: obj['학생 UID'] || obj['UID'],
+        package: obj['패키지'] || obj['상품'],
+        monthly_fee_krw: obj['월 수강료'] || obj['수강료'],
+        started_at: obj['개강일'] || obj['시작일']
+      });
+      if (enr) result.push(enr);
+    }
+    // 헤더 + 다행 표도 시도
+    if (result.length === 0 && trs.length >= 2) {
+      const headerCells = trs[0].querySelectorAll('th,td');
+      const headers = Array.from(headerCells).map(c => c.textContent.trim());
+      for (let i = 1; i < trs.length; i++) {
+        const cells = Array.from(trs[i].querySelectorAll('td')).map(c => c.textContent.trim());
+        const rec = {};
+        headers.forEach((h, idx) => { rec[h] = cells[idx] || ''; });
+        const enr = _normalizeEnrollment({
+          student_name: rec['학생 이름'] || rec['학생'] || rec['이름'],
+          student_user_id: rec['UID'] || rec['학생 UID'],
+          package: rec['패키지'] || rec['상품'],
+          monthly_fee_krw: rec['월 수강료(KRW)'] || rec['월 수강료'] || rec['수강료'],
+          started_at: rec['개강일'] || rec['시작일']
+        });
+        if (enr) result.push(enr);
+      }
+    }
+  }
+  // 표가 없으면 본문 텍스트에서 라벨 추출 시도
+  if (result.length === 0) {
+    const fields = _extractKoFields(doc.body.textContent || '');
+    const enr = _normalizeEnrollment(fields);
+    if (enr) result.push(enr);
+  }
+  return result;
+}
+
+// 카톡 텍스트 파서 — 빈 줄로 구분된 여러 명 지원
+function _parseKakaoEnrollments(text) {
+  // 빈 줄 (또는 ━ 같은 구분선) 으로 record 분리
+  const blocks = text.split(/\n\s*\n|━{3,}/).map(b => b.trim()).filter(b => b);
+  const result = [];
+  for (const block of blocks) {
+    const fields = _extractKoFields(block);
+    const enr = _normalizeEnrollment(fields);
+    if (enr) result.push(enr);
+  }
+  return result;
+}
+
+// 미리보기 렌더링
+function _renderImportPreview(records, source) {
+  const box = document.getElementById('en-import-preview');
+  if (!box) return;
+  if (!records || records.length === 0) {
+    box.style.display = 'block';
+    box.innerHTML = '<div style="color:#dc2626;font-size:13px">⚠️ ' +
+      _aiEsc(source) + ' 에서 수강신청 정보를 찾을 수 없습니다. 파일·텍스트 형식을 확인해 주세요.</div>';
+    return;
+  }
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
+    '<b style="color:#065f46">📋 미리보기 — ' + records.length + '건</b>' +
+    '<button id="en-import-confirm-btn" style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700">✅ ' + records.length + '건 일괄 등록</button>' +
+    '</div>' +
+    '<table style="width:100%;font-size:12px;border-collapse:collapse">' +
+    '<tr style="background:#fef3c7"><th style="padding:6px 8px;border:1px solid #e5e7eb">#</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">학생</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">UID</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">패키지</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">월 수강료</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">개강일</th></tr>';
+  records.forEach((r, i) => {
+    const startStr = r.started_at ? new Date(r.started_at).toISOString().slice(0,10) : '—';
+    const feeStr = r.monthly_fee_krw ? r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '—';
+    html += '<tr>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">' + (i+1) + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb"><b>' + _aiEsc(r.student_name) + '</b></td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb"><code>' + _aiEsc(r.student_user_id || '—') + '</code></td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc(r.package) + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + feeStr + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + startStr + '</td>' +
+      '</tr>';
+  });
+  html += '</table>';
+  box.style.display = 'block';
+  box.innerHTML = html;
+  // 확인 버튼 → 일괄 등록 실행
+  document.getElementById('en-import-confirm-btn').addEventListener('click', () => _bulkRegisterEnrollments(records));
+}
+
+async function _bulkRegisterEnrollments(records) {
+  const box = document.getElementById('en-import-preview');
+  if (box) box.innerHTML = '<div style="color:#9a3412">⏳ 등록 중… (' + records.length + '건)</div>';
+  let ok = 0, fail = 0; const errs = [];
+  for (const r of records) {
+    try {
+      const res = await fetch('/api/admin/enrollments', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(r)
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.ok !== false) ok++;
+      else { fail++; errs.push(r.student_name + ': ' + (j.error || ('HTTP ' + res.status))); }
+    } catch (e) {
+      fail++; errs.push(r.student_name + ': ' + (e.message || e));
+    }
+  }
+  if (box) {
+    box.innerHTML = '<div style="font-size:13px"><b>✅ 등록 완료 — 성공 ' + ok + '건 / 실패 ' + fail + '건</b>' +
+      (errs.length ? '<div style="margin-top:6px;color:#dc2626;font-size:11px">실패 상세:<br>' + errs.map(_aiEsc).join('<br>') + '</div>' : '') +
+      '</div>';
+  }
+  loadEnrollments();
+}
+
+async function importEnrollmentFromFile() {
+  const fi = document.getElementById('en-import-file');
+  if (!fi || !fi.files || fi.files.length === 0) {
+    alert('파일을 먼저 선택해 주세요.');
+    return;
+  }
+  const file = fi.files[0];
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  let text = '';
+  try { text = await file.text(); }
+  catch (e) { alert('파일 읽기 실패: ' + e.message); return; }
+  let records = [];
+  if (ext === 'csv' || ext === 'txt') {
+    records = _parseCsvEnrollments(text);
+  } else if (ext === 'doc' || ext === 'docx' || ext === 'html') {
+    records = _parseWordEnrollments(text);
+  } else {
+    // 자동 감지 — HTML 태그 있으면 Word, 아니면 CSV 시도
+    if (text.includes('<table') || text.includes('<html')) records = _parseWordEnrollments(text);
+    else records = _parseCsvEnrollments(text);
+  }
+  _renderImportPreview(records, file.name);
+}
+
+function importEnrollmentFromKakao() {
+  const ta = document.getElementById('en-kakao-text');
+  if (!ta || !ta.value.trim()) {
+    alert('카톡 메시지를 붙여넣어 주세요.');
+    return;
+  }
+  const records = _parseKakaoEnrollments(ta.value);
+  _renderImportPreview(records, '카톡 메시지');
+}
+
 // ── 커뮤니티 ─────────────────────────────────────────────────────────
 async function loadCommunity() {
   const r = await fetch('/api/admin/community-posts',{cache:'no-store',credentials:'include'});
@@ -4782,8 +5094,10 @@ window.bulkCopyContacts = function() {
   if (e('fr-add-btn'))      e('fr-add-btn').addEventListener('click', addFranchise);
   if (e('ct-add-btn'))      e('ct-add-btn').addEventListener('click', addCenter);
   if (e('lt-add-btn'))      e('lt-add-btn').addEventListener('click', addLevelTest);
-  if (e('en-add-btn'))      e('en-add-btn').addEventListener('click', addEnrollment);
-  if (e('en-refresh-btn'))  e('en-refresh-btn').addEventListener('click', loadEnrollments);
+  if (e('en-add-btn'))         e('en-add-btn').addEventListener('click', addEnrollment);
+  if (e('en-refresh-btn'))     e('en-refresh-btn').addEventListener('click', loadEnrollments);
+  if (e('en-import-file-btn')) e('en-import-file-btn').addEventListener('click', importEnrollmentFromFile);
+  if (e('en-import-kakao-btn'))e('en-import-kakao-btn').addEventListener('click', importEnrollmentFromKakao);
   if (e('en-status-filter')) e('en-status-filter').addEventListener('change', loadEnrollments);
   if (e('cm-add-btn'))      e('cm-add-btn').addEventListener('click', addCommunityPost);
   if (e('tb-add-btn'))      e('tb-add-btn').addEventListener('click', addTextbook);
