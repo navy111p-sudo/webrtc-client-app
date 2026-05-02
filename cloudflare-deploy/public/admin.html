@@ -2002,15 +2002,19 @@
       <!-- 🥭 Phase 24 — 다중 학생 동시 등록 표 -->
       <div style="margin-top:10px">
         <div style="overflow-x:auto">
-          <table id="en-multi-table" style="width:100%;font-size:12px;border-collapse:collapse;background:#fff">
+          <table id="en-multi-table" style="min-width:1100px;font-size:12px;border-collapse:collapse;background:#fff">
             <thead>
               <tr style="background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(251,146,60,0.18))">
                 <th style="padding:6px 8px;border:1px solid #e5e7eb;width:30px">#</th>
-                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="학생 이름*" data-en="Student name*">학생 이름*</th>
-                <th style="padding:6px 8px;border:1px solid #e5e7eb">UID</th>
-                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="패키지*" data-en="Package*">패키지*</th>
-                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="월 수강료(KRW)" data-en="Fee (KRW)">월 수강료(KRW)</th>
-                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="개강일" data-en="Start">개강일</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:110px" data-ko="학생 이름*" data-en="Student name*">학생 이름*</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:90px">UID</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:170px" data-ko="수업 유형 (레벨/체험/정규)" data-en="Type (Level/Trial/Regular)">수업 유형*</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:120px" data-ko="패키지" data-en="Package">패키지</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:100px" data-ko="월 수강료" data-en="Fee">월 수강료</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:200px" data-ko="요일" data-en="Days">요일</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:90px" data-ko="시간" data-en="Time">시간</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:90px" data-ko="인원 방식" data-en="Class size">인원 방식</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;min-width:120px" data-ko="시작일" data-en="Start">시작일</th>
                 <th style="padding:6px 8px;border:1px solid #e5e7eb;width:36px"></th>
               </tr>
             </thead>
@@ -2027,6 +2031,22 @@
                   style="padding:6px 18px;font-size:13px;font-weight:700"
                   data-ko="✅ 일괄 등록" data-en="✅ Register all">✅ 일괄 등록</button>
           <span id="en-multi-status" style="font-size:11px;color:#6b7280;margin-left:6px"></span>
+        </div>
+        <!-- 🥭 Phase 25 — 3종 빈 양식 다운로드 (배포·인쇄·공유용) -->
+        <div style="margin-top:12px;padding:10px 12px;background:rgba(254,243,199,0.4);border-left:3px solid #f59e0b;border-radius:6px">
+          <div style="font-size:11px;color:#78350f;font-weight:700;margin-bottom:6px"
+               data-ko="📋 빈 수강신청 양식 다운로드 — 학부모/강사에게 배포 후 채워서 다시 업로드"
+               data-en="📋 Download blank enrollment template — distribute and re-import after fill-in">
+            📋 빈 수강신청 양식 다운로드 — 학부모/강사에게 배포 후 채워서 다시 업로드
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            <button id="en-tmpl-excel-btn" type="button"
+                    style="padding:5px 12px;font-size:11px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📊 Excel(.csv) 빈 양식</button>
+            <button id="en-tmpl-word-btn" type="button"
+                    style="padding:5px 12px;font-size:11px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📄 Word(.doc) 빈 양식</button>
+            <button id="en-tmpl-kakao-btn" type="button"
+                    style="padding:5px 12px;font-size:11px;background:#fbbf24;color:#78350f;border:0;border-radius:6px;cursor:pointer;font-weight:600">📱 카톡 양식 (클립보드)</button>
+          </div>
         </div>
       </div>
     </details>
@@ -4083,33 +4103,164 @@ async function loadEnrollments() {
       </td></tr>`;
   }).join('');
 }
-// 🥭 Phase 24 — 다중 학생 동시 등록 (표 형식)
+// 🥭 Phase 25 — 빈 수강신청 양식 다운로드 (배포·인쇄·공유용)
+//   3종: Excel(.csv), Word(.doc), 카톡 텍스트(클립보드)
+//   양식에 적힌 그대로 채워서 Phase 23 import 영역에 다시 업로드하면 자동 등록
+function downloadEmptyEnrollmentTemplateExcel() {
+  const csv =
+    '﻿학생 이름,UID,수업 유형 (레벨+체험+정규 중 하나 이상),패키지,월 수강료(KRW),요일 (월화수목금토일 중 다수),시간 (HH:MM 10분 단위),인원 방식 (1:1, 1:2, 1:3, 1:N),시작일 (YYYY-MM-DD)\n' +
+    '"예시: 홍길동","user001","레벨+체험+정규","1년 정규반","350000","월수금","10:30","1:1","2026-05-01"\n' +
+    '"예시: 김민수","user002","레벨","무료 레벨테스트","0","화","16:20","1:1","2026-05-03"\n' +
+    '"예시: 박지영","user003","체험+정규","6개월 그룹반","220000","화목","17:30","1:3","2026-05-04"\n' +
+    '"","","","","","","","",""\n' +
+    '"","","","","","","","",""\n' +
+    '"","","","","","","","",""\n';
+  _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    '수강신청_빈양식_' + new Date().toISOString().slice(0,10) + '.csv');
+}
+
+function downloadEmptyEnrollmentTemplateWord() {
+  const today = new Date().toISOString().slice(0,10);
+  const docHtml =
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="UTF-8"><title>망고아이 수강신청서</title>' +
+    '<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11pt;padding:30px;line-height:1.6}' +
+    'h1{color:#9a3412;border-bottom:3px solid #f59e0b;padding-bottom:8px}' +
+    'h2{color:#78350f;font-size:13pt;margin-top:24px;border-left:4px solid #f59e0b;padding-left:10px}' +
+    'table{border-collapse:collapse;width:100%;margin-top:12px}' +
+    'th{background:#fef3c7;color:#78350f;text-align:left;padding:10px 14px;border:1px solid #d6d3d1;width:30%}' +
+    'td{padding:10px 14px;border:1px solid #d6d3d1}' +
+    '.checkbox-row{display:inline-block;margin-right:14px}' +
+    '.note{background:#fef9c3;padding:10px 14px;border-left:4px solid #f59e0b;margin:14px 0;font-size:10pt}' +
+    '.footer{margin-top:30px;font-size:10pt;color:#9ca3af;text-align:right}' +
+    '</style></head><body>' +
+    '<h1>📚 망고아이 수강신청서</h1>' +
+    '<div class="note">아래 양식을 작성하신 후 학원 관리자에게 다시 보내주세요. (Excel·카톡·Word 어떤 형식이든 가능)</div>' +
+    '<h2>📌 수업 유형 (해당 항목에 ☑ 표시)</h2>' +
+    '<p>' +
+      '<span class="checkbox-row">☐ 🔍 레벨테스트만 (Test Only)</span>' +
+      '<span class="checkbox-row">☐ 🎯 체험수업 (Trial)</span>' +
+      '<span class="checkbox-row">☐ 🌟 정규수업 (Regular)</span>' +
+    '</p>' +
+    '<h2>👤 학생 정보</h2>' +
+    '<table>' +
+      '<tr><th>학생 이름</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
+      '<tr><th>학생 UID (선택)</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
+      '<tr><th>수업 유형</th><td>(레벨 / 체험 / 정규 중 표시)</td></tr>' +
+      '<tr><th>패키지</th><td>　　　　　　　　　　　　　　　　　　　</td></tr>' +
+      '<tr><th>월 수강료</th><td>　　　　　　　　　　　　　 원</td></tr>' +
+      '<tr><th>희망 요일</th><td>☐ 월　☐ 화　☐ 수　☐ 목　☐ 금　☐ 토　☐ 일</td></tr>' +
+      '<tr><th>희망 시간 (10분 단위)</th><td>　　 시　　 분 (예: 10시 30분)</td></tr>' +
+      '<tr><th>수업 인원 방식</th><td>☐ 1:1 (개인)　☐ 1:2　☐ 1:3　☐ 1:4　☐ 1:5　☐ 1:6　☐ 1:N (대형)</td></tr>' +
+      '<tr><th>시작일 (YYYY-MM-DD)</th><td>　　　　　　　　　　　　　　　　　</td></tr>' +
+    '</table>' +
+    '<h2>🔍 학생 분류</h2>' +
+    '<p>' +
+      '<span class="checkbox-row">☐ 레벨테스트만 보는 학생</span>' +
+      '<span class="checkbox-row">☐ 레벨+체험+정규 모두 진행</span>' +
+      '<span class="checkbox-row">☐ 부분 (레벨+체험 / 체험+정규 등)</span>' +
+    '</p>' +
+    '<h2>📝 추가 메모</h2>' +
+    '<p style="border:1px solid #d6d3d1;min-height:80px;padding:10px"></p>' +
+    '<div class="footer">© Mangoi · 양식 발급일: ' + today + '</div>' +
+    '</body></html>';
+  _downloadBlob(new Blob([docHtml], { type: 'application/msword;charset=utf-8' }),
+    '수강신청_빈양식_' + today + '.doc');
+}
+
+function copyEmptyEnrollmentTemplateKakao() {
+  const tmpl =
+'📚 [망고아이] 수강신청\n' +
+'━━━━━━━━━━━━━━━\n' +
+'학생: \n' +
+'UID: \n' +
+'수업 유형: (레벨 / 체험 / 정규 중 다수 가능)\n' +
+'   ☐ 레벨테스트만\n' +
+'   ☐ 레벨+체험+정규 모두\n' +
+'   ☐ 부분 (예: 체험+정규)\n' +
+'패키지: \n' +
+'월 수강료: \n' +
+'요일: (월/화/수/목/금/토/일)\n' +
+'시간: (예: 10:30, 10분 단위)\n' +
+'인원 방식: (1:1, 1:2, 1:3, 1:N 중 선택)\n' +
+'시작일: (YYYY-MM-DD)\n' +
+'━━━━━━━━━━━━━━━';
+  // 클립보드에 복사
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(tmpl).then(() => {
+      alert('✅ 카톡 양식을 클립보드에 복사했습니다.\n\n카톡 채팅창에 Ctrl+V 로 붙여넣고 학생/학부모에게 보내세요.');
+    }).catch(err => {
+      // 클립보드 실패시 다이얼로그로 보여줌
+      prompt('아래 양식을 복사해서 카톡으로 보내주세요:', tmpl);
+    });
+  } else {
+    prompt('아래 양식을 복사해서 카톡으로 보내주세요:', tmpl);
+  }
+}
+
+// 🥭 Phase 24/25 — 다중 학생 동시 등록 (표 형식)
+//   Phase 25 추가 필드: 수업 유형(레벨/체험/정규 다중), 요일(월~일 다중), 시간(10분 단위)
+const _EN_TIME_OPTIONS = (() => {
+  const arr = [];
+  for (let h = 6; h <= 22; h++) {
+    for (let m = 0; m < 60; m += 10) {
+      arr.push(String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0'));
+    }
+  }
+  return arr;
+})();
+
 function _addEnrollmentRow(prefill) {
   const tbody = document.getElementById('en-multi-rows');
   if (!tbody) return;
   const idx = tbody.children.length + 1;
   const tr = document.createElement('tr');
   const v = prefill || {};
+  const types = v.types || [];
+  const days = v.days || [];
+  // 시간 select 옵션
+  const timeOpts = '<option value="">—</option>' +
+    _EN_TIME_OPTIONS.map(t => '<option value="' + t + '"' + (v.time === t ? ' selected' : '') + '>' + t + '</option>').join('');
+  // 🥭 Phase 26 — 수업 인원 방식 select (1:1, 1:2, 1:3, 1:4, 1:5, 1:6, 1:N)
+  const sizeOptionsList = ['1:1', '1:2', '1:3', '1:4', '1:5', '1:6', '1:N'];
+  const sizeOpts = '<option value="">—</option>' +
+    sizeOptionsList.map(s => '<option value="' + s + '"' + (v.class_size === s ? ' selected' : '') + '>' + s + '</option>').join('');
+  // 수업 유형 — 3 체크박스 (레벨/체험/정규)
+  const typeChecks =
+    '<label style="font-size:11px;margin-right:6px;cursor:pointer"><input type="checkbox" class="en-row-type" value="level"' + (types.includes('level')?' checked':'') + ' style="margin-right:2px;vertical-align:middle"/>레벨</label>' +
+    '<label style="font-size:11px;margin-right:6px;cursor:pointer"><input type="checkbox" class="en-row-type" value="trial"' + (types.includes('trial')?' checked':'') + ' style="margin-right:2px;vertical-align:middle"/>체험</label>' +
+    '<label style="font-size:11px;cursor:pointer"><input type="checkbox" class="en-row-type" value="regular"' + (types.includes('regular')?' checked':'') + ' style="margin-right:2px;vertical-align:middle"/>정규</label>';
+  // 요일 — 7 체크박스 (월화수목금토일)
+  const dayCodes = ['mon','tue','wed','thu','fri','sat','sun'];
+  const dayLabels = ['월','화','수','목','금','토','일'];
+  const dayChecks = dayCodes.map((c, i) =>
+    '<label style="font-size:11px;margin-right:3px;cursor:pointer"><input type="checkbox" class="en-row-day" value="' + c + '"' + (days.includes(c)?' checked':'') + ' style="margin-right:1px;vertical-align:middle"/>' + dayLabels[i] + '</label>'
+  ).join('');
+
   tr.innerHTML =
     '<td style="padding:4px 6px;border:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">' + idx + '</td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-name" placeholder="홍길동" value="' + (v.name||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-uid" placeholder="user001" value="' + (v.uid||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb;white-space:nowrap">' + typeChecks + '</td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-package" placeholder="1년 정규반" value="' + (v.package||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-fee" type="number" placeholder="350000" value="' + (v.fee||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb;white-space:nowrap">' + dayChecks + '</td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><select class="en-row-time" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px">' + timeOpts + '</select></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><select class="en-row-size" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px">' + sizeOpts + '</select></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-start" type="date" value="' + (v.start||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
     '<td style="padding:4px 6px;border:1px solid #e5e7eb;text-align:center"><button type="button" class="en-row-del" title="이 행 삭제" style="background:transparent;border:0;color:#ef4444;font-size:14px;cursor:pointer;padding:0 6px">✕</button></td>';
   tbody.appendChild(tr);
   // 행 삭제 — 마지막 1행은 항상 유지
   tr.querySelector('.en-row-del').addEventListener('click', () => {
     if (tbody.children.length <= 1) {
-      // 마지막 행은 비우기만
-      tr.querySelectorAll('input').forEach(inp => inp.value = '');
+      tr.querySelectorAll('input[type="text"], input[type="number"], input[type="date"]').forEach(inp => inp.value = '');
+      tr.querySelectorAll('input[type="checkbox"]').forEach(inp => inp.checked = false);
+      const sel = tr.querySelector('select'); if (sel) sel.value = '';
     } else {
       tr.remove();
       _renumberEnrollmentRows();
     }
   });
-  // 첫 입력란에 자동 포커스 (사용자가 + 행 추가 누른 직후)
   if (prefill === undefined) {
     setTimeout(() => { const inp = tr.querySelector('.en-row-name'); if (inp) inp.focus(); }, 0);
   }
@@ -4126,22 +4277,44 @@ function _renumberEnrollmentRows() {
 function _readEnrollmentRows() {
   const rows = document.querySelectorAll('#en-multi-rows tr');
   const out = [];
+  const TYPE_LABELS = { level:'레벨테스트', trial:'체험수업', regular:'정규수업' };
+  const DAY_LABELS  = { mon:'월', tue:'화', wed:'수', thu:'목', fri:'금', sat:'토', sun:'일' };
   rows.forEach((tr) => {
     const name = (tr.querySelector('.en-row-name')?.value || '').trim();
     const uid = (tr.querySelector('.en-row-uid')?.value || '').trim();
     const pkg = (tr.querySelector('.en-row-package')?.value || '').trim();
     const fee = tr.querySelector('.en-row-fee')?.value || '';
     const start = tr.querySelector('.en-row-start')?.value || '';
-    // 빈 행은 건너뜀 (이름·패키지 모두 비어있으면)
-    if (!name && !pkg) return;
+    const time = tr.querySelector('.en-row-time')?.value || '';
+    const classSize = tr.querySelector('.en-row-size')?.value || '';
+    const types = Array.from(tr.querySelectorAll('.en-row-type:checked')).map(c => c.value);
+    const days  = Array.from(tr.querySelectorAll('.en-row-day:checked')).map(c => c.value);
+    // 빈 행 건너뜀 (이름·유형·패키지 모두 비어있으면)
+    if (!name && types.length === 0 && !pkg) return;
+    // 사람이 읽을 수 있는 한글 레이블
+    const typesKo = types.map(t => TYPE_LABELS[t] || t);
+    const daysKo  = days.map(d => DAY_LABELS[d] || d);
+    // 분류 — 레벨테스트 만 vs 모두 vs 부분
+    let category = '';
+    if (types.length === 1 && types[0] === 'level') category = 'test_only';
+    else if (types.length === 3) category = 'full';
+    else if (types.length > 0) category = types.join('+');
     out.push({
       student_name: name,
       student_user_id: uid || null,
-      package: pkg,
+      package: pkg || (typesKo.join('+') || '미정'), // 패키지 비어있으면 유형으로 자동 채움
       monthly_fee_krw: fee ? parseInt(fee, 10) : null,
       started_at: start ? new Date(start).getTime() : null,
-      _started_at_str: start, // 자동 export 용
-      _fee_raw: fee
+      // 추가 메타 (자동 export·import 시 사용)
+      _types: types,
+      _types_ko: typesKo,
+      _days: days,
+      _days_ko: daysKo,
+      _time: time,
+      _class_size: classSize,
+      _started_at_str: start,
+      _fee_raw: fee,
+      _category: category
     });
   });
   return out;
@@ -4154,10 +4327,10 @@ async function addEnrollment() {
     alert(adminLang==='en' ? 'Add at least one student row' : '최소 1명 이상의 학생 정보를 입력해 주세요.');
     return;
   }
-  // 검증 — 이름 또는 패키지 누락
-  const invalid = records.filter(r => !r.student_name || !r.package);
+  // 검증 — 이름 + 수업 유형 최소 1개 필수
+  const invalid = records.filter(r => !r.student_name || !r._types || r._types.length === 0);
   if (invalid.length > 0) {
-    alert((adminLang==='en' ? 'Missing required fields (name/package): ' : '필수 항목 누락 (이름·패키지): ') + invalid.length + '건');
+    alert((adminLang==='en' ? 'Missing required (name + at least 1 type): ' : '필수 항목 누락 (이름 + 수업 유형 최소 1개): ') + invalid.length + '건');
     return;
   }
   // N=1 이면 단일 등록 + Phase 22 자동 export, N>1 이면 일괄 등록
@@ -4179,6 +4352,11 @@ async function addEnrollment() {
         package: r.package,
         monthly_fee_krw: r.monthly_fee_krw || 0,
         started_at: r._started_at_str || new Date().toISOString().slice(0,10),
+        types_ko: (r._types_ko || []).join(', ') || '—',
+        days_ko: (r._days_ko || []).join('') || '—',
+        time: r._time || '—',
+        class_size: r._class_size || '—',
+        category: r._category || '',
         created_at: new Date().toISOString().slice(0,19).replace('T', ' ')
       };
       autoExportEnrollment(enrollmentData);
@@ -4244,14 +4422,24 @@ function autoExportBulkEnrollment(records) {
   const dateStr = new Date().toISOString().slice(0,10);
   const N = records.length;
 
-  // 통합 카톡 메시지
-  let kakaoText = '📚 [망고아이] 수강신청 일괄 등록 — ' + N + '명\n━━━━━━━━━━━━━━━\n';
+  // 통합 카톡 메시지 — 구분(테스트만/풀)별 분류 통계 포함
+  const testOnly = records.filter(r => r._category === 'test_only').length;
+  const fullPkg  = records.filter(r => r._category === 'full').length;
+  const partial  = N - testOnly - fullPkg;
+  let kakaoText = '📚 [망고아이] 수강신청 일괄 등록 — ' + N + '명\n' +
+    '🔍 레벨테스트만 ' + testOnly + '명 · 🌟 풀패키지 ' + fullPkg + '명' +
+    (partial > 0 ? ' · 📌 부분 ' + partial + '명' : '') + '\n' +
+    '━━━━━━━━━━━━━━━\n';
   records.forEach((r, i) => {
-    kakaoText += (i+1) + '. ' + r.student_name +
-      (r.student_user_id ? ' (' + r.student_user_id + ')' : '') +
-      ' — ' + r.package +
-      (r.monthly_fee_krw ? ' / ' + r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '') +
-      '\n';
+    const tag = r._category === 'test_only' ? '🔍' : r._category === 'full' ? '🌟' : '📌';
+    kakaoText += (i+1) + '. ' + tag + ' ' + r.student_name +
+      (r.student_user_id ? ' (' + r.student_user_id + ')' : '') + '\n' +
+      '   유형: ' + ((r._types_ko || []).join(', ') || '—') +
+      ' / 요일: ' + ((r._days_ko || []).join('') || '—') +
+      ' / 시간: ' + (r._time || '—') +
+      ' / 인원: ' + (r._class_size || '—') + '\n' +
+      '   ' + (r.package || '—') +
+      (r.monthly_fee_krw ? ' / ' + r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '') + '\n';
   });
   kakaoText += '━━━━━━━━━━━━━━━\n등록일시: ' + new Date().toLocaleString('ko-KR');
   fetch('/api/admin/ai-action', {
@@ -4261,12 +4449,18 @@ function autoExportBulkEnrollment(records) {
   }).catch(() => {});
 
   // 통합 CSV (다행)
-  let csv = '﻿학생 이름,UID,패키지,월 수강료(KRW),개강일\n';
+  let csv = '﻿학생 이름,UID,수업 유형,구분,패키지,월 수강료(KRW),요일,시간,인원 방식,시작일\n';
   records.forEach(r => {
+    const cat = r._category === 'test_only' ? '레벨테스트만' : r._category === 'full' ? '풀패키지' : (r._category || '');
     csv += '"' + (r.student_name||'').replace(/"/g, '""') + '",' +
            '"' + (r.student_user_id||'').replace(/"/g, '""') + '",' +
+           '"' + ((r._types_ko||[]).join('+')) + '",' +
+           '"' + cat + '",' +
            '"' + (r.package||'').replace(/"/g, '""') + '",' +
            (r.monthly_fee_krw || '') + ',' +
+           '"' + ((r._days_ko||[]).join('')) + '",' +
+           '"' + (r._time || '') + '",' +
+           '"' + (r._class_size || '') + '",' +
            (r._started_at_str || '') + '\n';
   });
   _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
@@ -4284,15 +4478,23 @@ function autoExportBulkEnrollment(records) {
     '.footer{margin-top:30px;font-size:10pt;color:#9ca3af;text-align:right}' +
     '</style></head><body>' +
     '<h1>📚 망고아이 수강신청 일괄 등록 — ' + N + '명</h1>' +
-    '<p>아래 ' + N + '명의 학생 수강신청이 정상 등록되었습니다.</p>' +
-    '<table><tr><th>#</th><th>학생 이름</th><th>UID</th><th>패키지</th><th>월 수강료</th><th>개강일</th></tr>';
+    '<p>아래 ' + N + '명의 학생 수강신청이 정상 등록되었습니다. ' +
+    '🔍 레벨테스트만 ' + records.filter(r=>r._category==='test_only').length + '명 / ' +
+    '🌟 풀패키지 ' + records.filter(r=>r._category==='full').length + '명</p>' +
+    '<table><tr><th>#</th><th>학생</th><th>UID</th><th>유형</th><th>구분</th><th>패키지</th><th>수강료</th><th>요일</th><th>시간</th><th>인원</th><th>시작일</th></tr>';
   records.forEach((r, i) => {
+    const tag = r._category === 'test_only' ? '🔍 레벨테스트만' : r._category === 'full' ? '🌟 풀패키지' : (r._category||'—');
     docHtml += '<tr>' +
       '<td>' + (i+1) + '</td>' +
       '<td><b>' + _aiEsc(r.student_name) + '</b></td>' +
       '<td>' + _aiEsc(r.student_user_id || '—') + '</td>' +
+      '<td>' + _aiEsc((r._types_ko||[]).join(', ') || '—') + '</td>' +
+      '<td>' + _aiEsc(tag) + '</td>' +
       '<td>' + _aiEsc(r.package) + '</td>' +
       '<td>' + (r.monthly_fee_krw ? r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '—') + '</td>' +
+      '<td>' + _aiEsc((r._days_ko||[]).join('') || '—') + '</td>' +
+      '<td>' + _aiEsc(r._time || '—') + '</td>' +
+      '<td>' + _aiEsc(r._class_size || '—') + '</td>' +
       '<td>' + _aiEsc(r._started_at_str || '—') + '</td>' +
       '</tr>';
   });
@@ -4307,14 +4509,22 @@ function autoExportBulkEnrollment(records) {
 //   ③ Word HTML 자동 다운로드 (.doc — MS Word 에서 표 그대로 열림)
 async function autoExportEnrollment(enr) {
   // ① 카톡 큐 — 백엔드 KV 큐에 메시지 적재
+  const categoryBadge = enr.category === 'test_only' ? '🔍 레벨테스트만'
+                      : enr.category === 'full' ? '🌟 풀패키지(레벨+체험+정규)'
+                      : (enr.types_ko && enr.types_ko !== '—' ? '📌 ' + enr.types_ko : '');
   const kakaoText =
     '📚 [망고아이] 수강신청 등록\n' +
     '━━━━━━━━━━━━━━━\n' +
     '학생: ' + enr.student_name + '\n' +
     'UID:  ' + enr.student_user_id + '\n' +
+    (categoryBadge ? '구분: ' + categoryBadge + '\n' : '') +
+    '수업 유형: ' + (enr.types_ko || '—') + '\n' +
     '패키지: ' + enr.package + '\n' +
     '월 수강료: ' + (enr.monthly_fee_krw ? enr.monthly_fee_krw.toLocaleString('ko-KR') + ' 원' : '미정') + '\n' +
-    '개강일: ' + enr.started_at + '\n' +
+    '요일: ' + (enr.days_ko || '—') + '\n' +
+    '시간: ' + (enr.time || '—') + '\n' +
+    '인원 방식: ' + (enr.class_size || '—') + '\n' +
+    '시작일: ' + enr.started_at + '\n' +
     '등록일시: ' + enr.created_at + '\n' +
     '━━━━━━━━━━━━━━━';
   fetch('/api/admin/ai-action', {
@@ -4336,9 +4546,14 @@ async function autoExportEnrollment(enr) {
     '"수강신청 ID","' + enr.id + '"\n' +
     '"학생 이름","' + enr.student_name.replace(/"/g, '""') + '"\n' +
     '"학생 UID","' + (enr.student_user_id || '').replace(/"/g, '""') + '"\n' +
-    '"패키지","' + enr.package.replace(/"/g, '""') + '"\n' +
+    '"수업 유형","' + (enr.types_ko || '').replace(/"/g, '""') + '"\n' +
+    '"구분","' + (enr.category === 'test_only' ? '레벨테스트만' : enr.category === 'full' ? '풀패키지' : enr.category || '') + '"\n' +
+    '"패키지","' + (enr.package || '').replace(/"/g, '""') + '"\n' +
     '"월 수강료(KRW)","' + (enr.monthly_fee_krw || '') + '"\n' +
-    '"개강일","' + enr.started_at + '"\n' +
+    '"요일","' + (enr.days_ko || '') + '"\n' +
+    '"시간","' + (enr.time || '') + '"\n' +
+    '"인원 방식","' + (enr.class_size || '') + '"\n' +
+    '"시작일","' + enr.started_at + '"\n' +
     '"등록일시","' + enr.created_at + '"\n';
   _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
     '수강신청_' + safeName + '_' + dateStr + '.csv');
@@ -4360,11 +4575,16 @@ async function autoExportEnrollment(enr) {
     '<p>아래 학생의 수강신청이 정상 등록되었습니다.</p>' +
     '<table>' +
       '<tr><th style="width:30%">수강신청 ID</th><td>' + _aiEsc(enr.id) + '</td></tr>' +
-      '<tr><th>학생 이름</th><td>' + _aiEsc(enr.student_name) + '</td></tr>' +
+      '<tr><th>학생 이름</th><td><b>' + _aiEsc(enr.student_name) + '</b></td></tr>' +
       '<tr><th>학생 UID</th><td>' + _aiEsc(enr.student_user_id) + '</td></tr>' +
+      '<tr><th>수업 유형</th><td>' + _aiEsc(enr.types_ko || '—') + '</td></tr>' +
+      '<tr><th>구분</th><td>' + _aiEsc(enr.category === 'test_only' ? '🔍 레벨테스트만' : enr.category === 'full' ? '🌟 풀패키지(레벨+체험+정규)' : enr.category || '—') + '</td></tr>' +
       '<tr><th>패키지</th><td>' + _aiEsc(enr.package) + '</td></tr>' +
       '<tr><th>월 수강료</th><td>' + (enr.monthly_fee_krw ? enr.monthly_fee_krw.toLocaleString('ko-KR') + ' 원' : '미정') + '</td></tr>' +
-      '<tr><th>개강일</th><td>' + _aiEsc(enr.started_at) + '</td></tr>' +
+      '<tr><th>요일</th><td>' + _aiEsc(enr.days_ko || '—') + '</td></tr>' +
+      '<tr><th>시간</th><td>' + _aiEsc(enr.time || '—') + '</td></tr>' +
+      '<tr><th>인원 방식</th><td>' + _aiEsc(enr.class_size || '—') + '</td></tr>' +
+      '<tr><th>시작일</th><td>' + _aiEsc(enr.started_at) + '</td></tr>' +
       '<tr><th>등록일시</th><td>' + _aiEsc(enr.created_at) + '</td></tr>' +
     '</table>' +
     '<div class="footer">© Mangoi · 자동 생성 · ' + new Date().toLocaleString('ko-KR') + '</div>' +
@@ -4426,22 +4646,45 @@ function _parseCsvLine(line) {
   return out;
 }
 
-// 텍스트(붙여넣기)에서 한국어 라벨 추출
+// 텍스트(붙여넣기)에서 한국어 라벨 추출 (Phase 25: 유형·요일·시간 추가)
 function _extractKoFields(text) {
   const get = (re) => { const m = text.match(re); return m ? m[1].trim() : ''; };
   return {
     student_name: get(/(?:학생\s*이름|학생|이름)\s*[:：]?\s*([^\n,;]+)/),
     student_user_id: get(/(?:학생\s*UID|UID|user[_\s]*id|아이디)\s*[:：]?\s*([^\n,;]+)/i),
+    types_raw: get(/(?:수업\s*유형|유형|과목)\s*[:：]?\s*([^\n,;]+)/),
     package: get(/(?:패키지|상품|코스|과정)\s*[:：]?\s*([^\n,;]+)/),
     monthly_fee: get(/(?:월\s*수강료|수강료|학비|fee)\s*[:：]?\s*([0-9,]+)/i),
-    started_at: get(/(?:개강일|시작일|등록일|started?)\s*[:：]?\s*([0-9./-]+)/i)
+    days_raw: get(/(?:요일|days?)\s*[:：]?\s*([^\n,;]+)/i),
+    time: get(/(?:시간|time)\s*[:：]?\s*([0-9:]+)/i),
+    class_size: get(/(?:인원\s*방식|인원|class\s*size|수업\s*인원)\s*[:：]?\s*(1\s*[:대]\s*[0-9N]+)/i),
+    started_at: get(/(?:시작일|개강일|등록일|started?)\s*[:：]?\s*([0-9./-]+)/i)
   };
 }
 
 function _normalizeEnrollment(raw) {
   const name = (raw.student_name || '').trim();
-  const pkg = (raw.package || '').trim();
-  if (!name || !pkg) return null;
+  // 유형 텍스트에서 레벨/체험/정규 추출
+  const typesRaw = String(raw.types_raw || raw.types || '').toLowerCase();
+  const types = [];
+  if (/레벨|level/i.test(typesRaw)) types.push('level');
+  if (/체험|trial/i.test(typesRaw)) types.push('trial');
+  if (/정규|regular/i.test(typesRaw)) types.push('regular');
+  // 요일 추출
+  const daysRaw = String(raw.days_raw || raw.days || '').toLowerCase();
+  const days = [];
+  const dayMap = [['월','mon'],['화','tue'],['수','wed'],['목','thu'],['금','fri'],['토','sat'],['일','sun']];
+  dayMap.forEach(([ko, en]) => {
+    if (daysRaw.includes(ko) || daysRaw.includes(en)) days.push(en);
+  });
+  // 패키지 — 비어있으면 유형으로 자동 채움
+  let pkg = (raw.package || '').trim();
+  if (!pkg && types.length > 0) {
+    const tlabel = { level:'레벨테스트', trial:'체험수업', regular:'정규수업' };
+    pkg = types.map(t => tlabel[t]).join('+');
+  }
+  // 이름이 없거나 (패키지·유형 모두 없으면) 무효
+  if (!name || (!pkg && types.length === 0)) return null;
   let feeNum = null;
   if (raw.monthly_fee_krw) feeNum = parseInt(String(raw.monthly_fee_krw).replace(/[^0-9]/g, ''), 10) || null;
   else if (raw.monthly_fee) feeNum = parseInt(String(raw.monthly_fee).replace(/[^0-9]/g, ''), 10) || null;
@@ -4451,12 +4694,25 @@ function _normalizeEnrollment(raw) {
     const d = new Date(s);
     if (!isNaN(d.getTime())) startMs = d.getTime();
   }
+  // 분류
+  let category = '';
+  if (types.length === 1 && types[0] === 'level') category = 'test_only';
+  else if (types.length === 3) category = 'full';
+  else if (types.length > 0) category = types.join('+');
   return {
     student_name: name,
     student_user_id: (raw.student_user_id || '').trim() || null,
-    package: pkg,
+    package: pkg || '미정',
     monthly_fee_krw: feeNum,
-    started_at: startMs
+    started_at: startMs,
+    _types: types,
+    _types_ko: types.map(t => ({level:'레벨테스트',trial:'체험수업',regular:'정규수업'}[t])),
+    _days: days,
+    _days_ko: days.map(d => ({mon:'월',tue:'화',wed:'수',thu:'목',fri:'금',sat:'토',sun:'일'}[d])),
+    _time: (raw.time || '').trim(),
+    _class_size: String(raw.class_size || '').replace(/\s/g, '').replace('대', ':'),
+    _category: category,
+    _started_at_str: raw.started_at || ''
   };
 }
 
@@ -4476,9 +4732,13 @@ function _parseCsvEnrollments(text) {
     const enr = _normalizeEnrollment({
       student_name: obj['학생 이름'],
       student_user_id: obj['학생 UID'],
+      types_raw: obj['수업 유형'] || obj['유형'],
       package: obj['패키지'],
       monthly_fee_krw: obj['월 수강료(KRW)'] || obj['월 수강료'],
-      started_at: obj['개강일']
+      days_raw: obj['요일'],
+      time: obj['시간'],
+      class_size: obj['인원 방식'] || obj['인원'],
+      started_at: obj['시작일'] || obj['개강일']
     });
     return enr ? [enr] : [];
   }
@@ -4493,9 +4753,13 @@ function _parseCsvEnrollments(text) {
     const enr = _normalizeEnrollment({
       student_name: rec['학생 이름'] || rec['학생'] || rec['이름'] || rec.student_name || rec.name,
       student_user_id: rec['학생 UID'] || rec['UID'] || rec.user_id || rec.uid,
+      types_raw: rec['수업 유형'] || rec['수업 유형 (레벨+체험+정규 중 하나 이상)'] || rec['유형'] || rec['과목'],
       package: rec['패키지'] || rec['상품'] || rec.package,
       monthly_fee_krw: rec['월 수강료(KRW)'] || rec['월 수강료'] || rec['수강료'] || rec.fee,
-      started_at: rec['개강일'] || rec['시작일'] || rec.start || rec.started_at
+      days_raw: rec['요일'] || rec['요일 (월화수목금토일 중 다수)'] || rec.days,
+      time: rec['시간'] || rec['시간 (HH:MM 10분 단위)'] || rec.time,
+      class_size: rec['인원 방식'] || rec['인원'] || rec['수업 인원'] || rec['인원 방식 (1대1, 1대N)'] || rec.class_size,
+      started_at: rec['시작일'] || rec['시작일 (YYYY-MM-DD)'] || rec['개강일'] || rec.start || rec.started_at
     });
     if (enr) records.push(enr);
   }
@@ -4580,30 +4844,44 @@ function _renderImportPreview(records, source) {
       _aiEsc(source) + ' 에서 수강신청 정보를 찾을 수 없습니다. 파일·텍스트 형식을 확인해 주세요.</div>';
     return;
   }
-  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">' +
-    '<b style="color:#065f46">📋 미리보기 — ' + records.length + '건</b>' +
+  const testOnly = records.filter(r => r._category === 'test_only').length;
+  const fullPkg  = records.filter(r => r._category === 'full').length;
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:8px">' +
+    '<b style="color:#065f46">📋 미리보기 — ' + records.length + '건' +
+      ' (🔍 ' + testOnly + ' / 🌟 ' + fullPkg + ')</b>' +
     '<button id="en-import-confirm-btn" style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700">✅ ' + records.length + '건 일괄 등록</button>' +
     '</div>' +
-    '<table style="width:100%;font-size:12px;border-collapse:collapse">' +
+    '<div style="overflow-x:auto"><table style="min-width:900px;font-size:11px;border-collapse:collapse">' +
     '<tr style="background:#fef3c7"><th style="padding:6px 8px;border:1px solid #e5e7eb">#</th>' +
     '<th style="padding:6px 8px;border:1px solid #e5e7eb">학생</th>' +
     '<th style="padding:6px 8px;border:1px solid #e5e7eb">UID</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">유형</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">구분</th>' +
     '<th style="padding:6px 8px;border:1px solid #e5e7eb">패키지</th>' +
-    '<th style="padding:6px 8px;border:1px solid #e5e7eb">월 수강료</th>' +
-    '<th style="padding:6px 8px;border:1px solid #e5e7eb">개강일</th></tr>';
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">수강료</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">요일</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">시간</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">인원</th>' +
+    '<th style="padding:6px 8px;border:1px solid #e5e7eb">시작일</th></tr>';
   records.forEach((r, i) => {
-    const startStr = r.started_at ? new Date(r.started_at).toISOString().slice(0,10) : '—';
+    const startStr = r.started_at ? new Date(r.started_at).toISOString().slice(0,10) : (r._started_at_str || '—');
     const feeStr = r.monthly_fee_krw ? r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '—';
+    const tag = r._category === 'test_only' ? '🔍 레벨만' : r._category === 'full' ? '🌟 풀패키지' : (r._category||'—');
     html += '<tr>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:center">' + (i+1) + '</td>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb"><b>' + _aiEsc(r.student_name) + '</b></td>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb"><code>' + _aiEsc(r.student_user_id || '—') + '</code></td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc((r._types_ko||[]).join(',') || '—') + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc(tag) + '</td>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc(r.package) + '</td>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb;text-align:right">' + feeStr + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc((r._days_ko||[]).join('') || '—') + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc(r._time || '—') + '</td>' +
+      '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + _aiEsc(r._class_size || '—') + '</td>' +
       '<td style="padding:6px 8px;border:1px solid #e5e7eb">' + startStr + '</td>' +
       '</tr>';
   });
-  html += '</table>';
+  html += '</table></div>';
   box.style.display = 'block';
   box.innerHTML = html;
   // 확인 버튼 → 일괄 등록 실행
@@ -5314,6 +5592,10 @@ window.bulkCopyContacts = function() {
   if (e('en-multi-rows') && e('en-multi-rows').children.length === 0) {
     _addEnrollmentRow(); // 페이지 로드시 첫 행 자동 추가
   }
+  // 🥭 Phase 25 — 빈 양식 다운로드 버튼 3종
+  if (e('en-tmpl-excel-btn')) e('en-tmpl-excel-btn').addEventListener('click', downloadEmptyEnrollmentTemplateExcel);
+  if (e('en-tmpl-word-btn'))  e('en-tmpl-word-btn').addEventListener('click', downloadEmptyEnrollmentTemplateWord);
+  if (e('en-tmpl-kakao-btn')) e('en-tmpl-kakao-btn').addEventListener('click', copyEmptyEnrollmentTemplateKakao);
   if (e('en-status-filter')) e('en-status-filter').addEventListener('change', loadEnrollments);
   if (e('cm-add-btn'))      e('cm-add-btn').addEventListener('click', addCommunityPost);
   if (e('tb-add-btn'))      e('tb-add-btn').addEventListener('click', addTextbook);
