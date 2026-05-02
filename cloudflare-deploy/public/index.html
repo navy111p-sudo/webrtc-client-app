@@ -1398,6 +1398,7 @@
                 <button class="tab-btn" onclick="vcSwitchTab('pdf')" data-ko="📄 교재" data-en="📄 Materials">📄 교재</button>
                 <button class="tab-btn" onclick="vcSwitchTab('video')" data-ko="📹 동영상" data-en="📹 Video">📹 동영상</button>
                 <button class="tab-btn" onclick="vcSwitchTab('pron')" data-ko="🎯 발음연습" data-en="🎯 Pronunciation">🎯 발음연습</button>
+                <button class="tab-btn" onclick="vcSwitchTab('game')" data-ko="🎮 학생게임" data-en="🎮 Game">🎮 학생게임</button>
             </div>
 
             <!-- 탭 콘텐츠 -->
@@ -1522,6 +1523,37 @@
             <div style="padding:8px 12px;background:rgba(15,23,42,0.65);border-top:1px solid rgba(148,163,184,0.15);font-size:11px;color:#94a3b8;flex-shrink:0">
                 💡 <span data-ko="iframe 내 마이크 권한이 차단되면 [🔗 새 탭에서 열기]로 사용하세요." data-en="If mic is blocked in iframe, use [🔗 Open in new tab].">iframe 내 마이크 권한이 차단되면 [🔗 새 탭에서 열기]로 사용하세요.</span>
             </div>
+        </div>
+
+        <!-- 🥭 Phase 41 — 🎮 학생게임 탭 (문장 벽돌 + 단어 매칭) -->
+        <div class="tab-panel" id="tab-game" style="flex-direction:column">
+          <!-- 게임 선택 헤더 -->
+          <div style="display:flex;gap:8px;align-items:center;padding:10px 12px;background:rgba(15,23,42,0.65);border-bottom:1px solid rgba(148,163,184,0.15);flex-wrap:wrap;flex-shrink:0">
+            <span style="font-size:13px;color:#fbbf24;font-weight:700">🎮 <span data-ko="학생게임" data-en="Student Game">학생게임</span></span>
+            <span style="font-size:11px;color:#94a3b8" data-ko="오늘의 교재 단어/문장 기반" data-en="Based on today's textbook">오늘의 교재 단어/문장 기반</span>
+            <div style="margin-left:auto;display:inline-flex;border:1px solid #475569;border-radius:6px;overflow:hidden">
+              <button id="game-mode-brick" type="button" onclick="gameSwitchMode('brick')"
+                      style="padding:6px 14px;background:#10b981;color:#fff;border:0;cursor:pointer;font-size:12px;font-weight:600">🧱 <span data-ko="문장 벽돌" data-en="Sentence Brick">문장 벽돌</span></button>
+              <button id="game-mode-match" type="button" onclick="gameSwitchMode('match')"
+                      style="padding:6px 14px;background:transparent;color:#94a3b8;border:0;border-left:1px solid #475569;cursor:pointer;font-size:12px;font-weight:600">🧩 <span data-ko="단어 매칭" data-en="Word Match">단어 매칭</span></button>
+            </div>
+            <button onclick="gameNextRound()"
+                    style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600"
+                    data-ko="🔄 다음 문제" data-en="🔄 Next">🔄 다음 문제</button>
+          </div>
+
+          <!-- 게임 본체 -->
+          <div id="game-area" style="flex:1;min-height:0;overflow:auto;background:linear-gradient(135deg,#0f172a,#1e293b);padding:24px;color:#f1f5f9">
+            <!-- JS 가 동적 렌더 -->
+          </div>
+
+          <!-- 점수/피드백 -->
+          <div style="padding:8px 12px;background:rgba(15,23,42,0.85);border-top:1px solid rgba(148,163,184,0.15);font-size:12px;color:#cbd5e1;display:flex;gap:14px;align-items:center;flex-shrink:0">
+            <span>🏆 <span data-ko="점수" data-en="Score">점수</span>: <b id="game-score" style="color:#fbbf24">0</b></span>
+            <span>✅ <span data-ko="정답" data-en="Correct">정답</span>: <b id="game-correct" style="color:#10b981">0</b></span>
+            <span>❌ <span data-ko="오답" data-en="Wrong">오답</span>: <b id="game-wrong" style="color:#ef4444">0</b></span>
+            <span id="game-feedback" style="margin-left:auto;font-weight:600">&nbsp;</span>
+          </div>
         </div>
             </div><!-- /.tab-content -->
         </div><!-- /.content-pane -->
@@ -2949,6 +2981,200 @@ function vcSwitchTab(tabName, evt) {
         });
     }
     if (tabName === 'whiteboard') wbResize();
+    // 🥭 Phase 41 — 게임 탭 진입 시 자동 시작
+    if (tabName === 'game' && typeof gameInit === 'function') {
+      if (!_gameState.started) gameInit();
+    }
+}
+
+// 🥭 Phase 41 — 학생게임 (오늘의 교재 vocab 기반 두 가지 미니게임)
+const _GAME_VOCAB = [
+  // [영문 문장, 한국어 번역, 단어 분리]
+  { en: 'I love mango fruit.',           ko: '나는 망고 과일을 좋아해요.',         words: ['I','love','mango','fruit'] },
+  { en: 'She is reading a book.',        ko: '그녀는 책을 읽고 있어요.',           words: ['She','is','reading','a','book'] },
+  { en: 'We go to school every day.',    ko: '우리는 매일 학교에 가요.',           words: ['We','go','to','school','every','day'] },
+  { en: 'My dog is very cute.',          ko: '내 강아지는 매우 귀여워요.',         words: ['My','dog','is','very','cute'] },
+  { en: 'The sun is shining brightly.',  ko: '태양이 밝게 빛나고 있어요.',         words: ['The','sun','is','shining','brightly'] },
+  { en: 'He plays soccer on Sundays.',   ko: '그는 일요일에 축구를 해요.',         words: ['He','plays','soccer','on','Sundays'] },
+  { en: 'I like to eat pizza.',          ko: '나는 피자 먹는 것을 좋아해요.',     words: ['I','like','to','eat','pizza'] },
+  { en: 'They are good friends.',        ko: '그들은 좋은 친구입니다.',           words: ['They','are','good','friends'] }
+];
+const _GAME_WORDS = [
+  { en:'apple', ko:'사과' }, { en:'book', ko:'책' }, { en:'cat', ko:'고양이' },
+  { en:'dog', ko:'강아지' }, { en:'flower', ko:'꽃' }, { en:'hello', ko:'안녕' },
+  { en:'school', ko:'학교' }, { en:'water', ko:'물' }, { en:'sun', ko:'태양' },
+  { en:'moon', ko:'달' }, { en:'star', ko:'별' }, { en:'love', ko:'사랑' }
+];
+const _gameState = { mode: 'brick', score: 0, correct: 0, wrong: 0, current: null, started: false };
+
+function gameInit() {
+  _gameState.started = true;
+  _gameState.score = 0; _gameState.correct = 0; _gameState.wrong = 0;
+  _gameUpdateScore();
+  gameNextRound();
+}
+
+function gameSwitchMode(mode) {
+  _gameState.mode = mode;
+  document.getElementById('game-mode-brick').style.background = mode === 'brick' ? '#10b981' : 'transparent';
+  document.getElementById('game-mode-brick').style.color = mode === 'brick' ? '#fff' : '#94a3b8';
+  document.getElementById('game-mode-match').style.background = mode === 'match' ? '#10b981' : 'transparent';
+  document.getElementById('game-mode-match').style.color = mode === 'match' ? '#fff' : '#94a3b8';
+  gameNextRound();
+}
+
+function gameNextRound() {
+  document.getElementById('game-feedback').textContent = '';
+  if (_gameState.mode === 'brick') gameRenderBrick();
+  else gameRenderMatch();
+}
+
+function _gameShuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function _gameUpdateScore() {
+  document.getElementById('game-score').textContent = _gameState.score;
+  document.getElementById('game-correct').textContent = _gameState.correct;
+  document.getElementById('game-wrong').textContent = _gameState.wrong;
+}
+
+// 🧱 게임 1: 문장 벽돌 — 영어 단어 브릭을 순서대로 클릭해서 문장 완성
+function gameRenderBrick() {
+  const sentence = _GAME_VOCAB[Math.floor(Math.random() * _GAME_VOCAB.length)];
+  _gameState.current = { sentence, picked: [] };
+  const shuffled = _gameShuffle(sentence.words);
+  let html =
+    '<div style="text-align:center;margin-bottom:24px">' +
+      '<div style="font-size:13px;color:#94a3b8;margin-bottom:6px">📝 한국어 번역</div>' +
+      '<div style="font-size:22px;font-weight:700;color:#fbbf24;padding:12px 20px;background:rgba(251,191,36,0.12);border-radius:12px;display:inline-block">' + sentence.ko + '</div>' +
+    '</div>' +
+    '<div style="text-align:center;margin-bottom:18px">' +
+      '<div style="font-size:13px;color:#94a3b8;margin-bottom:8px">🎯 영어로 만들어보세요 (단어 클릭)</div>' +
+      '<div id="brick-built" style="min-height:54px;background:rgba(15,23,42,0.7);border:2px dashed #475569;border-radius:12px;padding:12px;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;align-items:center">' +
+        '<span style="color:#64748b;font-size:14px" id="brick-empty">아래 단어 브릭을 클릭하세요...</span>' +
+      '</div>' +
+    '</div>' +
+    '<div id="brick-pool" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:18px">';
+  shuffled.forEach((w, i) => {
+    html += '<button class="brick-btn" data-word="' + w + '" data-idx="' + i + '" onclick="gameBrickPick(this)" ' +
+      'style="padding:10px 18px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(59,130,246,0.4);transition:transform 0.15s">' + w + '</button>';
+  });
+  html += '</div>' +
+    '<div style="text-align:center;display:flex;gap:10px;justify-content:center">' +
+      '<button onclick="gameBrickReset()" style="padding:8px 18px;background:rgba(148,163,184,0.2);color:#cbd5e1;border:0;border-radius:8px;cursor:pointer;font-size:13px">↩ 다시</button>' +
+      '<button onclick="gameBrickCheck()" style="padding:10px 24px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:0;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700;box-shadow:0 4px 12px rgba(16,185,129,0.4)">✅ 확인</button>' +
+    '</div>';
+  document.getElementById('game-area').innerHTML = html;
+}
+
+function gameBrickPick(btn) {
+  const word = btn.dataset.word;
+  _gameState.current.picked.push(word);
+  btn.style.opacity = '0.3'; btn.disabled = true;
+  const built = document.getElementById('brick-built');
+  const empty = document.getElementById('brick-empty');
+  if (empty) empty.remove();
+  const span = document.createElement('span');
+  span.textContent = word;
+  span.style.cssText = 'padding:8px 16px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1f2937;border-radius:8px;font-size:15px;font-weight:700';
+  built.appendChild(span);
+}
+
+function gameBrickReset() {
+  gameRenderBrick();
+}
+
+function gameBrickCheck() {
+  const sent = _gameState.current.sentence;
+  const picked = _gameState.current.picked;
+  const correct = picked.length === sent.words.length &&
+                  picked.every((w, i) => w === sent.words[i]);
+  const fb = document.getElementById('game-feedback');
+  if (correct) {
+    _gameState.score += 10; _gameState.correct++;
+    fb.innerHTML = '<span style="color:#10b981">✅ 정답! +10점</span>';
+    setTimeout(gameNextRound, 1500);
+  } else {
+    _gameState.wrong++;
+    fb.innerHTML = '<span style="color:#ef4444">❌ 다시 시도! 정답: ' + sent.en + '</span>';
+  }
+  _gameUpdateScore();
+}
+
+// 🧩 게임 2: 단어 매칭 — 한영 카드 페어 매칭
+function gameRenderMatch() {
+  const pool = _gameShuffle(_GAME_WORDS).slice(0, 6); // 6개 페어 = 12개 카드
+  const cards = [];
+  pool.forEach((w, i) => {
+    cards.push({ id: 'k' + i, type: 'ko', text: w.ko, pairId: i });
+    cards.push({ id: 'e' + i, type: 'en', text: w.en, pairId: i });
+  });
+  const shuffled = _gameShuffle(cards);
+  _gameState.current = { cards: shuffled, flipped: [], matched: new Set() };
+  let html =
+    '<div style="text-align:center;margin-bottom:18px">' +
+      '<div style="font-size:13px;color:#94a3b8">🧩 한국어와 영어 카드 짝을 찾으세요!</div>' +
+    '</div>' +
+    '<div id="match-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:600px;margin:0 auto">';
+  shuffled.forEach((c, i) => {
+    const bg = c.type === 'ko' ? 'linear-gradient(135deg,#a855f7,#7c3aed)' : 'linear-gradient(135deg,#f59e0b,#ea580c)';
+    html += '<div class="match-card" data-idx="' + i + '" data-pair="' + c.pairId + '" data-type="' + c.type + '" data-text="' + c.text + '" onclick="gameMatchFlip(this)" ' +
+      'style="aspect-ratio:1.4;background:' + bg + ';border-radius:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:700;box-shadow:0 6px 18px rgba(0,0,0,0.3);transition:transform 0.2s">' +
+      '<span style="font-size:28px">?</span></div>';
+  });
+  html += '</div>' +
+    '<div style="text-align:center;margin-top:18px;font-size:12px;color:#94a3b8">남은 페어: <b id="match-remaining" style="color:#fbbf24">' + pool.length + '</b></div>';
+  document.getElementById('game-area').innerHTML = html;
+}
+
+function gameMatchFlip(card) {
+  if (card.dataset.flipped === '1' || card.dataset.matched === '1') return;
+  if (_gameState.current.flipped.length >= 2) return;
+  card.dataset.flipped = '1';
+  card.innerHTML = '<span style="font-size:18px;padding:8px;text-align:center">' + card.dataset.text + '</span>';
+  card.style.transform = 'scale(1.05)';
+  _gameState.current.flipped.push(card);
+  if (_gameState.current.flipped.length === 2) {
+    const [a, b] = _gameState.current.flipped;
+    if (a.dataset.pair === b.dataset.pair && a.dataset.type !== b.dataset.type) {
+      // 매치
+      setTimeout(() => {
+        a.dataset.matched = '1'; b.dataset.matched = '1';
+        a.style.opacity = '0.5'; b.style.opacity = '0.5';
+        a.style.transform = ''; b.style.transform = '';
+        _gameState.current.matched.add(a.dataset.pair);
+        _gameState.score += 5; _gameState.correct++;
+        _gameState.current.flipped = [];
+        _gameUpdateScore();
+        const total = _gameState.current.cards.length / 2;
+        const remEl = document.getElementById('match-remaining');
+        if (remEl) remEl.textContent = (total - _gameState.current.matched.size);
+        document.getElementById('game-feedback').innerHTML = '<span style="color:#10b981">✅ 매치! +5점</span>';
+        if (_gameState.current.matched.size === total) {
+          document.getElementById('game-feedback').innerHTML = '<span style="color:#fbbf24">🏆 완료! 다음 게임으로...</span>';
+          setTimeout(gameNextRound, 2000);
+        }
+      }, 400);
+    } else {
+      // 미스매치
+      _gameState.wrong++;
+      _gameUpdateScore();
+      document.getElementById('game-feedback').innerHTML = '<span style="color:#ef4444">❌ 다시</span>';
+      setTimeout(() => {
+        a.dataset.flipped = '0'; b.dataset.flipped = '0';
+        a.innerHTML = '<span style="font-size:28px">?</span>';
+        b.innerHTML = '<span style="font-size:28px">?</span>';
+        a.style.transform = ''; b.style.transform = '';
+        _gameState.current.flipped = [];
+      }, 800);
+    }
+  }
 }
 
 // 영상 패널 크기 조절 (1/4, 1/2, 3/4, 전체)
