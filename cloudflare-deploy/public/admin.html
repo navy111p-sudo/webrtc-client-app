@@ -1879,6 +1879,138 @@
   </div>
 </details>
 
+<!-- 🥭 Phase 34 — 🧑‍🏫 강사관리 (학생관리 바로 아래, 2개 하위 메뉴) -->
+<details class="table-card menu-card" id="card-teacher-mgmt">
+  <summary><span data-ko="🧑‍🏫 강사관리" data-en="🧑‍🏫 Teacher Management">🧑‍🏫 강사관리</span></summary>
+  <div class="menu-body">
+    <div class="sub-menu">
+
+      <!-- 하위 ① — Mangoi 강사 급여·평가 (기존 카드로 점프) -->
+      <details class="sub-item">
+        <summary data-ko="💼 Mangoi 강사 급여·평가 대시보드" data-en="💼 Mangoi Teacher Payroll & Evaluation">💼 Mangoi 강사 급여·평가 대시보드</summary>
+        <div class="sub-body">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button onclick="jumpToMenu('card-payroll')" class="primary"
+                    style="padding:8px 18px;font-size:13px;font-weight:700"
+                    data-ko="💼 강사 급여·평가 카드 열기" data-en="💼 Open Payroll & Evaluation card">💼 강사 급여·평가 카드 열기</button>
+            <span style="font-size:12px;color:#6b7280" data-ko="(클릭하면 아래 강사 급여 카드로 자동 이동)" data-en="(Scrolls to payroll card below)">(클릭하면 아래 강사 급여 카드로 자동 이동)</span>
+          </div>
+        </div>
+      </details>
+
+      <!-- 하위 ② — 강사 정보 (신규 CRUD) -->
+      <details class="sub-item" open>
+        <summary data-ko="📋 강사 정보 (등록·수정·제거)" data-en="📋 Teacher Profile (CRUD)">📋 강사 정보 (등록·수정·제거)</summary>
+        <div class="sub-body">
+
+          <!-- 신규 등록 폼 -->
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#10b981;font-weight:600"
+                     data-ko="＋ 신규 강사 등록" data-en="＋ Add New Teacher">＋ 신규 강사 등록</summary>
+            <div style="background:rgba(16,185,129,0.05);border:1px dashed rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-top:8px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
+                <div><label style="font-size:11px;color:#374151;font-weight:600">한글 이름 *</label>
+                  <input id="tp-name" type="text" placeholder="홍길동" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">영문 이름</label>
+                  <input id="tp-en-name" type="text" placeholder="Hong Gildong" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">이메일</label>
+                  <input id="tp-email" type="email" placeholder="teacher@mangoi.com" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">휴대폰</label>
+                  <input id="tp-phone" type="tel" placeholder="010-1234-5678" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">카카오톡 ID</label>
+                  <input id="tp-kakao" type="text" placeholder="kakao_id" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">생년월일</label>
+                  <input id="tp-dob" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">성별</label>
+                  <select id="tp-gender" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+                    <option value="">—</option><option value="M">남성</option><option value="F">여성</option><option value="O">기타</option></select></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">활동 지역</label>
+                  <input id="tp-active-region" type="text" placeholder="예: 서울 강남" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">출신 지역</label>
+                  <input id="tp-origin-region" type="text" placeholder="예: 부산" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">10분당 수수료 (KRW/PHP)</label>
+                  <input id="tp-fee-10min" type="number" placeholder="3000" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">강사 그룹</label>
+                  <select id="tp-group" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+                    <option value="">—</option><option value="home">🏠 Home (재택)</option><option value="office">🏢 Office (사무실)</option></select></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">상태</label>
+                  <select id="tp-status" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px">
+                    <option value="활동중">🟢 활동중</option><option value="비활동">⏸️ 비활동</option><option value="퇴사">🚪 퇴사</option></select></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">입사일</label>
+                  <input id="tp-join-date" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">퇴사일 (해당 시)</label>
+                  <input id="tp-leave-date" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div style="grid-column:1/-1"><label style="font-size:11px;color:#374151;font-weight:600">프로필 이미지 URL</label>
+                  <input id="tp-image-url" type="url" placeholder="https://... (R2/CDN URL)" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div style="grid-column:1/-1"><label style="font-size:11px;color:#374151;font-weight:600">소개 비디오 URL</label>
+                  <input id="tp-video-url" type="url" placeholder="https://youtube.com/... or https://..." style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">학력</label>
+                  <input id="tp-education" type="text" placeholder="예: 서울대 영문과 졸업" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">경력</label>
+                  <input id="tp-career" type="text" placeholder="예: 5년" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">자격증</label>
+                  <input id="tp-cert" type="text" placeholder="TESOL, CELTA 등" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">가능 요일</label>
+                  <input id="tp-avail-days" type="text" placeholder="월화수목금" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">가능 시간대</label>
+                  <input id="tp-avail-hours" type="text" placeholder="09:00-18:00" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">은행명</label>
+                  <input id="tp-bank-name" type="text" placeholder="국민은행" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div><label style="font-size:11px;color:#374151;font-weight:600">계좌번호</label>
+                  <input id="tp-bank-acct" type="text" placeholder="123-456-789012" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div style="grid-column:1/-1"><label style="font-size:11px;color:#374151;font-weight:600">메모</label>
+                  <textarea id="tp-notes" rows="2" placeholder="기타 참고사항" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical"></textarea></div>
+              </div>
+              <div style="margin-top:12px">
+                <button id="tp-add-btn" class="primary" type="button" style="padding:7px 18px;font-size:13px;font-weight:700">＋ 강사 등록</button>
+                <button id="tp-clear-btn" type="button" style="padding:7px 14px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">초기화</button>
+              </div>
+            </div>
+          </details>
+
+          <!-- 필터 + 새로고침 -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
+            <select id="tp-filter-status" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
+              <option value="">전체 상태</option>
+              <option value="활동중">🟢 활동중</option>
+              <option value="비활동">⏸️ 비활동</option>
+              <option value="퇴사">🚪 퇴사</option>
+            </select>
+            <select id="tp-filter-group" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
+              <option value="">전체 그룹</option>
+              <option value="home">🏠 Home</option>
+              <option value="office">🏢 Office</option>
+            </select>
+            <button id="tp-refresh-btn" type="button" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">🔄 새로고침</button>
+            <span id="tp-count" style="font-size:11px;color:#6b7280;align-self:center">—</span>
+          </div>
+
+          <!-- 강사 목록 표 -->
+          <div style="overflow-x:auto">
+            <table id="tp-list-table" style="width:100%;font-size:12px;border-collapse:collapse;background:#fff">
+              <thead>
+                <tr style="background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(251,146,60,0.18))">
+                  <th style="padding:6px;border:1px solid #e5e7eb">사진</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">이름</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">상태</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">그룹</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">활동지역</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">10분 수수료</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">연락처</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">입사일</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb">액션</th>
+                </tr>
+              </thead>
+              <tbody id="tp-list-body"><tr><td colspan="9" class="empty">—</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</details>
+
 <details class="table-card menu-card" id="card-payroll">
   <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
     <span data-ko="💼 Mangoi 강사 급여·평가 대시보드" data-en="💼 Mangoi Teacher Payroll & Evaluation">💼 Mangoi 강사 급여·평가 대시보드</span>
@@ -4146,6 +4278,193 @@ async function _menuPost(url, body) {
   return d;
 }
 
+// 🥭 Phase 34 — 강사 정보 CRUD ───────────────────────────────────────
+const _TP_STATUS_BADGE = {
+  '활동중': '<span style="background:#dcfce7;color:#166534;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600">🟢 활동중</span>',
+  '비활동': '<span style="background:#fef3c7;color:#854d0e;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600">⏸️ 비활동</span>',
+  '퇴사':   '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600">🚪 퇴사</span>'
+};
+const _TP_GROUP_BADGE = {
+  'home':   '<span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:999px;font-size:11px">🏠 Home</span>',
+  'office': '<span style="background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:999px;font-size:11px">🏢 Office</span>'
+};
+async function loadTeacherProfiles() {
+  const status = document.getElementById('tp-filter-status')?.value || '';
+  const group  = document.getElementById('tp-filter-group')?.value || '';
+  const params = new URLSearchParams();
+  if (status) params.set('status', status);
+  if (group)  params.set('group', group);
+  let res;
+  try {
+    const r = await fetch('/api/admin/teacher-profiles?' + params, { credentials:'include', cache:'no-store' });
+    res = await r.json();
+  } catch (e) { res = { ok:false, error:String(e) }; }
+  const tbody = document.getElementById('tp-list-body');
+  const cnt   = document.getElementById('tp-count');
+  if (!tbody) return;
+  const items = (res && res.ok && res.items) ? res.items : [];
+  if (cnt) cnt.textContent = items.length + '명';
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="empty">강사 데이터 없음 — 위에서 신규 등록</td></tr>';
+    return;
+  }
+  tbody.innerHTML = items.map(t => {
+    const img = t.image_url
+      ? '<img src="' + _aiEsc(t.image_url) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" />'
+      : '<div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:bold">' + (t.korean_name||'?').charAt(0) + '</div>';
+    const fee = t.fee_per_10min ? Number(t.fee_per_10min).toLocaleString('ko-KR') : '—';
+    const join = t.join_date || '—';
+    const phone = t.phone || t.kakao_id || '—';
+    return '<tr>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + img + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb"><b>' + _aiEsc(t.korean_name||'') + '</b>' +
+        (t.english_name ? '<br><span style="font-size:11px;color:#6b7280">' + _aiEsc(t.english_name) + '</span>' : '') + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + (_TP_STATUS_BADGE[t.status] || _aiEsc(t.status||'')) + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + (_TP_GROUP_BADGE[t.group_name] || '—') + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb">' + _aiEsc(t.active_region||'—') + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right">' + fee + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb">' + _aiEsc(phone) + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb">' + join + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center;white-space:nowrap">' +
+        '<button onclick="viewTeacherProfile(' + t.id + ')" title="상세 보기" style="padding:3px 8px;font-size:10px;background:#3b82f6;color:#fff;border:0;border-radius:4px;cursor:pointer">🔍</button> ' +
+        '<button onclick="editTeacherProfile(' + t.id + ')" title="수정" style="padding:3px 8px;font-size:10px;background:#10b981;color:#fff;border:0;border-radius:4px;cursor:pointer">✏️</button> ' +
+        '<button onclick="removeTeacherProfile(' + t.id + ',\'' + _aiEsc(t.korean_name||'') + '\')" title="제거" style="padding:3px 8px;font-size:10px;background:#ef4444;color:#fff;border:0;border-radius:4px;cursor:pointer">🗑️</button>' +
+      '</td>' +
+    '</tr>';
+  }).join('');
+}
+async function addTeacherProfile() {
+  const e = id => document.getElementById(id);
+  const body = {
+    korean_name: e('tp-name')?.value.trim(),
+    english_name: e('tp-en-name')?.value.trim() || null,
+    email: e('tp-email')?.value.trim() || null,
+    phone: e('tp-phone')?.value.trim() || null,
+    kakao_id: e('tp-kakao')?.value.trim() || null,
+    dob: e('tp-dob')?.value || null,
+    gender: e('tp-gender')?.value || null,
+    active_region: e('tp-active-region')?.value.trim() || null,
+    origin_region: e('tp-origin-region')?.value.trim() || null,
+    fee_per_10min: e('tp-fee-10min')?.value ? parseInt(e('tp-fee-10min').value, 10) : null,
+    group_name: e('tp-group')?.value || null,
+    status: e('tp-status')?.value || '활동중',
+    join_date: e('tp-join-date')?.value || null,
+    leave_date: e('tp-leave-date')?.value || null,
+    image_url: e('tp-image-url')?.value.trim() || null,
+    intro_video_url: e('tp-video-url')?.value.trim() || null,
+    education: e('tp-education')?.value.trim() || null,
+    career: e('tp-career')?.value.trim() || null,
+    certifications: e('tp-cert')?.value.trim() || null,
+    available_days: e('tp-avail-days')?.value.trim() || null,
+    available_hours: e('tp-avail-hours')?.value.trim() || null,
+    bank_name: e('tp-bank-name')?.value.trim() || null,
+    bank_account: e('tp-bank-acct')?.value.trim() || null,
+    notes: e('tp-notes')?.value.trim() || null
+  };
+  if (!body.korean_name) { alert('한글 이름은 필수입니다.'); return; }
+  // 수정 모드 감지 — 버튼 data-edit-id 가 있으면 PATCH
+  const btn = document.getElementById('tp-add-btn');
+  const editId = btn?.dataset?.editId;
+  let r, d, action;
+  if (editId) {
+    r = await fetch('/api/admin/teacher-profiles/' + editId, {
+      method: 'PATCH', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    action = '수정';
+  } else {
+    r = await fetch('/api/admin/teacher-profiles', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    action = '등록';
+  }
+  d = await r.json().catch(() => ({}));
+  if (!r.ok || d.ok === false) { alert(action + ' 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+  alert('✅ 강사 ' + action + ' 완료: ' + body.korean_name);
+  // 수정 모드 해제
+  if (btn) {
+    btn.textContent = '＋ 강사 등록';
+    delete btn.dataset.editId;
+  }
+  clearTeacherForm();
+  loadTeacherProfiles();
+}
+function clearTeacherForm() {
+  ['tp-name','tp-en-name','tp-email','tp-phone','tp-kakao','tp-dob','tp-gender','tp-active-region','tp-origin-region',
+   'tp-fee-10min','tp-group','tp-join-date','tp-leave-date','tp-image-url','tp-video-url',
+   'tp-education','tp-career','tp-cert','tp-avail-days','tp-avail-hours','tp-bank-name','tp-bank-acct','tp-notes']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  const st = document.getElementById('tp-status'); if (st) st.value = '활동중';
+}
+async function viewTeacherProfile(id) {
+  const r = await fetch('/api/admin/teacher-profiles/' + id, { credentials:'include' });
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || !d.ok) { alert('조회 실패'); return; }
+  const t = d.item;
+  const html = '<div style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px" onclick="if(event.target===this)this.remove()">' +
+    '<div style="background:#fff;border-radius:14px;padding:24px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px -10px rgba(0,0,0,0.3)">' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;border-bottom:2px solid #f3f4f6;padding-bottom:14px">' +
+        (t.image_url ? '<img src="' + _aiEsc(t.image_url) + '" style="width:80px;height:80px;border-radius:50%;object-fit:cover">' : '<div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;font-weight:bold">'+(t.korean_name||'?').charAt(0)+'</div>') +
+        '<div><div style="font-size:20px;font-weight:bold;color:#1f2937">' + _aiEsc(t.korean_name||'') + '</div>' +
+        (t.english_name ? '<div style="color:#6b7280">' + _aiEsc(t.english_name) + '</div>' : '') +
+        '<div style="margin-top:4px">' + (_TP_STATUS_BADGE[t.status]||'') + ' ' + (_TP_GROUP_BADGE[t.group_name]||'') + '</div></div>' +
+        '<button onclick="this.closest(\'[onclick]\').remove()" style="margin-left:auto;background:transparent;border:0;font-size:20px;cursor:pointer">✕</button>' +
+      '</div>' +
+      _tpField('이메일', t.email) + _tpField('휴대폰', t.phone) + _tpField('카톡 ID', t.kakao_id) +
+      _tpField('생년월일', t.dob) + _tpField('활동 지역', t.active_region) + _tpField('출신 지역', t.origin_region) +
+      _tpField('10분당 수수료', t.fee_per_10min ? Number(t.fee_per_10min).toLocaleString('ko-KR') + ' KRW' : null) +
+      _tpField('입사일', t.join_date) + _tpField('퇴사일', t.leave_date) +
+      _tpField('학력', t.education) + _tpField('경력', t.career) + _tpField('자격증', t.certifications) +
+      _tpField('가능 요일', t.available_days) + _tpField('가능 시간', t.available_hours) +
+      _tpField('은행', t.bank_name) + _tpField('계좌', t.bank_account) +
+      (t.intro_video_url ? '<div style="margin-top:10px"><b>소개 비디오:</b> <a href="' + _aiEsc(t.intro_video_url) + '" target="_blank" style="color:#3b82f6">' + _aiEsc(t.intro_video_url) + '</a></div>' : '') +
+      (t.notes ? '<div style="margin-top:10px;padding:10px;background:#f9fafb;border-radius:6px;font-size:13px"><b>메모:</b><br>' + _aiEsc(t.notes).replace(/\n/g,'<br>') + '</div>' : '') +
+    '</div></div>';
+  const div = document.createElement('div');
+  div.innerHTML = html;
+  document.body.appendChild(div.firstChild);
+}
+function _tpField(label, val) {
+  if (!val) return '';
+  return '<div style="display:flex;font-size:13px;padding:4px 0"><div style="min-width:90px;color:#6b7280;font-weight:600">' + label + '</div><div>' + _aiEsc(String(val)) + '</div></div>';
+}
+async function editTeacherProfile(id) {
+  const r = await fetch('/api/admin/teacher-profiles/' + id, { credentials:'include' });
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || !d.ok) { alert('조회 실패'); return; }
+  const t = d.item;
+  // 폼에 값 채우고 펼침
+  const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+  set('tp-name', t.korean_name); set('tp-en-name', t.english_name); set('tp-email', t.email);
+  set('tp-phone', t.phone); set('tp-kakao', t.kakao_id); set('tp-dob', t.dob); set('tp-gender', t.gender);
+  set('tp-active-region', t.active_region); set('tp-origin-region', t.origin_region);
+  set('tp-fee-10min', t.fee_per_10min); set('tp-group', t.group_name); set('tp-status', t.status||'활동중');
+  set('tp-join-date', t.join_date); set('tp-leave-date', t.leave_date);
+  set('tp-image-url', t.image_url); set('tp-video-url', t.intro_video_url);
+  set('tp-education', t.education); set('tp-career', t.career); set('tp-cert', t.certifications);
+  set('tp-avail-days', t.available_days); set('tp-avail-hours', t.available_hours);
+  set('tp-bank-name', t.bank_name); set('tp-bank-acct', t.bank_account); set('tp-notes', t.notes);
+  // Add 버튼을 임시로 "수정 저장" 으로 변경
+  const btn = document.getElementById('tp-add-btn');
+  if (btn) {
+    btn.textContent = '💾 수정 저장 (#' + id + ')';
+    btn.dataset.editId = id;
+  }
+  // 폼 펼침
+  const formDetails = document.querySelector('#card-teacher-mgmt details details');
+  if (formDetails) formDetails.open = true;
+  document.getElementById('tp-name')?.focus();
+}
+async function removeTeacherProfile(id, name) {
+  if (!confirm('정말 "' + name + '" 강사를 제거하시겠습니까?\n\n⚠️ 데이터가 영구 삭제됩니다.')) return;
+  const r = await fetch('/api/admin/teacher-profiles/' + id, { method:'DELETE', credentials:'include' });
+  const d = await r.json().catch(()=>({}));
+  if (!r.ok || d.ok === false) { alert('제거 실패: ' + (d.error || ('HTTP ' + r.status))); return; }
+  alert('✅ 제거 완료: ' + name);
+  loadTeacherProfiles();
+}
+
 // ── 가맹점 ──────────────────────────────────────────────────────────
 async function loadFranchises() {
   const r = await fetch('/api/admin/franchises',{cache:'no-store',credentials:'include'});
@@ -6326,6 +6645,20 @@ window.bulkCopyContacts = function() {
   if (e('fr-add-btn'))      e('fr-add-btn').addEventListener('click', addFranchise);
   if (e('ct-add-btn'))      e('ct-add-btn').addEventListener('click', addCenter);
   if (e('lt-add-btn'))      e('lt-add-btn').addEventListener('click', addLevelTest);
+  // 🥭 Phase 34 — 강사 정보 CRUD 버튼
+  if (e('tp-add-btn'))          e('tp-add-btn').addEventListener('click', addTeacherProfile);
+  if (e('tp-clear-btn'))        e('tp-clear-btn').addEventListener('click', () => {
+    clearTeacherForm();
+    const btn = e('tp-add-btn');
+    if (btn) { btn.textContent = '＋ 강사 등록'; delete btn.dataset.editId; }
+  });
+  if (e('tp-refresh-btn'))      e('tp-refresh-btn').addEventListener('click', loadTeacherProfiles);
+  if (e('tp-filter-status'))    e('tp-filter-status').addEventListener('change', loadTeacherProfiles);
+  if (e('tp-filter-group'))     e('tp-filter-group').addEventListener('change', loadTeacherProfiles);
+  // 페이지 로드시 강사 목록 자동 로드
+  if (document.getElementById('tp-list-body')) {
+    setTimeout(loadTeacherProfiles, 200);
+  }
   if (e('en-add-btn'))         e('en-add-btn').addEventListener('click', addEnrollment);
   if (e('en-refresh-btn'))     e('en-refresh-btn').addEventListener('click', loadEnrollments);
   if (e('en-import-file-btn')) e('en-import-file-btn').addEventListener('click', importEnrollmentFromFile);

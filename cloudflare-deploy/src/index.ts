@@ -229,6 +229,8 @@ export default {
         path.startsWith('/api/admin/stats/') ||
         path === '/api/admin/ai-command' ||
         path === '/api/admin/ai-action' ||
+        path === '/api/admin/teacher-profiles' ||
+        /^\/api\/admin\/teacher-profiles\/\d+$/.test(path) ||
         path === '/api/admin/teachers' ||
         /^\/api\/admin\/teachers\/\d+$/.test(path) ||
         path === '/api/admin/teacher-hours' ||
@@ -981,6 +983,8 @@ function isAdminPath(path: string, method: string): boolean {
   if (path === '/api/admin/ai-command' || path === '/api/admin/ai-action') return true;
   // 💼 강사 급여·평가 (Phase 8) — 관리자 전용
   if (path === '/api/admin/teachers' || /^\/api\/admin\/teachers\/\d+$/.test(path)) return true;
+  // 🥭 Phase 34 — 강사 정보 (Teacher Profiles)
+  if (path === '/api/admin/teacher-profiles' || /^\/api\/admin\/teacher-profiles\/\d+$/.test(path)) return true;
   if (path === '/api/admin/teacher-hours') return true;          // (deprecated, 호환성)
   if (path === '/api/admin/teacher-classes') return true;
   if (path === '/api/admin/teacher-evaluation') return true;

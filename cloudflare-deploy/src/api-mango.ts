@@ -1340,6 +1340,125 @@ export async function handleMangoApi(
       });
     }
 
+    // ════════════════════════════════════════════════════════════
+    // 🥭 Phase 34 — 강사 정보 (Teacher Profiles) CRUD
+    //   GET    /api/admin/teacher-profiles          (목록, ?status=&group=)
+    //   POST   /api/admin/teacher-profiles          (등록)
+    //   GET    /api/admin/teacher-profiles/:id      (단건 조회)
+    //   PATCH  /api/admin/teacher-profiles/:id      (수정)
+    //   DELETE /api/admin/teacher-profiles/:id      (제거)
+    // ════════════════════════════════════════════════════════════
+    const ensureTeacherProfilesSchema = async () => {
+      await env.DB.exec(
+        `CREATE TABLE IF NOT EXISTS teacher_profiles (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          korean_name TEXT NOT NULL,
+          english_name TEXT, email TEXT, phone TEXT, kakao_id TEXT,
+          dob TEXT, gender TEXT,
+          image_url TEXT, intro_video_url TEXT,
+          active_region TEXT, origin_region TEXT,
+          fee_per_10min INTEGER,
+          group_name TEXT,
+          status TEXT DEFAULT '활동중',
+          join_date TEXT, leave_date TEXT,
+          education TEXT, career TEXT, certifications TEXT,
+          available_days TEXT, available_hours TEXT,
+          bank_name TEXT, bank_account TEXT,
+          notes TEXT,
+          created_at INTEGER NOT NULL, updated_at INTEGER
+        )`
+      );
+    };
+
+    if (method === 'GET' && path === '/api/admin/teacher-profiles') {
+      try { await ensureTeacherProfilesSchema(); } catch {}
+      const fStatus = url.searchParams.get('status') || '';
+      const fGroup  = url.searchParams.get('group') || '';
+      const where: string[] = []; const binds: any[] = [];
+      if (fStatus) { where.push('status = ?'); binds.push(fStatus); }
+      if (fGroup)  { where.push('group_name = ?'); binds.push(fGroup); }
+      const sql = `SELECT * FROM teacher_profiles${where.length ? ' WHERE ' + where.join(' AND ') : ''}
+                   ORDER BY status='활동중' DESC, korean_name ASC`;
+      try {
+        const rs = await env.DB.prepare(sql).bind(...binds).all<any>();
+        return json({ ok: true, items: rs.results || [] });
+      } catch (e: any) {
+        return json({ ok: false, error: String(e?.message || e) }, 500);
+      }
+    }
+
+    if (method === 'POST' && path === '/api/admin/teacher-profiles') {
+      try { await ensureTeacherProfilesSchema(); } catch {}
+      const b = await parseJsonBody(request);
+      if (!b || !b.korean_name) return invalidBody(['korean_name']);
+      const now = Date.now();
+      try {
+        const r = await env.DB.prepare(
+          `INSERT INTO teacher_profiles
+           (korean_name, english_name, email, phone, kakao_id, dob, gender,
+            image_url, intro_video_url, active_region, origin_region, fee_per_10min,
+            group_name, status, join_date, leave_date, education, career, certifications,
+            available_days, available_hours, bank_name, bank_account, notes,
+            created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ).bind(
+          b.korean_name, b.english_name || null, b.email || null, b.phone || null, b.kakao_id || null,
+          b.dob || null, b.gender || null,
+          b.image_url || null, b.intro_video_url || null, b.active_region || null, b.origin_region || null,
+          b.fee_per_10min || null, b.group_name || null, b.status || '활동중',
+          b.join_date || null, b.leave_date || null, b.education || null, b.career || null, b.certifications || null,
+          b.available_days || null, b.available_hours || null, b.bank_name || null, b.bank_account || null,
+          b.notes || null, now, now
+        ).run();
+        return json({ ok: true, id: r.meta?.last_row_id });
+      } catch (e: any) {
+        return json({ ok: false, error: String(e?.message || e) }, 500);
+      }
+    }
+
+    // /:id 단건 (GET / PATCH / DELETE)
+    const tpMatch = path.match(/^\/api\/admin\/teacher-profiles\/(\d+)$/);
+    if (tpMatch) {
+      try { await ensureTeacherProfilesSchema(); } catch {}
+      const id = parseInt(tpMatch[1], 10);
+      if (method === 'GET') {
+        const row = await env.DB.prepare(`SELECT * FROM teacher_profiles WHERE id = ?`).bind(id).first<any>();
+        if (!row) return json({ ok: false, error: 'not_found' }, 404);
+        return json({ ok: true, item: row });
+      }
+      if (method === 'PATCH') {
+        const b = await parseJsonBody(request);
+        if (!b) return invalidBody(['body']);
+        const allowed = ['korean_name','english_name','email','phone','kakao_id','dob','gender',
+          'image_url','intro_video_url','active_region','origin_region','fee_per_10min',
+          'group_name','status','join_date','leave_date','education','career','certifications',
+          'available_days','available_hours','bank_name','bank_account','notes'];
+        const sets: string[] = []; const binds: any[] = [];
+        allowed.forEach(k => {
+          if (b.hasOwnProperty(k)) { sets.push(k + ' = ?'); binds.push(b[k] === '' ? null : b[k]); }
+        });
+        if (sets.length === 0) return json({ ok: false, error: 'no_fields' }, 400);
+        sets.push('updated_at = ?'); binds.push(Date.now());
+        binds.push(id);
+        try {
+          await env.DB.prepare(
+            `UPDATE teacher_profiles SET ${sets.join(', ')} WHERE id = ?`
+          ).bind(...binds).run();
+          return json({ ok: true, id });
+        } catch (e: any) {
+          return json({ ok: false, error: String(e?.message || e) }, 500);
+        }
+      }
+      if (method === 'DELETE') {
+        try {
+          await env.DB.prepare(`DELETE FROM teacher_profiles WHERE id = ?`).bind(id).run();
+          return json({ ok: true, id });
+        } catch (e: any) {
+          return json({ ok: false, error: String(e?.message || e) }, 500);
+        }
+      }
+    }
+
     // 강사 목록
     if (method === 'GET' && path === '/api/admin/teachers') {
       await ensurePayrollSchema(env);
