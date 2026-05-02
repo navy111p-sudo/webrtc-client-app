@@ -229,6 +229,138 @@
     border-radius: 999px;
   }
 
+  /* 🥭 Phase 28 — 일괄 등록 단순화 (2카드 레이아웃) */
+  .enroll-bulk-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 800px) {
+    .enroll-bulk-grid { grid-template-columns: 1fr; }
+  }
+  .enroll-bulk-card {
+    border-radius: 14px;
+    padding: 18px;
+    border: 1px solid #e5e7eb;
+    background: #fff;
+    box-shadow: 0 4px 14px -4px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .enroll-bulk-card:hover {
+    box-shadow: 0 8px 24px -6px rgba(0,0,0,0.1);
+  }
+  .enroll-bulk-download {
+    background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(34,197,94,0.06));
+    border-color: rgba(59,130,246,0.25);
+  }
+  .enroll-bulk-upload {
+    background: linear-gradient(135deg, rgba(34,197,94,0.06), rgba(245,158,11,0.06));
+    border-color: rgba(34,197,94,0.25);
+  }
+  .enroll-bulk-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .enroll-bulk-icon {
+    font-size: 28px;
+    width: 50px; height: 50px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.85);
+    border-radius: 14px;
+    box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+  }
+  .enroll-bulk-title { font-size: 15px; font-weight: 700; color: #1f2937; }
+  .enroll-bulk-sub { font-size: 11px; color: #6b7280; margin-top: 2px; }
+
+  /* 다운로드 카드 — 3개 큰 버튼 */
+  .enroll-tmpl-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .enroll-tmpl-btn {
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 14px 8px;
+    background: #fff;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .enroll-tmpl-btn:hover {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(99,102,241,0.08));
+    border-color: #3b82f6;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px -6px rgba(59,130,246,0.4);
+  }
+  .enroll-tmpl-emoji { font-size: 26px; line-height: 1; }
+  .enroll-tmpl-name { font-size: 13px; font-weight: 700; color: #1f2937; }
+  .enroll-tmpl-ext {
+    font-size: 10px; color: #6b7280;
+    background: #f3f4f6; padding: 2px 6px; border-radius: 999px;
+  }
+  .enroll-tmpl-btn:hover .enroll-tmpl-ext { background: #dbeafe; color: #1e40af; }
+
+  /* 업로드 카드 — 파일 행 + 텍스트 행 */
+  .enroll-up-row {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 4px;
+  }
+  .enroll-up-row-text { align-items: flex-start; margin-top: 8px; }
+  .enroll-up-label {
+    font-size: 12px; font-weight: 700; color: #065f46;
+    min-width: 56px;
+    padding-top: 6px;
+  }
+  .enroll-up-file {
+    flex: 1; min-width: 0;
+    font-size: 12px;
+    padding: 6px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+  }
+  .enroll-up-textarea {
+    flex: 1;
+    font-size: 12px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    font-family: 'Malgun Gothic', monospace;
+    line-height: 1.5;
+    resize: vertical;
+    background: #fff;
+  }
+  .enroll-up-textarea:focus {
+    outline: none; border-color: #10b981;
+    box-shadow: 0 0 0 3px rgba(16,185,129,0.15);
+  }
+  .enroll-up-btn {
+    padding: 8px 18px; font-size: 13px; font-weight: 700;
+    background: #10b981; color: #fff;
+    border: 0; border-radius: 8px; cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .enroll-up-btn:hover { background: #059669; }
+  .enroll-up-btn:active { transform: scale(0.97); }
+
+  .enroll-up-divider {
+    text-align: center; margin: 8px 0;
+    font-size: 11px; color: #9ca3af;
+    position: relative;
+  }
+  .enroll-up-divider::before, .enroll-up-divider::after {
+    content: ''; position: absolute; top: 50%; width: 38%;
+    height: 1px; background: #e5e7eb;
+  }
+  .enroll-up-divider::before { left: 0; }
+  .enroll-up-divider::after { right: 0; }
+  .enroll-up-divider span {
+    background: transparent; padding: 0 10px; position: relative; z-index: 1;
+  }
+
   /* === 하위(nested) 메뉴 토글 — 학생관리 같은 상위 카드 안의 sub-item === */
   .sub-menu { display:flex; flex-direction:column; gap:0; padding-left:8px; border-left:3px solid #e5e7eb; margin:8px 0; }
   details.sub-item {
@@ -2035,71 +2167,66 @@
       </div>
     </details>
 
-    <!-- 🥭 Phase 23/27 — 역방향 자동화: 다운로드 → 작성 → 업로드 -->
-    <details style="margin-top:8px" open>
-      <summary style="cursor:pointer;font-size:13px;color:#10b981;font-weight:600"
-               data-ko="📥 파일 가져오기 — 신청 양식 다운로드 → 작성 → 업로드 (Excel·Word·카톡)"
-               data-en="📥 File import — Download → Fill → Upload (Excel·Word·KakaoTalk)">📥 파일 가져오기 — 신청 양식 다운로드 → 작성 → 업로드 (Excel·Word·카톡)</summary>
-      <div style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(59,130,246,0.06));border:1px dashed rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-top:8px">
-
-        <!-- ① 신청 파일 다운로드 (작성용 빈 양식) -->
-        <div style="margin-bottom:14px;padding:12px 14px;background:rgba(254,243,199,0.45);border-left:3px solid #f59e0b;border-radius:6px">
-          <div style="font-size:12px;font-weight:700;color:#78350f;margin-bottom:6px"
-               data-ko="① 📋 신청 파일 다운로드 — 학원/학생이 받아서 작성"
-               data-en="① 📋 Download blank application form — for school/student to fill in">
-            ① 📋 신청 파일 다운로드 — 학원/학생이 받아서 작성
+    <!-- 🥭 Phase 28 — 단순화된 2카드 레이아웃 (양식 받기 / 양식 등록) -->
+    <div class="enroll-bulk" style="margin-top:14px">
+      <div class="enroll-bulk-grid">
+        <!-- 카드 1: 양식 받기 (다운로드) -->
+        <div class="enroll-bulk-card enroll-bulk-download">
+          <div class="enroll-bulk-head">
+            <span class="enroll-bulk-icon">📂</span>
+            <div>
+              <div class="enroll-bulk-title">양식 받기</div>
+              <div class="enroll-bulk-sub">학원·학부모 작성용</div>
+            </div>
           </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
-            <button id="en-tmpl-excel-btn" type="button"
-                    style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📊 Excel(.csv) 신청서</button>
-            <button id="en-tmpl-word-btn" type="button"
-                    style="padding:6px 14px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📄 Word(.doc) 신청서</button>
-            <button id="en-tmpl-kakao-btn" type="button"
-                    style="padding:6px 14px;font-size:12px;background:#fbbf24;color:#78350f;border:0;border-radius:6px;cursor:pointer;font-weight:600">📱 카톡 양식 (클립보드)</button>
-          </div>
-          <div style="font-size:11px;color:#78350f;margin-top:4px;line-height:1.5">
-            ※ Excel/Word 는 다운로드 → 작성 → 아래 ② 영역에 다시 업로드<br>
-            ※ 카톡은 학부모에게 양식 전송 → 회신받은 메시지를 ③ 영역에 붙여넣기
-          </div>
-        </div>
-
-        <!-- ② Excel/Word 파일 업로드 -->
-        <div style="margin-bottom:14px">
-          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
-               data-ko="② 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드"
-               data-en="② 📊 Excel(.csv) / 📄 Word(.doc) file upload">② 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드</div>
-          <input id="en-import-file" type="file" accept=".csv,.doc,.docx,.html,.txt"
-                 style="font-size:12px;margin-right:8px" />
-          <button id="en-import-file-btn"
-                  style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600"
-                  data-ko="📥 파일 가져오기" data-en="📥 Import file">📥 파일 가져오기</button>
-          <div style="font-size:11px;color:#6b7280;margin-top:4px"
-               data-ko="망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원"
-               data-en="Mangoi-issued single record OR multi-row CSV with headers">망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원</div>
-        </div>
-
-        <!-- ③ 카톡 메시지 붙여넣기 -->
-        <div>
-          <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
-               data-ko="③ 📱 카톡 메시지 붙여넣기"
-               data-en="③ 📱 Paste KakaoTalk message">③ 📱 카톡 메시지 붙여넣기</div>
-          <textarea id="en-kakao-text" rows="6"
-                    placeholder="예시:&#10;학생: 홍길동&#10;UID: user001&#10;수업 유형: 레벨+체험+정규&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;요일: 월수금&#10;시간: 10:30&#10;인원 방식: 1:1&#10;시작일: 2026-05-01"
-                    data-ko-placeholder="학생: 홍길동&#10;UID: user001&#10;수업 유형: 레벨+체험+정규&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;요일: 월수금&#10;시간: 10:30&#10;인원 방식: 1:1&#10;시작일: 2026-05-01"
-                    style="width:100%;font-size:12px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-family:'Malgun Gothic',monospace;line-height:1.5;resize:vertical"></textarea>
-          <div style="margin-top:6px">
-            <button id="en-import-kakao-btn"
-                    style="padding:6px 14px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600"
-                    data-ko="📥 카톡 가져오기" data-en="📥 Import KakaoTalk">📥 카톡 가져오기</button>
-            <span style="font-size:11px;color:#6b7280;margin-left:8px"
-                  data-ko="여러 명도 한 번에 가능 (각 학생을 빈 줄로 구분)"
-                  data-en="Multiple students supported (separate by blank lines)">여러 명도 한 번에 가능 (각 학생을 빈 줄로 구분)</span>
+          <div class="enroll-tmpl-grid">
+            <button id="en-tmpl-excel-btn" type="button" class="enroll-tmpl-btn">
+              <span class="enroll-tmpl-emoji">📊</span>
+              <span class="enroll-tmpl-name">엑셀</span>
+              <span class="enroll-tmpl-ext">.csv</span>
+            </button>
+            <button id="en-tmpl-word-btn" type="button" class="enroll-tmpl-btn">
+              <span class="enroll-tmpl-emoji">📄</span>
+              <span class="enroll-tmpl-name">워드</span>
+              <span class="enroll-tmpl-ext">.doc</span>
+            </button>
+            <button id="en-tmpl-kakao-btn" type="button" class="enroll-tmpl-btn">
+              <span class="enroll-tmpl-emoji">📱</span>
+              <span class="enroll-tmpl-name">카톡</span>
+              <span class="enroll-tmpl-ext">복사</span>
+            </button>
           </div>
         </div>
-        <!-- 미리보기 영역 -->
-        <div id="en-import-preview" style="display:none;margin-top:12px;padding:10px;background:#fff;border:1px solid #e5e7eb;border-radius:8px"></div>
+        <!-- 카드 2: 양식 등록 (업로드) -->
+        <div class="enroll-bulk-card enroll-bulk-upload">
+          <div class="enroll-bulk-head">
+            <span class="enroll-bulk-icon">📨</span>
+            <div>
+              <div class="enroll-bulk-title">양식 등록</div>
+              <div class="enroll-bulk-sub">작성한 신청서 가져오기</div>
+            </div>
+          </div>
+          <!-- 업로드 1: 파일 -->
+          <div class="enroll-up-row">
+            <label for="en-import-file" class="enroll-up-label">📎 파일</label>
+            <input id="en-import-file" type="file" accept=".csv,.doc,.docx,.html,.txt" class="enroll-up-file" />
+            <button id="en-import-file-btn" type="button" class="enroll-up-btn">등록</button>
+          </div>
+          <!-- 구분선 -->
+          <div class="enroll-up-divider"><span>또는</span></div>
+          <!-- 업로드 2: 카톡 텍스트 -->
+          <div class="enroll-up-row enroll-up-row-text">
+            <label for="en-kakao-text" class="enroll-up-label">💬 카톡</label>
+            <textarea id="en-kakao-text" rows="3"
+                      placeholder="카톡 메시지를 여기에 붙여넣으세요 (여러 명 가능, 빈 줄로 구분)"
+                      class="enroll-up-textarea"></textarea>
+            <button id="en-import-kakao-btn" type="button" class="enroll-up-btn">등록</button>
+          </div>
+        </div>
       </div>
-    </details>
+      <!-- 미리보기 영역 (전체 너비) -->
+      <div id="en-import-preview" style="display:none;margin-top:14px;padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:10px;box-shadow:0 4px 12px -4px rgba(0,0,0,0.06)"></div>
+    </div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;">
       <select id="en-status-filter" style="padding:5px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:12px;">
         <option value="" data-ko="전체" data-en="All">전체</option>
