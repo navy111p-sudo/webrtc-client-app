@@ -4024,12 +4024,121 @@ async function addEnrollment() {
   const pkg  = (e('en-package').value||'').trim();
   if (!name || !pkg) { alert(adminLang==='en'?'Name and package required':'이름·패키지 필수'); return; }
   const startStr = e('en-start').value;
+  const uid = e('en-uid').value || null;
+  const fee = e('en-fee').value ? parseInt(e('en-fee').value, 10) : null;
   const d = await _menuPost('/api/admin/enrollments', {
-    student_name: name, student_user_id: e('en-uid').value||null, package: pkg,
-    monthly_fee_krw: e('en-fee').value ? parseInt(e('en-fee').value, 10) : null,
+    student_name: name, student_user_id: uid, package: pkg,
+    monthly_fee_krw: fee,
     started_at: startStr ? new Date(startStr).getTime() : null
   });
-  if (d) { ['en-name','en-uid','en-package','en-fee','en-start'].forEach(id=>e(id).value=''); loadEnrollments(); }
+  if (d) {
+    // 🥭 Phase 22 — 자동화: 카톡 큐 + Excel + Word 다운로드
+    const enrollmentId = d.id || d.enrollment_id || ('enroll_' + Date.now());
+    const enrollmentData = {
+      id: enrollmentId,
+      student_name: name,
+      student_user_id: uid || '—',
+      package: pkg,
+      monthly_fee_krw: fee || 0,
+      started_at: startStr || new Date().toISOString().slice(0,10),
+      created_at: new Date().toISOString().slice(0,19).replace('T', ' ')
+    };
+    autoExportEnrollment(enrollmentData);
+    ['en-name','en-uid','en-package','en-fee','en-start'].forEach(id=>e(id).value='');
+    loadEnrollments();
+  }
+}
+
+// 🥭 Phase 22 — 수강신청 자동화: 카톡 + Excel + Word
+//   ① 백엔드에 카톡 큐 적재 요청
+//   ② Excel CSV 자동 다운로드 (한글 BOM 포함, 엑셀에서 깨짐 없이 열림)
+//   ③ Word HTML 자동 다운로드 (.doc — MS Word 에서 표 그대로 열림)
+async function autoExportEnrollment(enr) {
+  // ① 카톡 큐 — 백엔드 KV 큐에 메시지 적재
+  const kakaoText =
+    '📚 [망고아이] 수강신청 등록\n' +
+    '━━━━━━━━━━━━━━━\n' +
+    '학생: ' + enr.student_name + '\n' +
+    'UID:  ' + enr.student_user_id + '\n' +
+    '패키지: ' + enr.package + '\n' +
+    '월 수강료: ' + (enr.monthly_fee_krw ? enr.monthly_fee_krw.toLocaleString('ko-KR') + ' 원' : '미정') + '\n' +
+    '개강일: ' + enr.started_at + '\n' +
+    '등록일시: ' + enr.created_at + '\n' +
+    '━━━━━━━━━━━━━━━';
+  fetch('/api/admin/ai-action', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'send_kakao_self', args: { text: kakaoText } })
+  }).then(r => r.json()).then(j => {
+    if (j.ok) console.info('[enroll-auto] kakao queued:', j.queued_id);
+    else console.warn('[enroll-auto] kakao failed:', j);
+  }).catch(err => console.warn('[enroll-auto] kakao error:', err));
+
+  // ② Excel (CSV with BOM) 다운로드
+  const safeName = enr.student_name.replace(/[\\/:*?"<>|]/g, '_');
+  const dateStr = new Date().toISOString().slice(0,10);
+  const csv =
+    '﻿' + // UTF-8 BOM (한글 깨짐 방지)
+    '항목,값\n' +
+    '"수강신청 ID","' + enr.id + '"\n' +
+    '"학생 이름","' + enr.student_name.replace(/"/g, '""') + '"\n' +
+    '"학생 UID","' + (enr.student_user_id || '').replace(/"/g, '""') + '"\n' +
+    '"패키지","' + enr.package.replace(/"/g, '""') + '"\n' +
+    '"월 수강료(KRW)","' + (enr.monthly_fee_krw || '') + '"\n' +
+    '"개강일","' + enr.started_at + '"\n' +
+    '"등록일시","' + enr.created_at + '"\n';
+  _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    '수강신청_' + safeName + '_' + dateStr + '.csv');
+
+  // ③ Word (.doc HTML) 다운로드 — MS Word 가 HTML 을 표로 렌더링
+  const docHtml =
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" ' +
+          'xmlns:w="urn:schemas-microsoft-com:office:word" ' +
+          'xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="UTF-8"><title>수강신청서 — ' + _aiEsc(enr.student_name) + '</title>' +
+    '<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11pt;padding:30px;}' +
+    'h1{color:#9a3412;border-bottom:3px solid #f59e0b;padding-bottom:8px}' +
+    'table{border-collapse:collapse;width:100%;margin-top:20px}' +
+    'th{background:#fef3c7;color:#78350f;text-align:left;padding:10px 14px;border:1px solid #d6d3d1}' +
+    'td{padding:10px 14px;border:1px solid #d6d3d1}' +
+    '.footer{margin-top:30px;font-size:10pt;color:#9ca3af;text-align:right}' +
+    '</style></head><body>' +
+    '<h1>📚 망고아이 수강신청서</h1>' +
+    '<p>아래 학생의 수강신청이 정상 등록되었습니다.</p>' +
+    '<table>' +
+      '<tr><th style="width:30%">수강신청 ID</th><td>' + _aiEsc(enr.id) + '</td></tr>' +
+      '<tr><th>학생 이름</th><td>' + _aiEsc(enr.student_name) + '</td></tr>' +
+      '<tr><th>학생 UID</th><td>' + _aiEsc(enr.student_user_id) + '</td></tr>' +
+      '<tr><th>패키지</th><td>' + _aiEsc(enr.package) + '</td></tr>' +
+      '<tr><th>월 수강료</th><td>' + (enr.monthly_fee_krw ? enr.monthly_fee_krw.toLocaleString('ko-KR') + ' 원' : '미정') + '</td></tr>' +
+      '<tr><th>개강일</th><td>' + _aiEsc(enr.started_at) + '</td></tr>' +
+      '<tr><th>등록일시</th><td>' + _aiEsc(enr.created_at) + '</td></tr>' +
+    '</table>' +
+    '<div class="footer">© Mangoi · 자동 생성 · ' + new Date().toLocaleString('ko-KR') + '</div>' +
+    '</body></html>';
+  _downloadBlob(new Blob([docHtml], { type: 'application/msword;charset=utf-8' }),
+    '수강신청_' + safeName + '_' + dateStr + '.doc');
+
+  // 사용자 안내 토스트 (간단한 alert)
+  setTimeout(() => {
+    alert('✅ 수강신청 자동화 완료\n\n' +
+          '• 카톡 메모챗에 알림 큐 적재\n' +
+          '• Excel(.csv) 다운로드\n' +
+          '• Word(.doc) 다운로드');
+  }, 300);
+}
+
+function _downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
 }
 async function setEnrollmentStatus(id, status) {
   const r = await fetch('/api/admin/enrollments/'+id, {method:'PATCH',headers:{'Content-Type':'application/json'},credentials:'include',body:JSON.stringify({status})});
