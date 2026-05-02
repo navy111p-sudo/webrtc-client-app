@@ -1810,33 +1810,64 @@ export async function handleMangoApi(
     //   POST /api/admin/students/erp           (단건 등록)
     //   POST /api/admin/students/erp-seed      (22명 데모 일괄 시드)
     if (path === '/api/admin/students/erp-list' && method === 'GET') {
-      await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        student_id TEXT,
-        username TEXT NOT NULL,
-        login_id TEXT,
-        payment_type TEXT,
-        end_date TEXT,
-        signup_date TEXT,
-        classes_per_week INTEGER,
-        points INTEGER DEFAULT 0,
-        student_phone TEXT,
-        parent_phone TEXT,
-        teacher_phone TEXT,
-        shop_name TEXT,
-        hq_name TEXT,
-        branch1_name TEXT,
-        branch2_name TEXT,
-        franchise TEXT,
-        status TEXT DEFAULT '정상',
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      );`);
+      // 🥭 Phase 35b — 500 핫픽스
+      //   Phase 20d 에서 다른 스키마(user_id PK, id 컬럼 없음)로 자동 생성될 수 있음
+      //   ① 테이블이 없을 때만 풀 스키마로 생성 (이미 다른 모양이면 NOOP)
+      //   ② 누락된 컬럼은 ALTER TABLE ADD COLUMN 으로 보강
+      //   ③ ORDER BY 는 SQLite 의 내장 rowid 사용 — 어떤 스키마든 항상 존재
+      //   ④ 실패해도 200 OK + 빈 배열 (프론트가 깨지지 않게)
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS students_erp (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          student_id TEXT, username TEXT, login_id TEXT,
+          payment_type TEXT, end_date TEXT, signup_date TEXT,
+          classes_per_week INTEGER, points INTEGER DEFAULT 0,
+          student_phone TEXT, parent_phone TEXT, teacher_phone TEXT,
+          shop_name TEXT, hq_name TEXT, branch1_name TEXT, branch2_name TEXT,
+          franchise TEXT, status TEXT DEFAULT '정상',
+          created_at INTEGER, updated_at INTEGER,
+          korean_name TEXT, english_name TEXT, user_id TEXT
+        );`);
+      } catch {}
+      // 누락 컬럼 보강 — ADD COLUMN 은 이미 있으면 throw 하므로 개별 try/catch
+      const addCol = async (col: string, type: string) => {
+        try { await env.DB.exec(`ALTER TABLE students_erp ADD COLUMN ${col} ${type}`); } catch {}
+      };
+      await addCol('username', 'TEXT');
+      await addCol('login_id', 'TEXT');
+      await addCol('payment_type', 'TEXT');
+      await addCol('classes_per_week', 'INTEGER');
+      await addCol('points', 'INTEGER DEFAULT 0');
+      await addCol('student_phone', 'TEXT');
+      await addCol('parent_phone', 'TEXT');
+      await addCol('teacher_phone', 'TEXT');
+      await addCol('shop_name', 'TEXT');
+      await addCol('hq_name', 'TEXT');
+      await addCol('branch1_name', 'TEXT');
+      await addCol('branch2_name', 'TEXT');
+      await addCol('franchise', 'TEXT');
+      await addCol('updated_at', 'INTEGER');
+
       const lim = Math.max(1, Math.min(2000, parseInt(url.searchParams.get('limit') || '500', 10)));
-      const rs = await env.DB.prepare(
-        `SELECT * FROM students_erp ORDER BY id DESC LIMIT ?`
-      ).bind(lim).all();
-      return json({ ok: true, items: rs.results || [] });
+      try {
+        // rowid 는 모든 SQLite 테이블에 항상 존재 — id 컬럼 없는 스키마에서도 동작
+        const rs = await env.DB.prepare(
+          `SELECT rowid AS _rowid, * FROM students_erp ORDER BY rowid DESC LIMIT ?`
+        ).bind(lim).all<any>();
+        const items = (rs.results || []).map(r => {
+          // id 컬럼이 없으면 rowid 를 id 로 사용 (프론트 호환)
+          if (r.id == null) r.id = r._rowid;
+          // korean_name / english_name 만 있으면 username 에 채움 (Phase 20d 스키마 호환)
+          if (!r.username && r.korean_name) r.username = r.korean_name;
+          if (!r.login_id && r.user_id) r.login_id = r.user_id;
+          return r;
+        });
+        return json({ ok: true, items });
+      } catch (e: any) {
+        // 어떤 에러든 빈 배열로 graceful — UI 가 "데이터 없음" 으로 표시
+        console.warn('[erp-list] query failed:', e?.message || e);
+        return json({ ok: true, items: [], warning: String(e?.message || e) });
+      }
     }
 
     if (path === '/api/admin/students/erp' && method === 'POST') {
