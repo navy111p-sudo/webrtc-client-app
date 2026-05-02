@@ -2032,35 +2032,42 @@
                   data-ko="✅ 일괄 등록" data-en="✅ Register all">✅ 일괄 등록</button>
           <span id="en-multi-status" style="font-size:11px;color:#6b7280;margin-left:6px"></span>
         </div>
-        <!-- 🥭 Phase 25 — 3종 빈 양식 다운로드 (배포·인쇄·공유용) -->
-        <div style="margin-top:12px;padding:10px 12px;background:rgba(254,243,199,0.4);border-left:3px solid #f59e0b;border-radius:6px">
-          <div style="font-size:11px;color:#78350f;font-weight:700;margin-bottom:6px"
-               data-ko="📋 빈 수강신청 양식 다운로드 — 학부모/강사에게 배포 후 채워서 다시 업로드"
-               data-en="📋 Download blank enrollment template — distribute and re-import after fill-in">
-            📋 빈 수강신청 양식 다운로드 — 학부모/강사에게 배포 후 채워서 다시 업로드
-          </div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap">
-            <button id="en-tmpl-excel-btn" type="button"
-                    style="padding:5px 12px;font-size:11px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📊 Excel(.csv) 빈 양식</button>
-            <button id="en-tmpl-word-btn" type="button"
-                    style="padding:5px 12px;font-size:11px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📄 Word(.doc) 빈 양식</button>
-            <button id="en-tmpl-kakao-btn" type="button"
-                    style="padding:5px 12px;font-size:11px;background:#fbbf24;color:#78350f;border:0;border-radius:6px;cursor:pointer;font-weight:600">📱 카톡 양식 (클립보드)</button>
-          </div>
-        </div>
       </div>
     </details>
 
-    <!-- 🥭 Phase 23 — 역방향 자동화: 파일/카톡 → 수강신청 일괄 등록 -->
-    <details style="margin-top:8px">
+    <!-- 🥭 Phase 23/27 — 역방향 자동화: 다운로드 → 작성 → 업로드 -->
+    <details style="margin-top:8px" open>
       <summary style="cursor:pointer;font-size:13px;color:#10b981;font-weight:600"
-               data-ko="📥 파일·카톡으로 일괄 등록 (Excel·Word·카톡)"
-               data-en="📥 Bulk import (Excel·Word·KakaoTalk)">📥 파일·카톡으로 일괄 등록 (Excel·Word·카톡)</summary>
+               data-ko="📥 파일 가져오기 — 신청 양식 다운로드 → 작성 → 업로드 (Excel·Word·카톡)"
+               data-en="📥 File import — Download → Fill → Upload (Excel·Word·KakaoTalk)">📥 파일 가져오기 — 신청 양식 다운로드 → 작성 → 업로드 (Excel·Word·카톡)</summary>
       <div style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(59,130,246,0.06));border:1px dashed rgba(16,185,129,0.3);border-radius:10px;padding:14px;margin-top:8px">
+
+        <!-- ① 신청 파일 다운로드 (작성용 빈 양식) -->
+        <div style="margin-bottom:14px;padding:12px 14px;background:rgba(254,243,199,0.45);border-left:3px solid #f59e0b;border-radius:6px">
+          <div style="font-size:12px;font-weight:700;color:#78350f;margin-bottom:6px"
+               data-ko="① 📋 신청 파일 다운로드 — 학원/학생이 받아서 작성"
+               data-en="① 📋 Download blank application form — for school/student to fill in">
+            ① 📋 신청 파일 다운로드 — 학원/학생이 받아서 작성
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px">
+            <button id="en-tmpl-excel-btn" type="button"
+                    style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📊 Excel(.csv) 신청서</button>
+            <button id="en-tmpl-word-btn" type="button"
+                    style="padding:6px 14px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600">📄 Word(.doc) 신청서</button>
+            <button id="en-tmpl-kakao-btn" type="button"
+                    style="padding:6px 14px;font-size:12px;background:#fbbf24;color:#78350f;border:0;border-radius:6px;cursor:pointer;font-weight:600">📱 카톡 양식 (클립보드)</button>
+          </div>
+          <div style="font-size:11px;color:#78350f;margin-top:4px;line-height:1.5">
+            ※ Excel/Word 는 다운로드 → 작성 → 아래 ② 영역에 다시 업로드<br>
+            ※ 카톡은 학부모에게 양식 전송 → 회신받은 메시지를 ③ 영역에 붙여넣기
+          </div>
+        </div>
+
+        <!-- ② Excel/Word 파일 업로드 -->
         <div style="margin-bottom:14px">
           <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
-               data-ko="① 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드"
-               data-en="① 📊 Excel(.csv) / 📄 Word(.doc) file upload">① 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드</div>
+               data-ko="② 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드"
+               data-en="② 📊 Excel(.csv) / 📄 Word(.doc) file upload">② 📊 Excel(.csv) / 📄 Word(.doc) 파일 업로드</div>
           <input id="en-import-file" type="file" accept=".csv,.doc,.docx,.html,.txt"
                  style="font-size:12px;margin-right:8px" />
           <button id="en-import-file-btn"
@@ -2070,13 +2077,15 @@
                data-ko="망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원"
                data-en="Mangoi-issued single record OR multi-row CSV with headers">망고아이가 발급한 .csv·.doc 파일 또는 헤더 포함 다행 .csv 모두 지원</div>
         </div>
+
+        <!-- ③ 카톡 메시지 붙여넣기 -->
         <div>
           <div style="font-size:12px;font-weight:700;color:#065f46;margin-bottom:6px"
-               data-ko="② 📱 카톡 메시지 붙여넣기"
-               data-en="② 📱 Paste KakaoTalk message">② 📱 카톡 메시지 붙여넣기</div>
+               data-ko="③ 📱 카톡 메시지 붙여넣기"
+               data-en="③ 📱 Paste KakaoTalk message">③ 📱 카톡 메시지 붙여넣기</div>
           <textarea id="en-kakao-text" rows="6"
-                    placeholder="예시:&#10;학생: 홍길동&#10;UID: user001&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;개강일: 2026-05-01"
-                    data-ko-placeholder="학생: 홍길동&#10;UID: user001&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;개강일: 2026-05-01"
+                    placeholder="예시:&#10;학생: 홍길동&#10;UID: user001&#10;수업 유형: 레벨+체험+정규&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;요일: 월수금&#10;시간: 10:30&#10;인원 방식: 1:1&#10;시작일: 2026-05-01"
+                    data-ko-placeholder="학생: 홍길동&#10;UID: user001&#10;수업 유형: 레벨+체험+정규&#10;패키지: 1년 정규반&#10;월 수강료: 350,000 원&#10;요일: 월수금&#10;시간: 10:30&#10;인원 방식: 1:1&#10;시작일: 2026-05-01"
                     style="width:100%;font-size:12px;padding:8px;border:1px solid #d1d5db;border-radius:6px;font-family:'Malgun Gothic',monospace;line-height:1.5;resize:vertical"></textarea>
           <div style="margin-top:6px">
             <button id="en-import-kakao-btn"
