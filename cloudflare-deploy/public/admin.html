@@ -2176,19 +2176,203 @@
 <details class="table-card menu-card" id="card-franchises">
   <summary><span data-ko="🏬 가맹점 관리" data-en="🏬 Franchises">🏬 가맹점 관리</span></summary>
   <div class="menu-body">
-    <details>
-      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 가맹점 신규 등록" data-en="＋ Add Franchise">＋ 가맹점 신규 등록</summary>
-      <div class="menu-form">
-        <input id="fr-name"   placeholder="가맹점 이름 (필수)" data-ko-placeholder="가맹점 이름 (필수)" data-en-placeholder="Franchise name (required)" style="width:180px;" />
-        <input id="fr-owner"  placeholder="대표자"           data-ko-placeholder="대표자"           data-en-placeholder="Owner" style="width:120px;" />
-        <input id="fr-phone"  placeholder="전화번호"          data-ko-placeholder="전화번호"          data-en-placeholder="Phone" style="width:140px;" />
-        <input id="fr-address" placeholder="주소"             data-ko-placeholder="주소"             data-en-placeholder="Address" style="width:240px;" />
-        <input id="fr-opened" type="date" />
-        <button id="fr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
-      </div>
-    </details>
-    <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="대표" data-en="Owner">대표</th><th data-ko="전화" data-en="Phone">전화</th><th data-ko="주소" data-en="Address">주소</th><th data-ko="개업일" data-en="Opened">개업일</th></tr></thead>
-      <tbody id="franchises-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+
+    <!-- 🥭 Phase 44 — 가맹점 관리 하위 8개 메뉴 -->
+    <div class="sub-menu">
+
+      <!-- 1) 대리점 -->
+      <details class="sub-item" open>
+        <summary data-ko="🏪 대리점" data-en="🏪 Agency">🏪 대리점</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 대리점 신규 등록" data-en="＋ Add Agency">＋ 대리점 신규 등록</summary>
+            <div class="menu-form">
+              <input id="fr-name" placeholder="대리점 이름 (필수)" data-ko-placeholder="대리점 이름 (필수)" data-en-placeholder="Agency name (required)" style="width:200px;" />
+              <input id="fr-owner" placeholder="대표자" data-ko-placeholder="대표자" data-en-placeholder="Owner" style="width:120px;" />
+              <input id="fr-phone" placeholder="전화번호" style="width:140px;" />
+              <input id="fr-address" placeholder="주소" data-ko-placeholder="주소" data-en-placeholder="Address" style="width:240px;" />
+              <input id="fr-opened" type="date" />
+              <button id="fr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th data-ko="이름" data-en="Name">이름</th><th data-ko="대표" data-en="Owner">대표</th><th data-ko="전화" data-en="Phone">전화</th><th data-ko="주소" data-en="Address">주소</th><th data-ko="개업일" data-en="Opened">개업일</th></tr></thead>
+            <tbody id="franchises-table"><tr><td colspan="6" class="empty">—</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 2) 지사 -->
+      <details class="sub-item">
+        <summary data-ko="🏢 지사" data-en="🏢 Branch">🏢 지사</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 지사 등록</summary>
+            <div class="menu-form">
+              <input id="br-name" placeholder="지사 이름 (필수)" style="width:200px;" />
+              <input id="br-region" placeholder="담당 지역 (예: 수도권)" style="width:160px;" />
+              <input id="br-manager" placeholder="지사장" style="width:120px;" />
+              <input id="br-phone" placeholder="전화번호" style="width:140px;" />
+              <input id="br-opened" type="date" />
+              <button id="br-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>지사명</th><th>담당지역</th><th>지사장</th><th>전화</th><th>개설일</th><th>액션</th></tr></thead>
+            <tbody id="branches-table"><tr><td colspan="7" class="empty">데이터 없음 — 위에서 등록</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 3) 대표지사 -->
+      <details class="sub-item">
+        <summary data-ko="🏛️ 대표지사" data-en="🏛️ Master Branch">🏛️ 대표지사</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 대표지사 등록</summary>
+            <div class="menu-form">
+              <input id="mbr-name" placeholder="대표지사 이름 (필수)" style="width:220px;" />
+              <input id="mbr-region" placeholder="담당 권역 (예: 영남)" style="width:160px;" />
+              <select id="mbr-tier" style="width:140px;">
+                <option value="">등급…</option>
+                <option>플래티넘</option><option>골드</option><option>실버</option><option>일반</option>
+              </select>
+              <input id="mbr-manager" placeholder="대표자" style="width:120px;" />
+              <input id="mbr-phone" placeholder="전화번호" style="width:140px;" />
+              <button id="mbr-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>대표지사명</th><th>담당권역</th><th>등급</th><th>대표자</th><th>관리 지사 수</th><th>액션</th></tr></thead>
+            <tbody id="mbranches-table"><tr><td colspan="7" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 4) 영입본부 -->
+      <details class="sub-item">
+        <summary data-ko="🎯 영입본부" data-en="🎯 Recruitment HQ">🎯 영입본부</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 영입본부 등록</summary>
+            <div class="menu-form">
+              <input id="rec-name" placeholder="영입본부 이름 (필수)" style="width:220px;" />
+              <input id="rec-leader" placeholder="본부장" style="width:120px;" />
+              <input id="rec-target" type="number" placeholder="월 목표(가맹점 수)" style="width:160px;" />
+              <input id="rec-phone" placeholder="전화번호" style="width:140px;" />
+              <select id="rec-status" style="width:120px;">
+                <option value="active">🟢 활성</option>
+                <option value="paused">⏸️ 대기</option>
+                <option value="closed">🚪 종료</option>
+              </select>
+              <button id="rec-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>본부명</th><th>본부장</th><th>월 목표</th><th>이번 달 실적</th><th>달성률</th><th>상태</th><th>액션</th></tr></thead>
+            <tbody id="recruit-table"><tr><td colspan="8" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 5) 본사 관리 -->
+      <details class="sub-item">
+        <summary data-ko="🏯 본사 관리" data-en="🏯 HQ Management">🏯 본사 관리</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 본사 정보 등록</summary>
+            <div class="menu-form">
+              <input id="hq-name" placeholder="본사 이름 (예: 망고아이 본사)" style="width:220px;" />
+              <input id="hq-ceo" placeholder="대표이사" style="width:120px;" />
+              <input id="hq-business-no" placeholder="사업자번호" style="width:160px;" />
+              <input id="hq-address" placeholder="본사 주소" style="width:280px;" />
+              <input id="hq-phone" placeholder="대표전화" style="width:140px;" />
+              <button id="hq-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>본사명</th><th>대표이사</th><th>사업자번호</th><th>주소</th><th>대표전화</th><th>액션</th></tr></thead>
+            <tbody id="hq-table"><tr><td colspan="7" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 6) 독립 사이트 -->
+      <details class="sub-item">
+        <summary data-ko="🌐 독립 사이트" data-en="🌐 Standalone Site">🌐 독립 사이트</summary>
+        <div class="sub-body">
+          <details>
+            <summary style="cursor:pointer;font-size:13px;color:#3b82f6;">＋ 독립 사이트 등록</summary>
+            <div class="menu-form">
+              <input id="ind-name" placeholder="사이트 이름 (필수)" style="width:200px;" />
+              <input id="ind-url" type="url" placeholder="https://..." style="width:240px;" />
+              <input id="ind-owner" placeholder="운영자" style="width:120px;" />
+              <select id="ind-type" style="width:140px;">
+                <option value="">유형…</option>
+                <option>학원 직영</option><option>프랜차이즈</option><option>제휴</option><option>기타</option>
+              </select>
+              <input id="ind-launch" type="date" />
+              <button id="ind-add-btn" class="primary" style="padding:5px 12px;font-size:13px;">+ 등록</button>
+            </div>
+          </details>
+          <table style="margin-top:10px;"><thead><tr><th>ID</th><th>사이트명</th><th>URL</th><th>운영자</th><th>유형</th><th>오픈일</th><th>방문자수</th><th>액션</th></tr></thead>
+            <tbody id="indep-table"><tr><td colspan="8" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+      <!-- 7) 종전금 내역 -->
+      <details class="sub-item">
+        <summary data-ko="💵 종전금 내역" data-en="💵 Settlement History">💵 종전금 내역</summary>
+        <div class="sub-body">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <select id="set-period" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;">
+              <option value="month">이번 달</option>
+              <option value="quarter">이번 분기</option>
+              <option value="year">올해</option>
+              <option value="all">전체</option>
+            </select>
+            <select id="set-target" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;">
+              <option value="">전체 대상</option>
+              <option value="agency">대리점</option>
+              <option value="branch">지사</option>
+              <option value="master">대표지사</option>
+            </select>
+            <button id="set-refresh-btn" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">🔄 조회</button>
+            <button id="set-export-csv" style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer">📥 CSV 내보내기</button>
+          </div>
+          <table><thead><tr><th>정산 ID</th><th>기간</th><th>대상</th><th>총 매출</th><th>수수료</th><th>지급액</th><th>상태</th><th>액션</th></tr></thead>
+            <tbody id="settle-table"><tr><td colspan="8" class="empty">데이터 없음</td></tr></tbody></table>
+          <div style="font-size:11px;color:#6b7280;margin-top:6px;text-align:right">
+            합계 — 총 매출: <b id="set-total-rev">0원</b> · 수수료: <b id="set-total-fee">0원</b> · 지급액: <b id="set-total-pay">0원</b>
+          </div>
+        </div>
+      </details>
+
+      <!-- 8) 포인트 내역 -->
+      <details class="sub-item">
+        <summary data-ko="💎 포인트 내역" data-en="💎 Points History">💎 포인트 내역</summary>
+        <div class="sub-body">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+            <input id="pt-search" placeholder="가맹점/대리점 검색" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;width:200px;" />
+            <select id="pt-type-filter" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;">
+              <option value="">전체 유형</option>
+              <option value="earn">🟢 적립</option>
+              <option value="use">🔴 사용</option>
+              <option value="adjust">⚙️ 조정</option>
+            </select>
+            <button id="pt-refresh-btn" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer">🔄 조회</button>
+            <button id="pt-add-btn" style="padding:5px 12px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer">＋ 수동 적립/차감</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:10px">
+            <div style="background:rgba(34,197,94,0.08);padding:10px 14px;border-left:3px solid #10b981;border-radius:6px;font-size:12px">
+              <div style="color:#6b7280">총 적립 포인트</div>
+              <div style="font-size:18px;font-weight:700;color:#065f46" id="pt-total-earn">0 P</div>
+            </div>
+            <div style="background:rgba(239,68,68,0.08);padding:10px 14px;border-left:3px solid #ef4444;border-radius:6px;font-size:12px">
+              <div style="color:#6b7280">총 사용 포인트</div>
+              <div style="font-size:18px;font-weight:700;color:#991b1b" id="pt-total-use">0 P</div>
+            </div>
+            <div style="background:rgba(59,130,246,0.08);padding:10px 14px;border-left:3px solid #3b82f6;border-radius:6px;font-size:12px">
+              <div style="color:#6b7280">현재 잔여 포인트</div>
+              <div style="font-size:18px;font-weight:700;color:#1e40af" id="pt-balance">0 P</div>
+            </div>
+          </div>
+          <table><thead><tr><th>일시</th><th>대상</th><th>유형</th><th>포인트</th><th>잔액</th><th>사유</th><th>처리자</th></tr></thead>
+            <tbody id="points-table"><tr><td colspan="7" class="empty">데이터 없음</td></tr></tbody></table>
+        </div>
+      </details>
+
+    </div>
   </div>
 </details>
 
