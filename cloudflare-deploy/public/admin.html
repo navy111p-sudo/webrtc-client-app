@@ -1995,15 +1995,39 @@
 <details class="table-card menu-card" id="card-enrollments">
   <summary><span data-ko="📚 수강신청 관리" data-en="📚 Enrollments">📚 수강신청 관리</span></summary>
   <div class="menu-body">
-    <details>
-      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;" data-ko="＋ 수강신청 등록" data-en="＋ Add Enrollment">＋ 수강신청 등록</summary>
-      <div class="menu-form">
-        <input id="en-name"    placeholder="학생 이름 (필수)" data-ko-placeholder="학생 이름 (필수)" data-en-placeholder="Student name (required)" style="width:160px;" />
-        <input id="en-uid"     placeholder="user_id (선택)"   data-ko-placeholder="user_id (선택)"   data-en-placeholder="user_id (optional)" style="width:160px;" />
-        <input id="en-package" placeholder="상품/패키지 (필수)" data-ko-placeholder="상품/패키지 (필수)" data-en-placeholder="Package (required)" style="width:180px;" />
-        <input id="en-fee"     type="number" placeholder="월 수강료 (KRW)" data-ko-placeholder="월 수강료 (KRW)" data-en-placeholder="Monthly fee (KRW)" style="width:160px;" />
-        <input id="en-start"   type="date" />
-        <button id="en-add-btn" class="primary" style="padding:5px 12px;font-size:13px;" data-ko="+ 등록" data-en="+ Register">+ 등록</button>
+    <details open>
+      <summary style="cursor:pointer;font-size:13px;color:#3b82f6;font-weight:600"
+               data-ko="＋ 수강신청 등록 (1명 또는 여러 명 동시)"
+               data-en="＋ Add Enrollment (single or multiple at once)">＋ 수강신청 등록 (1명 또는 여러 명 동시)</summary>
+      <!-- 🥭 Phase 24 — 다중 학생 동시 등록 표 -->
+      <div style="margin-top:10px">
+        <div style="overflow-x:auto">
+          <table id="en-multi-table" style="width:100%;font-size:12px;border-collapse:collapse;background:#fff">
+            <thead>
+              <tr style="background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(251,146,60,0.18))">
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;width:30px">#</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="학생 이름*" data-en="Student name*">학생 이름*</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb">UID</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="패키지*" data-en="Package*">패키지*</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="월 수강료(KRW)" data-en="Fee (KRW)">월 수강료(KRW)</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb" data-ko="개강일" data-en="Start">개강일</th>
+                <th style="padding:6px 8px;border:1px solid #e5e7eb;width:36px"></th>
+              </tr>
+            </thead>
+            <tbody id="en-multi-rows">
+              <!-- 행은 JS 가 동적으로 추가 (페이지 로드시 1행 자동 추가) -->
+            </tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <button id="en-add-row-btn" type="button"
+                  style="padding:6px 14px;font-size:12px;background:#fff;border:1px dashed #3b82f6;color:#3b82f6;border-radius:6px;cursor:pointer;font-weight:600"
+                  data-ko="＋ 행 추가" data-en="＋ Add row">＋ 행 추가</button>
+          <button id="en-add-btn" class="primary" type="button"
+                  style="padding:6px 18px;font-size:13px;font-weight:700"
+                  data-ko="✅ 일괄 등록" data-en="✅ Register all">✅ 일괄 등록</button>
+          <span id="en-multi-status" style="font-size:11px;color:#6b7280;margin-left:6px"></span>
+        </div>
       </div>
     </details>
 
@@ -4059,35 +4083,222 @@ async function loadEnrollments() {
       </td></tr>`;
   }).join('');
 }
-async function addEnrollment() {
-  const e = id => document.getElementById(id);
-  const name = (e('en-name').value||'').trim();
-  const pkg  = (e('en-package').value||'').trim();
-  if (!name || !pkg) { alert(adminLang==='en'?'Name and package required':'이름·패키지 필수'); return; }
-  const startStr = e('en-start').value;
-  const uid = e('en-uid').value || null;
-  const fee = e('en-fee').value ? parseInt(e('en-fee').value, 10) : null;
-  const d = await _menuPost('/api/admin/enrollments', {
-    student_name: name, student_user_id: uid, package: pkg,
-    monthly_fee_krw: fee,
-    started_at: startStr ? new Date(startStr).getTime() : null
+// 🥭 Phase 24 — 다중 학생 동시 등록 (표 형식)
+function _addEnrollmentRow(prefill) {
+  const tbody = document.getElementById('en-multi-rows');
+  if (!tbody) return;
+  const idx = tbody.children.length + 1;
+  const tr = document.createElement('tr');
+  const v = prefill || {};
+  tr.innerHTML =
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb;text-align:center;color:#9ca3af;font-size:11px">' + idx + '</td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-name" placeholder="홍길동" value="' + (v.name||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-uid" placeholder="user001" value="' + (v.uid||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-package" placeholder="1년 정규반" value="' + (v.package||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-fee" type="number" placeholder="350000" value="' + (v.fee||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb"><input class="en-row-start" type="date" value="' + (v.start||'') + '" style="width:100%;padding:4px 6px;border:1px solid #e5e7eb;border-radius:4px;font-size:12px" /></td>' +
+    '<td style="padding:4px 6px;border:1px solid #e5e7eb;text-align:center"><button type="button" class="en-row-del" title="이 행 삭제" style="background:transparent;border:0;color:#ef4444;font-size:14px;cursor:pointer;padding:0 6px">✕</button></td>';
+  tbody.appendChild(tr);
+  // 행 삭제 — 마지막 1행은 항상 유지
+  tr.querySelector('.en-row-del').addEventListener('click', () => {
+    if (tbody.children.length <= 1) {
+      // 마지막 행은 비우기만
+      tr.querySelectorAll('input').forEach(inp => inp.value = '');
+    } else {
+      tr.remove();
+      _renumberEnrollmentRows();
+    }
   });
-  if (d) {
-    // 🥭 Phase 22 — 자동화: 카톡 큐 + Excel + Word 다운로드
-    const enrollmentId = d.id || d.enrollment_id || ('enroll_' + Date.now());
-    const enrollmentData = {
-      id: enrollmentId,
-      student_name: name,
-      student_user_id: uid || '—',
-      package: pkg,
-      monthly_fee_krw: fee || 0,
-      started_at: startStr || new Date().toISOString().slice(0,10),
-      created_at: new Date().toISOString().slice(0,19).replace('T', ' ')
-    };
-    autoExportEnrollment(enrollmentData);
-    ['en-name','en-uid','en-package','en-fee','en-start'].forEach(id=>e(id).value='');
-    loadEnrollments();
+  // 첫 입력란에 자동 포커스 (사용자가 + 행 추가 누른 직후)
+  if (prefill === undefined) {
+    setTimeout(() => { const inp = tr.querySelector('.en-row-name'); if (inp) inp.focus(); }, 0);
   }
+}
+
+function _renumberEnrollmentRows() {
+  const rows = document.querySelectorAll('#en-multi-rows tr');
+  rows.forEach((tr, i) => {
+    const numCell = tr.querySelector('td:first-child');
+    if (numCell) numCell.textContent = (i + 1);
+  });
+}
+
+function _readEnrollmentRows() {
+  const rows = document.querySelectorAll('#en-multi-rows tr');
+  const out = [];
+  rows.forEach((tr) => {
+    const name = (tr.querySelector('.en-row-name')?.value || '').trim();
+    const uid = (tr.querySelector('.en-row-uid')?.value || '').trim();
+    const pkg = (tr.querySelector('.en-row-package')?.value || '').trim();
+    const fee = tr.querySelector('.en-row-fee')?.value || '';
+    const start = tr.querySelector('.en-row-start')?.value || '';
+    // 빈 행은 건너뜀 (이름·패키지 모두 비어있으면)
+    if (!name && !pkg) return;
+    out.push({
+      student_name: name,
+      student_user_id: uid || null,
+      package: pkg,
+      monthly_fee_krw: fee ? parseInt(fee, 10) : null,
+      started_at: start ? new Date(start).getTime() : null,
+      _started_at_str: start, // 자동 export 용
+      _fee_raw: fee
+    });
+  });
+  return out;
+}
+
+async function addEnrollment() {
+  const records = _readEnrollmentRows();
+  const status = document.getElementById('en-multi-status');
+  if (records.length === 0) {
+    alert(adminLang==='en' ? 'Add at least one student row' : '최소 1명 이상의 학생 정보를 입력해 주세요.');
+    return;
+  }
+  // 검증 — 이름 또는 패키지 누락
+  const invalid = records.filter(r => !r.student_name || !r.package);
+  if (invalid.length > 0) {
+    alert((adminLang==='en' ? 'Missing required fields (name/package): ' : '필수 항목 누락 (이름·패키지): ') + invalid.length + '건');
+    return;
+  }
+  // N=1 이면 단일 등록 + Phase 22 자동 export, N>1 이면 일괄 등록
+  if (records.length === 1) {
+    const r = records[0];
+    if (status) status.textContent = '⏳ 등록 중…';
+    const d = await _menuPost('/api/admin/enrollments', {
+      student_name: r.student_name,
+      student_user_id: r.student_user_id,
+      package: r.package,
+      monthly_fee_krw: r.monthly_fee_krw,
+      started_at: r.started_at
+    });
+    if (d) {
+      const enrollmentData = {
+        id: d.id || d.enrollment_id || ('enroll_' + Date.now()),
+        student_name: r.student_name,
+        student_user_id: r.student_user_id || '—',
+        package: r.package,
+        monthly_fee_krw: r.monthly_fee_krw || 0,
+        started_at: r._started_at_str || new Date().toISOString().slice(0,10),
+        created_at: new Date().toISOString().slice(0,19).replace('T', ' ')
+      };
+      autoExportEnrollment(enrollmentData);
+      // 행 초기화
+      document.getElementById('en-multi-rows').innerHTML = '';
+      _addEnrollmentRow();
+      if (status) status.textContent = '✅ 1명 등록 완료';
+      loadEnrollments();
+    } else {
+      if (status) status.textContent = '❌ 등록 실패';
+    }
+    return;
+  }
+
+  // N>1 — 일괄 등록 (Phase 23 의 _bulkRegisterEnrollments 와 동일 패턴)
+  if (!confirm((adminLang==='en' ? 'Register ' : '') + records.length + (adminLang==='en' ? ' students at once?' : '명 학생을 동시에 등록하시겠습니까?'))) return;
+  if (status) status.textContent = '⏳ 일괄 등록 중… (0 / ' + records.length + ')';
+  let ok = 0, fail = 0; const errs = [];
+  const successList = [];
+  for (let i = 0; i < records.length; i++) {
+    const r = records[i];
+    try {
+      const res = await fetch('/api/admin/enrollments', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_name: r.student_name,
+          student_user_id: r.student_user_id,
+          package: r.package,
+          monthly_fee_krw: r.monthly_fee_krw,
+          started_at: r.started_at
+        })
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.ok !== false) {
+        ok++;
+        successList.push(r);
+      } else {
+        fail++;
+        errs.push(r.student_name + ': ' + (j.error || ('HTTP ' + res.status)));
+      }
+    } catch (e) {
+      fail++; errs.push(r.student_name + ': ' + (e.message || e));
+    }
+    if (status) status.textContent = '⏳ 일괄 등록 중… (' + (i+1) + ' / ' + records.length + ')';
+  }
+  if (status) status.textContent = '✅ 성공 ' + ok + '명 / 실패 ' + fail + '명';
+  // N>1 자동화 — 통합 알림 + 통합 CSV/Word
+  if (ok > 0) {
+    autoExportBulkEnrollment(successList);
+  }
+  if (errs.length > 0) {
+    alert('⚠️ 실패 상세:\n\n' + errs.join('\n'));
+  }
+  // 행 초기화
+  document.getElementById('en-multi-rows').innerHTML = '';
+  _addEnrollmentRow();
+  loadEnrollments();
+}
+
+// 다중 등록 자동 export — 통합 카톡 + 통합 CSV + 통합 Word
+function autoExportBulkEnrollment(records) {
+  const dateStr = new Date().toISOString().slice(0,10);
+  const N = records.length;
+
+  // 통합 카톡 메시지
+  let kakaoText = '📚 [망고아이] 수강신청 일괄 등록 — ' + N + '명\n━━━━━━━━━━━━━━━\n';
+  records.forEach((r, i) => {
+    kakaoText += (i+1) + '. ' + r.student_name +
+      (r.student_user_id ? ' (' + r.student_user_id + ')' : '') +
+      ' — ' + r.package +
+      (r.monthly_fee_krw ? ' / ' + r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '') +
+      '\n';
+  });
+  kakaoText += '━━━━━━━━━━━━━━━\n등록일시: ' + new Date().toLocaleString('ko-KR');
+  fetch('/api/admin/ai-action', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'send_kakao_self', args: { text: kakaoText } })
+  }).catch(() => {});
+
+  // 통합 CSV (다행)
+  let csv = '﻿학생 이름,UID,패키지,월 수강료(KRW),개강일\n';
+  records.forEach(r => {
+    csv += '"' + (r.student_name||'').replace(/"/g, '""') + '",' +
+           '"' + (r.student_user_id||'').replace(/"/g, '""') + '",' +
+           '"' + (r.package||'').replace(/"/g, '""') + '",' +
+           (r.monthly_fee_krw || '') + ',' +
+           (r._started_at_str || '') + '\n';
+  });
+  _downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }),
+    '수강신청_일괄_' + N + '명_' + dateStr + '.csv');
+
+  // 통합 Word (다행 표)
+  let docHtml =
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
+    '<head><meta charset="UTF-8"><title>수강신청 일괄 등록 ' + N + '명</title>' +
+    '<style>body{font-family:"Malgun Gothic",sans-serif;font-size:11pt;padding:30px}' +
+    'h1{color:#9a3412;border-bottom:3px solid #f59e0b;padding-bottom:8px}' +
+    'table{border-collapse:collapse;width:100%;margin-top:20px}' +
+    'th{background:#fef3c7;color:#78350f;text-align:left;padding:8px 12px;border:1px solid #d6d3d1;font-size:10pt}' +
+    'td{padding:8px 12px;border:1px solid #d6d3d1;font-size:10pt}' +
+    '.footer{margin-top:30px;font-size:10pt;color:#9ca3af;text-align:right}' +
+    '</style></head><body>' +
+    '<h1>📚 망고아이 수강신청 일괄 등록 — ' + N + '명</h1>' +
+    '<p>아래 ' + N + '명의 학생 수강신청이 정상 등록되었습니다.</p>' +
+    '<table><tr><th>#</th><th>학생 이름</th><th>UID</th><th>패키지</th><th>월 수강료</th><th>개강일</th></tr>';
+  records.forEach((r, i) => {
+    docHtml += '<tr>' +
+      '<td>' + (i+1) + '</td>' +
+      '<td><b>' + _aiEsc(r.student_name) + '</b></td>' +
+      '<td>' + _aiEsc(r.student_user_id || '—') + '</td>' +
+      '<td>' + _aiEsc(r.package) + '</td>' +
+      '<td>' + (r.monthly_fee_krw ? r.monthly_fee_krw.toLocaleString('ko-KR') + '원' : '—') + '</td>' +
+      '<td>' + _aiEsc(r._started_at_str || '—') + '</td>' +
+      '</tr>';
+  });
+  docHtml += '</table><div class="footer">© Mangoi · 자동 생성 · ' + new Date().toLocaleString('ko-KR') + '</div></body></html>';
+  _downloadBlob(new Blob([docHtml], { type: 'application/msword;charset=utf-8' }),
+    '수강신청_일괄_' + N + '명_' + dateStr + '.doc');
 }
 
 // 🥭 Phase 22 — 수강신청 자동화: 카톡 + Excel + Word
@@ -5098,6 +5309,11 @@ window.bulkCopyContacts = function() {
   if (e('en-refresh-btn'))     e('en-refresh-btn').addEventListener('click', loadEnrollments);
   if (e('en-import-file-btn')) e('en-import-file-btn').addEventListener('click', importEnrollmentFromFile);
   if (e('en-import-kakao-btn'))e('en-import-kakao-btn').addEventListener('click', importEnrollmentFromKakao);
+  // 🥭 Phase 24 — 다중 학생 행 초기화 + + 행 추가 버튼
+  if (e('en-add-row-btn'))     e('en-add-row-btn').addEventListener('click', () => _addEnrollmentRow());
+  if (e('en-multi-rows') && e('en-multi-rows').children.length === 0) {
+    _addEnrollmentRow(); // 페이지 로드시 첫 행 자동 추가
+  }
   if (e('en-status-filter')) e('en-status-filter').addEventListener('change', loadEnrollments);
   if (e('cm-add-btn'))      e('cm-add-btn').addEventListener('click', addCommunityPost);
   if (e('tb-add-btn'))      e('tb-add-btn').addEventListener('click', addTextbook);
