@@ -11,6 +11,7 @@ import { purgeExpired } from './retention';
 import { handleLivekit, ensureLivekitSchema } from './livekit-bridge';
 import { handleRecordingUpload as handleR2MultipartUpload } from './recordings-r2';
 import { handleAdminAuthApi, checkAdminSession } from './auth-admin';
+import { reportsRouter } from './accounting-reports';
 
 interface Env {
   SIGNALING_ROOM: DurableObjectNamespace;
@@ -256,6 +257,13 @@ export default {
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
+    }
+
+    // 📥 회계 리포트 6종 (2026-05-03 추가)
+    //   /api/admin/reports/{monthly|quarterly|annual|franchise|payslips|kpi}
+    //   format=json (기본) | csv 다운로드
+    if (path.startsWith('/api/admin/reports/')) {
+      return reportsRouter(request, env);
     }
 
     // WebSocket upgrade for signaling

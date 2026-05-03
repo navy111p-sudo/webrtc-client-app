@@ -2206,28 +2206,36 @@
       <details class="sub-item">
         <summary data-ko="📥 회계 리포트 다운로드" data-en="📥 Accounting Reports">📥 회계 리포트 다운로드</summary>
         <div class="sub-body">
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+            <input id="acc-rep-period" type="month" value="" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <input id="acc-rep-year"   type="number" min="2024" max="2030" placeholder="연도" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;width:90px" />
+            <select id="acc-rep-quarter" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="1">1분기</option><option value="2">2분기</option><option value="3">3분기</option><option value="4">4분기</option>
+            </select>
+            <span style="font-size:11px;color:#6b7280" data-ko="기간을 선택하고 아래 리포트 버튼을 누르세요" data-en="Pick a period then click a report below">기간을 선택하고 아래 리포트 버튼을 누르세요</span>
+          </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px">
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('monthly')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="📅 월간 회계 리포트" data-en="📅 Monthly Report">📅 월간 회계 리포트</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="매출·비용·손익 한 장" data-en="Revenue·cost·P&L summary">매출·비용·손익 한 장</div>
             </button>
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('quarterly')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="📊 분기 보고서" data-en="📊 Quarterly Report">📊 분기 보고서</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="3개월 종합 + 트렌드" data-en="Quarter aggregate + trends">3개월 종합 + 트렌드</div>
             </button>
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('annual')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="📈 연간 결산" data-en="📈 Annual Report">📈 연간 결산</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="세무사 제출용 종합 리포트" data-en="For tax accountant submission">세무사 제출용 종합 리포트</div>
             </button>
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('franchise')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="🏢 가맹점별 정산서" data-en="🏢 Per-franchise Statement">🏢 가맹점별 정산서</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="가맹점에 보낼 정산 명세" data-en="To send to franchise">가맹점에 보낼 정산 명세</div>
             </button>
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('payslips')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="👨‍🏫 강사별 급여명세서" data-en="👨‍🏫 Per-teacher Payslip">👨‍🏫 강사별 급여명세서</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="강사 개인별 PDF 일괄 발송" data-en="Bulk PDF send to teachers">강사 개인별 PDF 일괄 발송</div>
             </button>
-            <button style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
+            <button onclick="openReport('kpi')" style="padding:14px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;text-align:left">
               <div style="font-weight:700;font-size:13px;color:#111827" data-ko="⭐ 경영지표 (KPI)" data-en="⭐ Management KPIs">⭐ 경영지표 (KPI)</div>
               <div style="font-size:11px;color:#6b7280;margin-top:4px" data-ko="LTV·CAC·ROI·이익률" data-en="LTV·CAC·ROI·margins">LTV·CAC·ROI·이익률</div>
             </button>
