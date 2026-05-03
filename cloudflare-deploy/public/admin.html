@@ -1929,8 +1929,8 @@
               <option value="fail" data-ko="실패" data-en="Failed">실패</option>
               <option value="refund" data-ko="환불" data-en="Refunded">환불</option>
             </select>
-            <button id="acc-pay-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
-            <button id="acc-pay-csv" style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 CSV" data-en="📥 CSV">📥 CSV</button>
+            <button id="acc-pay-load" class="primary" onclick="accLoadPayments()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button id="acc-pay-csv" onclick="accDownloadPaymentsCsv()" style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 CSV" data-en="📥 CSV">📥 CSV</button>
           </div>
           <table>
             <thead><tr>
@@ -1965,8 +1965,8 @@
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
             <input id="acc-fx-month" type="month" value="2026-05" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-            <button id="acc-fx-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
-            <button id="acc-fx-rates" style="padding:5px 12px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="💱 환율 갱신" data-en="💱 Update FX">💱 환율 갱신</button>
+            <button id="acc-fx-load" class="primary" onclick="accLoadForex()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button id="acc-fx-rates" onclick="alert('환율 갱신: PHP 24.34 / USD 1,365 / GBP 1,720 (수동 설정)')" style="padding:5px 12px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="💱 환율 갱신" data-en="💱 Update FX">💱 환율 갱신</button>
             <span style="font-size:11px;color:#6b7280" data-ko="PHP 24.34 / USD 1,365 / GBP 1,720" data-en="PHP 24.34 / USD 1,365 / GBP 1,720">PHP 24.34 / USD 1,365 / GBP 1,720</span>
           </div>
           <table>
@@ -1989,8 +1989,8 @@
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
             <input id="acc-fr-month" type="month" value="2026-05" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-            <button id="acc-fr-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
-            <button id="acc-fr-transfer" style="padding:5px 12px;font-size:12px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="💸 일괄 송금" data-en="💸 Bulk Transfer">💸 일괄 송금</button>
+            <button id="acc-fr-load" class="primary" onclick="accLoadFranchise()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button id="acc-fr-transfer" onclick="alert('일괄 송금은 가맹점별 정산서 리포트(📥 다운로드)로 생성된 파일을 검토 후 은행에서 진행하세요.')" style="padding:5px 12px;font-size:12px;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="💸 일괄 송금" data-en="💸 Bulk Transfer">💸 일괄 송금</button>
           </div>
           <table>
             <thead><tr>
@@ -2026,7 +2026,7 @@
               <option value="quality" data-ko="서비스 불만" data-en="Service issue">서비스 불만</option>
               <option value="duplicate" data-ko="중복 결제" data-en="Duplicate">중복 결제</option>
             </select>
-            <button id="acc-rf-load" class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button id="acc-rf-load" class="primary" onclick="accLoadRefunds()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
           </div>
           <table>
             <thead><tr>
@@ -2054,8 +2054,8 @@
               <option data-ko="회원 포인트" data-en="Member points">회원 포인트</option>
               <option data-ko="추천인 보상" data-en="Referral rewards">추천인 보상</option>
             </select>
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="＋ 새 쿠폰" data-en="＋ New">＋ 새 쿠폰</button>
-            <button style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="📊 사용 통계" data-en="📊 Usage stats">📊 사용 통계</button>
+            <button class="primary" onclick="alert('쿠폰 발급은 별도 화면에서 처리됩니다. (수강신청 관리 메뉴 또는 학생 드릴다운에서)')" style="padding:5px 12px;font-size:12px;" data-ko="＋ 새 쿠폰" data-en="＋ New">＋ 새 쿠폰</button>
+            <button onclick="alert('쿠폰 사용 통계는 추후 별도 페이지에서 제공됩니다.')" style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="📊 사용 통계" data-en="📊 Usage stats">📊 사용 통계</button>
           </div>
           <table>
             <thead><tr>
@@ -2076,16 +2076,16 @@
         <summary data-ko="🧮 세무 (부가세 · 세금계산서 · 현금영수증)" data-en="🧮 Tax (VAT · Invoice)">🧮 세무 (부가세 · 세금계산서 · 현금영수증)</summary>
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <input type="month" value="2026-04" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-            <select style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
-              <option data-ko="부가세 신고" data-en="VAT filing">부가세 신고</option>
-              <option data-ko="세금계산서 (매출)" data-en="Sales tax invoice">세금계산서 (매출)</option>
-              <option data-ko="세금계산서 (매입)" data-en="Purchase tax invoice">세금계산서 (매입)</option>
-              <option data-ko="현금영수증" data-en="Cash receipts">현금영수증</option>
-              <option data-ko="원천세" data-en="Withholding tax">원천세</option>
+            <input id="acc-tax-month" type="month" value="2026-04" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <select id="acc-tax-kind" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="vat" data-ko="부가세 신고" data-en="VAT filing">부가세 신고</option>
+              <option value="sales-invoice" data-ko="세금계산서 (매출)" data-en="Sales tax invoice">세금계산서 (매출)</option>
+              <option value="purchase-invoice" data-ko="세금계산서 (매입)" data-en="Purchase tax invoice">세금계산서 (매입)</option>
+              <option value="cash-receipt" data-ko="현금영수증" data-en="Cash receipts">현금영수증</option>
+              <option value="withholding" data-ko="원천세" data-en="Withholding tax">원천세</option>
             </select>
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 집계" data-en="🧮 Compute">🧮 집계</button>
-            <button style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📤 홈택스 전송" data-en="📤 Submit to Hometax">📤 홈택스 전송</button>
+            <button class="primary" onclick="accLoadTax()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 집계" data-en="🧮 Compute">🧮 집계</button>
+            <button onclick="alert('홈택스 전송은 국세청 인증서가 필요합니다. 집계 결과 CSV를 다운받아 홈택스에 업로드해 주세요.\n\n홈택스: https://hometax.go.kr')" style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📤 홈택스 전송" data-en="📤 Submit to Hometax">📤 홈택스 전송</button>
           </div>
           <table>
             <thead><tr>
@@ -2095,7 +2095,7 @@
               <th data-ko="합계" data-en="Total">합계</th>
               <th data-ko="건수" data-en="Count">건수</th>
             </tr></thead>
-            <tbody><tr><td colspan="5" class="empty">—</td></tr></tbody>
+            <tbody id="acc-tax-tbody"><tr><td colspan="5" class="empty">—</td></tr></tbody>
           </table>
         </div>
       </details>
@@ -2105,11 +2105,11 @@
         <summary data-ko="📒 회계 전표 / 분개장" data-en="📒 Journal Entries">📒 회계 전표 / 분개장</summary>
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <input type="date" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <input id="acc-jrn-from" type="date" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
             <span style="font-size:11px;color:#6b7280">~</span>
-            <input type="date" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
-            <button style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="＋ 전표 입력" data-en="＋ New Entry">＋ 전표 입력</button>
+            <input id="acc-jrn-to" type="date" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <button class="primary" onclick="accLoadJournal()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button onclick="accNewJournalEntry()" style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="＋ 전표 입력" data-en="＋ New Entry">＋ 전표 입력</button>
             <span style="font-size:11px;color:#92400e" data-ko="(대차 자동 검증)" data-en="(auto debit/credit balance)">(대차 자동 검증)</span>
           </div>
           <table>
@@ -2121,7 +2121,7 @@
               <th data-ko="대변" data-en="Credit">대변</th>
               <th data-ko="작성자" data-en="By">작성자</th>
             </tr></thead>
-            <tbody><tr><td colspan="6" class="empty">—</td></tr></tbody>
+            <tbody id="acc-jrn-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
           </table>
         </div>
       </details>
@@ -2144,7 +2144,7 @@
               <option data-ko="결제수단별" data-en="By Method">결제수단별</option>
               <option data-ko="국가별" data-en="By Country">국가별</option>
             </select>
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="📊 차트 보기" data-en="📊 Charts">📊 차트 보기</button>
+            <button class="primary" onclick="accLoadSalesChart()" style="padding:5px 12px;font-size:12px;" data-ko="📊 차트 보기" data-en="📊 Charts">📊 차트 보기</button>
             <button onclick="jumpToMenu('card-daily-charts')" style="padding:5px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="📅 일자별 차트로 이동" data-en="📅 Daily charts">📅 일자별 차트로 이동</button>
           </div>
           <div id="acc-sales-chart" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:24px;text-align:center;color:#6b7280;font-size:13px">
@@ -2158,12 +2158,12 @@
         <summary data-ko="💼 미수금 / 미지급금" data-en="💼 Receivables / Payables">💼 미수금 / 미지급금</summary>
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <select style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
-              <option data-ko="미수금 (학생 미납)" data-en="Receivable (unpaid students)">미수금 (학생 미납)</option>
-              <option data-ko="미지급금 (강사 미지급)" data-en="Payable (teacher)">미지급금 (강사 미지급)</option>
-              <option data-ko="미정산 (가맹점)" data-en="Pending (franchise)">미정산 (가맹점)</option>
+            <select id="acc-ar-kind" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="receivable" data-ko="미수금 (학생 미납)" data-en="Receivable (unpaid students)">미수금 (학생 미납)</option>
+              <option value="payable" data-ko="미지급금 (강사 미지급)" data-en="Payable (teacher)">미지급금 (강사 미지급)</option>
+              <option value="pending" data-ko="미정산 (가맹점)" data-en="Pending (franchise)">미정산 (가맹점)</option>
             </select>
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
+            <button class="primary" onclick="accLoadReceivables()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 불러오기" data-en="🧮 Load">🧮 불러오기</button>
             <span style="font-size:11px;color:#dc2626;font-weight:700" data-ko="⚠️ 30일 초과 건 빨간색 표시" data-en="⚠️ Overdue >30d in red">⚠️ 30일 초과 건 빨간색 표시</span>
           </div>
           <table>
@@ -2175,7 +2175,7 @@
               <th data-ko="사유" data-en="Note">사유</th>
               <th data-ko="액션" data-en="Action">액션</th>
             </tr></thead>
-            <tbody><tr><td colspan="6" class="empty">—</td></tr></tbody>
+            <tbody id="acc-ar-tbody"><tr><td colspan="6" class="empty">—</td></tr></tbody>
           </table>
         </div>
       </details>
@@ -2185,19 +2185,19 @@
         <summary data-ko="📈 손익 / 재무제표" data-en="📈 P&amp;L / Financials">📈 손익 / 재무제표</summary>
         <div class="sub-body">
           <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
-            <input type="month" value="2026-04" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-            <select style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
-              <option data-ko="손익계산서 (P&L)" data-en="Income Statement (P&L)">손익계산서 (P&L)</option>
-              <option data-ko="재무상태표 (BS)" data-en="Balance Sheet">재무상태표 (BS)</option>
-              <option data-ko="현금흐름표 (CF)" data-en="Cash Flow">현금흐름표 (CF)</option>
-              <option data-ko="시산표" data-en="Trial Balance">시산표</option>
+            <input id="acc-fs-month" type="month" value="2026-04" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <select id="acc-fs-type" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="pl" data-ko="손익계산서 (P&L)" data-en="Income Statement (P&L)">손익계산서 (P&L)</option>
+              <option value="bs" data-ko="재무상태표 (BS)" data-en="Balance Sheet">재무상태표 (BS)</option>
+              <option value="cf" data-ko="현금흐름표 (CF)" data-en="Cash Flow">현금흐름표 (CF)</option>
+              <option value="tb" data-ko="시산표" data-en="Trial Balance">시산표</option>
             </select>
-            <button class="primary" style="padding:5px 12px;font-size:12px;" data-ko="🧮 생성" data-en="🧮 Generate">🧮 생성</button>
-            <button style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 PDF" data-en="📥 PDF">📥 PDF</button>
-            <button style="padding:5px 12px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 Excel" data-en="📥 Excel">📥 Excel</button>
+            <button class="primary" onclick="accGenStatement()" style="padding:5px 12px;font-size:12px;" data-ko="🧮 생성" data-en="🧮 Generate">🧮 생성</button>
+            <button onclick="accStatementPdf()" style="padding:5px 12px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 PDF" data-en="📥 PDF">📥 PDF</button>
+            <button onclick="accStatementExcel()" style="padding:5px 12px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer" data-ko="📥 Excel" data-en="📥 Excel">📥 Excel</button>
           </div>
-          <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:24px;text-align:center;color:#6b7280;font-size:13px">
-            <span data-ko="[생성]을 누르면 재무제표가 여기에 표시됩니다." data-en="Click [Generate] to render the statement.">[생성]을 누르면 재무제표가 여기에 표시됩니다.</span>
+          <div id="acc-fs-result" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:24px;color:#374151;font-size:13px">
+            <div style="text-align:center;color:#6b7280" data-ko="[생성]을 누르면 재무제표가 여기에 표시됩니다." data-en="Click [Generate] to render the statement.">[생성]을 누르면 재무제표가 여기에 표시됩니다.</div>
           </div>
         </div>
       </details>
@@ -8756,6 +8756,376 @@ window.rebuildGlobalSearchIndex = function() {
         ROI = 순이익 / 비용 · LTV/CAC가 3 이상이면 건전.
       </p>`;
   }
+})();
+
+
+// ════════════════════════════════════════════════════════════════════
+// 💰 회계관리 submenu 핸들러 모음 (2026-05-03 추가)
+// ════════════════════════════════════════════════════════════════════
+(function(){
+  const _fmt = n => (n === null || n === undefined || isNaN(n)) ? '—'
+                  : '₩ ' + Number(n).toLocaleString('ko-KR');
+  const _esc = s => String(s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const _today = () => new Date(Date.now()+9*3600*1000).toISOString().slice(0,10);
+  const _showErr = (tbody, e, cols) => {
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="${cols||7}" class="empty" style="color:#ef4444">에러: ${_esc(e.message||e)}</td></tr>`;
+  };
+  const _badge = (text, color) => {
+    const colors = { ok:'#10b981', warn:'#f59e0b', bad:'#ef4444', info:'#3b82f6' };
+    return `<span style="display:inline-block;padding:2px 8px;border-radius:99px;background:${colors[color]||'#6b7280'};color:#fff;font-size:11px;font-weight:700">${_esc(text)}</span>`;
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 1. 학생 결제 내역
+  // ──────────────────────────────────────────────────────────
+  window.accLoadPayments = async function(){
+    const from   = document.getElementById('acc-pay-from').value;
+    const to     = document.getElementById('acc-pay-to').value;
+    const method = document.getElementById('acc-pay-method').value;
+    const status = document.getElementById('acc-pay-status').value;
+    const tbody  = document.getElementById('acc-pay-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">불러오는 중…</td></tr>';
+    try {
+      const qs = new URLSearchParams();
+      if (from)   qs.set('from', from);
+      if (to)     qs.set('to', to);
+      if (method) qs.set('method', method);
+      if (status) qs.set('status', status);
+      const r = await fetch('/api/admin/reports/payments-list?' + qs.toString(), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      if (!d.rows.length) { tbody.innerHTML = '<tr><td colspan="7" class="empty">조건에 맞는 결제 내역이 없습니다.</td></tr>'; return; }
+      tbody.innerHTML = d.rows.map(p => {
+        const t = new Date((p.paid_at||0)*1000+9*3600*1000).toISOString().slice(0,16).replace('T',' ');
+        const c = p.status === 'paid' ? 'ok' : p.status === 'refunded' ? 'warn' : 'bad';
+        return `<tr><td>${_esc(t)}</td><td>${_esc('#'+p.id)}</td><td>${_esc(p.user_id||'')}</td>
+                <td>${_esc(p.memo||'-')}</td><td style="text-align:right">${_fmt(p.amount_krw)}</td>
+                <td>${_esc(p.method||'')}</td><td>${_badge(p.status, c)}</td></tr>`;
+      }).join('');
+    } catch(e) { _showErr(tbody, e, 7); }
+  };
+  window.accDownloadPaymentsCsv = function(){
+    const from = document.getElementById('acc-pay-from').value;
+    const to = document.getElementById('acc-pay-to').value;
+    const qs = new URLSearchParams({ format:'csv' });
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    location.href = '/api/admin/reports/payments-list?' + qs.toString();
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 2. 국가별 강사료 환전
+  // ──────────────────────────────────────────────────────────
+  window.accLoadForex = async function(){
+    const month = document.getElementById('acc-fx-month').value || _today().slice(0,7);
+    const tbody = document.getElementById('acc-fx-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">불러오는 중…</td></tr>';
+    try {
+      const r = await fetch('/api/admin/reports/payslips?period=' + encodeURIComponent(month), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      // 국가별 그룹화
+      const fxRates = { '필리핀':24.34, 'PH':24.34, 'Philippines':24.34,
+                        '미국':1365, 'US':1365, 'USA':1365, '캐나다':1365, 'CA':1365,
+                        '영국':1720, 'UK':1720, '호주':1720, 'AU':1720,
+                        '한국':1, 'KR':1, 'Korea':1 };
+      const byCountry = {};
+      for (const r of d.rows||[]) {
+        const c = r.country || '한국';
+        const fx = fxRates[c] || 1;
+        if (!byCountry[c]) byCountry[c] = { country:c, count:0, krw:0, fx };
+        byCountry[c].count++;
+        byCountry[c].krw += (r.net||r.payment_krw||0);
+      }
+      const arr = Object.values(byCountry);
+      if (!arr.length) { tbody.innerHTML = `<tr><td colspan="6" class="empty">${month} 강사 급여 데이터 없음</td></tr>`; return; }
+      tbody.innerHTML = arr.map(r => {
+        const local = r.fx > 0 ? Math.round(r.krw / r.fx) : r.krw;
+        return `<tr><td>${_esc(r.country)}</td><td style="text-align:right">${r.count}</td>
+                <td style="text-align:right">${local.toLocaleString()}</td>
+                <td style="text-align:right">${r.fx.toLocaleString()}</td>
+                <td style="text-align:right">${_fmt(r.krw)}</td>
+                <td>${_badge('대기','info')}</td></tr>`;
+      }).join('');
+    } catch(e) { _showErr(tbody, e, 6); }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 3. 가맹점 정산
+  // ──────────────────────────────────────────────────────────
+  window.accLoadFranchise = async function(){
+    const month = document.getElementById('acc-fr-month').value || _today().slice(0,7);
+    const tbody = document.getElementById('acc-fr-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">불러오는 중…</td></tr>';
+    try {
+      const r = await fetch('/api/admin/reports/franchise?period=' + encodeURIComponent(month), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      tbody.innerHTML = (d.rows||[]).map(r => `
+        <tr><td><b>${_esc(r.franchise_name)}</b></td>
+            <td style="text-align:right">${_fmt(r.gross_revenue)}</td>
+            <td style="text-align:right;color:#dc2626">${_fmt(r.hq_fee)}</td>
+            <td style="text-align:right"><b>${_fmt(r.net_settlement)}</b></td>
+            <td>${_esc(r.due_date)}</td>
+            <td>${_badge(r.status, r.status==='ok'?'ok':r.status==='hold'?'warn':'info')}</td></tr>`).join('') ||
+        '<tr><td colspan="6" class="empty">가맹점 데이터 없음</td></tr>';
+    } catch(e) { _showErr(tbody, e, 6); }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 4. 환불 / 취소 관리
+  // ──────────────────────────────────────────────────────────
+  window.accLoadRefunds = async function(){
+    const status = document.getElementById('acc-rf-status').value;
+    const tbody = document.getElementById('acc-rf-tbody');
+    tbody.innerHTML = '<tr><td colspan="7" class="empty">불러오는 중…</td></tr>';
+    try {
+      const qs = new URLSearchParams();
+      if (status) qs.set('status', status);
+      const r = await fetch('/api/admin/reports/refunds-list?' + qs.toString(), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      tbody.innerHTML = (d.rows||[]).map(r => {
+        const t = new Date((r.paid_at||0)*1000+9*3600*1000).toISOString().slice(0,10);
+        return `<tr><td>${_esc(t)}</td><td>${_esc(r.user_id||'')}</td>
+                <td style="text-align:right">${_fmt(r.amount_krw)}</td>
+                <td style="text-align:right">${_fmt(r.amount_krw)}</td>
+                <td>${_esc(r.memo||'-')}</td>
+                <td>${_badge(r.status, r.status==='refunded'?'warn':'bad')}</td>
+                <td><button class="primary" style="padding:3px 8px;font-size:11px" onclick="alert('상세 처리는 별도 페이지에서')">처리</button></td></tr>`;
+      }).join('') || '<tr><td colspan="7" class="empty">환불/취소 내역 없음</td></tr>';
+    } catch(e) { _showErr(tbody, e, 7); }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 5. 세무 (부가세·세금계산서·현금영수증)
+  // ──────────────────────────────────────────────────────────
+  window.accLoadTax = async function(){
+    const month = document.getElementById('acc-tax-month').value || _today().slice(0,7);
+    const kind  = document.getElementById('acc-tax-kind').value || 'vat';
+    const tbody = document.getElementById('acc-tax-tbody');
+    tbody.innerHTML = '<tr><td colspan="5" class="empty">집계 중…</td></tr>';
+    try {
+      const r = await fetch(`/api/admin/reports/tax?period=${encodeURIComponent(month)}&kind=${kind}`, { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      tbody.innerHTML = (d.rows||[]).map(r => `
+        <tr><td>${_esc(r.kind)}</td>
+            <td style="text-align:right">${_fmt(r.supply)}</td>
+            <td style="text-align:right">${_fmt(r.vat)}</td>
+            <td style="text-align:right"><b>${_fmt(r.total)}</b></td>
+            <td style="text-align:right">${(r.count||0).toLocaleString()}</td></tr>`).join('') +
+        `<tr style="background:#fef3c7;font-weight:700"><td colspan="2">납부할 부가세</td>
+         <td style="text-align:right">${_fmt(d.summary.vat)}</td>
+         <td colspan="2">원천세 ${_fmt(d.summary.withholding)}</td></tr>`;
+    } catch(e) { _showErr(tbody, e, 5); }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 6. 회계 전표 / 분개장
+  // ──────────────────────────────────────────────────────────
+  window.accLoadJournal = async function(){
+    let from = document.getElementById('acc-jrn-from').value;
+    let to   = document.getElementById('acc-jrn-to').value;
+    if (!from || !to) {
+      // 기본 = 이번 달 전체
+      const today = _today();
+      const ym = today.slice(0,7);
+      from = ym + '-01'; to = today;
+      document.getElementById('acc-jrn-from').value = from;
+      document.getElementById('acc-jrn-to').value = to;
+    }
+    const tbody = document.getElementById('acc-jrn-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">불러오는 중…</td></tr>';
+    try {
+      const qs = new URLSearchParams({ from, to });
+      const r = await fetch('/api/admin/reports/journal?' + qs.toString(), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      tbody.innerHTML = (d.entries||[]).map(e => `
+        <tr><td>${_esc(e.date)}</td><td><code style="font-size:11px">${_esc(e.doc_no)}</code></td>
+            <td>${_esc(e.desc)}</td>
+            <td style="text-align:right;color:#0ea5e9">${_esc(e.debit_account)} ${_fmt(e.amount)}</td>
+            <td style="text-align:right;color:#dc2626">${_esc(e.credit_account)} ${_fmt(e.amount)}</td>
+            <td><code style="font-size:10px">${_esc(e.ref||'')}</code></td></tr>`).join('') +
+        `<tr style="background:#fef3c7;font-weight:800"><td colspan="3">합계</td>
+         <td style="text-align:right">차변 ${_fmt(d.totals.debit)}</td>
+         <td style="text-align:right">대변 ${_fmt(d.totals.credit)}</td><td>대차 ${d.totals.debit===d.totals.credit?'✓ 일치':'✗ 불일치'}</td></tr>` ||
+         '<tr><td colspan="6" class="empty">전표 데이터 없음</td></tr>';
+    } catch(e) { _showErr(tbody, e, 6); }
+  };
+
+  window.accNewJournalEntry = function(){
+    const date  = prompt('일자 (YYYY-MM-DD)', _today());
+    if (!date) return;
+    const desc  = prompt('적요 (예: 사무실 임대료 지급)');
+    if (!desc) return;
+    const debit = prompt('차변 계정과목 (예: 임대료)');
+    if (!debit) return;
+    const credit = prompt('대변 계정과목 (예: 현금)');
+    if (!credit) return;
+    const amount = Number(prompt('금액 (KRW)', '0'));
+    if (!amount || isNaN(amount)) { alert('금액이 올바르지 않습니다.'); return; }
+    alert(`전표 입력 (수동 기록):\n\n  일자: ${date}\n  적요: ${desc}\n  차변: ${debit} ${amount.toLocaleString()}\n  대변: ${credit} ${amount.toLocaleString()}\n\n현재 자동 기록은 student_payments + payslips 에서만 생성됩니다.\n수동 전표는 별도 ledger 테이블이 추가되면 저장 가능합니다.`);
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 7. 매출 대시보드 (차트)
+  // ──────────────────────────────────────────────────────────
+  window.accLoadSalesChart = async function(){
+    const wrap = document.getElementById('acc-sales-chart');
+    wrap.innerHTML = '<div style="text-align:center;padding:30px"><span class="empty">차트 생성 중…</span></div>';
+    try {
+      const year = new Date().getUTCFullYear();
+      const r = await fetch('/api/admin/reports/annual?year=' + year, { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      // 차트 캔버스 + 표
+      wrap.innerHTML = `
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div style="background:#fff;padding:14px;border-radius:8px;border:1px solid #e5e7eb">
+            <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:8px">${year}년 월별 매출 (KRW)</div>
+            <canvas id="acc-sales-canvas" height="180"></canvas>
+          </div>
+          <div style="background:#fff;padding:14px;border-radius:8px;border:1px solid #e5e7eb;overflow:auto;max-height:300px">
+            <table style="width:100%;font-size:11px;border-collapse:collapse">
+              <thead><tr style="background:#f3f4f6"><th style="padding:6px;text-align:left">월</th><th style="padding:6px;text-align:right">매출</th><th style="padding:6px;text-align:right">순이익</th></tr></thead>
+              <tbody>${d.monthlies.map(m=>`<tr><td style="padding:5px;border-bottom:1px solid #f3f4f6">${m.period}</td><td style="padding:5px;text-align:right;border-bottom:1px solid #f3f4f6">${_fmt(m.revenue)}</td><td style="padding:5px;text-align:right;border-bottom:1px solid #f3f4f6;color:${m.net>=0?'#16a34a':'#dc2626'}">${_fmt(m.net)}</td></tr>`).join('')}
+              <tr style="background:#fef3c7;font-weight:800"><td style="padding:6px">합계</td><td style="padding:6px;text-align:right">${_fmt(d.totals.revenue)}</td><td style="padding:6px;text-align:right">${_fmt(d.totals.net)}</td></tr></tbody>
+            </table>
+          </div>
+        </div>`;
+      // Chart.js 그리기 (전역 Chart 사용 — 페이지 상단에 이미 로드됨)
+      if (typeof Chart !== 'undefined') {
+        const ctx = document.getElementById('acc-sales-canvas');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: d.monthlies.map(m=>m.period.slice(5)+'월'),
+            datasets: [
+              { label:'매출', data: d.monthlies.map(m=>m.revenue), backgroundColor:'rgba(251,146,60,0.7)' },
+              { label:'순이익', data: d.monthlies.map(m=>m.net), backgroundColor:'rgba(34,197,94,0.7)', type:'line', borderColor:'rgba(34,197,94,1)', tension:0.3 },
+            ],
+          },
+          options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ position:'bottom' } } },
+        });
+      }
+    } catch(e) {
+      wrap.innerHTML = `<div style="color:#ef4444;text-align:center;padding:20px">에러: ${_esc(e.message||e)}</div>`;
+    }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 8. 미수금 / 미지급금
+  // ──────────────────────────────────────────────────────────
+  window.accLoadReceivables = async function(){
+    const kind = document.getElementById('acc-ar-kind').value || 'receivable';
+    const tbody = document.getElementById('acc-ar-tbody');
+    tbody.innerHTML = '<tr><td colspan="6" class="empty">불러오는 중…</td></tr>';
+    try {
+      const r = await fetch('/api/admin/reports/receivables?kind=' + kind, { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      if (!d.rows.length) { tbody.innerHTML = '<tr><td colspan="6" class="empty">데이터 없음</td></tr>'; return; }
+      tbody.innerHTML = d.rows.map(r => {
+        const overdueColor = r.days > 30 ? 'color:#dc2626;font-weight:700' : '';
+        return `<tr><td>${_esc(r.target)}</td><td>${_esc(r.issued||'')}</td>
+                <td style="text-align:right">${_fmt(r.amount)}</td>
+                <td style="text-align:right;${overdueColor}">${r.days||0}일</td>
+                <td>${_esc(r.note||'')}</td>
+                <td><button class="primary" style="padding:3px 8px;font-size:11px" onclick="alert('처리는 별도 화면에서')">처리</button></td></tr>`;
+      }).join('') +
+      `<tr style="background:#fef3c7;font-weight:700"><td colspan="2">합계 ${d.totals.count}건</td><td style="text-align:right">${_fmt(d.totals.amount)}</td><td colspan="3"></td></tr>`;
+    } catch(e) { _showErr(tbody, e, 6); }
+  };
+
+  // ──────────────────────────────────────────────────────────
+  // 9. 손익 / 재무제표 — 생성 / PDF / Excel
+  // ──────────────────────────────────────────────────────────
+  function _statementUrl(format){
+    const month = document.getElementById('acc-fs-month').value || _today().slice(0,7);
+    const type  = document.getElementById('acc-fs-type').value || 'pl';
+    const qs = new URLSearchParams({ type, period: month });
+    if (format) qs.set('format', format);
+    return '/api/admin/reports/statement?' + qs.toString();
+  }
+  window.accGenStatement = async function(){
+    const wrap = document.getElementById('acc-fs-result');
+    wrap.innerHTML = '<div style="text-align:center;padding:30px;color:#6b7280">생성 중…</div>';
+    try {
+      const r = await fetch(_statementUrl(), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      let html = `<div style="font-size:18px;font-weight:800;color:#111;border-bottom:3px solid #fb923c;padding-bottom:6px;margin-bottom:14px">${_esc(d.label)}</div>`;
+      for (const sec of d.sections) {
+        html += `<div style="font-size:14px;font-weight:700;color:#374151;margin:14px 0 6px">${_esc(sec.title)}</div>`;
+        html += '<table style="width:100%;border-collapse:collapse;font-size:13px">';
+        for (const it of sec.items) {
+          const cls = it.highlight ? 'background:#fef3c7;font-weight:800' :
+                      it.total ? 'background:#f3f4f6;font-weight:700;border-top:2px solid #d1d5db' :
+                      it.sub ? 'font-style:italic;color:#6b7280' : '';
+          const big = it.big ? 'font-size:16px;color:#fb923c' : '';
+          if (it.amount === undefined) {
+            html += `<tr style="${cls}"><td colspan="2" style="padding:6px 10px">${_esc(it.name)}</td></tr>`;
+          } else {
+            const amtColor = (it.amount < 0) ? 'color:#dc2626' : '';
+            html += `<tr style="${cls}"><td style="padding:6px 10px;${big}">${_esc(it.name)}</td>
+                     <td style="padding:6px 10px;text-align:right;${big};${amtColor}">${_fmt(it.amount)}</td></tr>`;
+          }
+        }
+        html += '</table>';
+      }
+      wrap.innerHTML = html;
+    } catch(e) {
+      wrap.innerHTML = `<div style="color:#ef4444;text-align:center;padding:20px">에러: ${_esc(e.message||e)}</div>`;
+    }
+  };
+  window.accStatementPdf = async function(){
+    // 새 창에 인쇄 가능한 형태로 출력
+    const w = window.open('', '_blank', 'width=1000,height=900,scrollbars=yes');
+    if (!w) { alert('팝업이 차단되었습니다.'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>재무제표</title></head><body><div style="text-align:center;padding:30px">생성 중…</div></body></html>');
+    try {
+      const r = await fetch(_statementUrl(), { credentials:'include' });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error||'API error');
+      let body = `<h1 style="font-size:22px;border-bottom:3px solid #fb923c;padding-bottom:8px">${_esc(d.label)}</h1>`;
+      for (const sec of d.sections) {
+        body += `<h2 style="font-size:14px;color:#374151;margin:16px 0 6px">${_esc(sec.title)}</h2>`;
+        body += '<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px">';
+        for (const it of sec.items) {
+          const bg = it.highlight ? '#fef3c7' : it.total ? '#f3f4f6' : '#fff';
+          const fw = it.highlight || it.total ? 'bold' : 'normal';
+          const fs = it.big ? '16px' : '13px';
+          if (it.amount === undefined) {
+            body += `<tr style="background:${bg};font-weight:${fw}"><td colspan="2" style="padding:8px 10px;border-bottom:1px solid #e5e7eb">${_esc(it.name)}</td></tr>`;
+          } else {
+            const ac = it.amount < 0 ? '#dc2626' : '#111';
+            body += `<tr style="background:${bg};font-weight:${fw}"><td style="padding:8px 10px;font-size:${fs};border-bottom:1px solid #e5e7eb">${_esc(it.name)}</td><td style="padding:8px 10px;font-size:${fs};text-align:right;color:${ac};border-bottom:1px solid #e5e7eb">${_fmt(it.amount)}</td></tr>`;
+          }
+        }
+        body += '</table>';
+      }
+      w.document.open();
+      w.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${_esc(d.label)}</title>
+        <style>@page{size:A4;margin:18mm 14mm}body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;color:#111;padding:30px;max-width:900px;margin:0 auto}.toolbar{position:fixed;top:10px;right:10px;background:#fff;padding:8px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1)}.toolbar button{padding:8px 14px;font-size:13px;border:0;border-radius:6px;cursor:pointer;margin-left:6px;font-weight:600}@media print{.toolbar{display:none}body{padding:0}}</style>
+        </head><body>
+        <div class="toolbar">
+          <button style="background:#fb923c;color:#fff" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+          <button style="background:#6b7280;color:#fff" onclick="window.close()">✕ 닫기</button>
+        </div>
+        ${body}
+        <p style="margin-top:30px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;text-align:center">망고아이 ERP · 생성: ${new Date().toLocaleString('ko-KR')}</p>
+        </body></html>`);
+      w.document.close();
+    } catch(e) {
+      w.document.body.innerHTML = `<h2 style="color:#ef4444">에러: ${_esc(e.message||e)}</h2>`;
+    }
+  };
+  window.accStatementExcel = function(){
+    location.href = _statementUrl('csv');
+  };
 })();
 
 </script>
