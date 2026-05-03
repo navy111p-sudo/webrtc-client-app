@@ -8487,6 +8487,277 @@ window.rebuildGlobalSearchIndex = function() {
     location.replace('/admin/login');
   });
 })();
+
+// ════════════════════════════════════════════════════════════════════
+// 📥 회계 리포트 6종 — 실제 D1 데이터 → 인쇄 가능한 HTML + CSV 다운로드
+// (2026-05-03 추가)
+// ════════════════════════════════════════════════════════════════════
+
+(function(){
+  // 기본값 = 현재(KST)월
+  function defaultMonth(){
+    const d = new Date(Date.now() + 9*3600*1000);
+    return d.toISOString().slice(0,7);
+  }
+  function defaultYear(){
+    const d = new Date(Date.now() + 9*3600*1000);
+    return d.getUTCFullYear();
+  }
+  // 기간 입력 보정
+  function getInputs(){
+    const periodEl = document.getElementById('acc-rep-period');
+    const yearEl   = document.getElementById('acc-rep-year');
+    const qEl      = document.getElementById('acc-rep-quarter');
+    if (periodEl && !periodEl.value) periodEl.value = defaultMonth();
+    if (yearEl   && !yearEl.value)   yearEl.value   = defaultYear();
+    return {
+      period: (periodEl && periodEl.value) || defaultMonth(),
+      year:   Number(yearEl && yearEl.value) || defaultYear(),
+      quarter: Number(qEl && qEl.value) || 1,
+    };
+  }
+
+  function fmtKRW(n){
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    return '₩ ' + Number(n).toLocaleString('ko-KR');
+  }
+  function fmtNum(n, unit){
+    if (n === null || n === undefined || isNaN(n)) return '—';
+    if (unit === 'KRW') return fmtKRW(n);
+    if (unit === '%')   return Number(n).toFixed(1) + '%';
+    if (unit === '배')   return Number(n).toFixed(2) + '배';
+    return Number(n).toLocaleString('ko-KR') + (unit?' '+unit:'');
+  }
+
+  // 메인: 리포트 종류별 fetch + render
+  window.openReport = async function(type){
+    const inputs = getInputs();
+    let url, csvUrl, title;
+    switch(type){
+      case 'monthly':
+        url    = `/api/admin/reports/monthly?period=${inputs.period}`;
+        csvUrl = url + '&format=csv';
+        title  = `월간 회계 리포트 (${inputs.period})`;
+        break;
+      case 'quarterly':
+        url    = `/api/admin/reports/quarterly?year=${inputs.year}&q=${inputs.quarter}`;
+        csvUrl = url + '&format=csv';
+        title  = `${inputs.year}년 ${inputs.quarter}분기 보고서`;
+        break;
+      case 'annual':
+        url    = `/api/admin/reports/annual?year=${inputs.year}`;
+        csvUrl = url + '&format=csv';
+        title  = `${inputs.year}년 연간 결산`;
+        break;
+      case 'franchise':
+        url    = `/api/admin/reports/franchise?period=${inputs.period}`;
+        csvUrl = url + '&format=csv';
+        title  = `가맹점별 정산서 (${inputs.period})`;
+        break;
+      case 'payslips':
+        url    = `/api/admin/reports/payslips?period=${inputs.period}`;
+        csvUrl = url + '&format=csv';
+        title  = `강사별 급여명세서 (${inputs.period})`;
+        break;
+      case 'kpi':
+        url    = `/api/admin/reports/kpi?period=${inputs.period}`;
+        csvUrl = url + '&format=csv';
+        title  = `경영지표 KPI (${inputs.period})`;
+        break;
+      default: alert('알 수 없는 리포트: '+type); return;
+    }
+
+    // 새 창 먼저 열기 (사용자 액션 컨텍스트 유지 — 팝업 차단 회피)
+    const win = window.open('', '_blank', 'width=1100,height=900,scrollbars=yes');
+    if (!win) {
+      alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해 주세요.');
+      return;
+    }
+    win.document.write(`<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${title}</title>
+      <style>body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;color:#111;padding:30px;text-align:center}.spinner{display:inline-block;width:36px;height:36px;border:4px solid #e5e7eb;border-top-color:#fb923c;border-radius:50%;animation:s 0.8s linear infinite;margin-bottom:14px}@keyframes s{to{transform:rotate(360deg)}}</style>
+      </head><body><div class="spinner"></div><div>리포트 데이터 불러오는 중...</div></body></html>`);
+
+    try {
+      const r = await fetch(url, { credentials:'include' });
+      const data = await r.json();
+      if (!data.ok) throw new Error(data.error || 'API error');
+      const html = renderReport(type, data, csvUrl);
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    } catch(e) {
+      win.document.body.innerHTML = `<h2 style="color:#ef4444">에러: ${e.message}</h2>
+        <p>API 호출 실패 — wrangler 배포 후 다시 시도하세요.</p>
+        <p><code>${url}</code></p>`;
+    }
+  };
+
+  // ════════════════════════════════════════════════════════════════
+  // 렌더링 — 인쇄 가능한 HTML 문서 생성
+  // ════════════════════════════════════════════════════════════════
+  function renderReport(type, d, csvUrl){
+    const baseStyle = `
+      <style>
+        @page { size:A4; margin:18mm 14mm; }
+        body{font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;color:#111;padding:24px;max-width:1000px;margin:0 auto;background:#fff}
+        h1{font-size:24px;margin:0 0 4px;border-bottom:3px solid #fb923c;padding-bottom:8px}
+        h2{font-size:16px;color:#374151;margin:20px 0 8px}
+        .meta{color:#6b7280;font-size:12px;margin-bottom:18px}
+        table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+        th{background:#f3f4f6;padding:8px 10px;text-align:left;border-bottom:2px solid #d1d5db;font-weight:700}
+        td{padding:8px 10px;border-bottom:1px solid #e5e7eb}
+        td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+        tr.total td{background:#fef3c7;font-weight:800;border-top:2px solid #f59e0b}
+        .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:16px 0}
+        .kpi{background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:14px}
+        .kpi .l{font-size:11px;color:#6b7280;margin-bottom:4px}
+        .kpi .v{font-size:20px;font-weight:800;color:#111}
+        .pl-box{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+        .pl-box .b{padding:14px;border-radius:10px;border:1px solid #e5e7eb;background:#f9fafb}
+        .pl-box .b.rev{background:#dbeafe;border-color:#93c5fd}
+        .pl-box .b.cost{background:#fee2e2;border-color:#fca5a5}
+        .pl-box .b.net{background:#dcfce7;border-color:#86efac}
+        .pl-box .b.margin{background:#fef3c7;border-color:#fcd34d}
+        .pl-box .l{font-size:11px;color:#374151;margin-bottom:4px}
+        .pl-box .v{font-size:18px;font-weight:800}
+        .toolbar{position:fixed;top:10px;right:10px;background:#fff;padding:8px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:1000}
+        .toolbar button{padding:8px 14px;font-size:13px;border:0;border-radius:6px;cursor:pointer;margin-left:6px;font-weight:600}
+        .toolbar .print{background:#fb923c;color:#fff}
+        .toolbar .csv{background:#10b981;color:#fff}
+        .toolbar .close{background:#6b7280;color:#fff}
+        @media print{.toolbar{display:none}body{padding:0}}
+        .footer{margin-top:30px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;text-align:center}
+      </style>`;
+    const toolbar = `<div class="toolbar">
+        <button class="print" onclick="window.print()">🖨️ 인쇄 / PDF 저장</button>
+        <button class="csv" onclick="location.href='${csvUrl}'">📥 CSV</button>
+        <button class="close" onclick="window.close()">✕ 닫기</button>
+      </div>`;
+    const footer = `<div class="footer">망고아이 ERP · 생성: ${new Date().toLocaleString('ko-KR')} · 출처: webrtc-unified-platform</div>`;
+
+    let body = '';
+    if (type === 'monthly')   body = renderMonthly(d);
+    else if (type === 'quarterly') body = renderQuarterly(d);
+    else if (type === 'annual')    body = renderAnnual(d);
+    else if (type === 'franchise') body = renderFranchise(d);
+    else if (type === 'payslips')  body = renderPayslips(d);
+    else if (type === 'kpi')       body = renderKpi(d);
+
+    return `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${d.label||'Report'}</title>${baseStyle}</head><body>${toolbar}${body}${footer}</body></html>`;
+  }
+
+  function renderMonthly(d){
+    const s = d.summary, c = d.cost, p = d.pl;
+    return `
+      <h1>📅 월간 회계 리포트</h1>
+      <div class="meta">${d.label}</div>
+      <div class="pl-box">
+        <div class="b rev"><div class="l">매출</div><div class="v">${fmtKRW(p.revenue)}</div></div>
+        <div class="b cost"><div class="l">비용</div><div class="v">${fmtKRW(p.cost)}</div></div>
+        <div class="b net"><div class="l">순이익</div><div class="v">${fmtKRW(p.net_income)}</div></div>
+        <div class="b margin"><div class="l">이익률</div><div class="v">${p.margin_pct}%</div></div>
+      </div>
+      <h2>매출 요약</h2>
+      <table>
+        <tr><th>결제 건수</th><td class="num">${s.pay_count.toLocaleString()} 건</td>
+            <th>결제 학생수</th><td class="num">${s.paying_users.toLocaleString()} 명</td></tr>
+        <tr><th>평균 결제액</th><td class="num">${fmtKRW(s.avg_per_user)}</td>
+            <th>활성 학생수</th><td class="num">${s.active_students.toLocaleString()} 명</td></tr>
+        <tr><th>신규 가입</th><td class="num">${s.new_signups.toLocaleString()} 명</td>
+            <th>만료</th><td class="num">${s.expirations.toLocaleString()} 명</td></tr>
+        <tr><th>총 수업 분</th><td class="num">${s.class_minutes.toLocaleString()} 분</td>
+            <th>세션 수</th><td class="num">${s.class_sessions.toLocaleString()} 건</td></tr>
+      </table>
+      <h2>비용 내역</h2>
+      <table>
+        <tr><th>강사 급여</th><td class="num">${fmtKRW(c.teacher_payroll)}</td><td class="num">${c.teacher_count} 명</td></tr>
+        <tr><th>PG 수수료 (추정 3.3%)</th><td class="num">${fmtKRW(c.pg_fee)}</td><td></td></tr>
+        <tr><th>운영비 (추정 10%)</th><td class="num">${fmtKRW(c.op_cost)}</td><td></td></tr>
+        <tr class="total"><td>합계</td><td class="num">${fmtKRW(c.total)}</td><td></td></tr>
+      </table>
+      <h2>결제 수단별 분포</h2>
+      <table>
+        <thead><tr><th>결제수단</th><th class="num">건수</th><th class="num">금액</th></tr></thead>
+        <tbody>
+          ${(d.by_method||[]).map(m => `<tr><td>${m.method||'기타'}</td><td class="num">${m.cnt}</td><td class="num">${fmtKRW(m.total)}</td></tr>`).join('')}
+        </tbody>
+      </table>`;
+  }
+
+  function renderQuarterly(d){
+    const ms = d.monthlies, t = d.totals;
+    return `
+      <h1>📊 분기 보고서</h1>
+      <div class="meta">${d.label} · 이익률 ${d.margin_pct}%</div>
+      <table>
+        <thead><tr><th>월</th><th class="num">매출</th><th class="num">결제건</th><th class="num">강사 급여</th><th class="num">비용 합계</th><th class="num">순이익</th></tr></thead>
+        <tbody>
+          ${ms.map(m => `<tr><td>${m.period}</td><td class="num">${fmtKRW(m.revenue)}</td><td class="num">${m.pays}</td><td class="num">${fmtKRW(m.payroll)}</td><td class="num">${fmtKRW(m.cost)}</td><td class="num"><b>${fmtKRW(m.net)}</b></td></tr>`).join('')}
+          <tr class="total"><td>합계</td><td class="num">${fmtKRW(t.revenue)}</td><td class="num">${t.pays}</td><td class="num">${fmtKRW(t.payroll)}</td><td class="num">${fmtKRW(t.cost)}</td><td class="num">${fmtKRW(t.net)}</td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  function renderAnnual(d){
+    const ms = d.monthlies, t = d.totals;
+    return `
+      <h1>📈 연간 결산</h1>
+      <div class="meta">${d.label} · 이익률 ${d.margin_pct}% · 세무사 제출용</div>
+      <table>
+        <thead><tr><th>월</th><th class="num">매출</th><th class="num">결제건</th><th class="num">강사 급여</th><th class="num">비용 합계</th><th class="num">순이익</th></tr></thead>
+        <tbody>
+          ${ms.map(m => `<tr><td>${m.period}</td><td class="num">${fmtKRW(m.revenue)}</td><td class="num">${m.pays}</td><td class="num">${fmtKRW(m.payroll)}</td><td class="num">${fmtKRW(m.cost)}</td><td class="num"><b>${fmtKRW(m.net)}</b></td></tr>`).join('')}
+          <tr class="total"><td>연간 합계</td><td class="num">${fmtKRW(t.revenue)}</td><td class="num">${t.pays}</td><td class="num">${fmtKRW(t.payroll)}</td><td class="num">${fmtKRW(t.cost)}</td><td class="num">${fmtKRW(t.net)}</td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  function renderFranchise(d){
+    return `
+      <h1>🏢 가맹점별 정산서</h1>
+      <div class="meta">${d.label} · 본사 수수료율 ${(d.hq_fee_rate*100).toFixed(1)}%</div>
+      <table>
+        <thead><tr><th>가맹점</th><th class="num">총 매출</th><th class="num">본사 수수료</th><th class="num">정산액</th><th>송금예정일</th><th>상태</th></tr></thead>
+        <tbody>
+          ${d.rows.map(r => `<tr><td>${r.franchise_name}</td><td class="num">${fmtKRW(r.gross_revenue)}</td><td class="num">${fmtKRW(r.hq_fee)}</td><td class="num"><b>${fmtKRW(r.net_settlement)}</b></td><td>${r.due_date}</td><td>${r.status}</td></tr>`).join('')}
+          <tr class="total"><td>합계</td><td class="num">${fmtKRW(d.totals.gross)}</td><td class="num">${fmtKRW(d.totals.fee)}</td><td class="num">${fmtKRW(d.totals.net)}</td><td></td><td></td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  function renderPayslips(d){
+    return `
+      <h1>👨‍🏫 강사별 급여명세서</h1>
+      <div class="meta">${d.label} · 총 ${d.teacher_count}명</div>
+      <table>
+        <thead><tr><th>강사ID</th><th>이름</th><th>국가</th><th class="num">수업분</th><th class="num">기본급여</th><th class="num">상여</th><th class="num">공제</th><th class="num">실지급</th></tr></thead>
+        <tbody>
+          ${d.rows.map(r => `<tr><td>${r.teacher_id}</td><td><b>${r.teacher_name||r.teacher_id}</b></td><td>${r.country||''}</td><td class="num">${(r.minutes||0).toLocaleString()}</td><td class="num">${fmtKRW(r.payment_krw)}</td><td class="num">${fmtKRW(r.bonus)}</td><td class="num" style="color:#dc2626">${fmtKRW(-Math.abs(r.deduction||0))}</td><td class="num"><b>${fmtKRW(r.net)}</b></td></tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:#6b7280">데이터 없음</td></tr>'}
+          <tr class="total"><td colspan="3">합계</td><td class="num">${(d.totals.minutes||0).toLocaleString()}</td><td class="num">${fmtKRW(d.totals.payment)}</td><td class="num">${fmtKRW(d.totals.bonus)}</td><td class="num">${fmtKRW(d.totals.deduction)}</td><td class="num">${fmtKRW(d.totals.net)}</td></tr>
+        </tbody>
+      </table>`;
+  }
+
+  function renderKpi(d){
+    return `
+      <h1>⭐ 경영지표 (KPI)</h1>
+      <div class="meta">${d.label}</div>
+      <div class="kpi-grid">
+        ${d.kpis.map(k => `<div class="kpi"><div class="l">${k.label}</div><div class="v">${fmtNum(k.value, k.unit)}</div></div>`).join('')}
+      </div>
+      <h2>요약 손익</h2>
+      <table>
+        <tr><th>매출</th><td class="num">${fmtKRW(d.revenue)}</td></tr>
+        <tr><th>비용 (강사급여 포함)</th><td class="num">${fmtKRW(d.cost)}</td></tr>
+        <tr class="total"><td>순이익</td><td class="num">${fmtKRW(d.net)}</td></tr>
+      </table>
+      <p style="font-size:11px;color:#6b7280;margin-top:14px;line-height:1.6">
+        ※ ARPU = 매출 / 활성 학생수 · LTV = 학생당 평균 누적 결제액 · CAC 추정 = 매출의 5%를 마케팅비로 가정 / 신규 학생수 ·
+        ROI = 순이익 / 비용 · LTV/CAC가 3 이상이면 건전.
+      </p>`;
+  }
+})();
+
 </script>
 
 </div>
