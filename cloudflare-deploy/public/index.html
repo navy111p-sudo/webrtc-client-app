@@ -7520,7 +7520,23 @@ window.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'ph-card';
       card.style.cursor = 'pointer';
-      card.addEventListener('click', () => { if (window.openTeacherDetail) window.openTeacherDetail(t); });
+      card.style.transition = 'transform 0.2s, box-shadow 0.2s';
+      card.title = '클릭하면 상세 프로필이 열립니다';
+      card.addEventListener('mouseenter', () => {
+        card.style.transform = 'translateY(-3px)';
+        card.style.boxShadow = '0 6px 20px rgba(251,191,36,0.35)';
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.transform = '';
+        card.style.boxShadow = '';
+      });
+      card.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        ev.preventDefault();
+        console.log('[teacher-card] click →', t.korean_name || t.english_name);
+        if (window.openTeacherDetail) window.openTeacherDetail(t);
+        else alert('프로필 열기 함수가 로드되지 않았습니다. 페이지를 새로고침하세요.');
+      });
 
       const photo = document.createElement('div');
       photo.className = 'ph-photo';
@@ -11563,11 +11579,4 @@ window.showRulesModal = function() {
     bg.addEventListener('click', (e) => { if (e.target === bg) closeRulesModal(); });
     bg.innerHTML = `
       <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(251,191,36,0.35);border-radius:18px;max-width:720px;width:96%;margin:auto;box-shadow:0 24px 64px -16px rgba(0,0,0,0.8);overflow:hidden">
-        <!-- 헤더 -->
-        <div style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.05));padding:22px 26px 16px;border-bottom:1px solid rgba(255,255,255,0.06);position:relative">
-          <button onclick="closeRulesModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.1);border:0;color:#cbd5e1;font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%">✕</button>
-          <h2 style="color:#fbbf24;font-size:22px;margin:0 0 4px;font-weight:900;letter-spacing:-0.4px">📋 결제 및 수강 규정</h2>
-          <p style="color:#cbd5e1;font-size:12.5px;margin:0">결제 전 반드시 확인 부탁드립니다.</p>
-        </div>
-
-        <!-- 본문 --
+        <!-- 헤더 -
