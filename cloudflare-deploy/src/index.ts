@@ -257,7 +257,6 @@ export default {
         path === '/api/community/posts' ||
         path === '/api/teacher-profiles' ||
         path === '/api/_bootstrap' ||
-        path === '/api/student/recordings' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -1022,8 +1021,7 @@ function isAdminPath(path: string, method: string): boolean {
   // 학생 클라이언트 자동 호출인 /start, /stop, /upload, /stream, /complete, /blob/upload 는 열어둠.
   if (path === '/api/recordings' && method === 'GET') return true;
   if (path === '/api/recordings/blob/list' && method === 'GET') return true;
-  // 🎬 GET /api/recordings/blob/{key} — 학생 본인 녹화본 재생용. 공개 허용 (DELETE 만 관리자)
-  if (path.startsWith('/api/recordings/blob/') && method === 'DELETE') return true;
+  if (path.startsWith('/api/recordings/blob/') && (method === 'GET' || method === 'DELETE')) return true;
   // DELETE /api/recordings/{숫자ID} (Mango DB 레코드 삭제) — 관리자
   // 단, /api/recordings/blob/* 는 위에서 이미 처리됐고, /start·/stop 은 POST 라 method 체크로 통과
   if (method === 'DELETE' && /^\/api\/recordings\/\d+$/.test(path)) return true;
