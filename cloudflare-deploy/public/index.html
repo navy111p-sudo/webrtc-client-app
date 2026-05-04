@@ -9346,10 +9346,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(overlay);
       };
     });
-    // 자동 로그인 저장된 경우 바로 카드 표시, 아니면 로그인 폼
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem('mangoi_rec_login') || 'null'); } catch(e){}
-
+    // 항상 로그인 폼 먼저 표시 (사용자 요청에 따라 자동 스킵 비활성)
     function renderCards() {
       showModal(`
         <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
@@ -9363,12 +9360,7 @@ window.addEventListener('DOMContentLoaded', () => {
       `);
     }
 
-    if (saved && saved.uid === '정우영') {
-      renderCards();
-      return;
-    }
-
-    // 로그인 폼 — 정우영 / 1234 미리 입력
+    // 로그인 폼 — 정우영 / 1234 미리 입력 (항상 먼저 표시)
     showModal(`
       <h2>📼 녹화본 복습 — 로그인</h2>
       <p style="color:#cbd5e1">본인 수업 녹화본을 시청하려면 로그인이 필요합니다.</p>
@@ -11554,4 +11546,5 @@ window.addEventListener('DOMContentLoaded', () => {
             <span></span>
           </div>
         </div>
-        <d
+        <div style="padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:11px;color:#86efac">
+          ✅ 위 가상계좌로
