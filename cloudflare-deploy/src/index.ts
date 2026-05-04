@@ -1202,4 +1202,10 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
     buildInfo,
     bindings
   }, null, 2), {
-    status: 
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    }
+  });
+}

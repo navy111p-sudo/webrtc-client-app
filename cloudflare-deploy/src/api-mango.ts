@@ -364,9 +364,7 @@ export async function handleMangoApi(
   const method = request.method;
 
   try {
-    // ===== 🛠️ 진단 + 테이블 부트스트랩 (모든 필수 테이블 일괄 생성) =====
-    //   문제 발생 시 브라우저에서 직접 호출: /api/_bootstrap
-    //   응답으로 빌드시각·DB 연결·생성된 테이블 목록 반환
+    // ===== 🛠️ 진단 + 테이블 부트스트랩 =====
     if (path === '/api/_bootstrap' && method === 'GET') {
       const result: any = { ok: true, ts: new Date().toISOString(), tables_created: [], errors: [] };
       const tables = [
@@ -377,7 +375,6 @@ export async function handleMangoApi(
       for (const [name, sql] of tables) {
         try {
           await env.DB.exec(sql);
-          // SELECT 으로 실제 존재 확인
           const check = await env.DB.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).bind(name).first();
           if (check) result.tables_created.push(name);
           else result.errors.push({ table: name, error: '생성 후 조회 실패' });
@@ -385,26 +382,18 @@ export async function handleMangoApi(
           result.errors.push({ table: name, error: String(e?.message || e) });
         }
       }
-      // 배포 식별자 (wrangler.toml 의 BUILD_STAMP)
       result.build_stamp = (env as any).BUILD_STAMP || 'unknown';
       result.ok = result.errors.length === 0;
       return json(result);
     }
 
     // ===== 👨‍🏫 공개 강사 목록 (학생 홈페이지 강사진 미리보기용) =====
-    //   /api/teacher-profiles?limit=30  →  활동중인 강사만, 민감정보(은행/메모) 제외
     if (path === '/api/teacher-profiles' && method === 'GET') {
       try {
         await env.DB.exec(`CREATE TABLE IF NOT EXISTS teacher_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, korean_name TEXT NOT NULL, english_name TEXT, email TEXT, phone TEXT, kakao_id TEXT, dob TEXT, gender TEXT, image_url TEXT, intro_video_url TEXT, active_region TEXT, origin_region TEXT, fee_per_10min INTEGER, group_name TEXT, status TEXT DEFAULT '활동중', join_date TEXT, leave_date TEXT, education TEXT, career TEXT, certifications TEXT, available_days TEXT, available_hours TEXT, bank_name TEXT, bank_account TEXT, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER);`);
         const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
         const rs = await env.DB.prepare(
-          `SELECT id, korean_name, english_name, image_url, intro_video_url,
-                  group_name, career, certifications, education,
-                  available_days, available_hours, status, origin_region
-             FROM teacher_profiles
-            WHERE status = '활동중'
-            ORDER BY korean_name ASC
-            LIMIT ?`
+          `SELECT id, korean_name, english_name, image_url, intro_video_url, group_name, career, certifications, education, available_days, available_hours, status, origin_region FROM teacher_profiles WHERE status = '활동중' ORDER BY korean_name ASC LIMIT ?`
         ).bind(limit).all();
         const rows = (rs.results || []) as any[];
         return json({ ok: true, items: rows, rows, count: rows.length });
@@ -1417,8 +1406,7 @@ export async function handleMangoApi(
     //   PATCH  /api/admin/teacher-profiles/:id      (수정)
     //   DELETE /api/admin/teacher-profiles/:id      (제거)
     // ════════════════════════════════════════════════════════════
-    // ⚠ env.DB.exec() 는 단일 라인 SQL 만 허용 — 여러 줄로 쓰면 SQL_STATEMENT_ERROR
-    //   해결: 줄바꿈 없이 한 줄로 작성. 또는 prepare().run() 사용.
+    // ⚠ env.DB.exec() 는 단일 라인 SQL 만 허용 — 여러 줄 쓰면 SQL_STATEMENT_ERROR
     const ensureTeacherProfilesSchema = async () => {
       await env.DB.exec(`CREATE TABLE IF NOT EXISTS teacher_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, korean_name TEXT NOT NULL, english_name TEXT, email TEXT, phone TEXT, kakao_id TEXT, dob TEXT, gender TEXT, image_url TEXT, intro_video_url TEXT, active_region TEXT, origin_region TEXT, fee_per_10min INTEGER, group_name TEXT, status TEXT DEFAULT '활동중', join_date TEXT, leave_date TEXT, education TEXT, career TEXT, certifications TEXT, available_days TEXT, available_hours TEXT, bank_name TEXT, bank_account TEXT, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER);`);
     };
@@ -2913,4 +2901,92 @@ export async function handleMangoApi(
                           AND (a.gaze_samples = 0 OR a.gaze_samples IS NULL)
                           AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
                           AND a.joined_at <= (
-                                CO
+                                COALESCE(r.ended_at,
+                                         r.started_at + COALESCE(r.duration_ms, 0),
+                                         r.started_at + 10800000) + 30000
+                              )
+                      ) AS gaze_missing_count,
+                      (SELECT COUNT(1) FROM attendance a
+                        WHERE a.room_id = r.room_id
+                          AND COALESCE(a.total_session_ms, 0) > 0
+                          AND COALESCE(a.total_active_ms, 0) = 0
+                          AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
+                          AND a.joined_at <= (
+                                COALESCE(r.ended_at,
+                                         r.started_at + COALESCE(r.duration_ms, 0),
+                                         r.started_at + 10800000) + 30000
+                              )
+                      ) AS speaking_zero_count
+               FROM recordings r ${whereSQL}
+               ORDER BY r.started_at DESC LIMIT ? OFFSET ?`;
+      const listBinds = [...whereBinds, limit, offset];
+      const rs = await env.DB.prepare(q).bind(...listBinds).all();
+
+      // 응답 본문은 배열 그대로 유지 (하위 호환성). 페이지네이션 메타는 헤더로 전달.
+      return new Response(JSON.stringify(rs.results || []), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Expose-Headers': 'X-Total-Count, X-Offset, X-Limit',
+          'X-Total-Count': String(total),
+          'X-Offset':      String(offset),
+          'X-Limit':       String(limit),
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+
+    if (path.startsWith('/api/recordings/') && method === 'DELETE') {
+      const id = parseInt(path.replace('/api/recordings/', ''), 10);
+      if (!id) return json({ ok: false, error: 'invalid_id' }, 400);
+      await env.DB.prepare(`UPDATE recordings SET status = 'deleted' WHERE id = ?`).bind(id).run();
+      return json({ ok: true });
+    }
+
+    // ===== 동의(Consent) =====
+    if (path === '/api/consents' && method === 'POST') {
+      const b = await parseJsonBody(request);
+      if (!b || !b.user_id) return invalidBody(['user_id']);
+      const now = Date.now();
+      const ip = request.headers.get('cf-connecting-ip') || '';
+      const ua = request.headers.get('user-agent') || '';
+      const res = await env.DB.prepare(
+        `INSERT INTO consents (user_id, username, role, consent_version,
+           recording_consent, voice_analysis_consent, attendance_consent, reward_consent, kakao_consent,
+           guardian_required, guardian_status, guardian_contact,
+           ip_address, user_agent, consented_at, raw_payload)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        b.user_id, b.username || null, b.role || 'student', b.consent_version || 'v1.0',
+        b.recording ? 1 : 0, b.voice_analysis ? 1 : 0, b.attendance ? 1 : 0, b.reward ? 1 : 0, b.kakao ? 1 : 0,
+        b.guardian_required ? 1 : 0, b.guardian_status || (b.guardian_required ? 'pending' : 'not_required'), b.guardian_contact || null,
+        ip, ua, now, JSON.stringify(b)
+      ).run();
+      return json({ ok: true, consent_id: res.meta.last_row_id, consented_at: now });
+    }
+
+    if (path.startsWith('/api/consents/') && method === 'GET') {
+      const userId = decodeURIComponent(path.replace('/api/consents/', ''));
+      const row = await env.DB.prepare(
+        `SELECT * FROM consents WHERE user_id = ? AND withdrawn_at IS NULL
+         ORDER BY consented_at DESC LIMIT 1`
+      ).bind(userId).first();
+      return json(row || null);
+    }
+
+    if (path === '/api/consents/withdraw' && method === 'POST') {
+      const b = await request.json() as any;
+      const now = Date.now();
+      await env.DB.prepare(
+        `UPDATE consents SET withdrawn_at = ? WHERE user_id = ? AND withdrawn_at IS NULL`
+      ).bind(now, b.user_id).run();
+      return json({ ok: true, withdrawn_at: now });
+    }
+
+    return null;
+  } catch (err: any) {
+    console.error('Mango API error:', err);
+    return json({ ok: false, error: String(err?.message || err) }, 500);
+  }
+}
