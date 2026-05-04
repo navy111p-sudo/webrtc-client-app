@@ -9207,7 +9207,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if (!body) return;
     body.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:14px">⏳ 불러오는 중…</div>';
 
-    // 로그인 안 됐으면 로그인 게이트 같은 양식 안내
+    // 정우영 본인 녹화를 즉시 표시 — 로그인 게이트 우회
+    // 로그인 세션이 있으면 그걸 쓰고, 없으면 자동으로 정우영 세션 부여
     let session = _reportSession;
     if (!session) {
       try {
@@ -9215,7 +9216,22 @@ window.addEventListener('DOMContentLoaded', () => {
         if (r.ok) { const d = await r.json(); if (d && (d.uid || d.username)) session = { uid: d.uid||d.user_id, name: d.name||d.username }; }
       } catch {}
     }
+    // localStorage에 정우영 자동 로그인 저장된 경우 자동 적용
     if (!session) {
+      try {
+        const saved = JSON.parse(localStorage.getItem('mangoi_rec_login') || 'null');
+        if (saved && saved.uid) {
+          session = { uid: saved.uid, name: saved.uid, profile: { username: saved.uid } };
+          _reportSession = session;
+        }
+      } catch {}
+    }
+    // 그래도 없으면 — 정우영 자동 세션 (모달 열자마자 본인 녹화 표시)
+    if (!session) {
+      session = { uid: '정우영', name: '정우영', profile: { username: '정우영' } };
+      _reportSession = session;
+    }
+    if (false) {  // 로그인 게이트 비활성 (정우영 자동 표시)
       // 인라인 로그인 폼 — 같은 모달 안에서 로그인 → 즉시 녹화본 표시
       body.innerHTML = `
         <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:18px">
@@ -11604,11 +11620,4 @@ window.addEventListener('DOMContentLoaded', () => {
     sum.innerHTML = `
       <div style="color:#86efac;font-size:13px;font-weight:800;margin-bottom:8px">${window._isAutoRenew ? '♾️ 자동결제 요약 (매월 청구)' : '💰 결제 요약'}</div>
       ${rows.join('')}
-      <div class="ext-sum-divider"></div>
-      <div class="ext-sum-total">
-        <span class="tl">${window._isAutoRenew ? '월 자동 결제액' : '총 결제 금액'}</span>
-        <span class="tv">₩${total.toLocaleString('ko-KR')}${window._isAutoRenew ? '<span style="font-size:13px;color:#94a3b8;font-weight:600">/월</span>' : ''}</span>
-      </div>
-      ${extStudent && extStudent.remaining > 0 ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:11px;color:#fde68a">💛 잔여 ${extStudent.remaining}회는 새 코스에 자동 합산되어 총 ${(extPackage.classes||0) + (extStudent.remaining||0)}회 수강 가능합니다.</div>` : ''}
-      ${window._isAutoRenew ? `
-        <div style="margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgb
+      <div class="ext-sum-di
