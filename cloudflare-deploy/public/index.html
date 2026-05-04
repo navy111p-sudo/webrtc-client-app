@@ -9332,18 +9332,7 @@ window.addEventListener('DOMContentLoaded', () => {
         });
       }
     }
-    const safe = (s)=>String(s||'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
-    body.innerHTML = `
-      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">
-        <input id="rec-search" placeholder="🔍 강사·주제 검색" oninput="filterRecordings(this.value)" style="flex:1;padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px;outline:none" />
-        <select id="rec-period" onchange="filterRecordings(document.getElementById('rec-search').value)" style="padding:8px 12px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:8px;color:#fff;font-size:13px">
-          <option value="0">전체</option>
-          <option value="7">최근 7일</option>
-          <option value="30">최근 30일</option>
-        </select>
-      </div>
-      <div id="rec-list" style="max-height:48vh;overflow-y:auto"></div>
-    `;
+    body.innerHTML = '<div id="rec-list" style="max-height:55vh;overflow-y:auto"></div>';
     window._recRows = rows;
     renderRecordingList(rows);
   }
@@ -11613,4 +11602,13 @@ window.addEventListener('DOMContentLoaded', () => {
     const total = computeExtTotal();
     const monthlyTotal = window._isAutoRenew ? total : 0;
     sum.innerHTML = `
-      <div style="color:#86efac;font-size:13px;font-weight:800;margin-bottom:8px">${window._isAutoRenew ? '♾️ 자�
+      <div style="color:#86efac;font-size:13px;font-weight:800;margin-bottom:8px">${window._isAutoRenew ? '♾️ 자동결제 요약 (매월 청구)' : '💰 결제 요약'}</div>
+      ${rows.join('')}
+      <div class="ext-sum-divider"></div>
+      <div class="ext-sum-total">
+        <span class="tl">${window._isAutoRenew ? '월 자동 결제액' : '총 결제 금액'}</span>
+        <span class="tv">₩${total.toLocaleString('ko-KR')}${window._isAutoRenew ? '<span style="font-size:13px;color:#94a3b8;font-weight:600">/월</span>' : ''}</span>
+      </div>
+      ${extStudent && extStudent.remaining > 0 ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:11px;color:#fde68a">💛 잔여 ${extStudent.remaining}회는 새 코스에 자동 합산되어 총 ${(extPackage.classes||0) + (extStudent.remaining||0)}회 수강 가능합니다.</div>` : ''}
+      ${window._isAutoRenew ? `
+        <div style="margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgb
