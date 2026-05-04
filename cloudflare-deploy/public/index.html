@@ -6648,6 +6648,53 @@ window.addEventListener('DOMContentLoaded', () => {
   #info-modal-content ul { padding-left:20px; margin:8px 0 }
   #info-modal-content .info-cta { display:inline-block; padding:10px 20px; margin-top:14px; background:linear-gradient(135deg,#fbbf24,#f59e0b); color:#1a0f08; border-radius:10px; font-weight:800; text-decoration:none; transition:transform 0.2s }
   #info-modal-content .info-cta:hover { transform:translateY(-2px) }
+
+  /* 💛 가맹점 감성 호소문 */
+  #info-modal-content .franchise-emo {
+    margin: 20px 0 16px;
+    padding: 18px 18px 14px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(251,191,36,0.10), rgba(245,158,11,0.04) 60%, rgba(15,23,42,0.6));
+    border: 1px solid rgba(251,191,36,0.35);
+    box-shadow: 0 6px 22px rgba(251,191,36,0.08), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+  #info-modal-content .franchise-emo::before {
+    content: '';
+    position: absolute; top: -40px; right: -40px;
+    width: 140px; height: 140px;
+    background: radial-gradient(circle, rgba(251,191,36,0.15), transparent 70%);
+    pointer-events: none;
+  }
+  #info-modal-content .franchise-emo-head {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 12px; gap: 10px; flex-wrap: wrap;
+  }
+  #info-modal-content .franchise-voice-btn {
+    background: linear-gradient(135deg, #fbbf24, #d97706);
+    color: #1a0f08; border: 0; border-radius: 999px;
+    padding: 7px 14px; font-size: 12.5px; font-weight: 800;
+    cursor: pointer; transition: transform 0.15s, box-shadow 0.2s;
+    box-shadow: 0 3px 10px rgba(251,191,36,0.35);
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  #info-modal-content .franchise-voice-btn:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 4px 14px rgba(251,191,36,0.5); }
+  #info-modal-content .franchise-voice-btn.playing { background: linear-gradient(135deg,#ef4444,#b91c1c); color:#fff; animation: voicePulse 1.2s ease-in-out infinite; }
+  @keyframes voicePulse {
+    0%, 100% { box-shadow: 0 3px 10px rgba(239,68,68,0.4); }
+    50%      { box-shadow: 0 3px 18px rgba(239,68,68,0.85); }
+  }
+  #info-modal-content .emo-lead    { color:#fde68a; font-size:15px; font-weight:600; margin:6px 0 10px; line-height:1.65 }
+  #info-modal-content .emo-pain    { color:#cbd5e1; font-size:13.5px; line-height:1.75; margin:6px 0 14px; padding-left:10px; border-left:3px solid rgba(239,68,68,0.5) }
+  #info-modal-content .emo-turn    { color:#fbbf24; font-size:16px; font-weight:800; margin:14px 0 8px; text-align:center }
+  #info-modal-content .emo-list    { list-style:none; padding:0; margin:8px 0 14px }
+  #info-modal-content .emo-list li { color:#e8e4d8; padding:6px 12px; margin:4px 0; background:rgba(251,191,36,0.06); border-left:3px solid #fbbf24; border-radius:6px; line-height:1.6 }
+  #info-modal-content .emo-proof   { color:#fcd34d; font-size:13.5px; line-height:1.7; margin:14px 0; padding:10px 12px; background:rgba(16,185,129,0.08); border-radius:8px; border:1px solid rgba(16,185,129,0.25) }
+  #info-modal-content .emo-localops{ color:#cbd5e1; font-size:13.5px; line-height:1.7; margin:12px 0; padding:10px 12px; background:rgba(59,130,246,0.06); border-radius:8px; border:1px solid rgba(59,130,246,0.2) }
+  #info-modal-content .emo-philosophy{ color:#fde68a; font-size:14px; line-height:1.75; margin:14px 0; text-align:center; font-weight:500 }
+  #info-modal-content .emo-closing { color:#e8e4d8; font-size:13.5px; line-height:1.8; margin:14px 0 10px; text-align:center }
+  #info-modal-content .emo-signature{ color:#fbbf24; font-size:13px; font-weight:800; text-align:center; margin:8px 0 0; letter-spacing:0.5px; opacity:0.9 }
   #info-modal-content .info-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin:10px 0 }
   #info-modal-content .info-tile { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:10px; padding:14px; text-align:center }
   #info-modal-content .info-tile b { color:#fbbf24; font-size:13px; display:block; margin-bottom:6px }
@@ -7433,6 +7480,8 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   window.closeInfoModal = function(){
     modal.style.display = 'none';
+    // 모달 닫을 때 음성 재생 중이면 중지
+    try { if (window.speechSynthesis && window.speechSynthesis.speaking) window.speechSynthesis.cancel(); } catch{}
     // 정보 모달 닫으면 히트맵 그리드(메뉴)로 자동 복귀
     const gmEl = document.getElementById('grid-menu');
     if (gmEl) gmEl.style.display = 'block';
@@ -7440,6 +7489,78 @@ window.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && modal.style.display !== 'none') closeInfoModal();
   });
+
+  // 🔊 가맹점 감성 호소문 음성 재생 (Web Speech API)
+  window.playFranchiseVoice = function(btn) {
+    if (typeof window.speechSynthesis === 'undefined') {
+      alert('이 브라우저는 음성 재생을 지원하지 않습니다.\n(Chrome / Edge / Safari 권장)');
+      return;
+    }
+    const synth = window.speechSynthesis;
+    const lblEl = btn && btn.querySelector('.vlbl');
+    // 이미 재생 중이면 중지
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+      btn.classList.remove('playing');
+      if (lblEl) lblEl.textContent = '음성으로 듣기';
+      btn.firstChild.nodeValue = '🔊 ';
+      return;
+    }
+    const text = [
+      '원장님, 혹시 지금 이런 고민 안고 계시지 않으세요?',
+      '매달 오르는 환율, 부담스러운 인건비와 숙소비, 4대보험에 항공료, 소개비까지.',
+      '영미권 원어민 한 명 모셔 오는 데 들어가는 시간과 비용은 늘 학원의 무거운 짐이었습니다.',
+      '갑자기 그만두는 강사, 잦은 결석, 길어지는 휴가. 원장님 마음 한구석은 항상 불안하셨을 겁니다.',
+      '이제, 망고아이가 그 짐을 함께 나누겠습니다.',
+      '저희 선생님들은 친절하고 재밌고, 열정적이며 부지런합니다.',
+      '결석 없고 휴가 없으며, 비용도 합리적입니다.',
+      '무엇보다, 진심으로 학생들을 사랑하고 정말 잘 가르칩니다.',
+      '이미 함께하신 학원장님들. 한 분도 빠짐없이 대만족, 수익은 눈에 띄게 성장하셨습니다.',
+      '저희는 필리핀 현지에 직접 콜센터를 운영합니다. 원하시는 시간, 레벨, 스타일, 1대1 맞춤으로 준비해 드립니다.',
+      '영어는 결국, 집중과 반복, 그리고 흥미입니다.',
+      '20년 전통의 망고아이가 그 노하우로, 원장님께 스트레스 없는 행복한 학원을 만들어 드리겠습니다.',
+      '원장님의 학생들을 향한 사랑과 열정, 그리고 저희 원어민 선생님들의 진심 어린 수업이 만나면, 지역에서 가장 사랑받는 학원이 됩니다.',
+      '망고아이가 함께 만들어 가겠습니다.'
+    ].join(' ');
+
+    function speakWith(voice) {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'ko-KR';
+      utter.rate = 0.95;
+      utter.pitch = 1.05;
+      utter.volume = 1.0;
+      if (voice) utter.voice = voice;
+      utter.onstart = () => {
+        btn.classList.add('playing');
+        if (lblEl) lblEl.textContent = '재생 중지';
+        btn.firstChild.nodeValue = '⏸️ ';
+      };
+      utter.onend = () => {
+        btn.classList.remove('playing');
+        if (lblEl) lblEl.textContent = '음성으로 듣기';
+        btn.firstChild.nodeValue = '🔊 ';
+      };
+      utter.onerror = utter.onend;
+      synth.speak(utter);
+    }
+    // 한국어 음성 우선 선택 (목소리 목록이 비동기 로드되는 브라우저 대응)
+    let voices = synth.getVoices();
+    let koVoice = voices.find(v => /^ko/i.test(v.lang));
+    if (koVoice || voices.length > 0) {
+      speakWith(koVoice || null);
+    } else {
+      // voiceschanged 이벤트 후 재시도
+      const handler = () => {
+        synth.removeEventListener('voiceschanged', handler);
+        const v = synth.getVoices();
+        const k = v.find(x => /^ko/i.test(x.lang));
+        speakWith(k || null);
+      };
+      synth.addEventListener('voiceschanged', handler);
+      // 안전망: 1초 후에도 못 잡으면 기본 음성으로 시도
+      setTimeout(() => { if (!synth.speaking && !synth.pending) speakWith(null); }, 1000);
+    }
+  };
 
   // ──── 정보 모달 콘텐츠 ────
   const FEATURES = `
@@ -8046,6 +8167,63 @@ window.addEventListener('DOMContentLoaded', () => {
       <li>이메일: <b>partner@mangoi.kr</b></li>
       <li>전화: <b>1588-0000 (내선 3)</b></li>
     </ul>
+
+    <!-- 💛 감성 호소문 + 음성 듣기 -->
+    <div class="franchise-emo">
+      <div class="franchise-emo-head">
+        <h3 style="margin:0;color:#fbbf24">💛 원장님께 드리는 진심의 한마디</h3>
+        <button type="button" class="franchise-voice-btn" onclick="playFranchiseVoice(this)" aria-label="음성으로 듣기">
+          🔊 <span class="vlbl">음성으로 듣기</span>
+        </button>
+      </div>
+
+      <p class="emo-lead">
+        <b>원장님,</b> 혹시 지금 이런 고민 안고 계시지 않으세요?
+      </p>
+      <p class="emo-pain">
+        매달 오르는 <b>환율</b>, 부담스러운 <b>인건비·숙소비</b>,
+        <b>4대보험·항공료·소개비</b>까지 —<br>
+        영미권 원어민 한 명 모셔 오는 데 들어가는 시간과 비용은
+        늘 학원의 무거운 짐이었습니다.<br>
+        갑자기 그만두는 강사, 잦은 결석, 길어지는 휴가…
+        원장님 마음 한구석은 항상 불안하셨을 겁니다.
+      </p>
+
+      <p class="emo-turn">
+        🥭 <b>이제, 망고아이가 그 짐을 함께 나누겠습니다.</b>
+      </p>
+      <ul class="emo-list">
+        <li>✅ <b>친절하고 재밌고</b>, 열정적이며 부지런합니다</li>
+        <li>✅ <b>결석 없고 휴가 없으며</b>, 비용도 합리적입니다</li>
+        <li>✅ 무엇보다, <b>진심으로 학생들을 사랑하고 정말 잘 가르칩니다</b></li>
+      </ul>
+
+      <p class="emo-proof">
+        🏆 이미 함께하신 학원장님들 — <b>한 분도 빠짐없이 "대만족"</b>,
+        <b>수익은 눈에 띄게 성장</b>하셨습니다.
+      </p>
+
+      <p class="emo-localops">
+        📞 저희는 <b>필리핀 현지에 직접 콜센터를 운영</b>합니다.<br>
+        원하시는 시간, 레벨, 스타일 — <b>1:1 맞춤</b>으로 준비해 드립니다.
+      </p>
+
+      <p class="emo-philosophy">
+        💛 영어는 결국 — <b>집중·반복·흥미</b>입니다.<br>
+        <b>20년 전통의 망고아이</b>가 그 노하우로,
+        원장님께 <b>스트레스 없는 행복한 학원</b>을 만들어 드리겠습니다.
+      </p>
+
+      <p class="emo-closing">
+        원장님의 <b>학생들을 향한 사랑과 열정</b>,<br>
+        그리고 저희 <b>원어민 선생님들의 진심 어린 수업</b>이 만나면 —<br>
+        <b style="color:#fbbf24">지역에서 가장 사랑받는 학원</b>이 됩니다. ✨
+      </p>
+      <p class="emo-signature">
+        — 망고아이가 함께 만들어 가겠습니다 —
+      </p>
+    </div>
+
     <a class="info-cta" onclick="closeInfoModal();window.openInquiryModal&&window.openInquiryModal()">📨 가맹 상담 신청 →</a>`;
 
   const CALLCENTER = `
@@ -11243,219 +11421,4 @@ window.showRulesModal = function() {
         </div>
 
         <!-- 푸터 버튼 -->
-        <div style="padding:16px 26px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:10px;justify-content:flex-end">
-          <button onclick="closeRulesModal()" style="padding:10px 22px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:10px;color:#1a0f08;font-size:13px;font-weight:800;cursor:pointer">확인했습니다</button>
-        </div>
-      </div>
-    `;
-    document.body.appendChild(bg);
-  }
-  bg.style.display = 'flex';
-};
-window.closeRulesModal = function() {
-  const bg = document.getElementById('rules-modal-bg');
-  if (bg) bg.style.display = 'none';
-};
-
-// 결제 step 1 product-card에서 rules-card에만 다른 스타일 강제 적용
-(function(){
-  const style = document.createElement('style');
-  style.textContent = `
-    .product-card.rules-card {
-      border: 1.5px dashed rgba(78,201,255,0.45) !important;
-      background: linear-gradient(135deg, rgba(78,201,255,0.06), rgba(78,201,255,0.02)) !important;
-    }
-    .product-card.rules-card:hover {
-      border-color: rgba(78,201,255,0.7) !important;
-      background: linear-gradient(135deg, rgba(78,201,255,0.10), rgba(78,201,255,0.04)) !important;
-      transform: translateY(-2px);
-    }
-    .product-card.rules-card .prod-icon { filter: drop-shadow(0 2px 4px rgba(78,201,255,0.4)); }
-    .product-card.rules-card .prod-name { color: #9ee5ff !important; }
-    .product-card.rules-card .prod-detail { color: #cbd5e1 !important; }
-  `;
-  document.head.appendChild(style);
-})();
-
-// ━━━━━━━━━━ 8단계 레벨 시스템 — hover 자동 열림 ━━━━━━━━━━
-(function(){
-  const _timers = new WeakMap();
-  const HOVER_OPEN_DELAY  = 50;   // 진입 후 열림까지 (ms)
-  const HOVER_CLOSE_DELAY = 200;  // 떠난 후 닫힘까지 (ms)
-
-  function clearTimer(row) {
-    const t = _timers.get(row);
-    if (t) { clearTimeout(t); _timers.delete(row); }
-  }
-
-  function scheduleOpen(row) {
-    clearTimer(row);
-    const t = setTimeout(() => {
-      if (!row.hasAttribute('open')) row.setAttribute('open', '');
-    }, HOVER_OPEN_DELAY);
-    _timers.set(row, t);
-  }
-
-  function scheduleClose(row) {
-    clearTimer(row);
-    // .lvl-pinned는 사용자가 클릭해서 고정한 행 — 자동 닫지 않음
-    if (row.classList && row.classList.contains('lvl-pinned')) return;
-    const t = setTimeout(() => row.removeAttribute('open'), HOVER_CLOSE_DELAY);
-    _timers.set(row, t);
-  }
-
-  // 행 마우스 진입/떠남 — 이벤트 위임 (mouseover/mouseout이 버블링됨)
-  document.addEventListener('mouseover', (e) => {
-    if (!e.target || !e.target.closest) return;
-    const row = e.target.closest('#info-modal-content .lvl-row');
-    if (!row) return;
-    scheduleOpen(row);
-  });
-
-  document.addEventListener('mouseout', (e) => {
-    if (!e.target || !e.target.closest) return;
-    const row = e.target.closest('#info-modal-content .lvl-row');
-    if (!row) return;
-    // 마우스가 이 행을 정말로 떠났을 때만 닫기 (자식 요소로 이동한 건 아닌지 체크)
-    if (e.relatedTarget && row.contains(e.relatedTarget)) return;
-    scheduleClose(row);
-  });
-
-  // 클릭 → 핀(고정) 토글 — 한 번 클릭하면 마우스 떠나도 안 닫힘
-  document.addEventListener('click', (e) => {
-    if (!e.target || !e.target.closest) return;
-    const summary = e.target.closest('#info-modal-content .lvl-row > summary');
-    if (!summary) return;
-    const row = summary.parentElement;
-    if (row && row.classList) {
-      // 클릭이 이미 details 토글을 처리하므로 pin 토글만 추가
-      if (row.classList.contains('lvl-pinned')) {
-        row.classList.remove('lvl-pinned');
-      } else {
-        row.classList.add('lvl-pinned');
-      }
-    }
-  });
-
-  // 헤더 컬럼 hover — 해당 컬럼의 모든 행에 강조 효과 (이벤트 위임)
-  document.addEventListener('mouseover', (e) => {
-    if (!e.target || !e.target.closest) return;
-    const head = e.target.closest('#info-modal-content .lvl-head');
-    if (!head) return;
-    const table = head.closest('.lvl-table');
-    if (!table) return;
-    const col = e.target.closest('.lvl-col-cat, .lvl-col-lv, .lvl-col-en');
-    table.classList.remove('hover-cat', 'hover-lv', 'hover-en');
-    if (col?.classList.contains('lvl-col-cat')) table.classList.add('hover-cat');
-    else if (col?.classList.contains('lvl-col-lv')) table.classList.add('hover-lv');
-    else if (col?.classList.contains('lvl-col-en')) table.classList.add('hover-en');
-  });
-  document.addEventListener('mouseout', (e) => {
-    if (!e.target || !e.target.closest) return;
-    const head = e.target.closest('#info-modal-content .lvl-head');
-    if (!head) return;
-    const table = head.closest('.lvl-table');
-    if (!table) return;
-    if (e.relatedTarget && head.contains(e.relatedTarget)) return;
-    table.classList.remove('hover-cat', 'hover-lv', 'hover-en');
-  });
-})();
-</script>
-
-<!-- ━━━━━━━━━━ 🌌 우주 뉴에이지 앰비언트 자동재생 ━━━━━━━━━━ -->
-<script>
-(function(){
-  let _zaraStarted = false;
-  let _zaraCtx = null;
-  let _zaraStops = [];
-  let _zaraBadge = null;
-  let _zaraButton = null;
-  let _zaraTimer = null;
-
-  function makeBadge(text) {
-    if (_zaraBadge) return;
-    const b = document.createElement('div');
-    b.id = 'zara-badge';
-    b.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99996;padding:5px 12px;background:linear-gradient(135deg,rgba(15,23,42,0.92),rgba(30,41,59,0.92));backdrop-filter:blur(8px);color:#fde68a;border:1px solid rgba(251,191,36,0.45);border-radius:99px;font-size:11px;font-weight:700;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;box-shadow:0 6px 16px -4px rgba(0,0,0,0.45);cursor:pointer;animation:zaraIn 0.4s cubic-bezier(0.34,1.56,0.64,1);user-select:none;letter-spacing:0.2px;line-height:1;white-space:nowrap';
-    b.innerHTML = text;
-    document.body.appendChild(b);
-    _zaraBadge = b;
-    if (!document.getElementById('zara-style')) {
-      const s = document.createElement('style');
-      s.id = 'zara-style';
-      s.textContent = `
-        @keyframes zaraIn { from{opacity:0;transform:translate(-50%,-12px)} to{opacity:1;transform:translate(-50%,0)} }
-        @keyframes zaraOut { from{opacity:1;transform:translate(-50%,0)} to{opacity:0;transform:translate(-50%,-12px)} }
-        @keyframes zaraPulse { 0%,100%{box-shadow:0 12px 32px -8px rgba(0,0,0,0.5),0 0 0 0 rgba(251,191,36,0.4)} 50%{box-shadow:0 12px 32px -8px rgba(0,0,0,0.5),0 0 0 8px rgba(251,191,36,0)} }
-        #zara-badge { animation: zaraIn 0.5s cubic-bezier(0.34,1.56,0.64,1), zaraPulse 2s ease-in-out infinite 0.5s !important; }
-      `;
-      document.head.appendChild(s);
-    }
-  }
-  function removeBadge() {
-    if (!_zaraBadge) return;
-    _zaraBadge.style.animation = 'zaraOut 0.4s forwards';
-    setTimeout(() => { _zaraBadge && _zaraBadge.remove(); _zaraBadge = null; }, 400);
-  }
-
-  // 🌌 우주 뉴에이지 앰비언트 합성 — Web Audio API (60초 무한루프 가능)
-  function playZarathustra() {
-    if (_zaraStarted) return;
-    _zaraStarted = true;
-    try {
-      const Ctx = window.AudioContext || window.webkitAudioContext;
-      if (!Ctx) { console.warn('[zara] AudioContext 미지원'); _zaraStarted = false; return; }
-      _zaraCtx = new Ctx();
-      const ctx = _zaraCtx;
-      if (ctx.state === 'suspended') ctx.resume();
-      console.log('[ambient] 🌌 우주 뉴에이지 음악 재생 시작');
-
-      const master = ctx.createGain();
-      master.gain.value = 0.32;
-      // 리버브 효과 — feedback delay
-      const delay = ctx.createDelay(2.0);
-      delay.delayTime.value = 0.42;
-      const delayGain = ctx.createGain();
-      delayGain.gain.value = 0.35;
-      const delayFilter = ctx.createBiquadFilter();
-      delayFilter.type = 'lowpass';
-      delayFilter.frequency.value = 2200;
-      delay.connect(delayGain).connect(delayFilter).connect(delay); // 피드백 루프
-      delay.connect(master);
-      master.connect(ctx.destination);
-
-      // 우주 화음 진행 (D minor → F major → C major → A minor → 반복)
-      // 각 화음 8초씩, 4 화음 × 8초 = 32초, 60초까지 1.875회 반복
-      const chords = [
-        { name:'Dm', freqs:[146.83, 220.00, 293.66, 349.23, 440.00] }, // D3, A3, D4, F4, A4
-        { name:'F',  freqs:[174.61, 261.63, 349.23, 440.00, 523.25] }, // F3, C4, F4, A4, C5
-        { name:'C',  freqs:[130.81, 196.00, 261.63, 329.63, 392.00] }, // C3, G3, C4, E4, G4
-        { name:'Am', freqs:[110.00, 164.81, 220.00, 261.63, 329.63] }, // A2, E3, A3, C4, E4
-      ];
-
-      // ━━ 1. 지속 패드 (사인 + 삼각, 우주적 부드러움) ━━
-      const playChord = (when, dur, freqs) => {
-        freqs.forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          osc.type = i < 2 ? 'triangle' : 'sine';
-          osc.frequency.value = freq;
-          // 미세 디튠
-          osc.detune.value = (i % 2 === 0) ? -3 : 3;
-
-          const filt = ctx.createBiquadFilter();
-          filt.type = 'lowpass';
-          // 천천히 열리는 필터 (우주가 펼쳐지는 느낌)
-          filt.frequency.setValueAtTime(400, when);
-          filt.frequency.linearRampToValueAtTime(1800, when + dur*0.5);
-          filt.frequency.linearRampToValueAtTime(800, when + dur);
-          filt.Q.value = 1.5;
-
-          const g = ctx.createGain();
-          const vol = 0.08 - (i * 0.005);
-          g.gain.setValueAtTime(0, when);
-          g.gain.linearRampToValueAtTime(vol, when + 1.2);    // 부드러운 어택
-          g.gain.linearRampToValueAtTime(vol, when + dur - 1.2);
-          g.gain.linearRampToValueAtTime(0, when + dur);      // 부드러운 릴리즈
-
-          osc.connect(filt).connect(g);
-         
+        <div style="padding:16px 26px;border-top:1px solid rgba(255,255,255,0.0
