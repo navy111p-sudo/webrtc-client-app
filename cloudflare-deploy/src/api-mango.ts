@@ -1390,30 +1390,15 @@ export async function handleMangoApi(
     //   PATCH  /api/admin/teacher-profiles/:id      (수정)
     //   DELETE /api/admin/teacher-profiles/:id      (제거)
     // ════════════════════════════════════════════════════════════
+    // ⚠ env.DB.exec() 는 단일 라인 SQL 만 허용 — 여러 줄로 쓰면 SQL_STATEMENT_ERROR
+    //   해결: 줄바꿈 없이 한 줄로 작성. 또는 prepare().run() 사용.
     const ensureTeacherProfilesSchema = async () => {
-      await env.DB.exec(
-        `CREATE TABLE IF NOT EXISTS teacher_profiles (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          korean_name TEXT NOT NULL,
-          english_name TEXT, email TEXT, phone TEXT, kakao_id TEXT,
-          dob TEXT, gender TEXT,
-          image_url TEXT, intro_video_url TEXT,
-          active_region TEXT, origin_region TEXT,
-          fee_per_10min INTEGER,
-          group_name TEXT,
-          status TEXT DEFAULT '활동중',
-          join_date TEXT, leave_date TEXT,
-          education TEXT, career TEXT, certifications TEXT,
-          available_days TEXT, available_hours TEXT,
-          bank_name TEXT, bank_account TEXT,
-          notes TEXT,
-          created_at INTEGER NOT NULL, updated_at INTEGER
-        )`
-      );
+      await env.DB.exec(`CREATE TABLE IF NOT EXISTS teacher_profiles (id INTEGER PRIMARY KEY AUTOINCREMENT, korean_name TEXT NOT NULL, english_name TEXT, email TEXT, phone TEXT, kakao_id TEXT, dob TEXT, gender TEXT, image_url TEXT, intro_video_url TEXT, active_region TEXT, origin_region TEXT, fee_per_10min INTEGER, group_name TEXT, status TEXT DEFAULT '활동중', join_date TEXT, leave_date TEXT, education TEXT, career TEXT, certifications TEXT, available_days TEXT, available_hours TEXT, bank_name TEXT, bank_account TEXT, notes TEXT, created_at INTEGER NOT NULL, updated_at INTEGER);`);
     };
 
     if (method === 'GET' && path === '/api/admin/teacher-profiles') {
-      try { await ensureTeacherProfilesSchema(); } catch {}
+      try { await ensureTeacherProfilesSchema(); }
+      catch (e: any) { return json({ ok: false, error: '테이블 생성 실패: ' + String(e?.message || e) }, 500); }
       const fStatus = url.searchParams.get('status') || '';
       const fGroup  = url.searchParams.get('group') || '';
       const where: string[] = []; const binds: any[] = [];
@@ -1430,7 +1415,8 @@ export async function handleMangoApi(
     }
 
     if (method === 'POST' && path === '/api/admin/teacher-profiles') {
-      try { await ensureTeacherProfilesSchema(); } catch {}
+      try { await ensureTeacherProfilesSchema(); }
+      catch (e: any) { return json({ ok: false, error: '테이블 생성 실패: ' + String(e?.message || e) }, 500); }
       const b = await parseJsonBody(request);
       if (!b || !b.korean_name) return invalidBody(['korean_name']);
       const now = Date.now();
@@ -2948,8 +2934,4 @@ export async function handleMangoApi(
       const b = await parseJsonBody(request);
       if (!b || !b.user_id) return invalidBody(['user_id']);
       const now = Date.now();
-      const ip = request.headers.get('cf-connecting-ip') || '';
-      const ua = request.headers.get('user-agent') || '';
-      const res = await env.DB.prepare(
-        `INSERT INTO consents (user_id, username, role, consent_version,
-           recording_consent, 
+      const ip = request.header
