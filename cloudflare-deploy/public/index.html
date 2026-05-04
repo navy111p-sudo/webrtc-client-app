@@ -8423,13 +8423,27 @@ window.addEventListener('DOMContentLoaded', () => {
           <p style="color:#94a3b8;font-size:12px;margin-top:10px">※ 더 많은 공지는 카카오 채널 "@망고아이"에서 확인하세요.</p>
         `;
       } else {
+        const safe = (s) => String(s || '').replace(/[<>&"']/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[ch]));
+        const fmtDate = (ts) => {
+          if (!ts) return '';
+          const d = new Date(typeof ts === 'number' ? (ts > 1e12 ? ts : ts*1000) : ts);
+          if (isNaN(d.getTime())) return '';
+          return d.toLocaleString('ko-KR', { month:'2-digit', day:'2-digit' }).replace(/\.\s?$/, '');
+        };
         list.innerHTML = rows.slice(0, 20).map(p => {
-          const pinned = p.pinned ? '📌 ' : '';
-          const safe = (s) => String(s || '').replace(/[<>&"']/g, ch => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[ch]));
+          const isPinned = !!p.pinned;
+          const pinIcon = isPinned ? '📌 ' : '';
+          const dateStr = fmtDate(p.created_at);
+          const author = safe(p.author || '관리자');
+          const bodyText = safe(p.body || '');
+          const bodyHtml = bodyText.slice(0, 400) + (bodyText.length > 400 ? '...' : '');
           return `
-            <div class="info-tile" style="text-align:left;margin-bottom:8px">
-              <b>${pinned}${safe(p.title)}</b>
-              <span style="display:block;margin-top:6px;white-space:pre-wrap">${safe(p.body || '').slice(0, 400)}${(p.body||'').length>400?'...':''}</span>
+            <div class="info-tile" style="text-align:left;margin-bottom:8px;${isPinned?'border-left:3px solid #fbbf24':''}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+                <b style="${isPinned?'color:#fbbf24':''}">${pinIcon}${safe(p.title)}</b>
+                <span style="font-size:10.5px;color:#94a3b8;white-space:nowrap">${dateStr ? dateStr + ' · ' : ''}${author}</span>
+              </div>
+              <span style="display:block;margin-top:4px;white-space:pre-wrap;color:#cbd5e1;font-size:13px;line-height:1.6">${bodyHtml}</span>
             </div>`;
         }).join('');
       }

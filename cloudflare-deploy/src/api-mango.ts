@@ -364,6 +364,26 @@ export async function handleMangoApi(
   const method = request.method;
 
   try {
+    // ===== 📢 공개 공지사항 (학생 홈페이지에서 인증 없이 조회) =====
+    //   /api/community/posts?limit=20  →  community_posts 테이블에서 핀고정 우선·최신순으로 반환
+    //   응답 shape: { ok, rows, posts, count } — 프론트엔드는 rows 또는 posts 둘 다 인식
+    if (path === '/api/community/posts' && method === 'GET') {
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS community_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, body TEXT, author TEXT, pinned INTEGER DEFAULT 0, created_at INTEGER NOT NULL, updated_at INTEGER NOT NULL);`);
+        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+        const rs = await env.DB.prepare(
+          `SELECT id, title, body, author, pinned, created_at, updated_at
+             FROM community_posts
+            ORDER BY pinned DESC, created_at DESC
+            LIMIT ?`
+        ).bind(limit).all();
+        const rows = (rs.results || []) as any[];
+        return json({ ok: true, rows, posts: rows, count: rows.length });
+      } catch (e: any) {
+        return json({ ok: true, rows: [], posts: [], count: 0, _err: String(e?.message || e) });
+      }
+    }
+
     // ===== 출석 =====
     if (path === '/api/attendance/join' && method === 'POST') {
       const b = await parseJsonBody(request);
