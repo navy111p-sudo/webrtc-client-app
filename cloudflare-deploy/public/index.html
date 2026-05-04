@@ -7520,23 +7520,7 @@ window.addEventListener('DOMContentLoaded', () => {
       const card = document.createElement('div');
       card.className = 'ph-card';
       card.style.cursor = 'pointer';
-      card.style.transition = 'transform 0.2s, box-shadow 0.2s';
-      card.title = '클릭하면 상세 프로필이 열립니다';
-      card.addEventListener('mouseenter', () => {
-        card.style.transform = 'translateY(-3px)';
-        card.style.boxShadow = '0 6px 20px rgba(251,191,36,0.35)';
-      });
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-        card.style.boxShadow = '';
-      });
-      card.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        ev.preventDefault();
-        console.log('[teacher-card] click →', t.korean_name || t.english_name);
-        if (window.openTeacherDetail) window.openTeacherDetail(t);
-        else alert('프로필 열기 함수가 로드되지 않았습니다. 페이지를 새로고침하세요.');
-      });
+      card.addEventListener('click', () => { if (window.openTeacherDetail) window.openTeacherDetail(t); });
 
       const photo = document.createElement('div');
       photo.className = 'ph-photo';
@@ -9192,81 +9176,34 @@ window.addEventListener('DOMContentLoaded', () => {
   function escapeLT(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ━━━━━━━━━━ 녹화본 복습 모달 ━━━━━━━━━━
-  // 📼 녹화본 복습 — 정우영 본인 4개 즉시 표시 + admin 엔드포인트로 실제 R2 URL 자동 매칭
   async function showRecordingsModal() {
-    // 1) 정적 4개 카드 즉시 표시 (UI 빠른 반응)
+    // 1) 정적 4개 카드 (UI 빠른 반응)
     let RECS = [
       { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (4회차)',   teacher:'정우영', dur:'17초',     size:'2.5 MB',  url:'' },
       { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (3회차)',   teacher:'정우영', dur:'2분 46초', size:'26.5 MB', url:'' },
       { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (2회차)',   teacher:'정우영', dur:'54초',     size:'8.6 MB',  url:'' },
       { date:'2026-05-04', topic:'방 9yoqs3 — 1:1 영어 회화 (1회차)', teacher:'정우영', dur:'24초',     size:'3.7 MB',  url:'' },
     ];
-
-    // 2) 공개 endpoint 우선 시도 → admin endpoint fallback
-    async function loadRecRows() {
-      try {
-        const r1 = await fetch('/api/student/recordings?uid=' + encodeURIComponent('정우영') + '&limit=50', { credentials: 'include' });
-        if (r1.ok) {
-          const j = await r1.json();
-          if (j && Array.isArray(j.rows) && j.rows.length) return j.rows;
-        }
-      } catch(e){}
-      try {
-        const r2 = await fetch('/api/recordings?limit=200', { credentials: 'include' });
-        if (r2.ok) {
-          const ct = (r2.headers.get('content-type') || '').toLowerCase();
-          if (ct.includes('json')) {
-            const arr = await r2.json();
-            if (Array.isArray(arr)) {
-              return arr.filter(x => {
-                if (!x || x.status === 'deleted') return false;
-                const t = String(x.teacher_name || x.teacher || '');
-                const pids = x.participant_ids || '';
-                const pnames = x.participant_names || '';
-                return t === '정우영' || pids.includes('정우영') || pnames.includes('정우영');
-              }).sort((a, b) => (b.started_at || 0) - (a.started_at || 0));
-            }
-          }
-        }
-      } catch(e){}
-      return [];
-    }
+    // 2) /api/student/recordings 우선 → 정우영 필터
     try {
-      const mine = await loadRecRows();
-      mine.slice(0, RECS.length).forEach((rec, i) => {
-        // /api/student/recordings 는 이미 url 필드를 포함 (file_url 우선, 없으면 blob 경로 자동 생성)
-        if (rec.url) {
-          RECS[i].url = rec.url;
-        } else if (rec.file_url) {
-          RECS[i].url = rec.file_url;
-        } else if (rec.filename) {
-          const blobKey = String(rec.filename).startsWith('recordings/') ? rec.filename : ('recordings/' + rec.filename);
-          RECS[i].url = '/api/recordings/blob/' + encodeURIComponent(blobKey);
-        }
-        // 메타데이터 갱신 (서버 row 우선)
-        if (rec.topic) RECS[i].topic = rec.topic;
-        else if (rec.room_id) RECS[i].topic = '방 ' + rec.room_id + ' — 1:1 영어 회화';
-        if (rec.duration) RECS[i].dur = rec.duration;
-        else if (rec.duration_ms) {
-          const s = Math.round(rec.duration_ms / 1000);
-          RECS[i].dur = s >= 60 ? Math.round(s/60) + '분 ' + (s%60) + '초' : s + '초';
-        }
-        if (rec.size) RECS[i].size = rec.size;
-        else if (rec.size_bytes) {
-          RECS[i].size = rec.size_bytes >= 1048576
-            ? (Math.round(rec.size_bytes / 104857.6) / 10) + ' MB'
-            : Math.round(rec.size_bytes / 1024) + ' KB';
-        }
-        if (rec.date) RECS[i].date = rec.date;
-        else if (rec.started_at) RECS[i].date = new Date(rec.started_at).toISOString().slice(0, 10);
-      });
-    } catch(e){ /* 매칭 실패해도 정적 4개는 그대로 표시 */ }
+      const r = await fetch('/api/student/recordings?uid=' + encodeURIComponent('정우영') + '&limit=50', { credentials: 'include' });
+      if (r.ok) {
+        const j = await r.json();
+        const rows = (j && Array.isArray(j.rows)) ? j.rows : [];
+        rows.slice(0, RECS.length).forEach((rec, i) => {
+          if (rec.url) RECS[i].url = rec.url;
+          else if (rec.file_url) RECS[i].url = /^https?:\/\//.test(String(rec.file_url)) ? String(rec.file_url) : '/api/recordings/blob/' + encodeURIComponent(String(rec.file_url));
+          if (rec.topic) RECS[i].topic = rec.topic;
+          if (rec.duration) RECS[i].dur = rec.duration;
+          if (rec.size) RECS[i].size = rec.size;
+          if (rec.date) RECS[i].date = rec.date;
+        });
+      }
+    } catch(e){}
 
-    // 3) 카드 렌더 — 클릭 시 url 있으면 실제 영상 재생, 없으면 안내
+    // 3) 카드 HTML
     const cards = RECS.map((r, idx) => `
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s"
-           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(251,191,36,0.3)'"
-           onmouseout="this.style.transform='';this.style.boxShadow=''"
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;cursor:pointer"
            onclick="window.playRecording${idx}&&window.playRecording${idx}()">
         <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px">▶️</div>
         <div>
@@ -9280,65 +9217,30 @@ window.addEventListener('DOMContentLoaded', () => {
         </div>
       </div>`).join('');
 
-    // 4) 각 row 에 클릭 핸들러 등록 (실제 영상 재생 또는 안내)
+    // 4) 클릭 핸들러 등록 (영상 플레이어)
     RECS.forEach((r, idx) => {
       window['playRecording' + idx] = function() {
         if (!r.url) {
-          alert('⏳ 영상 업로드 대기 중\n\n수업: ' + r.topic + '\n날짜: ' + r.date + '\n\n녹화본이 R2 저장소에 업로드 완료되면 자동 재생됩니다 (보통 24시간 이내).');
+          alert('⏳ 영상 업로드 대기 중\n\n수업: ' + r.topic + '\n날짜: ' + r.date);
           return;
         }
-        // 실제 영상 플레이어 모달
         const overlay = document.createElement('div');
         overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:20px';
         overlay.addEventListener('click', () => overlay.remove());
         const box = document.createElement('div');
         box.style.cssText = 'background:#0f172a;border:1px solid rgba(251,191,36,0.4);border-radius:14px;padding:18px;max-width:900px;width:100%;max-height:92vh;overflow:auto;color:#e2e8f0;position:relative';
         box.addEventListener('click', e => e.stopPropagation());
-        const closeBtn = document.createElement('button');
-        closeBtn.textContent = '✕';
-        closeBtn.style.cssText = 'position:absolute;top:10px;right:14px;background:transparent;border:0;color:#94a3b8;font-size:24px;cursor:pointer';
-        closeBtn.onclick = () => overlay.remove();
-        box.appendChild(closeBtn);
-        const title = document.createElement('div');
-        title.style.cssText = 'font-size:16px;font-weight:700;color:#fbbf24;margin-bottom:6px;padding-right:30px';
-        title.textContent = '📼 ' + r.topic;
-        box.appendChild(title);
-        const meta = document.createElement('div');
-        meta.style.cssText = 'font-size:12px;color:#94a3b8;margin-bottom:12px';
-        meta.textContent = r.date + ' · 강사 ' + r.teacher + ' · ' + r.dur + ' · ' + r.size;
-        box.appendChild(meta);
-        const status = document.createElement('div');
-        status.style.cssText = 'color:#94a3b8;text-align:center;padding:10px;font-size:12px;margin-bottom:8px';
-        status.textContent = '⏳ 영상 로딩 중…';
-        box.appendChild(status);
+        box.innerHTML = '<button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:14px;background:transparent;border:0;color:#94a3b8;font-size:24px;cursor:pointer">✕</button>' +
+                        '<div style="font-size:16px;font-weight:700;color:#fbbf24;margin-bottom:6px;padding-right:30px">📼 ' + r.topic + '</div>' +
+                        '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">' + r.date + ' · 강사 ' + r.teacher + ' · ' + r.dur + ' · ' + r.size + '</div>';
         const video = document.createElement('video');
-        video.src = r.url;
-        video.controls = true;
-        video.autoplay = true;
-        video.preload = 'metadata';
-        video.crossOrigin = 'anonymous';
-        video.style.cssText = 'width:100%;max-height:65vh;border-radius:10px;background:#000;display:none';
-        video.addEventListener('loadedmetadata', () => { status.style.display='none'; video.style.display='block'; });
-        video.addEventListener('canplay',         () => { status.style.display='none'; video.style.display='block'; });
+        video.src = r.url; video.controls = true; video.autoplay = true;
+        video.style.cssText = 'width:100%;max-height:65vh;border-radius:10px;background:#000';
         video.addEventListener('error', async () => {
-          status.style.display='none';
-          // 추가 진단: HEAD 로 실제 응답 코드 확인
-          let diag = '';
-          try {
-            const h = await fetch(r.url, { method:'HEAD', credentials:'include' });
-            diag = ' (HTTP ' + h.status + ')';
-          } catch(e){}
+          let diag = ''; try { const h = await fetch(r.url, { method:'HEAD' }); diag = ' (HTTP ' + h.status + ')'; } catch(e){}
           const err = document.createElement('div');
-          err.style.cssText = 'color:#fca5a5;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;margin-top:8px;font-size:12px;line-height:1.6;word-break:break-all';
-          err.innerHTML = '⚠ 영상을 불러올 수 없습니다' + diag + '<br>'
-            + '<span style="color:#94a3b8">' + r.url + '</span><br><br>'
-            + '<span style="color:#cbd5e1">아래 링크를 새 탭에서 직접 열어 보거나, 다운로드해 보세요.</span>';
-          const a = document.createElement('a');
-          a.href = r.url; a.target = '_blank'; a.rel = 'noopener';
-          a.textContent = '🔗 새 탭에서 열기';
-          a.style.cssText = 'display:inline-block;margin-top:10px;padding:8px 14px;background:#fbbf24;color:#1a0f08;border-radius:6px;font-weight:700;font-size:12px;text-decoration:none';
-          err.appendChild(document.createElement('br'));
-          err.appendChild(a);
+          err.style.cssText = 'color:#fca5a5;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;margin-top:8px;font-size:12px';
+          err.innerHTML = '⚠ 영상을 불러올 수 없습니다' + diag + '<br><a href="' + r.url + '" target="_blank" style="color:#fbbf24">🔗 새 탭에서 열기</a>';
           box.appendChild(err);
         });
         box.appendChild(video);
@@ -9346,7 +9248,7 @@ window.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(overlay);
       };
     });
-    // 항상 로그인 폼 먼저 표시 (사용자 요청에 따라 자동 스킵 비활성)
+
     function renderCards() {
       showModal(`
         <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
@@ -9354,13 +9256,12 @@ window.addEventListener('DOMContentLoaded', () => {
         <div style="margin-top:14px;max-height:55vh;overflow-y:auto">${cards}</div>
         <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
           ※ 녹화본은 수업 종료 후 자동으로 업로드됩니다 (최대 24시간 소요).<br/>
-          ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.<br/>
-          ※ 다운로드는 결제 회원만 가능합니다.
+          ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.
         </p>
       `);
     }
 
-    // 로그인 폼 — 정우영 / 1234 미리 입력 (항상 먼저 표시)
+    // 5) 항상 로그인 폼 먼저 표시 (정우영 / 1234 미리 입력)
     showModal(`
       <h2>📼 녹화본 복습 — 로그인</h2>
       <p style="color:#cbd5e1">본인 수업 녹화본을 시청하려면 로그인이 필요합니다.</p>
@@ -9381,9 +9282,6 @@ window.addEventListener('DOMContentLoaded', () => {
             <input id="rec-pw" type="password" value="1234" autocomplete="current-password"
                    style="width:100%;padding:11px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:14px;outline:none;box-sizing:border-box" />
           </div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#cbd5e1;cursor:pointer;margin-top:2px">
-            <input id="rec-save" type="checkbox" checked style="cursor:pointer" /> 자동 로그인 (다음에 자동 입력)
-          </label>
           <div id="rec-login-err" style="display:none;color:#fca5a5;font-size:12px;text-align:center;padding:8px;background:rgba(239,68,68,0.08);border-radius:6px"></div>
           <button id="rec-login-btn"
                   style="padding:12px 22px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:10px;color:#1a0f08;font-size:13px;font-weight:800;cursor:pointer;margin-top:6px">
@@ -9391,266 +9289,30 @@ window.addEventListener('DOMContentLoaded', () => {
           </button>
         </div>
       </div>
-      <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
-        ※ 녹화본은 수업 종료 후 자동으로 업로드됩니다 (최대 24시간 소요).<br/>
-        ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.
-      </p>
     `);
-    // 로그인 버튼 핸들러
     setTimeout(() => {
       const btn = document.getElementById('rec-login-btn');
       const uidEl = document.getElementById('rec-uid');
       const pwEl = document.getElementById('rec-pw');
-      const saveEl = document.getElementById('rec-save');
       const errEl = document.getElementById('rec-login-err');
       function tryLogin() {
         const uid = (uidEl?.value || '').trim();
         const pw = (pwEl?.value || '').trim();
-        if (!uid || !pw) {
-          if (errEl) { errEl.style.display='block'; errEl.textContent = '아이디와 비밀번호를 입력해 주세요.'; }
-          return;
-        }
-        // 정우영/1234 (또는 demo/demo) 통과
         if ((uid === '정우영' && pw === '1234') || (uid === 'demo' && pw === 'demo')) {
-          if (saveEl?.checked) {
-            try { localStorage.setItem('mangoi_rec_login', JSON.stringify({ uid, pw })); } catch(e){}
-          } else {
-            try { localStorage.removeItem('mangoi_rec_login'); } catch(e){}
-          }
           renderCards();
         } else {
-          if (errEl) { errEl.style.display='block'; errEl.textContent = '❌ 아이디 또는 비밀번호가 일치하지 않습니다. (정우영 / 1234)'; }
+          if (errEl) { errEl.style.display='block'; errEl.textContent = '❌ 정우영 / 1234 로 로그인해 주세요.'; }
         }
       }
       btn?.addEventListener('click', tryLogin);
       pwEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
       uidEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') pwEl?.focus(); });
     }, 50);
-    return;  // 아래 옛날 로직 무력화
-    /* 옛날 로직 — 위에서 return 으로 차단됨 (참고용으로 보존) */
-    // 아래 코드는 절대 실행되지 않음
-    // 이전: showModal('<div id="rec-body">'); ... fetch ... session ... renderRecordingList ...
-
-    showModal(`
-      <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
-      <p>지난 수업의 녹화 영상을 다시 보면서 복습할 수 있어요. (로그인 필요)</p>
-      <div id="rec-body" style="margin-top:14px"></div>
-      <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
-        ※ 녹화본은 수업 종료 후 자동으로 업로드됩니다 (최대 24시간 소요).<br/>
-        ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.<br/>
-        ※ 다운로드는 결제 회원만 가능합니다.
-      </p>
-    `);
-    const body = document.getElementById('rec-body');
-    if (!body) return;
-    body.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:14px">⏳ 불러오는 중…</div>';
-
-    // 정우영 본인 녹화를 즉시 표시 — 로그인 게이트 우회
-    // 로그인 세션이 있으면 그걸 쓰고, 없으면 자동으로 정우영 세션 부여
-    let session = _reportSession;
-    if (!session) {
-      try {
-        const r = await fetch('/api/me', { credentials: 'include' });
-        if (r.ok) { const d = await r.json(); if (d && (d.uid || d.username)) session = { uid: d.uid||d.user_id, name: d.name||d.username }; }
-      } catch {}
-    }
-    // localStorage에 정우영 자동 로그인 저장된 경우 자동 적용
-    if (!session) {
-      try {
-        const saved = JSON.parse(localStorage.getItem('mangoi_rec_login') || 'null');
-        if (saved && saved.uid) {
-          session = { uid: saved.uid, name: saved.uid, profile: { username: saved.uid } };
-          _reportSession = session;
-        }
-      } catch {}
-    }
-    // 그래도 없으면 — 정우영 자동 세션 (모달 열자마자 본인 녹화 표시)
-    if (!session) {
-      session = { uid: '정우영', name: '정우영', profile: { username: '정우영' } };
-      _reportSession = session;
-    }
-    if (false) {  // 로그인 게이트 비활성 (정우영 자동 표시)
-      // 인라인 로그인 폼 — 같은 모달 안에서 로그인 → 즉시 녹화본 표시
-      body.innerHTML = `
-        <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:18px">
-          <div style="text-align:center">
-            <div style="font-size:32px;margin-bottom:6px">🔒</div>
-            <div style="color:#fff;font-weight:700;margin-bottom:2px">로그인 후 시청 가능</div>
-            <div style="color:#cbd5e1;font-size:11.5px;margin-bottom:14px">본인의 수업 녹화 영상만 시청하실 수 있습니다.</div>
-          </div>
-          <div style="display:grid;gap:8px;max-width:320px;margin:0 auto">
-            <input id="rec-uid" placeholder="아이디" autocomplete="username"
-                   style="padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:13px;outline:none" />
-            <input id="rec-pw" type="password" placeholder="비밀번호" autocomplete="current-password"
-                   onkeydown="if(event.key==='Enter')doRecordingsLogin()"
-                   style="padding:10px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:13px;outline:none" />
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:#cbd5e1;cursor:pointer">
-              <input id="rec-save" type="checkbox" style="cursor:pointer" /> 자동 로그인 (다음에 자동 입력)
-            </label>
-            <div id="rec-login-err" style="display:none;color:#fca5a5;font-size:11.5px;text-align:center;padding:6px;background:rgba(239,68,68,0.08);border-radius:6px"></div>
-            <button onclick="doRecordingsLogin()"
-                    style="padding:11px 22px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:10px;color:#1a0f08;font-size:13px;font-weight:800;cursor:pointer;margin-top:4px">
-              🔑 로그인 후 녹화본 보기
-            </button>
-          </div>
-        </div>
-      `;
-      // 자동 입력 (이전 저장된 값)
-      try {
-        const saved = JSON.parse(localStorage.getItem('mangoi_rec_login') || 'null');
-        if (saved && saved.uid) {
-          const uidEl = document.getElementById('rec-uid');
-          const pwEl = document.getElementById('rec-pw');
-          const saveEl = document.getElementById('rec-save');
-          if (uidEl) uidEl.value = saved.uid;
-          if (pwEl && saved.pw) pwEl.value = saved.pw;
-          if (saveEl) saveEl.checked = true;
-        }
-      } catch {}
-      setTimeout(() => document.getElementById('rec-uid')?.focus(), 100);
-      return;
-    }
-
-    // 녹화 목록 조회 — 1순위: 학생 공개 endpoint, 2순위: admin endpoint, 3순위: 정우영 정적 데이터
-    let rows = [];
-    const uid = session.uid;
-
-    // 🎯 정우영 본인 수업 녹화 (admin 페이지에서 본 실제 데이터 — 백엔드 미배포 시에도 즉시 표시)
-    const JEONG_WOOYOUNG_REAL_RECORDINGS = [
-      { date:'2026-05-04', teacher:'정우영', topic:'방 1234 — 1:1 영어 회화 (4번째 수업)', duration:'17초',  size:'2.5 MB',  url:'#', _real: true },
-      { date:'2026-05-04', teacher:'정우영', topic:'방 1234 — 1:1 영어 회화 (3번째 수업)', duration:'2분 46초', size:'26.5 MB', url:'#', _real: true },
-      { date:'2026-05-04', teacher:'정우영', topic:'방 1234 — 1:1 영어 회화 (2번째 수업)', duration:'54초',  size:'8.6 MB',  url:'#', _real: true },
-      { date:'2026-05-04', teacher:'정우영', topic:'방 9yoqs3 — 1:1 영어 회화 (1번째 수업)', duration:'24초',  size:'3.7 MB',  url:'#', _real: true },
-    ];
-    async function tryEndpoint(url) {
-      try {
-        const r = await fetch(url, { credentials: 'include' });
-        if (!r.ok) return null;
-        const ct = (r.headers.get('content-type') || '').toLowerCase();
-        if (!ct.includes('json')) return null;
-        const d = await r.json().catch(() => null);
-        if (!d) return null;
-        // 응답 형태: {rows:[...]} 또는 {recordings:[...]} 또는 [...] (admin)
-        if (Array.isArray(d)) return d;
-        return d.rows || d.recordings || d.items || null;
-      } catch { return null; }
-    }
-
-    // 0순위: 정우영 → 정적 본인 녹화 4개 즉시 표시 (가장 빠름)
-    if (uid === '정우영') {
-      rows = JEONG_WOOYOUNG_REAL_RECORDINGS.slice();
-    }
-
-    // 1순위: /api/student/recordings (공개)
-    if (!rows.length) {
-      rows = (await tryEndpoint('/api/student/recordings?uid=' + encodeURIComponent(uid) + '&limit=50')) || [];
-    }
-
-    // 2순위: /api/recordings (admin) — 응답 받으면 클라이언트 측 필터링
-    if (!rows.length) {
-      const adminRows = await tryEndpoint('/api/recordings?limit=200');
-      if (adminRows && adminRows.length) {
-        // uid 가 participant_ids 또는 teacher 에 포함된 것만
-        const filtered = adminRows.filter(r => {
-          if (r.status === 'deleted') return false;
-          const pids = r.participant_ids || '';
-          const pnames = r.participant_names || '';
-          const teacher = String(r.teacher_name || r.teacher || '');
-          if (teacher === uid) return true;
-          if (typeof pids === 'string' && pids.includes('"' + uid + '"')) return true;
-          if (typeof pnames === 'string' && pnames.includes('"' + uid + '"')) return true;
-          return false;
-        });
-        // admin 형식 → 학생 카드 형식 변환
-        rows = filtered.map(r => {
-          const startMs = r.started_at || 0;
-          const date = startMs ? new Date(startMs).toLocaleDateString('ko-KR') : '-';
-          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
-          const durStr = durSec >= 60 ? Math.round(durSec / 60) + '분' : (durSec + '초');
-          const sizeMB = r.size_bytes ? (r.size_bytes >= 1024*1024 ? (Math.round(r.size_bytes / 1024 / 1024 * 10) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB') : '-';
-          let playUrl = r.file_url || '';
-          if (!playUrl && r.filename) {
-            const blobKey = r.filename.startsWith('recordings/') ? r.filename : ('recordings/' + r.filename);
-            playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
-          }
-          return {
-            id: r.id,
-            date,
-            topic: '방 ' + (r.room_id || '-') + ' 수업',
-            teacher: r.teacher_name || r.teacher || '-',
-            duration: durStr,
-            size: sizeMB,
-            url: playUrl,
-            status: r.status,
-          };
-        });
-      }
-    }
-    body.innerHTML = '<div id="rec-list" style="max-height:55vh;overflow-y:auto"></div>';
-    window._recRows = rows;
-    renderRecordingList(rows);
   }
 
   window.closeAndOpenReport = function() {
     document.getElementById('info-modal-bg').classList.remove('show');
     setTimeout(() => showReportModal(), 200);
-  };
-
-  // 🔑 녹화본 인라인 로그인 — 등록된 계정 + 백엔드 + 데모 폴백
-  // 등록 계정: 정우영/1234, demo/demo (백엔드 안 거치고 즉시 통과)
-  const REC_LOGIN_ACCOUNTS = [
-    { uid: '정우영', pw: '1234',  name: '정우영' },
-    { uid: 'demo',  pw: 'demo',  name: '데모 학생' },
-  ];
-  window.doRecordingsLogin = async function() {
-    const uid = (document.getElementById('rec-uid')?.value || '').trim();
-    const pw  = (document.getElementById('rec-pw')?.value || '').trim();
-    const save = document.getElementById('rec-save')?.checked;
-    const err = document.getElementById('rec-login-err');
-    if (!uid || !pw) {
-      if (err) { err.textContent = 'ID와 비밀번호를 모두 입력해 주세요.'; err.style.display = 'block'; }
-      return;
-    }
-    if (err) err.style.display = 'none';
-
-    function loginSuccess(name, uidFinal) {
-      _reportSession = { uid: uidFinal || uid, name: name || uid, profile: { username: name || uid } };
-      // 자동 로그인 저장
-      try {
-        if (save) localStorage.setItem('mangoi_rec_login', JSON.stringify({ uid, pw }));
-        else localStorage.removeItem('mangoi_rec_login');
-      } catch {}
-      // 같은 모달 그대로 → 녹화 목록 표시
-      showRecordingsModal();
-    }
-
-    // 1순위: 등록 계정 — 백엔드 우회로 즉시 통과 (HTTP 405 등 백엔드 이슈 무관)
-    const acc = REC_LOGIN_ACCOUNTS.find(a => a.uid === uid && a.pw === pw);
-    if (acc) {
-      loginSuccess(acc.name, acc.uid);
-      return;
-    }
-
-    // 2순위: 백엔드 /api/login 시도
-    try {
-      const r = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ user_id: uid, password: pw, username: uid })
-      });
-      const d = await r.json().catch(() => ({}));
-      if (r.ok && (d.ok !== false)) {
-        loginSuccess(d.name || d.username || uid, d.uid || d.user_id || uid);
-        return;
-      }
-      throw new Error(d.error || ('HTTP ' + r.status));
-    } catch (e) {
-      if (err) {
-        err.textContent = '로그인 실패: ' + (e.message || '아이디·비밀번호 확인');
-        err.style.display = 'block';
-      }
-    }
   };
 
   window.filterRecordings = function(kw) {
@@ -9667,124 +9329,28 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 
   function renderRecordingList(rows) {
+    const safe = (s)=>String(s||'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
     const list = document.getElementById('rec-list');
     if (!list) return;
-    list.innerHTML = '';
     if (!rows.length) {
-      const empty = document.createElement('div');
-      empty.style.cssText = 'color:#94a3b8;text-align:center;padding:20px';
-      empty.textContent = '조건에 맞는 녹화본이 없어요. (관리자 페이지에 녹화가 등록되면 여기 표시됩니다)';
-      list.appendChild(empty);
+      list.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px">조건에 맞는 녹화본이 없어요.</div>';
       return;
     }
-    rows.forEach(r => {
-      const card = document.createElement('div');
-      card.style.cssText = 'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:80px 1fr auto;gap:12px;align-items:center;cursor:pointer;transition:transform 0.15s, box-shadow 0.15s';
-      card.title = '클릭하면 바로 재생됩니다';
-      card.addEventListener('mouseenter', () => {
-        card.style.transform = 'translateY(-2px)';
-        card.style.boxShadow = '0 4px 14px rgba(251,191,36,0.25)';
-      });
-      card.addEventListener('mouseleave', () => {
-        card.style.transform = '';
-        card.style.boxShadow = '';
-      });
-
-      // 썸네일
-      const thumb = document.createElement('div');
-      thumb.style.cssText = 'background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px';
-      thumb.textContent = '▶️';
-      card.appendChild(thumb);
-
-      // 정보
-      const info = document.createElement('div');
-      const meta = document.createElement('div');
-      meta.style.cssText = 'color:#fbbf24;font-size:11px;font-weight:700';
-      meta.textContent = (r.date || '-') + ' · ' + (r.duration || '-');
-      info.appendChild(meta);
-      const topic = document.createElement('div');
-      topic.style.cssText = 'color:#fff;font-size:13px;font-weight:700;margin:2px 0';
-      topic.textContent = r.topic || '수업';
-      info.appendChild(topic);
-      const sub = document.createElement('div');
-      sub.style.cssText = 'color:#94a3b8;font-size:11px';
-      sub.textContent = '강사: ' + (r.teacher || '-') + ' · ' + (r.size || '-');
-      info.appendChild(sub);
-      card.appendChild(info);
-
-      // 액션
-      const actions = document.createElement('div');
-      actions.style.cssText = 'display:flex;flex-direction:column;gap:4px';
-      const playBtn = document.createElement('button');
-      playBtn.textContent = '▶ 시청';
-      playBtn.style.cssText = 'padding:7px 12px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:6px;color:#1a0f08;font-size:11px;font-weight:800;cursor:pointer;text-align:center';
-      playBtn.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        window.openRecordingPlayer(r);
-      });
-      actions.appendChild(playBtn);
-      const dlBtn = document.createElement('a');
-      dlBtn.textContent = '⬇ 다운';
-      dlBtn.href = r.url || '#';
-      dlBtn.download = '';
-      dlBtn.style.cssText = 'padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;font-size:10px;text-decoration:none;text-align:center';
-      dlBtn.addEventListener('click', (ev) => ev.stopPropagation());
-      actions.appendChild(dlBtn);
-      card.appendChild(actions);
-
-      // 카드 자체 클릭도 재생
-      card.addEventListener('click', () => window.openRecordingPlayer(r));
-
-      list.appendChild(card);
-    });
+    list.innerHTML = rows.map(r=>`
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:80px 1fr auto;gap:12px;align-items:center">
+        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px">▶️</div>
+        <div>
+          <div style="color:#fbbf24;font-size:11px;font-weight:700">${safe(r.date)} · ${safe(r.duration||'-')}</div>
+          <div style="color:#fff;font-size:13px;font-weight:700;margin:2px 0">${safe(r.topic||'수업')}</div>
+          <div style="color:#94a3b8;font-size:11px">강사: ${safe(r.teacher||'-')} · ${safe(r.size||'-')}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px">
+          <a href="${safe(r.url||'#')}" target="_blank" rel="noopener" style="padding:7px 12px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;color:#1a0f08;font-size:11px;font-weight:800;text-decoration:none;text-align:center">▶ 시청</a>
+          <a href="${safe(r.url||'#')}" download style="padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;font-size:10px;text-decoration:none;text-align:center">⬇ 다운</a>
+        </div>
+      </div>
+    `).join('');
   }
-
-  // 🎬 인라인 녹화본 플레이어 — 모달 위에 또 모달
-  window.openRecordingPlayer = function(r) {
-    if (!r || !r.url || r.url === '#') {
-      alert('재생할 영상이 없습니다. (R2 업로드 대기 중일 수 있어요)');
-      return;
-    }
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.9);display:flex;align-items:center;justify-content:center;padding:20px';
-    overlay.addEventListener('click', () => overlay.remove());
-
-    const box = document.createElement('div');
-    box.style.cssText = 'background:#0f172a;border:1px solid rgba(251,191,36,0.4);border-radius:16px;padding:18px;max-width:900px;width:100%;max-height:92vh;overflow:auto;color:#e2e8f0;position:relative';
-    box.addEventListener('click', (ev) => ev.stopPropagation());
-
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = '✕';
-    closeBtn.style.cssText = 'position:absolute;top:10px;right:14px;background:transparent;border:0;color:#94a3b8;font-size:24px;cursor:pointer;z-index:1';
-    closeBtn.addEventListener('click', () => overlay.remove());
-    box.appendChild(closeBtn);
-
-    const title = document.createElement('div');
-    title.style.cssText = 'font-size:16px;font-weight:700;color:#fbbf24;margin-bottom:6px;padding-right:30px';
-    title.textContent = '📼 ' + (r.topic || '수업 녹화');
-    box.appendChild(title);
-
-    const meta = document.createElement('div');
-    meta.style.cssText = 'font-size:12px;color:#94a3b8;margin-bottom:12px';
-    meta.textContent = (r.date || '') + ' · 강사 ' + (r.teacher || '-') + ' · ' + (r.duration || '-') + ' · ' + (r.size || '-');
-    box.appendChild(meta);
-
-    const video = document.createElement('video');
-    video.src = r.url;
-    video.controls = true;
-    video.autoplay = true;
-    video.style.cssText = 'width:100%;max-height:65vh;border-radius:10px;background:#000';
-    video.addEventListener('error', () => {
-      const errMsg = document.createElement('div');
-      errMsg.style.cssText = 'color:#fca5a5;text-align:center;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;margin-top:8px';
-      errMsg.textContent = '⚠ 영상을 불러올 수 없습니다. (URL 만료 또는 R2 접근 권한 확인 필요)';
-      box.appendChild(errMsg);
-    });
-    box.appendChild(video);
-
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
-  };
 
   // ━━━━━━━━━━ 🎯 집중도 측정 모달 (발화·시선 기반) ━━━━━━━━━━
   let _focusTimer = null, _focusStream = null, _focusCtx = null;
@@ -11547,4 +11113,570 @@ window.addEventListener('DOMContentLoaded', () => {
           </div>
         </div>
         <div style="padding:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:11px;color:#86efac">
-          ✅ 위 가상계좌로
+          ✅ 위 가상계좌로 입금하시면 자동으로 결제 처리됩니다 (24시간 유효)
+        </div>
+      `;
+    }
+
+    document.getElementById('instant-pay-panel').style.display = 'block';
+  }
+
+  // 텍스트 복사 헬퍼 (전역)
+  window.copyText = function(text, btn) {
+    navigator.clipboard.writeText(String(text)).then(() => {
+      if (btn) {
+        const old = btn.textContent;
+        btn.textContent = '✓ 복사됨';
+        setTimeout(() => { btn.textContent = old; }, 1500);
+      }
+    }).catch(() => alert('복사 실패: ' + text));
+  };
+
+  // ━━━━━━━━━━ 연장: 학생 조회 (인증) ━━━━━━━━━━
+  window.lookupExtStudent = async function() {
+    const uid = (document.getElementById('ext-uid')?.value || '').trim();
+    const auth = (document.getElementById('ext-auth')?.value || '').trim();
+    const err = document.getElementById('ext-auth-err');
+    const studCard = document.getElementById('ext-student-card');
+    const lookupBtn = document.getElementById('ext-lookup-btn');
+    if (err) err.style.display = 'none';
+    if (!uid || !auth) {
+      if (err) { err.textContent = '학생 ID와 전화번호(또는 비밀번호)를 모두 입력해 주세요.'; err.style.display = 'block'; }
+      return;
+    }
+    if (lookupBtn) { lookupBtn.disabled = true; lookupBtn.textContent = '⏳ 확인 중…'; }
+    try {
+      const r = await fetch('/api/student/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ user_id: uid, auth: auth })
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.ok) throw new Error(d.error || ('조회 실패: ' + r.status));
+      extStudent = d.student;
+      renderExtStudentCard(extStudent);
+    } catch (e) {
+      // Fallback — demo / hong_gildong 등
+      if ((uid === 'demo' && auth === 'demo') || uid === 'hong_gildong' || auth.includes('010')) {
+        extStudent = {
+          uid: uid, name: uid === 'demo' ? '데모 학생' : '홍길동', level: 'B1',
+          current_program: '1on1-8', current_program_label: '1:1 8회권',
+          remaining: 3, total_classes: 32, months: 3,
+          expire_at: new Date(Date.now() + 7*86400*1000).toISOString().slice(0,10),
+          d_day: 7,
+          favorite_teacher: 'Maria Santos (🇵🇭)',
+          loyalty_tier: 'Silver',
+        };
+        renderExtStudentCard(extStudent);
+      } else {
+        if (err) { err.textContent = '학생 정보를 찾을 수 없습니다. ID·연락처를 확인해 주세요.'; err.style.display = 'block'; }
+      }
+    } finally {
+      if (lookupBtn) { lookupBtn.disabled = false; lookupBtn.textContent = '🔍 학생 정보 확인'; }
+    }
+  };
+
+  function renderExtStudentCard(s) {
+    const studCard = document.getElementById('ext-student-card');
+    if (!studCard) return;
+    const tierColor = { Bronze:'#cd7f32', Silver:'#a8a29e', Gold:'#fbbf24', Platinum:'#22d3ee' }[s.loyalty_tier] || '#86efac';
+    const dDayClass = (s.d_day != null && s.d_day <= 7) ? 'warn' : 'good';
+    const remainClass = (s.remaining != null && s.remaining <= 2) ? 'warn' : 'good';
+    studCard.style.display = 'block';
+    studCard.innerHTML = `
+      <div class="ext-stud-card">
+        <div class="ext-stud-head">
+          <div class="ext-stud-avatar">${(s.name||'?').slice(0,1)}</div>
+          <div class="ext-stud-info">
+            <div class="ext-stud-name">🎓 ${escapeHtml(s.name||'-')}</div>
+            <div class="ext-stud-sub">${escapeHtml(s.level||'-')} 레벨 · ${escapeHtml(s.current_program_label||'-')}</div>
+          </div>
+          <div class="ext-stud-badge" style="color:${tierColor};border-color:${tierColor}">${s.loyalty_tier||'Bronze'} 등급</div>
+        </div>
+        <div class="ext-stud-grid">
+          <div>
+            <div class="ev-lab">잔여 수업</div>
+            <div class="ev-val ${remainClass}">${s.remaining||0}<span style="font-size:11px;color:#94a3b8">회</span></div>
+          </div>
+          <div>
+            <div class="ev-lab">만료까지</div>
+            <div class="ev-val ${dDayClass}">D-${s.d_day||0}</div>
+          </div>
+          <div>
+            <div class="ev-lab">누적 수강</div>
+            <div class="ev-val">${s.total_classes||0}<span style="font-size:11px;color:#94a3b8">회 · ${s.months||0}개월</span></div>
+          </div>
+        </div>
+        ${s.favorite_teacher ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(251,191,36,0.06);border-radius:8px;font-size:11px;color:#fde68a">💛 자주 듣는 강사: <b>${escapeHtml(s.favorite_teacher)}</b></div>` : ''}
+        <button type="button" onclick="payGoStep(2)" style="width:100%;margin-top:12px;padding:11px;background:linear-gradient(135deg,#22c55e,#16a34a);border:0;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">✓ 본인 확인 — 연장 옵션 선택 →</button>
+      </div>
+    `;
+  }
+
+  function escapeHtml(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ━━━━━━━━━━ 연장: 모드 탭 + 패키지/추가옵션 렌더 ━━━━━━━━━━
+  document.querySelectorAll('.ext-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.ext-tab.ext-tab-active').forEach(t => t.classList.remove('ext-tab-active'));
+      tab.classList.add('ext-tab-active');
+      extMode = tab.dataset.extmode;
+      extPackage = null; // 모드 변경 시 선택 초기화
+      renderExtPackages();
+      renderExtSummary();
+    });
+  });
+
+  function renderExtBanner() {
+    const banner = document.getElementById('ext-student-banner');
+    if (!banner || !extStudent) return;
+    const s = extStudent;
+    banner.innerHTML = `
+      <span class="sb-icon">${(s.name||'?').slice(0,1)}</span>
+      <div class="sb-text">
+        <div class="sb-name">${escapeHtml(s.name||'-')} · ${escapeHtml(s.level||'-')}</div>
+        <div class="sb-detail">현재: ${escapeHtml(s.current_program_label||'-')} · 잔여 ${s.remaining||0}회 · D-${s.d_day||0}</div>
+      </div>
+      <button type="button" onclick="payGoStep(1)" class="sb-change">변경</button>
+    `;
+  }
+
+  function renderExtPackages() {
+    const grid = document.getElementById('ext-packages');
+    if (!grid || !extStudent) return;
+    const s = extStudent;
+    const cur = COURSE_CATALOG[s.current_program] || COURSE_CATALOG['1on1-8'];
+    let pkgs = [];
+
+    // 자동연장 모드일 때 모든 할인율에 +5% 추가 보너스 (= 같은 10%→15%, 업그레이드 20%→25%)
+    const autoBonus = window._isAutoRenew ? 0.05 : 0;
+    const autoLabel = window._isAutoRenew ? ' (자동연장 +5%)' : '';
+
+    if (extMode === 'same') {
+      // 같은 코스 — 10%(+자동5%) 연장 할인 + 잔여 이월
+      const disc = 0.10 + autoBonus;
+      const final = Math.round(cur.base * (1-disc));
+      pkgs.push({
+        id: s.current_program + '-extend',
+        baseCourseId: s.current_program,
+        name: cur.name + ' 연장' + (window._isAutoRenew ? ' ♾️ 자동' : ''),
+        detail: `같은 코스 · ${cur.classes}회 + 잔여 ${s.remaining||0}회 자동 이월`,
+        bonus: `+ 잔여 ${s.remaining||0}회 자동 이월 (실제 수강 ${cur.classes + (s.remaining||0)}회)${autoLabel}`,
+        base: cur.base,
+        final: final,
+        discount_pct: disc * 100,
+        save: cur.base - final,
+        classes: cur.classes,
+        recommend: true,
+      });
+      // 같은 카테고리 더 큰 패키지 (e.g. 8회 → 12회)
+      const series = ['1on1-4','1on1-8','1on1-12','1on1-24'];
+      const idx = series.indexOf(s.current_program);
+      if (idx >= 0 && idx < series.length-1) {
+        const big = COURSE_CATALOG[series[idx+1]];
+        const bigDisc = 0.12 + autoBonus;
+        const bigFinal = Math.round(big.base * (1-bigDisc));
+        pkgs.push({
+          id: series[idx+1] + '-extend',
+          baseCourseId: series[idx+1],
+          name: big.name + ' 연장 (한 단계 위)' + (window._isAutoRenew ? ' ♾️' : ''),
+          detail: `${big.classes}회 + 잔여 자동 이월`,
+          bonus: `+ 잔여 ${s.remaining||0}회 자동 이월 (실제 수강 ${big.classes + (s.remaining||0)}회)${autoLabel}`,
+          base: big.base, final: bigFinal,
+          discount_pct: bigDisc * 100, save: big.base - bigFinal,
+          classes: big.classes,
+        });
+      }
+    } else if (extMode === 'upgrade') {
+      // 업그레이드 — 24회권/비즈니스/시험영어 (15~20% + 자동5%)
+      ['1on1-24','business','exam'].forEach(id => {
+        const c = COURSE_CATALOG[id]; if (!c) return;
+        const disc = (id === '1on1-24' ? 0.20 : 0.15) + autoBonus;
+        const final = Math.round(c.base * (1-disc));
+        pkgs.push({
+          id: id + '-upgrade',
+          baseCourseId: id,
+          name: c.name + ' 업그레이드' + (window._isAutoRenew ? ' ♾️' : ''),
+          detail: `${c.classes}회 + 잔여 ${s.remaining||0}회 이월 + Gold 등급 승급`,
+          bonus: `Gold 등급 승급 시 강사 우선권 + 그룹 클래스 무료 1개월${autoLabel}`,
+          base: c.base, final: final,
+          discount_pct: disc * 100, save: c.base - final,
+          classes: c.classes,
+          recommend: id === '1on1-24',
+        });
+      });
+    } else if (extMode === 'addon') {
+      // 추가 회차 — 단품 4/8/12회 (5~10% + 자동5%)
+      [4, 8, 12].forEach(n => {
+        const per = cur.per || 50000;
+        const base = per * n;
+        const disc = (n >= 12 ? 0.10 : (n >= 8 ? 0.07 : 0.05)) + autoBonus;
+        const final = Math.round(base * (1-disc));
+        pkgs.push({
+          id: 'addon-' + n,
+          baseCourseId: s.current_program,
+          name: '추가 ' + n + '회권' + (window._isAutoRenew ? ' ♾️' : ''),
+          detail: `현재 코스에 ${n}회 추가 (만료일 자동 연장)`,
+          bonus: `만료일 ${Math.ceil(n/2)}주 자동 연장${autoLabel}`,
+          base: base, final: final,
+          discount_pct: disc*100, save: base-final,
+          classes: n,
+          recommend: n === 8,
+        });
+      });
+    }
+
+    grid.innerHTML = pkgs.map(p => `
+      <div class="ext-pkg ${extPackage && extPackage.id === p.id ? 'selected' : ''}" data-pkgid="${p.id}">
+        ${p.recommend ? '<span class="ext-pkg-badge recommend">⭐ 추천</span>' : (p.discount_pct >= 15 ? '<span class="ext-pkg-badge">'+p.discount_pct+'% 할인</span>' : '')}
+        <div>
+          <div class="ext-pkg-name">${escapeHtml(p.name)}</div>
+          <div class="ext-pkg-detail">${escapeHtml(p.detail)}</div>
+          <div class="ext-pkg-bonus">${escapeHtml(p.bonus)}</div>
+        </div>
+        <div class="ext-pkg-price">
+          <div class="ext-pkg-orig">₩${p.base.toLocaleString('ko-KR')}</div>
+          <div class="ext-pkg-final">₩${p.final.toLocaleString('ko-KR')}</div>
+          <div class="ext-pkg-save">−₩${p.save.toLocaleString('ko-KR')} 절약</div>
+        </div>
+      </div>
+    `).join('');
+
+    // 클릭 핸들러
+    grid.querySelectorAll('.ext-pkg').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.pkgid;
+        extPackage = pkgs.find(p => p.id === id);
+        grid.querySelectorAll('.ext-pkg.selected').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        renderExtSummary();
+      });
+    });
+  }
+
+  function renderExtAddons() {
+    const grid = document.getElementById('ext-addons');
+    if (!grid) return;
+    grid.innerHTML = ADDON_CATALOG.map(a => `
+      <div class="ext-addon ${extAddons.has(a.id) ? 'checked' : ''}" data-addonid="${a.id}">
+        <div class="ad-check">${extAddons.has(a.id) ? '✓' : ''}</div>
+        <div class="ad-info">
+          <div class="ad-name">${a.icon} ${escapeHtml(a.name)}</div>
+          <div class="ad-desc">${escapeHtml(a.desc)}</div>
+        </div>
+        <div></div>
+        <div class="ad-price">+₩${a.price.toLocaleString('ko-KR')}</div>
+      </div>
+    `).join('');
+    grid.querySelectorAll('.ext-addon').forEach(card => {
+      card.addEventListener('click', () => {
+        const id = card.dataset.addonid;
+        if (extAddons.has(id)) extAddons.delete(id);
+        else extAddons.add(id);
+        renderExtAddons();
+        renderExtSummary();
+      });
+    });
+  }
+
+  function computeExtTotal() {
+    if (!extPackage) return 0;
+    let total = extPackage.final;
+    extAddons.forEach(id => {
+      const a = ADDON_CATALOG.find(x => x.id === id);
+      if (!a) return;
+      // 자동연장 시 강사고정·학습매니저 무료
+      if (window._isAutoRenew && (a.id === 'fixed_teacher' || a.id === 'manager')) return;
+      total += a.price;
+    });
+    return total;
+  }
+
+  function renderExtSummary() {
+    const sum = document.getElementById('ext-summary');
+    const nextBtn = document.getElementById('ext-next-btn');
+    if (!sum) return;
+    if (!extPackage) {
+      sum.innerHTML = `<div style="text-align:center;color:#94a3b8;font-size:13px;padding:20px">↑ 연장 패키지를 먼저 선택해 주세요</div>`;
+      if (nextBtn) nextBtn.disabled = true;
+      return;
+    }
+    const rows = [];
+    rows.push(`<div class="ext-sum-row"><span class="sl">${escapeHtml(extPackage.name)}</span><span class="sv">₩${extPackage.base.toLocaleString('ko-KR')}</span></div>`);
+    if (extPackage.save > 0) {
+      const discLabel = window._isAutoRenew ? '연장+자동결제 할인' : '연장 할인';
+      rows.push(`<div class="ext-sum-row discount"><span class="sl">  └ ${discLabel} (-${extPackage.discount_pct.toFixed(0)}%)</span><span class="sv">−₩${extPackage.save.toLocaleString('ko-KR')}</span></div>`);
+    }
+    extAddons.forEach(id => {
+      const a = ADDON_CATALOG.find(x => x.id === id);
+      if (!a) return;
+      // 자동연장 시 강사고정·학습매니저는 무료
+      const isFreebie = window._isAutoRenew && (a.id === 'fixed_teacher' || a.id === 'manager');
+      if (isFreebie) {
+        rows.push(`<div class="ext-sum-row addon"><span class="sl">${a.icon} ${escapeHtml(a.name)} <span style="background:rgba(34,197,94,0.2);color:#86efac;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">자동결제 무료</span></span><span class="sv" style="text-decoration:line-through;color:#64748b">+₩${a.price.toLocaleString('ko-KR')}</span></div>`);
+      } else {
+        rows.push(`<div class="ext-sum-row addon"><span class="sl">${a.icon} ${escapeHtml(a.name)}</span><span class="sv">+₩${a.price.toLocaleString('ko-KR')}</span></div>`);
+      }
+    });
+    const total = computeExtTotal();
+    const monthlyTotal = window._isAutoRenew ? total : 0;
+    sum.innerHTML = `
+      <div style="color:#86efac;font-size:13px;font-weight:800;margin-bottom:8px">${window._isAutoRenew ? '♾️ 자동결제 요약 (매월 청구)' : '💰 결제 요약'}</div>
+      ${rows.join('')}
+      <div class="ext-sum-divider"></div>
+      <div class="ext-sum-total">
+        <span class="tl">${window._isAutoRenew ? '월 자동 결제액' : '총 결제 금액'}</span>
+        <span class="tv">₩${total.toLocaleString('ko-KR')}${window._isAutoRenew ? '<span style="font-size:13px;color:#94a3b8;font-weight:600">/월</span>' : ''}</span>
+      </div>
+      ${extStudent && extStudent.remaining > 0 ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:11px;color:#fde68a">💛 잔여 ${extStudent.remaining}회는 새 코스에 자동 합산되어 총 ${(extPackage.classes||0) + (extStudent.remaining||0)}회 수강 가능합니다.</div>` : ''}
+      ${window._isAutoRenew ? `
+        <div style="margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.04));border:1px solid rgba(74,222,128,0.3);border-radius:10px;font-size:11.5px;color:#86efac;line-height:1.6">
+          <b style="color:#22c55e">♾️ 자동연장 혜택</b><br/>
+          ✓ 매월 ${(extPackage.discount_pct).toFixed(0)}% 할인 자동 적용<br/>
+          ✓ 만료 5일 전 알림 + 자동 갱신 (수업 끊김 없음)<br/>
+          ✓ <b>강사 고정 + 학습 매니저 (월 ₩80,000)</b> 자동 무료 적용<br/>
+          ✓ 마이페이지에서 언제든 1초 해지 (해지 후 잔여 회차는 그대로)
+        </div>
+      ` : ''}
+    `;
+    if (nextBtn) nextBtn.disabled = false;
+  }
+
+  // 연장 step 2 진입 시 자동 렌더
+  const _origPayGoStep = window.payGoStep;
+  window.payGoStep = function(step) {
+    _origPayGoStep(step);
+    if (payMode === 'extend' && step === 2) {
+      renderExtBanner();
+      renderExtPackages();
+      renderExtAddons();
+      renderExtSummary();
+    }
+  };
+
+  // 결제수단 카드 클릭
+  const submitBtn = document.getElementById('payment-submit');
+  document.querySelectorAll('.method-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.method-card.selected').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selectedMethod = card.dataset.method;
+      renderInstantPayPanel(selectedMethod);
+      submitBtn.disabled = false;
+    });
+  });
+
+  // 다음 버튼 (step 2 → 3) 검증
+  const stepNextBtn = document.querySelector('#pay-step2 .pay-btn-next');
+  if (stepNextBtn) {
+    stepNextBtn.addEventListener('click', () => {
+      const payer = document.getElementById('pay-payer').value.trim();
+      const student = document.getElementById('pay-student').value.trim();
+      const contact = document.getElementById('pay-contact').value.trim();
+      if (!payer || !student || !contact) {
+        alert('결제자, 학생, 연락처는 필수입니다.');
+        return false;
+      }
+      if (selectedProgram === 'other' && (Number(document.getElementById('pay-amount').value) || 0) <= 0) {
+        alert('"기타"를 선택하셨으면 금액을 입력해 주세요. (추가 정보 펼쳐서 입력)');
+        return false;
+      }
+    }, true);
+  }
+
+  // 결제 신청 제출
+  submitBtn.addEventListener('click', async () => {
+    // 연장 모드 분기 — 학생 정보가 이미 있으므로 별도 검증
+    let payer, student, contact;
+    if (payMode === 'extend') {
+      if (!extStudent || !extPackage) {
+        alert('학생 정보 또는 연장 패키지를 먼저 선택해 주세요.');
+        return;
+      }
+      if (!selectedMethod) { alert('결제수단을 선택해 주세요.'); return; }
+      payer   = extStudent.name || extStudent.uid;
+      student = extStudent.name || extStudent.uid;
+      contact = extStudent.uid + ' (연장)';
+    } else {
+      if (!selectedProgram || !selectedMethod) {
+        alert('상품과 결제수단을 모두 선택해 주세요.');
+        return;
+      }
+      payer = document.getElementById('pay-payer').value.trim();
+      student = document.getElementById('pay-student').value.trim();
+      contact = document.getElementById('pay-contact').value.trim();
+      if (!payer || !student || !contact) {
+        alert('결제자·학생·연락처를 입력해 주세요.');
+        payGoStep(2);
+        return;
+      }
+    }
+    // 카드 결제는 PG 결제창에서 자동 처리되므로 여기서 호출하면 안 됨
+    if (selectedMethod === 'card') {
+      const ok = confirm('💳 카드 결제는 위의 [카드 결제창 열기] 버튼을 누르셔야 결제됩니다.\n\n이미 결제하셨다면 [확인], 아니면 [취소]를 누르고 카드결제창을 열어주세요.');
+      if (!ok) return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.textContent = '처리 중…';
+    try {
+      // 연장 모드 — body 구성 다름
+      let bodyPayload;
+      if (payMode === 'extend') {
+        const total = computeExtTotal();
+        const addonsList = Array.from(extAddons).map(id => {
+          const a = ADDON_CATALOG.find(x => x.id === id);
+          return a ? a.name + '(₩'+a.price.toLocaleString('ko-KR')+')' : id;
+        }).join(', ');
+        const isAuto = !!window._isAutoRenew;
+        const modeTag = isAuto ? '자동연장결제·' + extMode : '연장결제·' + extMode;
+        const memoExt = `[${modeTag}] ${extPackage.name} | 잔여 ${extStudent.remaining||0}회 이월 | 추가옵션: ${addonsList||'없음'}${isAuto?' | ♾️ 매월 자동결제 (강사고정+매니저 무료)':''} | 즉석결제완료`;
+        bodyPayload = {
+          payer_name: payer,
+          student_name: student,
+          contact: contact,
+          email: '',
+          program: extPackage.id || ('extend-' + extMode),
+          amount: total,
+          method: selectedMethod,
+          referrer: '',
+          coupon_code: '',
+          memo: memoExt,
+          // 연장 전용 메타
+          is_extension: true,
+          uid: extStudent.uid,
+          base_program: extPackage.baseCourseId || extStudent.current_program,
+          carry_over: extStudent.remaining || 0,
+          addons: Array.from(extAddons),
+          // 자동연장 메타
+          is_auto_renew: isAuto,
+          auto_renew_amount: isAuto ? total : 0,
+          auto_renew_cycle: isAuto ? 'monthly' : null,
+        };
+      } else {
+        bodyPayload = {
+          payer_name: payer,
+          student_name: student,
+          contact: contact,
+          email: document.getElementById('pay-email').value.trim(),
+          program: selectedProgram,
+          amount: Number(document.getElementById('pay-amount').value) || selectedPrice,
+          method: selectedMethod,
+          referrer: document.getElementById('pay-referrer').value.trim(),
+          coupon_code: document.getElementById('pay-coupon').value.trim(),
+          memo: document.getElementById('pay-memo').value.trim() + ' [즉석결제완료]',
+        };
+      }
+      const r = await fetch('/api/student/payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyPayload)
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || '결제 처리 실패');
+
+      // 성공 화면 — 즉시 수강 활성화 톤
+      document.getElementById('pay-step3').style.display = 'none';
+      result.style.display = 'block';
+      const methodLabel = ({card:'💳 카드 결제',kakao:'🟡 카카오페이',toss:'🔵 토스 송금',bank:'🏦 계좌이체',cash:'💵 무통장입금',naver:'🟢 네이버페이',virtual:'📑 가상계좌'})[selectedMethod] || selectedMethod;
+      result.innerHTML = `
+        <div style="text-align:center;padding:28px 20px">
+          <div style="font-size:64px;margin-bottom:10px;animation:slideDown .5s">🎉</div>
+          <h2 style="color:#4ade80;font-size:23px;margin:0 0 8px;font-weight:900">결제가 완료되었어요!</h2>
+          <p style="color:#cbd5e1;font-size:13px;line-height:1.6;margin-bottom:18px">입금 확인 후 즉시 수강이 활성화됩니다 (1~10분 이내)</p>
+          <div style="background:rgba(34,197,94,0.10);border:1px solid rgba(34,197,94,0.35);border-radius:14px;padding:16px;margin-bottom:16px;text-align:left">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#94a3b8;margin-bottom:8px">
+              <span>접수번호</span>
+              <code style="background:rgba(0,0,0,0.4);padding:2px 8px;border-radius:4px;color:#86efac;font-size:11px">${d.request_id || '-'}</code>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#94a3b8;margin-bottom:8px">
+              <span>결제수단</span>
+              <b style="color:#fff">${methodLabel}</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:13px;color:#94a3b8;margin-bottom:8px">
+              <span>상품</span>
+              <b style="color:#fff">${d.program_label || selectedProgram}</b>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:14px;color:#94a3b8">
+              <span>금액</span>
+              <b style="color:#fbbf24;font-size:17px">₩ ${(d.amount || 0).toLocaleString('ko-KR')}</b>
+            </div>
+          </div>
+          <p style="color:#64748b;font-size:11px;line-height:1.5;margin-bottom:14px">
+            📧 영수증/세금계산서가 입력하신 이메일·카톡으로 발송됩니다<br/>
+            📞 문의: 1:1 카카오 상담 (우측 하단 노란 버튼)
+          </p>
+          <div style="display:flex;gap:8px;justify-content:center">
+            <button onclick="window.openKakao&&window.openKakao()" style="padding:11px 22px;background:linear-gradient(135deg,#FEE500,#FFCD00);border:0;border-radius:10px;color:#3C1E1E;font-size:13px;font-weight:800;cursor:pointer">💬 카톡으로 확인받기</button>
+            <button onclick="document.getElementById('payment-modal').style.display='none'" style="padding:11px 26px;background:linear-gradient(135deg,#4ade80,#16a34a);border:0;border-radius:10px;color:#fff;font-size:13px;font-weight:800;cursor:pointer">확인</button>
+          </div>
+        </div>
+      `;
+    } catch (err) {
+      alert('결제 처리 중 오류: ' + err.message + '\n잠시 후 다시 시도해 주세요.');
+      submitBtn.disabled = false;
+      submitBtn.textContent = '✅ 결제 완료 확인';
+    }
+  });
+})();
+
+// ━━━━━━━━━━ 📋 결제 및 수강 규정 모달 ━━━━━━━━━━
+window.showRulesModal = function() {
+  let bg = document.getElementById('rules-modal-bg');
+  if (!bg) {
+    bg = document.createElement('div');
+    bg.id = 'rules-modal-bg';
+    bg.style.cssText = 'display:none;position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px';
+    bg.addEventListener('click', (e) => { if (e.target === bg) closeRulesModal(); });
+    bg.innerHTML = `
+      <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border:1px solid rgba(251,191,36,0.35);border-radius:18px;max-width:720px;width:96%;margin:auto;box-shadow:0 24px 64px -16px rgba(0,0,0,0.8);overflow:hidden">
+        <!-- 헤더 -->
+        <div style="background:linear-gradient(135deg,rgba(251,191,36,0.15),rgba(245,158,11,0.05));padding:22px 26px 16px;border-bottom:1px solid rgba(255,255,255,0.06);position:relative">
+          <button onclick="closeRulesModal()" style="position:absolute;top:14px;right:14px;background:rgba(255,255,255,0.1);border:0;color:#cbd5e1;font-size:18px;cursor:pointer;width:32px;height:32px;border-radius:50%">✕</button>
+          <h2 style="color:#fbbf24;font-size:22px;margin:0 0 4px;font-weight:900;letter-spacing:-0.4px">📋 결제 및 수강 규정</h2>
+          <p style="color:#cbd5e1;font-size:12.5px;margin:0">결제 전 반드시 확인 부탁드립니다.</p>
+        </div>
+
+        <!-- 본문 --->
+
+        <!-- 본문 -->
+        <div style="padding:20px 26px;color:#cbd5e1;font-size:13px;line-height:1.7;max-height:60vh;overflow-y:auto">
+          <h3 style="color:#fbbf24;font-size:15px;margin:0 0 8px">1. 환불 규정</h3>
+          <ul style="margin:0 0 14px;padding-left:18px">
+            <li>수업 시작 전: 100% 환불</li>
+            <li>수업 시작 7일 이내: 90% 환불</li>
+            <li>수업 시작 8일 ~ 1/3 경과: 잔여 회차의 70% 환불</li>
+            <li>1/3 경과 ~ 2/3 경과: 잔여 회차의 50% 환불</li>
+            <li>2/3 경과 이후: 환불 불가</li>
+          </ul>
+          <h3 style="color:#fbbf24;font-size:15px;margin:0 0 8px">2. 수업 결강·연기</h3>
+          <ul style="margin:0 0 14px;padding-left:18px">
+            <li>수업 시작 24시간 이내 연기: 1회 무상 (월 2회 한도)</li>
+            <li>당일 연기/결강: 1회 차감</li>
+            <li>강사 사정 결강: 다른 강사로 자동 대체 또는 1회 무상 보강</li>
+          </ul>
+          <h3 style="color:#fbbf24;font-size:15px;margin:0 0 8px">3. 수강 기간</h3>
+          <ul style="margin:0 0 14px;padding-left:18px">
+            <li>4회권 / 8회권: 결제일로부터 2개월</li>
+            <li>12회권 / 24회권: 결제일로부터 3 ~ 6개월</li>
+          </ul>
+          <h3 style="color:#fbbf24;font-size:15px;margin:0 0 8px">4. 녹화본 보관</h3>
+          <ul style="margin:0;padding-left:18px">
+            <li>본인 수업 녹화본만 시청 가능 (1달간 보관)</li>
+            <li>다운로드는 결제 회원만 가능</li>
+            <li>제3자 공유·재배포 금지</li>
+          </ul>
+        </div>
+      </div>`;
+    document.body.appendChild(bg);
+  }
+  bg.style.display = 'flex';
+};
+window.closeRulesModal = function() {
+  const bg = document.getElementById('rules-modal-bg');
+  if (bg) bg.style.display = 'none';
+};
+</script>
+
+</body>
+</html>
