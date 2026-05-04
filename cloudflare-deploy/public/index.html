@@ -1697,146 +1697,306 @@
       </svg>
     </div>
 
-    <!-- 🐶 마티즈 우주비행사 (강아지 얼굴 + 우주복) -->
+    <!-- 🐶 마티즈 우주비행사 (입체감 강화 — 다층 그라데이션 + 명암 + 하이라이트) -->
     <div id="astronaut" class="astronaut-wrap" aria-hidden="true">
-      <svg viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg" class="astronaut-svg" style="width:100%;height:100%;display:block;overflow:visible">
+      <svg viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg" class="astronaut-svg" style="width:100%;height:100%;display:block;overflow:visible">
         <defs>
-          <!-- 우주복 흰색 그라데이션 -->
-          <linearGradient id="suitMaltese" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#ffffff"/>
-            <stop offset="50%" stop-color="#e8eef5"/>
-            <stop offset="100%" stop-color="#b8c2cf"/>
+          <!-- 우주복 — 구면 그라데이션(왼쪽 위 광원) -->
+          <radialGradient id="suit3D" cx="32%" cy="22%" r="85%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="35%"  stop-color="#f3f6fb"/>
+            <stop offset="65%"  stop-color="#c8d0db"/>
+            <stop offset="90%"  stop-color="#8d96a4"/>
+            <stop offset="100%" stop-color="#5b6472"/>
+          </radialGradient>
+          <!-- 팔 (실린더) 좌측 -->
+          <linearGradient id="armL" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#7a8694"/>
+            <stop offset="35%"  stop-color="#e2e7ee"/>
+            <stop offset="60%"  stop-color="#ffffff"/>
+            <stop offset="100%" stop-color="#9aa3b1"/>
           </linearGradient>
-          <!-- 헬멧 유리(바이저) — 금빛 반사 -->
-          <radialGradient id="visorMaltese" cx="35%" cy="30%" r="70%">
-            <stop offset="0%"  stop-color="#fff5d6" stop-opacity="0.95"/>
-            <stop offset="35%" stop-color="#fde68a" stop-opacity="0.55"/>
-            <stop offset="65%" stop-color="#f59e0b" stop-opacity="0.35"/>
-            <stop offset="100%" stop-color="#78350f" stop-opacity="0.55"/>
+          <linearGradient id="armR" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#9aa3b1"/>
+            <stop offset="40%"  stop-color="#ffffff"/>
+            <stop offset="65%"  stop-color="#e2e7ee"/>
+            <stop offset="100%" stop-color="#7a8694"/>
+          </linearGradient>
+          <!-- 헬멧(투명 구) — 다층 광택 -->
+          <radialGradient id="helmet3D" cx="30%" cy="22%" r="80%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="25%"  stop-color="#f3f8ff"/>
+            <stop offset="60%"  stop-color="#cbd5e1"/>
+            <stop offset="90%"  stop-color="#64748b"/>
+            <stop offset="100%" stop-color="#334155"/>
           </radialGradient>
-          <!-- 마티즈 흰털 (살짝 크림빛) -->
-          <radialGradient id="fur" cx="50%" cy="50%" r="60%">
-            <stop offset="0%"  stop-color="#ffffff"/>
-            <stop offset="60%" stop-color="#fafaf6"/>
-            <stop offset="100%" stop-color="#e8e4d8"/>
+          <!-- 바이저 — 골드 글래스 (투과+반사) -->
+          <radialGradient id="visor3D" cx="32%" cy="25%" r="85%">
+            <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.95"/>
+            <stop offset="18%"  stop-color="#fff5d6" stop-opacity="0.8"/>
+            <stop offset="45%"  stop-color="#fde68a" stop-opacity="0.55"/>
+            <stop offset="72%"  stop-color="#f59e0b" stop-opacity="0.42"/>
+            <stop offset="92%"  stop-color="#9a3412" stop-opacity="0.7"/>
+            <stop offset="100%" stop-color="#451a03" stop-opacity="0.85"/>
           </radialGradient>
-          <!-- 코 -->
-          <radialGradient id="nose" cx="40%" cy="35%" r="60%">
-            <stop offset="0%"  stop-color="#3a3a3a"/>
-            <stop offset="100%" stop-color="#0a0a0a"/>
+          <!-- 마티즈 흰털 — 머리 본체 (구) -->
+          <radialGradient id="fur3D" cx="38%" cy="28%" r="78%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="25%"  stop-color="#fdfcf8"/>
+            <stop offset="55%"  stop-color="#f0ece0"/>
+            <stop offset="80%"  stop-color="#d4cdb8"/>
+            <stop offset="100%" stop-color="#9c9580"/>
           </radialGradient>
-          <!-- 눈 (반짝임 표현) -->
-          <radialGradient id="eye" cx="35%" cy="30%" r="60%">
-            <stop offset="0%"  stop-color="#3a2a1a"/>
-            <stop offset="40%" stop-color="#1a0e05"/>
-            <stop offset="100%" stop-color="#000"/>
+          <!-- 귀 — 드리운 입체감 -->
+          <linearGradient id="earL" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#9c9580"/>
+            <stop offset="30%"  stop-color="#d4cdb8"/>
+            <stop offset="60%"  stop-color="#f8f5ec"/>
+            <stop offset="100%" stop-color="#ffffff"/>
+          </linearGradient>
+          <linearGradient id="earR" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="40%"  stop-color="#f8f5ec"/>
+            <stop offset="70%"  stop-color="#d4cdb8"/>
+            <stop offset="100%" stop-color="#9c9580"/>
+          </linearGradient>
+          <!-- 머즐(주둥이) — 살짝 튀어나오게 -->
+          <radialGradient id="muzzle3D" cx="50%" cy="35%" r="65%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="55%"  stop-color="#fbf9f3"/>
+            <stop offset="100%" stop-color="#e0d9c4"/>
+          </radialGradient>
+          <!-- 코 — 글로시 검정(3D 비드) -->
+          <radialGradient id="nose3D" cx="32%" cy="28%" r="75%">
+            <stop offset="0%"   stop-color="#a3a3a3"/>
+            <stop offset="20%"  stop-color="#525252"/>
+            <stop offset="55%"  stop-color="#1c1c1c"/>
+            <stop offset="100%" stop-color="#000000"/>
+          </radialGradient>
+          <!-- 눈 — 단추 비드 -->
+          <radialGradient id="eye3D" cx="30%" cy="25%" r="80%">
+            <stop offset="0%"   stop-color="#9a8466"/>
+            <stop offset="22%"  stop-color="#3a2a1a"/>
+            <stop offset="55%"  stop-color="#0a0604"/>
+            <stop offset="100%" stop-color="#000000"/>
           </radialGradient>
           <!-- 백팩(PLSS) -->
-          <linearGradient id="plssMaltese" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%"  stop-color="#fafafa"/>
-            <stop offset="100%" stop-color="#a8b0bd"/>
+          <linearGradient id="plss3D" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%"   stop-color="#ffffff"/>
+            <stop offset="40%"  stop-color="#dde2eb"/>
+            <stop offset="100%" stop-color="#6b7280"/>
           </linearGradient>
-          <!-- 입체감 그림자 -->
-          <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="2.5"/>
+          <linearGradient id="plssSide" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#475569"/>
+            <stop offset="100%" stop-color="#0f172a"/>
+          </linearGradient>
+          <!-- 장갑 -->
+          <radialGradient id="glove3D" cx="32%" cy="28%" r="80%">
+            <stop offset="0%"   stop-color="#6b7280"/>
+            <stop offset="40%"  stop-color="#1f2937"/>
+            <stop offset="100%" stop-color="#000000"/>
+          </radialGradient>
+          <!-- 그림자(투영) -->
+          <radialGradient id="groundShadow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="#000000" stop-opacity="0.5"/>
+            <stop offset="60%"  stop-color="#000000" stop-opacity="0.18"/>
+            <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+          </radialGradient>
+          <!-- 부드러운 그림자 필터 -->
+          <filter id="bodyShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+            <feOffset dx="2" dy="4"/>
+            <feComponentTransfer><feFuncA type="linear" slope="0.45"/></feComponentTransfer>
+            <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="1.5"/>
+          </filter>
+          <!-- 헬멧 표면 specular -->
+          <filter id="helmetSpec" x="-20%" y="-20%" width="140%" height="140%">
+            <feSpecularLighting result="spec" surfaceScale="3" specularConstant="0.6" specularExponent="20" lighting-color="#ffffff">
+              <fePointLight x="-30" y="-50" z="120"/>
+            </feSpecularLighting>
+            <feComposite in="spec" in2="SourceGraphic" operator="in" result="specMask"/>
+            <feComposite in="SourceGraphic" in2="specMask" operator="arithmetic" k1="0" k2="1" k3="1" k4="0"/>
           </filter>
         </defs>
 
-        <!-- ━━━ 1. 백팩 (어깨 뒤) ━━━ -->
-        <rect x="60" y="135" width="120" height="100" rx="14" fill="url(#plssMaltese)" stroke="#7a8694" stroke-width="1.2"/>
-        <rect x="68" y="148" width="22" height="14" rx="2" fill="#1f2937"/>
-        <rect x="150" y="148" width="22" height="14" rx="2" fill="#1f2937"/>
-        <circle cx="79" cy="180" r="3" fill="#10b981"/>
-        <circle cx="161" cy="180" r="3" fill="#ef4444"/>
+        <!-- ━━━ 0. 바닥 그림자 (투영) ━━━ -->
+        <ellipse cx="120" cy="316" rx="68" ry="9" fill="url(#groundShadow)"/>
 
-        <!-- ━━━ 2. 우주복 — 몸통 ━━━ -->
+        <!-- ━━━ 1. 백팩 (어깨 뒤) — 깊이감 ━━━ -->
+        <!-- 그림자(뒤) -->
+        <rect x="62" y="138" width="120" height="100" rx="14" fill="#1f2937" opacity="0.35" filter="url(#softGlow)"/>
+        <!-- 백팩 본체 -->
+        <rect x="60" y="135" width="120" height="100" rx="14" fill="url(#plss3D)" stroke="#5b6472" stroke-width="1.2"/>
+        <!-- 좌우 측면 그림자(입체) -->
+        <rect x="60" y="135" width="8" height="100" rx="3" fill="url(#plssSide)" opacity="0.55"/>
+        <rect x="172" y="135" width="8" height="100" rx="3" fill="url(#plssSide)" opacity="0.55"/>
+        <!-- 상단 하이라이트 -->
+        <rect x="68" y="138" width="104" height="6" rx="3" fill="#ffffff" opacity="0.7"/>
+        <!-- 패널 -->
+        <rect x="68" y="148" width="22" height="14" rx="2" fill="#0f172a"/>
+        <rect x="150" y="148" width="22" height="14" rx="2" fill="#0f172a"/>
+        <rect x="68" y="148" width="22" height="3" rx="1" fill="#475569"/>
+        <rect x="150" y="148" width="22" height="3" rx="1" fill="#475569"/>
+        <!-- LED -->
+        <circle cx="79" cy="180" r="3.2" fill="#10b981"/>
+        <circle cx="78" cy="178.5" r="1" fill="#ecfdf5"/>
+        <circle cx="161" cy="180" r="3.2" fill="#ef4444"/>
+        <circle cx="160" cy="178.5" r="1" fill="#fee2e2"/>
+        <!-- 그릴 -->
+        <line x1="100" y1="200" x2="140" y2="200" stroke="#475569" stroke-width="1"/>
+        <line x1="100" y1="206" x2="140" y2="206" stroke="#475569" stroke-width="1"/>
+        <line x1="100" y1="212" x2="140" y2="212" stroke="#475569" stroke-width="1"/>
+
+        <!-- ━━━ 2. 우주복 — 몸통(둥근 구면) ━━━ -->
         <path d="M70 160 Q70 250 80 280 L160 280 Q170 250 170 160 Q170 145 155 142 L85 142 Q70 145 70 160 Z"
-              fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.4"/>
-        <!-- 몸통 패널 라인 -->
-        <line x1="120" y1="150" x2="120" y2="278" stroke="#9aa3b1" stroke-width="0.7" stroke-dasharray="3,2"/>
-        <!-- 미션 패치 (가슴) -->
-        <circle cx="98" cy="195" r="13" fill="#1e40af" stroke="#fbbf24" stroke-width="1.5"/>
-        <text x="98" y="200" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="Arial, sans-serif">🐾</text>
-        <!-- USA 깃발 패치 -->
+              fill="url(#suit3D)" stroke="#5b6472" stroke-width="1.4"/>
+        <!-- 측면 그림자 -->
+        <path d="M70 160 Q70 250 80 280 L88 280 Q82 250 82 162 Q82 150 92 144 L85 142 Q70 145 70 160 Z" fill="#5b6472" opacity="0.32"/>
+        <path d="M170 160 Q170 250 160 280 L152 280 Q158 250 158 162 Q158 150 148 144 L155 142 Q170 145 170 160 Z" fill="#5b6472" opacity="0.22"/>
+        <!-- 중앙 광택 -->
+        <ellipse cx="106" cy="180" rx="14" ry="42" fill="#ffffff" opacity="0.45"/>
+        <!-- 패널 라인 -->
+        <line x1="120" y1="150" x2="120" y2="278" stroke="#475569" stroke-width="0.8" stroke-dasharray="3,2" opacity="0.7"/>
+        <!-- 미션 패치 -->
+        <circle cx="98" cy="195" r="13.5" fill="#1e3a8a" stroke="#fbbf24" stroke-width="1.6"/>
+        <circle cx="95" cy="192" r="4" fill="#3b82f6" opacity="0.7"/>
+        <text x="98" y="200" text-anchor="middle" fill="#fef3c7" font-size="11" font-weight="bold" font-family="Arial, sans-serif">🐾</text>
+        <!-- USA 깃발 -->
         <rect x="135" y="186" width="26" height="16" rx="1.5" fill="#fff" stroke="#1f2937" stroke-width="0.6"/>
         <rect x="135" y="186" width="11" height="7" fill="#1e3a8a"/>
         <line x1="135" y1="190.5" x2="161" y2="190.5" stroke="#dc2626" stroke-width="1.3"/>
-        <line x1="135" y1="195"   x2="161" y2="195"   stroke="#dc2626" stroke-width="1.3"/>
+        <line x1="135" y1="195" x2="161" y2="195" stroke="#dc2626" stroke-width="1.3"/>
         <line x1="135" y1="199.5" x2="161" y2="199.5" stroke="#dc2626" stroke-width="1.3"/>
+        <line x1="135" y1="186" x2="161" y2="186" stroke="#1f2937" stroke-width="0.4" opacity="0.4"/>
 
         <!-- ━━━ 3. 컨트롤 패널 (아랫배) ━━━ -->
-        <rect x="92" y="232" width="56" height="22" rx="3" fill="#e5e7eb" stroke="#9aa3b1" stroke-width="0.8"/>
-        <circle cx="102" cy="243" r="2.4" fill="#dc2626"/>
-        <circle cx="112" cy="243" r="2.4" fill="#fbbf24"/>
-        <circle cx="122" cy="243" r="2.4" fill="#10b981"/>
-        <rect x="130" y="239" width="14" height="8" rx="1" fill="#1f2937"/>
+        <rect x="92" y="232" width="56" height="22" rx="3" fill="#e5e7eb" stroke="#475569" stroke-width="0.8"/>
+        <rect x="92" y="232" width="56" height="3" rx="1" fill="#ffffff"/>
+        <rect x="92" y="251" width="56" height="3" rx="1" fill="#9aa3b1" opacity="0.6"/>
+        <circle cx="102" cy="243" r="2.8" fill="#dc2626"/>
+        <circle cx="101" cy="241.5" r="0.9" fill="#fee2e2"/>
+        <circle cx="112" cy="243" r="2.8" fill="#fbbf24"/>
+        <circle cx="111" cy="241.5" r="0.9" fill="#fef3c7"/>
+        <circle cx="122" cy="243" r="2.8" fill="#10b981"/>
+        <circle cx="121" cy="241.5" r="0.9" fill="#ecfdf5"/>
+        <rect x="130" y="239" width="14" height="8" rx="1" fill="#0f172a"/>
+        <rect x="131" y="240" width="12" height="2" rx="0.5" fill="#06b6d4" opacity="0.7"/>
 
-        <!-- ━━━ 4. 팔 ━━━ -->
-        <path d="M70 165 Q55 200 60 240 Q62 252 76 250 Q72 220 80 175 Z" fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.2"/>
-        <path d="M170 165 Q185 200 180 240 Q178 252 164 250 Q168 220 160 175 Z" fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.2"/>
-        <!-- 장갑 -->
-        <ellipse cx="64"  cy="252" rx="12" ry="10" fill="#1f2937" stroke="#000" stroke-width="0.8"/>
-        <ellipse cx="176" cy="252" rx="12" ry="10" fill="#1f2937" stroke="#000" stroke-width="0.8"/>
+        <!-- ━━━ 4. 팔 (실린더 입체) ━━━ -->
+        <path d="M70 165 Q55 200 60 240 Q62 252 76 250 Q72 220 80 175 Z" fill="url(#armL)" stroke="#5b6472" stroke-width="1.2"/>
+        <path d="M170 165 Q185 200 180 240 Q178 252 164 250 Q168 220 160 175 Z" fill="url(#armR)" stroke="#5b6472" stroke-width="1.2"/>
+        <!-- 팔꿈치 주름 -->
+        <path d="M61 205 Q66 207 72 205" stroke="#9aa3b1" stroke-width="0.6" fill="none" opacity="0.6"/>
+        <path d="M179 205 Q174 207 168 205" stroke="#9aa3b1" stroke-width="0.6" fill="none" opacity="0.6"/>
+        <!-- 장갑 (구체 입체) -->
+        <ellipse cx="64" cy="256" rx="13" ry="11" fill="url(#glove3D)" stroke="#000" stroke-width="0.8"/>
+        <ellipse cx="60" cy="251" rx="3" ry="2" fill="#9aa3b1" opacity="0.5"/>
+        <ellipse cx="176" cy="256" rx="13" ry="11" fill="url(#glove3D)" stroke="#000" stroke-width="0.8"/>
+        <ellipse cx="172" cy="251" rx="3" ry="2" fill="#9aa3b1" opacity="0.5"/>
+        <!-- 손목 링 -->
+        <ellipse cx="64" cy="246" rx="11" ry="3" fill="#475569"/>
+        <ellipse cx="176" cy="246" rx="11" ry="3" fill="#475569"/>
 
-        <!-- ━━━ 5. 헬멧 (외곽) ━━━ -->
-        <ellipse cx="120" cy="92" rx="68" ry="74" fill="#ffffff" stroke="#7a8694" stroke-width="2"/>
-        <!-- 헬멧 림 -->
-        <ellipse cx="120" cy="142" rx="56" ry="6" fill="#9aa3b1"/>
+        <!-- ━━━ 5. 헬멧 외곽 (구) ━━━ -->
+        <ellipse cx="120" cy="92" rx="68" ry="74" fill="url(#helmet3D)" stroke="#475569" stroke-width="2"/>
+        <!-- 헬멧 림 (그림자 + 하이라이트) -->
+        <ellipse cx="120" cy="142" rx="58" ry="7" fill="#475569"/>
+        <ellipse cx="120" cy="140.5" rx="55" ry="3" fill="#cbd5e1" opacity="0.7"/>
 
-        <!-- ━━━ 6. 바이저 (금빛 유리) ━━━ -->
-        <ellipse cx="120" cy="92" rx="56" ry="60" fill="url(#visorMaltese)" stroke="#92400e" stroke-width="1.5"/>
+        <!-- ━━━ 6. 바이저 (글래스) ━━━ -->
+        <ellipse cx="120" cy="92" rx="56" ry="60" fill="url(#visor3D)" stroke="#7c2d12" stroke-width="1.8"/>
+        <!-- 바이저 안쪽 림 그림자 -->
+        <ellipse cx="120" cy="92" rx="55" ry="59" fill="none" stroke="#451a03" stroke-width="1" opacity="0.6"/>
 
-        <!-- ━━━ 7. 🐶 마티즈 강아지 얼굴 (바이저 안) ━━━ -->
-        <!-- 양쪽 귀 (드리운 흰털) -->
-        <ellipse cx="82"  cy="92"  rx="18" ry="32" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8" transform="rotate(-12 82 92)"/>
-        <ellipse cx="158" cy="92"  rx="18" ry="32" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8" transform="rotate(12 158 92)"/>
+        <!-- ━━━ 7. 🐶 마티즈 강아지 얼굴 (입체 다층) ━━━ -->
+        <!-- 귀 그림자 (얼굴 뒤) -->
+        <ellipse cx="84" cy="98" rx="20" ry="34" fill="#5b5040" opacity="0.35" transform="rotate(-12 84 98)"/>
+        <ellipse cx="156" cy="98" rx="20" ry="34" fill="#5b5040" opacity="0.35" transform="rotate(12 156 98)"/>
+        <!-- 귀 본체 -->
+        <ellipse cx="82" cy="92" rx="18" ry="32" fill="url(#earL)" stroke="#c4bda8" stroke-width="0.8" transform="rotate(-12 82 92)"/>
+        <ellipse cx="158" cy="92" rx="18" ry="32" fill="url(#earR)" stroke="#c4bda8" stroke-width="0.8" transform="rotate(12 158 92)"/>
+        <!-- 귀 끝 털결 -->
+        <path d="M76 118 Q78 124 80 122 M84 122 Q86 128 88 126" stroke="#a8a08c" stroke-width="0.7" fill="none" opacity="0.7" transform="rotate(-12 82 92)"/>
+        <path d="M152 122 Q154 128 156 126 M160 122 Q162 128 164 126" stroke="#a8a08c" stroke-width="0.7" fill="none" opacity="0.7" transform="rotate(12 158 92)"/>
         <!-- 머리 윗부분 (이마 털) -->
-        <ellipse cx="120" cy="68" rx="42" ry="22" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.6"/>
-        <!-- 머리 본체 (둥근 얼굴) -->
-        <ellipse cx="120" cy="98" rx="46" ry="42" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8"/>
-        <!-- 털 결 (텍스처) -->
+        <ellipse cx="120" cy="68" rx="42" ry="22" fill="url(#fur3D)" stroke="#c4bda8" stroke-width="0.6"/>
+        <!-- 머리 본체 (구체) -->
+        <ellipse cx="120" cy="98" rx="46" ry="42" fill="url(#fur3D)" stroke="#c4bda8" stroke-width="0.8"/>
+        <!-- 얼굴 좌측 음영 -->
+        <ellipse cx="100" cy="105" rx="20" ry="30" fill="#a8a08c" opacity="0.18"/>
+        <!-- 얼굴 우측 하이라이트 -->
+        <ellipse cx="138" cy="80" rx="14" ry="20" fill="#ffffff" opacity="0.55"/>
+        <!-- 털 결 디테일 -->
         <path d="M80 75 Q85 70 90 78 M95 65 Q100 60 105 68 M115 60 Q120 56 125 62 M135 64 Q140 60 145 68 M155 73 Q160 70 165 80"
-              stroke="#e0dac8" stroke-width="1.2" fill="none" opacity="0.7"/>
-        <path d="M82 110 Q86 116 92 112 M155 110 Q158 116 165 112"
-              stroke="#e0dac8" stroke-width="1" fill="none" opacity="0.6"/>
+              stroke="#d4cdb8" stroke-width="1.3" fill="none" opacity="0.85" stroke-linecap="round"/>
+        <path d="M82 110 Q86 116 92 112 M155 110 Q158 116 165 112 M88 130 Q92 134 96 130 M148 130 Q152 134 156 130"
+              stroke="#c4bda8" stroke-width="1" fill="none" opacity="0.7" stroke-linecap="round"/>
 
-        <!-- 눈 (검은 동그란 단추 눈) — 마티즈 특유 -->
-        <ellipse cx="103" cy="95" rx="6"   ry="6.5" fill="url(#eye)"/>
-        <ellipse cx="137" cy="95" rx="6"   ry="6.5" fill="url(#eye)"/>
-        <!-- 눈 하이라이트 -->
-        <circle cx="101" cy="92" r="1.7" fill="#fff" opacity="0.95"/>
-        <circle cx="135" cy="92" r="1.7" fill="#fff" opacity="0.95"/>
-        <circle cx="105" cy="97" r="0.8" fill="#fff" opacity="0.7"/>
-        <circle cx="139" cy="97" r="0.8" fill="#fff" opacity="0.7"/>
+        <!-- ━━━ 눈 (3D 단추 비드) ━━━ -->
+        <!-- 눈구멍 그림자 -->
+        <ellipse cx="103" cy="96" rx="7" ry="7.5" fill="#3a2a1a" opacity="0.45"/>
+        <ellipse cx="137" cy="96" rx="7" ry="7.5" fill="#3a2a1a" opacity="0.45"/>
+        <!-- 눈동자 -->
+        <ellipse cx="103" cy="95" rx="6" ry="6.5" fill="url(#eye3D)"/>
+        <ellipse cx="137" cy="95" rx="6" ry="6.5" fill="url(#eye3D)"/>
+        <!-- 메인 하이라이트 -->
+        <circle cx="100.5" cy="91.5" r="2.2" fill="#ffffff" opacity="0.95"/>
+        <circle cx="134.5" cy="91.5" r="2.2" fill="#ffffff" opacity="0.95"/>
+        <!-- 부 하이라이트 -->
+        <circle cx="105" cy="98" r="0.9" fill="#ffffff" opacity="0.75"/>
+        <circle cx="139" cy="98" r="0.9" fill="#ffffff" opacity="0.75"/>
+        <!-- 반사광(아래) -->
+        <ellipse cx="103" cy="100" rx="3" ry="0.8" fill="#fbbf24" opacity="0.45"/>
+        <ellipse cx="137" cy="100" rx="3" ry="0.8" fill="#fbbf24" opacity="0.45"/>
 
-        <!-- 코 주변 머즐 (입 주변 둥근 흰털) -->
-        <ellipse cx="120" cy="115" rx="16" ry="12" fill="#ffffff" stroke="#e0dac8" stroke-width="0.6"/>
+        <!-- ━━━ 머즐 (입체 돌출) ━━━ -->
+        <!-- 머즐 그림자 -->
+        <ellipse cx="120" cy="118" rx="17" ry="12" fill="#a8a08c" opacity="0.35" filter="url(#softGlow)"/>
+        <!-- 머즐 본체 -->
+        <ellipse cx="120" cy="115" rx="16" ry="12" fill="url(#muzzle3D)" stroke="#d4cdb8" stroke-width="0.7"/>
+        <!-- 머즐 상단 광택 -->
+        <ellipse cx="120" cy="111" rx="10" ry="3" fill="#ffffff" opacity="0.7"/>
 
-        <!-- 코 (검은 하트 모양) -->
-        <ellipse cx="120" cy="108" rx="5" ry="4" fill="url(#nose)"/>
-        <!-- 코 하이라이트 -->
-        <ellipse cx="118.5" cy="106" rx="1.4" ry="1" fill="#fff" opacity="0.7"/>
+        <!-- ━━━ 코 (글로시 3D) ━━━ -->
+        <!-- 코 그림자 -->
+        <ellipse cx="120" cy="110" rx="6" ry="4.5" fill="#000" opacity="0.35" filter="url(#softGlow)"/>
+        <!-- 코 본체 -->
+        <ellipse cx="120" cy="108" rx="5.5" ry="4.2" fill="url(#nose3D)"/>
+        <!-- 코 메인 하이라이트 -->
+        <ellipse cx="118" cy="106" rx="1.8" ry="1.2" fill="#ffffff" opacity="0.85"/>
+        <!-- 코 부 하이라이트 -->
+        <circle cx="121" cy="107" r="0.6" fill="#ffffff" opacity="0.6"/>
 
-        <!-- 입 (작은 W모양) -->
-        <path d="M120 113 L120 118 M120 118 Q116 121 113 119 M120 118 Q124 121 127 119"
-              stroke="#3a2a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <!-- 작은 분홍 혀 -->
-        <ellipse cx="120" cy="121" rx="2.2" ry="1.4" fill="#f87171"/>
+        <!-- ━━━ 입 + 혀 ━━━ -->
+        <path d="M120 113 L120 118 M120 118 Q116 122 112 119 M120 118 Q124 122 128 119"
+              stroke="#3a2a1a" stroke-width="1.7" fill="none" stroke-linecap="round"/>
+        <ellipse cx="120" cy="121" rx="2.5" ry="1.6" fill="#ef4444"/>
+        <ellipse cx="120" cy="120.5" rx="1.5" ry="0.7" fill="#fca5a5" opacity="0.8"/>
 
-        <!-- 양쪽 볼 살짝 핑크 (귀여움) -->
-        <circle cx="92"  cy="113" r="4.5" fill="#fda4af" opacity="0.35"/>
-        <circle cx="148" cy="113" r="4.5" fill="#fda4af" opacity="0.35"/>
+        <!-- ━━━ 볼터치 ━━━ -->
+        <ellipse cx="92" cy="113" rx="5.5" ry="4" fill="#fda4af" opacity="0.5"/>
+        <ellipse cx="148" cy="113" rx="5.5" ry="4" fill="#fda4af" opacity="0.5"/>
 
-        <!-- ━━━ 8. 헬멧 반사광 ━━━ -->
-        <ellipse cx="92" cy="65" rx="14" ry="22" fill="#ffffff" opacity="0.55"/>
-        <ellipse cx="98" cy="55" rx="6"  ry="10" fill="#ffffff" opacity="0.85"/>
+        <!-- ━━━ 8. 헬멧 표면 광택(specular) ━━━ -->
+        <!-- 메인 광채 -->
+        <ellipse cx="92" cy="62" rx="16" ry="26" fill="#ffffff" opacity="0.7"/>
+        <ellipse cx="98" cy="52" rx="7" ry="11" fill="#ffffff" opacity="0.95"/>
+        <!-- 우측 보조 반사 -->
+        <ellipse cx="158" cy="115" rx="5" ry="14" fill="#ffffff" opacity="0.35"/>
+        <!-- 하단 림 라이트 -->
+        <ellipse cx="120" cy="142" rx="40" ry="5" fill="#ffffff" opacity="0.55"/>
 
         <!-- ━━━ 9. 안테나 ━━━ -->
-        <line x1="120" y1="18" x2="120" y2="6" stroke="#9aa3b1" stroke-width="1.3"/>
-        <circle cx="120" cy="4" r="2.2" fill="#dc2626"/>
+        <line x1="120" y1="20" x2="120" y2="6" stroke="#475569" stroke-width="1.5"/>
+        <line x1="120" y1="20" x2="120" y2="6" stroke="#cbd5e1" stroke-width="0.5"/>
+        <circle cx="120" cy="4" r="2.5" fill="#dc2626"/>
+        <circle cx="119" cy="3" r="0.9" fill="#fee2e2"/>
 
-        <!-- ━━━ 10. 헬멧 광채 ━━━ -->
-        <ellipse cx="120" cy="92" rx="62" ry="66" fill="#fde68a" opacity="0.06"/>
+        <!-- ━━━ 10. 주변 글로우 ━━━ -->
+        <ellipse cx="120" cy="92" rx="64" ry="68" fill="#fde68a" opacity="0.05"/>
       </svg>
     </div>
 
