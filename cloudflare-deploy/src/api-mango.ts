@@ -388,47 +388,65 @@ export async function handleMangoApi(
     }
 
     // ===== 📼 공개 학생 녹화본 조회 (본인이 참여한 수업만) =====
-    //   /api/student/recordings?uid=정우영&limit=30
-    //   recordings.participant_ids JSON 배열에 user_id가 포함된 녹화 + 본인이 강사인 녹화
-    //   응답: { ok, rows: [{ id, date, topic, teacher, duration, size, url }, ...] }
+    //   /api/student/recordings?uid=정우영&limit=50
+    //   recordings.participant_ids JSON 에 user_id 포함된 녹화 + 본인이 강사인 녹화
+    //   재생 URL: file_url 우선, 없으면 /api/recordings/blob/recordings/{filename} (R2)
+    //   filter: status != 'deleted' (file_url 비어있어도 R2 추정 시도)
     if (path === '/api/student/recordings' && method === 'GET') {
       const uid = (url.searchParams.get('uid') || '').trim();
-      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
       if (!uid) return json({ ok: true, rows: [], count: 0 });
       try {
-        // recordings 테이블 자동 생성 (이미 있으면 무시)
         await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
-        // participant_ids 가 JSON 배열 문자열이라 LIKE 로 매칭
         const likePattern = '%"' + uid + '"%';
         const rs = await env.DB.prepare(
-          `SELECT id, room_id, teacher_name, filename, file_url, size_bytes, duration_ms,
+          `SELECT id, room_id, teacher_id, teacher_name, filename, file_url, size_bytes, duration_ms,
                   started_at, ended_at, status, storage,
-                  participant_names
+                  participant_names, participant_ids
              FROM recordings
-            WHERE (participant_ids LIKE ? OR teacher_name = ? OR teacher_id = ?)
+            WHERE (participant_ids LIKE ?
+                   OR participant_names LIKE ?
+                   OR teacher_name = ?
+                   OR teacher_id = ?)
               AND status != 'deleted'
-              AND file_url IS NOT NULL
             ORDER BY started_at DESC
             LIMIT ?`
-        ).bind(likePattern, uid, uid, limit).all<any>();
+        ).bind(likePattern, likePattern, uid, uid, limit).all<any>();
         const raw = (rs.results || []) as any[];
 
-        // 학생 친화적 형식으로 변환
+        // R2 blob key 패턴: recordings/{filename}
+        // 재생 URL: /api/recordings/blob/{encodedBlobKey}
         const rows = raw.map((r: any) => {
           const startMs = r.started_at || 0;
-          const date = startMs ? new Date(startMs).toISOString().slice(0,10) : '-';
-          const durMin = r.duration_ms ? Math.round(r.duration_ms / 60000) + '분' : '-';
-          const sizeMB = r.size_bytes ? (Math.round(r.size_bytes / 1024 / 1024) + ' MB') : '-';
+          const date = startMs ? new Date(startMs).toLocaleDateString('ko-KR', { year:'numeric', month:'2-digit', day:'2-digit' }).replace(/\.\s/g, '-').replace(/\.$/, '') : '-';
+          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+          const durStr = durSec >= 60 ? Math.round(durSec / 60) + '분' : (durSec + '초');
+          const sizeMB = r.size_bytes ? (r.size_bytes >= 1024*1024 ? (Math.round(r.size_bytes / 1024 / 1024 * 10) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB') : '-';
+
+          // 재생 URL 결정:
+          // 1. file_url 컬럼이 명시적으로 있으면 사용
+          // 2. 없으면 filename 으로 R2 blob key 만들어 admin 과 동일 endpoint 사용
+          let playUrl = '';
+          if (r.file_url && r.file_url !== 'null') {
+            playUrl = r.file_url;
+          } else if (r.filename) {
+            const blobKey = r.filename.startsWith('recordings/') ? r.filename : ('recordings/' + r.filename);
+            playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
+          } else {
+            playUrl = '';
+          }
+
           return {
             id: r.id,
             date,
-            topic: r.filename ? r.filename.replace(/\.(webm|mp4)$/i, '') : ('수업 ' + (r.room_id || r.id)),
+            topic: '방 ' + (r.room_id || '-') + ' 수업',
             teacher: r.teacher_name || '-',
-            duration: durMin,
+            duration: durStr,
             size: sizeMB,
-            url: r.file_url || '#',
+            url: playUrl,
             status: r.status || 'completed',
             storage: r.storage || 'r2',
+            filename: r.filename || null,
           };
         });
         return json({ ok: true, rows, recordings: rows, count: rows.length });
@@ -2959,21 +2977,4 @@ export async function handleMangoApi(
                       (SELECT COUNT(1) FROM attendance a
                         WHERE a.room_id = r.room_id
                           AND COALESCE(a.total_session_ms, 0) > 0
-                          AND COALESCE(a.total_active_ms, 0) = 0
-                          AND a.joined_at >= (COALESCE(r.started_at, 0) - 30000)
-                          AND a.joined_at <= (
-                                COALESCE(r.ended_at,
-                                         r.started_at + COALESCE(r.duration_ms, 0),
-                                         r.started_at + 10800000) + 30000
-                              )
-                      ) AS speaking_zero_count
-               FROM recordings r ${whereSQL}
-               ORDER BY r.started_at DESC LIMIT ? OFFSET ?`;
-      const listBinds = [...whereBinds, limit, offset];
-      const rs = await env.DB.prepare(q).bind(...listBinds).all();
-
-      // 응답 본문은 배열 그대로 유지 (하위 호환성). 페이지네이션 메타는 헤더로 전달.
-      return new Response(JSON.stringify(rs.results || []), {
-        status: 200,
-        headers: {
-          'Content-Type': 'applicatio
+                          AND COALESCE(a.total_ac
