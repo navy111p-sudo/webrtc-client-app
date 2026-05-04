@@ -2645,8 +2645,28 @@
                   <input id="tp-join-date" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
                 <div><label style="font-size:11px;color:#374151;font-weight:600" data-ko="퇴사일 (해당 시)" data-en="Leave Date (if any)">퇴사일 (해당 시)</label>
                   <input id="tp-leave-date" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
-                <div style="grid-column:1/-1"><label style="font-size:11px;color:#374151;font-weight:600" data-ko="프로필 이미지 URL" data-en="Profile Image URL">프로필 이미지 URL</label>
-                  <input id="tp-image-url" type="url" placeholder="https://... (R2/CDN URL)" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
+                <div style="grid-column:1/-1">
+                  <label style="font-size:11px;color:#374151;font-weight:600" data-ko="프로필 이미지 (파일)" data-en="Profile Image (File)">프로필 이미지 (파일)</label>
+                  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
+                    <input id="tp-image-file" type="file" accept="image/*,application/pdf"
+                           style="flex:1;min-width:200px;padding:6px;border:1px dashed #d1d5db;border-radius:6px;font-size:12px;background:#fafafa;cursor:pointer"
+                           onchange="handleProfileImageUpload(this)" />
+                    <img id="tp-image-preview" alt="미리보기"
+                         style="display:none;max-width:60px;max-height:60px;border-radius:8px;border:1px solid #d1d5db;object-fit:cover" />
+                    <span id="tp-image-info" style="font-size:11px;color:#6b7280;flex-basis:100%"></span>
+                  </div>
+                  <!-- 폼이 사용하는 실제 값 (data URL 또는 외부 URL) -->
+                  <input id="tp-image-url" type="hidden" />
+                  <details style="margin-top:6px">
+                    <summary style="cursor:pointer;font-size:11px;color:#6b7280;list-style:none">
+                      <span data-ko="📎 또는 URL 직접 입력" data-en="📎 Or enter URL directly">📎 또는 URL 직접 입력</span>
+                    </summary>
+                    <input id="tp-image-url-text" type="url" placeholder="https://... (R2/CDN URL)"
+                           style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:4px"
+                           oninput="document.getElementById('tp-image-url').value = this.value.trim();" />
+                  </details>
+                  <span style="display:block;font-size:10.5px;color:#9aa3b8;margin-top:4px">JPEG · PNG · WebP · PDF 지원 · 최대 5MB</span>
+                </div>
                 <div style="grid-column:1/-1"><label style="font-size:11px;color:#374151;font-weight:600" data-ko="소개 비디오 URL" data-en="Intro Video URL">소개 비디오 URL</label>
                   <input id="tp-video-url" type="url" placeholder="https://youtube.com/... or https://..." style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" /></div>
                 <div><label style="font-size:11px;color:#374151;font-weight:600" data-ko="학력" data-en="Education">학력</label>
@@ -5347,6 +5367,54 @@ async function loadTeacherProfiles() {
     '</tr>';
   }).join('');
 }
+// 프로필 이미지 파일 업로드 → base64 data URL 로 변환해 hidden input 에 저장
+window.handleProfileImageUpload = function(input) {
+  const file = input.files && input.files[0];
+  const hidden = document.getElementById('tp-image-url');
+  const preview = document.getElementById('tp-image-preview');
+  const info = document.getElementById('tp-image-info');
+  if (!file) return;
+  const sizeMB = file.size / 1024 / 1024;
+  // 파일 종류 검사
+  const isImage = file.type.startsWith('image/');
+  const isPDF = file.type === 'application/pdf';
+  if (!isImage && !isPDF) {
+    alert('지원하지 않는 파일 형식입니다.\n이미지(JPEG/PNG/WebP/GIF) 또는 PDF만 업로드 가능합니다.');
+    input.value = '';
+    return;
+  }
+  if (sizeMB > 5) {
+    alert('파일이 너무 큽니다 (' + sizeMB.toFixed(2) + 'MB).\n5MB 이하 파일을 업로드해주세요.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function() {
+    const dataUrl = reader.result;
+    if (hidden) hidden.value = dataUrl;
+    if (isImage) {
+      // 이미지: 미리보기에 바로 표시
+      if (preview) {
+        preview.src = dataUrl;
+        preview.style.display = 'block';
+      }
+      if (info) info.textContent = '📷 ' + file.name + ' (' + sizeMB.toFixed(2) + 'MB) — 저장됩니다';
+    } else {
+      // PDF
+      if (preview) preview.style.display = 'none';
+      if (info) info.textContent = '📄 ' + file.name + ' (' + sizeMB.toFixed(2) + 'MB) — PDF 저장됩니다';
+    }
+    // URL 텍스트 입력은 비움 (파일 업로드 우선)
+    const urlText = document.getElementById('tp-image-url-text');
+    if (urlText) urlText.value = '';
+  };
+  reader.onerror = function() {
+    alert('파일을 읽을 수 없습니다. 다시 시도해주세요.');
+    input.value = '';
+  };
+  reader.readAsDataURL(file);
+};
+
 async function addTeacherProfile() {
   const e = id => document.getElementById(id);
   const body = {
@@ -5455,7 +5523,31 @@ async function editTeacherProfile(id) {
   set('tp-active-region', t.active_region); set('tp-origin-region', t.origin_region);
   set('tp-fee-10min', t.fee_per_10min); set('tp-group', t.group_name); set('tp-status', t.status||'활동중');
   set('tp-join-date', t.join_date); set('tp-leave-date', t.leave_date);
-  set('tp-image-url', t.image_url); set('tp-video-url', t.intro_video_url);
+  set('tp-image-url', t.image_url); set('tp-image-url-text', t.image_url); set('tp-video-url', t.intro_video_url);
+  // 프로필 이미지 미리보기 복원
+  (function(){
+    const url = t.image_url || '';
+    const pv = document.getElementById('tp-image-preview');
+    const info = document.getElementById('tp-image-info');
+    const fileInput = document.getElementById('tp-image-file');
+    if (fileInput) fileInput.value = '';
+    if (pv && info) {
+      if (url && /^(data:image\/|https?:\/\/.*\.(png|jpe?g|gif|webp|svg))/i.test(url)) {
+        pv.src = url;
+        pv.style.display = 'block';
+        info.textContent = url.startsWith('data:') ? '📷 저장된 이미지 (새 파일 선택 시 교체됨)' : '📷 ' + url;
+      } else if (url && /^data:application\/pdf/i.test(url)) {
+        pv.style.display = 'none';
+        info.textContent = '📄 저장된 PDF 파일 (새 파일 선택 시 교체됨)';
+      } else if (url) {
+        pv.style.display = 'none';
+        info.textContent = '🔗 ' + url;
+      } else {
+        pv.style.display = 'none';
+        info.textContent = '';
+      }
+    }
+  })();
   set('tp-education', t.education); set('tp-career', t.career); set('tp-cert', t.certifications);
   set('tp-avail-days', t.available_days); set('tp-avail-hours', t.available_hours);
   set('tp-bank-name', t.bank_name); set('tp-bank-acct', t.bank_account); set('tp-notes', t.notes);
@@ -11306,87 +11398,4 @@ window.rebuildGlobalSearchIndex = function() {
     c.match = null;
     c.status = 'pending';
     renderSubTable();
-    updateSubKpis();
-  };
-
-  function renderSubTable() {
-    const tbody = document.getElementById('sub-rows');
-    if (!tbody) return;
-    if (_absentClasses.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#9ca3af">결석 강사가 없습니다. 좋은 하루입니다! ☀️</td></tr>';
-      return;
-    }
-    tbody.innerHTML = _absentClasses.map(c => {
-      const at = c.absent_teacher;
-      const m = c.match;
-      const statusBadge = c.status === 'applied'
-        ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✅ 적용완료</span>'
-        : m
-          ? '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⏳ 대기</span>'
-          : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">❗ 미매칭</span>';
-      const matchCell = m
-        ? `<div><b>${m.teacher.name}</b><div style="font-size:10px;color:#6b7280">⭐${m.teacher.rating} · 레벨 ${m.teacher.levels.join('/')}</div></div>`
-        : '<button onclick="autoMatchOne('+c.id+')" style="padding:3px 8px;font-size:11px;background:#a855f7;color:#fff;border:0;border-radius:4px;cursor:pointer">🤖 매칭</button>';
-      const scoreCell = m
-        ? `<span style="background:${m.score>=80?'#dcfce7':m.score>=60?'#fef3c7':'#fee2e2'};color:${m.score>=80?'#15803d':m.score>=60?'#92400e':'#991b1b'};padding:2px 10px;border-radius:99px;font-size:11px;font-weight:800">${m.score}점</span>`
-        : '—';
-      const actionCell = c.status === 'applied'
-        ? statusBadge
-        : m
-          ? `<button onclick="applyMatch(${c.id})" style="padding:3px 8px;font-size:11px;background:#10b981;color:#fff;border:0;border-radius:4px;cursor:pointer;margin-right:3px">✅</button><button onclick="rejectMatch(${c.id})" style="padding:3px 8px;font-size:11px;background:#fee2e2;color:#991b1b;border:0;border-radius:4px;cursor:pointer">✕</button>`
-          : statusBadge;
-      return `<tr style="border-bottom:1px solid #f3f4f6">
-        <td style="padding:8px 10px;font-family:Consolas,monospace;color:#0ea5e9;font-weight:700">${c.time}</td>
-        <td style="padding:8px 10px;color:#111;font-weight:600">${c.student}</td>
-        <td style="padding:8px 10px;text-align:center"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${c.level}</span></td>
-        <td style="padding:8px 10px"><b style="color:#dc2626">${at.name}</b><div style="font-size:10px;color:#9ca3af">⚠️ 결석</div></td>
-        <td style="padding:8px 10px;text-align:center;color:#a855f7;font-size:18px">→</td>
-        <td style="padding:8px 10px">${matchCell}</td>
-        <td style="padding:8px 10px;text-align:center">${scoreCell}</td>
-        <td style="padding:8px 10px;text-align:center">${actionCell}</td>
-      </tr>`;
-    }).join('');
-  }
-
-  window.autoMatchOne = function(id) {
-    const c = _absentClasses.find(x => x.id === id);
-    if (!c) return;
-    c.match = findBestSubstitute(c);
-    renderSubTable();
-    updateSubKpis();
-    const applyBtn = document.getElementById('apply-all-btn');
-    if (applyBtn && _absentClasses.some(x => x.match)) {
-      applyBtn.disabled = false; applyBtn.style.opacity = '1';
-    }
-  };
-
-  function updateSubKpis() {
-    const absent = new Set(_absentClasses.map(c => c.absent_teacher.id)).size;
-    const matched = _absentClasses.filter(c => c.match).length;
-    const saved = matched * 8; // 매칭 1건당 평균 8분 절감
-    const $ = (id) => document.getElementById(id);
-    $('kpi-absent') && ($('kpi-absent').textContent = absent + '명');
-    $('kpi-classes') && ($('kpi-classes').textContent = _absentClasses.length + '개');
-    $('kpi-matched') && ($('kpi-matched').textContent = matched + '건');
-    $('kpi-saved') && ($('kpi-saved').textContent = saved + '분');
-  }
-
-  // 카드 열릴 때 자동 오늘 날짜 세팅
-  document.addEventListener('DOMContentLoaded', () => {
-    const today = new Date().toISOString().slice(0,10);
-    const dateInput = document.getElementById('sub-date');
-    if (dateInput) dateInput.value = today;
-    const subItem = document.getElementById('sub-auto-sub');
-    if (subItem) {
-      subItem.addEventListener('toggle', () => {
-        if (subItem.open && _absentClasses.length === 0) {
-          setTimeout(loadAbsentTeachers, 300);
-        }
-      });
-    }
-  });
-})();
-</script>
-
-</body>
-</html>
+    updateSubKp
