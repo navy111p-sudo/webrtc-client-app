@@ -148,6 +148,27 @@ export default {
       if (res) return res;
     }
 
+    // 🩺 R2 녹화 파일 공개 진단 (학생용) — file 존재여부 확인
+    if (path === '/api/recordings/check' && request.method === 'GET') {
+      try {
+        if (!env.RECORDINGS) return new Response(JSON.stringify({ ok:false, error:'R2 not configured' }), { headers:{'Content-Type':'application/json'} });
+        const k = url.searchParams.get('key') || '';
+        if (!k) {
+          // 전체 목록 (최근 20개)
+          const list = await env.RECORDINGS.list({ prefix: 'recordings/', limit: 20 });
+          return new Response(JSON.stringify({ ok:true, total: list.objects.length, items: list.objects.map(o=>({ key:o.key, size:o.size, uploaded:o.uploaded })) }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
+        }
+        const obj = await env.RECORDINGS.head(k);
+        return new Response(JSON.stringify({
+          ok: true, key: k, exists: !!obj,
+          size: obj?.size, uploaded: obj?.uploaded,
+          contentType: obj?.httpMetadata?.contentType
+        }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
+      } catch(e:any) {
+        return new Response(JSON.stringify({ ok:false, error: e?.message }), { headers:{'Content-Type':'application/json'} });
+      }
+    }
+
     // R2 녹화 저장소 연결 테스트
     if (path === '/api/recordings/test-r2' && request.method === 'GET') {
       try {
@@ -257,6 +278,7 @@ export default {
         path === '/api/community/posts' ||
         path === '/api/teacher-profiles' ||
         path === '/api/_bootstrap' ||
+        path === '/api/student/recordings' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -915,7 +937,20 @@ async function handleRecordingDownload(path: string, request: Request, env: Env)
       ? await env.RECORDINGS.get(key, { range })
       : await env.RECORDINGS.get(key);
 
-    if (!obj) return recordingJson({ error: 'Not found' }, 404);
+    if (!obj) {
+      // 🎬 R2 객체 없음 → DB 의 file_url 로 fallback redirect (다른 storage·외부 URL)
+      try {
+        const fname = key.startsWith('recordings/') ? key.slice('recordings/'.length) : key;
+        const rs = await env.DB.prepare(
+          'SELECT file_url FROM recordings WHERE filename = ? OR filename = ? LIMIT 1'
+        ).bind(fname, key).first<any>();
+        const fu = rs && (rs as any).file_url;
+        if (fu && /^https?:\/\//.test(fu)) {
+          return Response.redirect(fu, 302);
+        }
+      } catch(e) { /* DB 조회 실패해도 404 */ }
+      return recordingJson({ error: 'Not found', key, hint: 'R2 객체가 없습니다. recordings 테이블의 file_url 도 비어 있습니다.' }, 404);
+    }
 
     const headers = new Headers();
     headers.set('Content-Type', (obj.httpMetadata && obj.httpMetadata.contentType) || 'video/webm');
@@ -1021,7 +1056,8 @@ function isAdminPath(path: string, method: string): boolean {
   // 학생 클라이언트 자동 호출인 /start, /stop, /upload, /stream, /complete, /blob/upload 는 열어둠.
   if (path === '/api/recordings' && method === 'GET') return true;
   if (path === '/api/recordings/blob/list' && method === 'GET') return true;
-  if (path.startsWith('/api/recordings/blob/') && (method === 'GET' || method === 'DELETE')) return true;
+  // 🎬 GET /api/recordings/blob/{key} — 학생 본인 녹화본 재생용. 공개 허용 (DELETE 만 관리자)
+  if (path.startsWith('/api/recordings/blob/') && method === 'DELETE') return true;
   // DELETE /api/recordings/{숫자ID} (Mango DB 레코드 삭제) — 관리자
   // 단, /api/recordings/blob/* 는 위에서 이미 처리됐고, /start·/stop 은 POST 라 method 체크로 통과
   if (method === 'DELETE' && /^\/api\/recordings\/\d+$/.test(path)) return true;
@@ -1152,60 +1188,4 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
   try {
     const t0 = Date.now();
     await env.PDF_STORE.get('__health_probe__');
-    bindings.kv_pdf = { status: 'ok', latencyMs: Date.now() - t0 };
-  } catch (e: any) {
-    bindings.kv_pdf = { status: 'error', error: String(e?.message || e) };
-  }
-
-  // --- KV: SESSION_STATE ------------------------------------------
-  try {
-    const t0 = Date.now();
-    await env.SESSION_STATE.get('__health_probe__');
-    bindings.kv_session = { status: 'ok', latencyMs: Date.now() - t0 };
-  } catch (e: any) {
-    bindings.kv_session = { status: 'error', error: String(e?.message || e) };
-  }
-
-  // --- Durable Objects binding presence only (호출은 실제 방 진입에서만) ---
-  bindings.do_signaling = { status: env.SIGNALING_ROOM ? 'ok' : 'error', configured: !!env.SIGNALING_ROOM };
-  bindings.do_video_call = { status: env.VIDEO_CALL_ROOM ? 'ok' : 'error', configured: !!env.VIDEO_CALL_ROOM };
-
-  // --- Secrets & vars ----------------------------------------------
-  bindings.admin_password = {
-    status: env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length >= 4 ? 'ok' : 'warn',
-    configured: !!env.ADMIN_PASSWORD,
-    length: env.ADMIN_PASSWORD ? env.ADMIN_PASSWORD.length : 0,
-    failOpenThreshold: 4
-  };
-  bindings.turn_key = {
-    status: env.TURN_KEY_API_TOKEN ? 'ok' : 'warn',
-    configured: !!env.TURN_KEY_API_TOKEN
-  };
-  bindings.livekit = {
-    status: env.LIVEKIT_API_SECRET ? 'ok' : 'warn',
-    configured: !!env.LIVEKIT_API_SECRET
-  };
-
-  // --- Build / deploy info ----------------------------------------
-  const cf = (request as any).cf || {};
-  const buildInfo = {
-    stamp: env.BUILD_STAMP || '(not set — wrangler.toml vars.BUILD_STAMP 미설정)',
-    workerNow: new Date().toISOString(),
-    cfColo: cf.colo || '(unknown)',
-    cfCountry: cf.country || '(unknown)'
-  };
-
-  return new Response(JSON.stringify({
-    ok: true,
-    timestamp: new Date().toISOString(),
-    totalLatencyMs: Date.now() - startedAt,
-    buildInfo,
-    bindings
-  }, null, 2), {
-    status: 200,
-    headers: {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Cache-Control': 'no-store'
-    }
-  });
-}
+    bindings.kv_pdf = { status: 'ok', lat
