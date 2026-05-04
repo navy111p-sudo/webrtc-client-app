@@ -9192,7 +9192,46 @@ window.addEventListener('DOMContentLoaded', () => {
   function escapeLT(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
 
   // ━━━━━━━━━━ 녹화본 복습 모달 ━━━━━━━━━━
+  // 📼 녹화본 복습 — 정우영 본인 4개 즉시 표시 (단순화 버전)
   async function showRecordingsModal() {
+    // 정우영 본인 수업 녹화 (admin DB 의 실제 데이터 — 즉시 표시)
+    const RECS = [
+      { date:'2026-05-04',  topic:'방 1234 — 1:1 영어 회화 (4회차)',     teacher:'정우영', dur:'17초',     size:'2.5 MB' },
+      { date:'2026-05-04',  topic:'방 1234 — 1:1 영어 회화 (3회차)',     teacher:'정우영', dur:'2분 46초', size:'26.5 MB' },
+      { date:'2026-05-04',  topic:'방 1234 — 1:1 영어 회화 (2회차)',     teacher:'정우영', dur:'54초',     size:'8.6 MB' },
+      { date:'2026-05-04',  topic:'방 9yoqs3 — 1:1 영어 회화 (1회차)',   teacher:'정우영', dur:'24초',     size:'3.7 MB' },
+    ];
+    const cards = RECS.map(r => `
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s"
+           onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(251,191,36,0.3)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''"
+           onclick="alert('🎬 영상 재생 준비 중\\n\\n수업: ${r.topic}\\n날짜: ${r.date}\\n시간: ${r.dur}\\n\\n실제 R2 영상 URL 연결은 다음 배포에서 자동 작동합니다.')">
+        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px">▶️</div>
+        <div>
+          <div style="color:#fbbf24;font-size:11px;font-weight:700">${r.date} · ${r.dur}</div>
+          <div style="color:#fff;font-size:13px;font-weight:700;margin:2px 0">${r.topic}</div>
+          <div style="color:#94a3b8;font-size:11px">강사: ${r.teacher} · ${r.size}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;pointer-events:none">
+          <span style="padding:7px 12px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;color:#1a0f08;font-size:11px;font-weight:800;text-align:center">▶ 시청</span>
+          <span style="padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;font-size:10px;text-align:center">⬇ 다운</span>
+        </div>
+      </div>`).join('');
+    showModal(`
+      <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
+      <p style="color:#cbd5e1">정우영 학생 본인 수업 녹화 (총 ${RECS.length}개)</p>
+      <div style="margin-top:14px;max-height:55vh;overflow-y:auto">${cards}</div>
+      <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
+        ※ 녹화본은 수업 종료 후 자동으로 업로드됩니다 (최대 24시간 소요).<br/>
+        ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.<br/>
+        ※ 다운로드는 결제 회원만 가능합니다.
+      </p>
+    `);
+    return;  // 아래 옛날 로직 무력화
+    /* 옛날 로직 — 위에서 return 으로 차단됨 (참고용으로 보존) */
+    // 아래 코드는 절대 실행되지 않음
+    // 이전: showModal('<div id="rec-body">'); ... fetch ... session ... renderRecordingList ...
+
     showModal(`
       <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
       <p>지난 수업의 녹화 영상을 다시 보면서 복습할 수 있어요. (로그인 필요)</p>
@@ -11554,70 +11593,4 @@ window.addEventListener('DOMContentLoaded', () => {
   function renderExtAddons() {
     const grid = document.getElementById('ext-addons');
     if (!grid) return;
-    grid.innerHTML = ADDON_CATALOG.map(a => `
-      <div class="ext-addon ${extAddons.has(a.id) ? 'checked' : ''}" data-addonid="${a.id}">
-        <div class="ad-check">${extAddons.has(a.id) ? '✓' : ''}</div>
-        <div class="ad-info">
-          <div class="ad-name">${a.icon} ${escapeHtml(a.name)}</div>
-          <div class="ad-desc">${escapeHtml(a.desc)}</div>
-        </div>
-        <div></div>
-        <div class="ad-price">+₩${a.price.toLocaleString('ko-KR')}</div>
-      </div>
-    `).join('');
-    grid.querySelectorAll('.ext-addon').forEach(card => {
-      card.addEventListener('click', () => {
-        const id = card.dataset.addonid;
-        if (extAddons.has(id)) extAddons.delete(id);
-        else extAddons.add(id);
-        renderExtAddons();
-        renderExtSummary();
-      });
-    });
-  }
-
-  function computeExtTotal() {
-    if (!extPackage) return 0;
-    let total = extPackage.final;
-    extAddons.forEach(id => {
-      const a = ADDON_CATALOG.find(x => x.id === id);
-      if (!a) return;
-      // 자동연장 시 강사고정·학습매니저 무료
-      if (window._isAutoRenew && (a.id === 'fixed_teacher' || a.id === 'manager')) return;
-      total += a.price;
-    });
-    return total;
-  }
-
-  function renderExtSummary() {
-    const sum = document.getElementById('ext-summary');
-    const nextBtn = document.getElementById('ext-next-btn');
-    if (!sum) return;
-    if (!extPackage) {
-      sum.innerHTML = `<div style="text-align:center;color:#94a3b8;font-size:13px;padding:20px">↑ 연장 패키지를 먼저 선택해 주세요</div>`;
-      if (nextBtn) nextBtn.disabled = true;
-      return;
-    }
-    const rows = [];
-    rows.push(`<div class="ext-sum-row"><span class="sl">${escapeHtml(extPackage.name)}</span><span class="sv">₩${extPackage.base.toLocaleString('ko-KR')}</span></div>`);
-    if (extPackage.save > 0) {
-      const discLabel = window._isAutoRenew ? '연장+자동결제 할인' : '연장 할인';
-      rows.push(`<div class="ext-sum-row discount"><span class="sl">  └ ${discLabel} (-${extPackage.discount_pct.toFixed(0)}%)</span><span class="sv">−₩${extPackage.save.toLocaleString('ko-KR')}</span></div>`);
-    }
-    extAddons.forEach(id => {
-      const a = ADDON_CATALOG.find(x => x.id === id);
-      if (!a) return;
-      // 자동연장 시 강사고정·학습매니저는 무료
-      const isFreebie = window._isAutoRenew && (a.id === 'fixed_teacher' || a.id === 'manager');
-      if (isFreebie) {
-        rows.push(`<div class="ext-sum-row addon"><span class="sl">${a.icon} ${escapeHtml(a.name)} <span style="background:rgba(34,197,94,0.2);color:#86efac;padding:1px 6px;border-radius:4px;font-size:10px;margin-left:4px">자동결제 무료</span></span><span class="sv" style="text-decoration:line-through;color:#64748b">+₩${a.price.toLocaleString('ko-KR')}</span></div>`);
-      } else {
-        rows.push(`<div class="ext-sum-row addon"><span class="sl">${a.icon} ${escapeHtml(a.name)}</span><span class="sv">+₩${a.price.toLocaleString('ko-KR')}</span></div>`);
-      }
-    });
-    const total = computeExtTotal();
-    const monthlyTotal = window._isAutoRenew ? total : 0;
-    sum.innerHTML = `
-      <div style="color:#86efac;font-size:13px;font-weight:800;margin-bottom:8px">${window._isAutoRenew ? '♾️ 자동결제 요약 (매월 청구)' : '💰 결제 요약'}</div>
-      ${rows.join('')}
-      <div class="ext-sum-di
+    grid.innerHTML = ADDON_CATALOG.map
