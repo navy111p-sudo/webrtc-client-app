@@ -387,6 +387,56 @@ export async function handleMangoApi(
       return json(result);
     }
 
+    // ===== 📼 공개 학생 녹화본 조회 (본인이 참여한 수업만) =====
+    //   /api/student/recordings?uid=정우영&limit=30
+    //   recordings.participant_ids JSON 배열에 user_id가 포함된 녹화 + 본인이 강사인 녹화
+    //   응답: { ok, rows: [{ id, date, topic, teacher, duration, size, url }, ...] }
+    if (path === '/api/student/recordings' && method === 'GET') {
+      const uid = (url.searchParams.get('uid') || '').trim();
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
+      if (!uid) return json({ ok: true, rows: [], count: 0 });
+      try {
+        // recordings 테이블 자동 생성 (이미 있으면 무시)
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
+        // participant_ids 가 JSON 배열 문자열이라 LIKE 로 매칭
+        const likePattern = '%"' + uid + '"%';
+        const rs = await env.DB.prepare(
+          `SELECT id, room_id, teacher_name, filename, file_url, size_bytes, duration_ms,
+                  started_at, ended_at, status, storage,
+                  participant_names
+             FROM recordings
+            WHERE (participant_ids LIKE ? OR teacher_name = ? OR teacher_id = ?)
+              AND status != 'deleted'
+              AND file_url IS NOT NULL
+            ORDER BY started_at DESC
+            LIMIT ?`
+        ).bind(likePattern, uid, uid, limit).all<any>();
+        const raw = (rs.results || []) as any[];
+
+        // 학생 친화적 형식으로 변환
+        const rows = raw.map((r: any) => {
+          const startMs = r.started_at || 0;
+          const date = startMs ? new Date(startMs).toISOString().slice(0,10) : '-';
+          const durMin = r.duration_ms ? Math.round(r.duration_ms / 60000) + '분' : '-';
+          const sizeMB = r.size_bytes ? (Math.round(r.size_bytes / 1024 / 1024) + ' MB') : '-';
+          return {
+            id: r.id,
+            date,
+            topic: r.filename ? r.filename.replace(/\.(webm|mp4)$/i, '') : ('수업 ' + (r.room_id || r.id)),
+            teacher: r.teacher_name || '-',
+            duration: durMin,
+            size: sizeMB,
+            url: r.file_url || '#',
+            status: r.status || 'completed',
+            storage: r.storage || 'r2',
+          };
+        });
+        return json({ ok: true, rows, recordings: rows, count: rows.length });
+      } catch (e: any) {
+        return json({ ok: true, rows: [], count: 0, _err: String(e?.message || e) });
+      }
+    }
+
     // ===== 👨‍🏫 공개 강사 목록 (학생 홈페이지 강사진 미리보기용) =====
     if (path === '/api/teacher-profiles' && method === 'GET') {
       try {
@@ -2926,67 +2976,4 @@ export async function handleMangoApi(
       return new Response(JSON.stringify(rs.results || []), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
-          'Access-Control-Expose-Headers': 'X-Total-Count, X-Offset, X-Limit',
-          'X-Total-Count': String(total),
-          'X-Offset':      String(offset),
-          'X-Limit':       String(limit),
-          'Cache-Control': 'no-store'
-        }
-      });
-    }
-
-    if (path.startsWith('/api/recordings/') && method === 'DELETE') {
-      const id = parseInt(path.replace('/api/recordings/', ''), 10);
-      if (!id) return json({ ok: false, error: 'invalid_id' }, 400);
-      await env.DB.prepare(`UPDATE recordings SET status = 'deleted' WHERE id = ?`).bind(id).run();
-      return json({ ok: true });
-    }
-
-    // ===== 동의(Consent) =====
-    if (path === '/api/consents' && method === 'POST') {
-      const b = await parseJsonBody(request);
-      if (!b || !b.user_id) return invalidBody(['user_id']);
-      const now = Date.now();
-      const ip = request.headers.get('cf-connecting-ip') || '';
-      const ua = request.headers.get('user-agent') || '';
-      const res = await env.DB.prepare(
-        `INSERT INTO consents (user_id, username, role, consent_version,
-           recording_consent, voice_analysis_consent, attendance_consent, reward_consent, kakao_consent,
-           guardian_required, guardian_status, guardian_contact,
-           ip_address, user_agent, consented_at, raw_payload)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      ).bind(
-        b.user_id, b.username || null, b.role || 'student', b.consent_version || 'v1.0',
-        b.recording ? 1 : 0, b.voice_analysis ? 1 : 0, b.attendance ? 1 : 0, b.reward ? 1 : 0, b.kakao ? 1 : 0,
-        b.guardian_required ? 1 : 0, b.guardian_status || (b.guardian_required ? 'pending' : 'not_required'), b.guardian_contact || null,
-        ip, ua, now, JSON.stringify(b)
-      ).run();
-      return json({ ok: true, consent_id: res.meta.last_row_id, consented_at: now });
-    }
-
-    if (path.startsWith('/api/consents/') && method === 'GET') {
-      const userId = decodeURIComponent(path.replace('/api/consents/', ''));
-      const row = await env.DB.prepare(
-        `SELECT * FROM consents WHERE user_id = ? AND withdrawn_at IS NULL
-         ORDER BY consented_at DESC LIMIT 1`
-      ).bind(userId).first();
-      return json(row || null);
-    }
-
-    if (path === '/api/consents/withdraw' && method === 'POST') {
-      const b = await request.json() as any;
-      const now = Date.now();
-      await env.DB.prepare(
-        `UPDATE consents SET withdrawn_at = ? WHERE user_id = ? AND withdrawn_at IS NULL`
-      ).bind(now, b.user_id).run();
-      return json({ ok: true, withdrawn_at: now });
-    }
-
-    return null;
-  } catch (err: any) {
-    console.error('Mango API error:', err);
-    return json({ ok: false, error: String(err?.message || err) }, 500);
-  }
-}
+          'Content-Type': 'applicatio
