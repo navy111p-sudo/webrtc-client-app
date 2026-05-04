@@ -154,7 +154,6 @@ export default {
         if (!env.RECORDINGS) return new Response(JSON.stringify({ ok:false, error:'R2 not configured' }), { headers:{'Content-Type':'application/json'} });
         const k = url.searchParams.get('key') || '';
         if (!k) {
-          // 전체 목록 (최근 20개)
           const list = await env.RECORDINGS.list({ prefix: 'recordings/', limit: 20 });
           return new Response(JSON.stringify({ ok:true, total: list.objects.length, items: list.objects.map(o=>({ key:o.key, size:o.size, uploaded:o.uploaded })) }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
         }
@@ -278,7 +277,6 @@ export default {
         path === '/api/community/posts' ||
         path === '/api/teacher-profiles' ||
         path === '/api/_bootstrap' ||
-        path === '/api/student/recordings' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -1188,4 +1186,60 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
   try {
     const t0 = Date.now();
     await env.PDF_STORE.get('__health_probe__');
-    bindings.kv_pdf = { status: 'ok', lat
+    bindings.kv_pdf = { status: 'ok', latencyMs: Date.now() - t0 };
+  } catch (e: any) {
+    bindings.kv_pdf = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- KV: SESSION_STATE ------------------------------------------
+  try {
+    const t0 = Date.now();
+    await env.SESSION_STATE.get('__health_probe__');
+    bindings.kv_session = { status: 'ok', latencyMs: Date.now() - t0 };
+  } catch (e: any) {
+    bindings.kv_session = { status: 'error', error: String(e?.message || e) };
+  }
+
+  // --- Durable Objects binding presence only (호출은 실제 방 진입에서만) ---
+  bindings.do_signaling = { status: env.SIGNALING_ROOM ? 'ok' : 'error', configured: !!env.SIGNALING_ROOM };
+  bindings.do_video_call = { status: env.VIDEO_CALL_ROOM ? 'ok' : 'error', configured: !!env.VIDEO_CALL_ROOM };
+
+  // --- Secrets & vars ----------------------------------------------
+  bindings.admin_password = {
+    status: env.ADMIN_PASSWORD && env.ADMIN_PASSWORD.length >= 4 ? 'ok' : 'warn',
+    configured: !!env.ADMIN_PASSWORD,
+    length: env.ADMIN_PASSWORD ? env.ADMIN_PASSWORD.length : 0,
+    failOpenThreshold: 4
+  };
+  bindings.turn_key = {
+    status: env.TURN_KEY_API_TOKEN ? 'ok' : 'warn',
+    configured: !!env.TURN_KEY_API_TOKEN
+  };
+  bindings.livekit = {
+    status: env.LIVEKIT_API_SECRET ? 'ok' : 'warn',
+    configured: !!env.LIVEKIT_API_SECRET
+  };
+
+  // --- Build / deploy info ----------------------------------------
+  const cf = (request as any).cf || {};
+  const buildInfo = {
+    stamp: env.BUILD_STAMP || '(not set — wrangler.toml vars.BUILD_STAMP 미설정)',
+    workerNow: new Date().toISOString(),
+    cfColo: cf.colo || '(unknown)',
+    cfCountry: cf.country || '(unknown)'
+  };
+
+  return new Response(JSON.stringify({
+    ok: true,
+    timestamp: new Date().toISOString(),
+    totalLatencyMs: Date.now() - startedAt,
+    buildInfo,
+    bindings
+  }, null, 2), {
+    status: 200,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    }
+  });
+}
