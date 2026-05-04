@@ -9257,21 +9257,66 @@ window.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // 녹화 목록 조회
+    // 녹화 목록 조회 — 1순위: 학생 공개 endpoint, 2순위: admin endpoint (관리자 세션)
+    //   샘플 데이터 제거 → 실제 admin 등록 녹화만 표시
     let rows = [];
-    try {
-      const r = await fetch(`/api/student/recordings?uid=${encodeURIComponent(session.uid)}`, { credentials: 'include' });
-      if (r.ok) { const d = await r.json(); rows = d.rows || d.recordings || []; }
-    } catch {}
+    const uid = session.uid;
+    async function tryEndpoint(url) {
+      try {
+        const r = await fetch(url, { credentials: 'include' });
+        if (!r.ok) return null;
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (!ct.includes('json')) return null;
+        const d = await r.json().catch(() => null);
+        if (!d) return null;
+        // 응답 형태: {rows:[...]} 또는 {recordings:[...]} 또는 [...] (admin)
+        if (Array.isArray(d)) return d;
+        return d.rows || d.recordings || d.items || null;
+      } catch { return null; }
+    }
+
+    // 1순위: /api/student/recordings (공개)
+    rows = (await tryEndpoint('/api/student/recordings?uid=' + encodeURIComponent(uid) + '&limit=50')) || [];
+
+    // 2순위: /api/recordings (admin) — 응답 받으면 클라이언트 측 필터링
     if (!rows.length) {
-      // 샘플 표시
-      rows = [
-        { date:'2026-05-03', teacher:'Maria Santos', topic:'Daily Conversation: At a Restaurant', duration:'40분', size:'420 MB', url:'#' },
-        { date:'2026-05-02', teacher:'James Kim',    topic:'Business English: Email Writing',    duration:'40분', size:'408 MB', url:'#' },
-        { date:'2026-05-01', teacher:'Anna Wilson',  topic:'Pronunciation: TH Sounds',           duration:'40분', size:'395 MB', url:'#' },
-        { date:'2026-04-29', teacher:'Maria Santos', topic:'Past Tense Verbs',                   duration:'40분', size:'412 MB', url:'#' },
-        { date:'2026-04-26', teacher:'James Kim',    topic:'Phone Conference English',           duration:'40분', size:'398 MB', url:'#' },
-      ];
+      const adminRows = await tryEndpoint('/api/recordings?limit=200');
+      if (adminRows && adminRows.length) {
+        // uid 가 participant_ids 또는 teacher 에 포함된 것만
+        const filtered = adminRows.filter(r => {
+          if (r.status === 'deleted') return false;
+          const pids = r.participant_ids || '';
+          const pnames = r.participant_names || '';
+          const teacher = String(r.teacher_name || r.teacher || '');
+          if (teacher === uid) return true;
+          if (typeof pids === 'string' && pids.includes('"' + uid + '"')) return true;
+          if (typeof pnames === 'string' && pnames.includes('"' + uid + '"')) return true;
+          return false;
+        });
+        // admin 형식 → 학생 카드 형식 변환
+        rows = filtered.map(r => {
+          const startMs = r.started_at || 0;
+          const date = startMs ? new Date(startMs).toLocaleDateString('ko-KR') : '-';
+          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+          const durStr = durSec >= 60 ? Math.round(durSec / 60) + '분' : (durSec + '초');
+          const sizeMB = r.size_bytes ? (r.size_bytes >= 1024*1024 ? (Math.round(r.size_bytes / 1024 / 1024 * 10) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB') : '-';
+          let playUrl = r.file_url || '';
+          if (!playUrl && r.filename) {
+            const blobKey = r.filename.startsWith('recordings/') ? r.filename : ('recordings/' + r.filename);
+            playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
+          }
+          return {
+            id: r.id,
+            date,
+            topic: '방 ' + (r.room_id || '-') + ' 수업',
+            teacher: r.teacher_name || r.teacher || '-',
+            duration: durStr,
+            size: sizeMB,
+            url: playUrl,
+            status: r.status,
+          };
+        });
+      }
     }
     const safe = (s)=>String(s||'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));
     body.innerHTML = `
@@ -11563,49 +11608,4 @@ window.addEventListener('DOMContentLoaded', () => {
       </div>
       ${extStudent && extStudent.remaining > 0 ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(251,191,36,0.08);border-radius:8px;font-size:11px;color:#fde68a">💛 잔여 ${extStudent.remaining}회는 새 코스에 자동 합산되어 총 ${(extPackage.classes||0) + (extStudent.remaining||0)}회 수강 가능합니다.</div>` : ''}
       ${window._isAutoRenew ? `
-        <div style="margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.04));border:1px solid rgba(74,222,128,0.3);border-radius:10px;font-size:11.5px;color:#86efac;line-height:1.6">
-          <b style="color:#22c55e">♾️ 자동연장 혜택</b><br/>
-          ✓ 매월 ${(extPackage.discount_pct).toFixed(0)}% 할인 자동 적용<br/>
-          ✓ 만료 5일 전 알림 + 자동 갱신 (수업 끊김 없음)<br/>
-          ✓ <b>강사 고정 + 학습 매니저 (월 ₩80,000)</b> 자동 무료 적용<br/>
-          ✓ 마이페이지에서 언제든 1초 해지 (해지 후 잔여 회차는 그대로)
-        </div>
-      ` : ''}
-    `;
-    if (nextBtn) nextBtn.disabled = false;
-  }
-
-  // 연장 step 2 진입 시 자동 렌더
-  const _origPayGoStep = window.payGoStep;
-  window.payGoStep = function(step) {
-    _origPayGoStep(step);
-    if (payMode === 'extend' && step === 2) {
-      renderExtBanner();
-      renderExtPackages();
-      renderExtAddons();
-      renderExtSummary();
-    }
-  };
-
-  // 결제수단 카드 클릭
-  const submitBtn = document.getElementById('payment-submit');
-  document.querySelectorAll('.method-card').forEach(card => {
-    card.addEventListener('click', () => {
-      document.querySelectorAll('.method-card.selected').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      selectedMethod = card.dataset.method;
-      renderInstantPayPanel(selectedMethod);
-      submitBtn.disabled = false;
-    });
-  });
-
-  // 다음 버튼 (step 2 → 3) 검증
-  const stepNextBtn = document.querySelector('#pay-step2 .pay-btn-next');
-  if (stepNextBtn) {
-    stepNextBtn.addEventListener('click', () => {
-      const payer = document.getElementById('pay-payer').value.trim();
-      const student = document.getElementById('pay-student').value.trim();
-      const contact = document.getElementById('pay-contact').value.trim();
-      if (!payer || !student || !contact) {
-        alert('결제자, 학생, 연락처는 필수입니다.');
-        return fal
+        <div style="margin-top:8px;padding:10px 12px;background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(16,185,129,0.04));border:1px solid rgba(74,222,128,0.3);border-r
