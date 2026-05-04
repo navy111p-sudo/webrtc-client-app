@@ -1697,13 +1697,147 @@
       </svg>
     </div>
 
-    <!-- 🧑‍🚀 우주비행사 (멀리서 떠오는 사진 이미지) -->
+    <!-- 🐶 마티즈 우주비행사 (강아지 얼굴 + 우주복) -->
     <div id="astronaut" class="astronaut-wrap" aria-hidden="true">
-      <img src="/watermarked_img_17084291696895520303.png"
-           class="astronaut-img"
-           alt="우주비행사"
-           onerror="this.onerror=null; this.style.display='none'; var fb=this.nextElementSibling; if(fb) fb.style.display='flex';">
-      <div class="astronaut-fallback" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:120px;line-height:1;filter:drop-shadow(0 0 12px rgba(255,255,255,0.45))">🧑‍🚀</div>
+      <svg viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg" class="astronaut-svg" style="width:100%;height:100%;display:block;overflow:visible">
+        <defs>
+          <!-- 우주복 흰색 그라데이션 -->
+          <linearGradient id="suitMaltese" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#ffffff"/>
+            <stop offset="50%" stop-color="#e8eef5"/>
+            <stop offset="100%" stop-color="#b8c2cf"/>
+          </linearGradient>
+          <!-- 헬멧 유리(바이저) — 금빛 반사 -->
+          <radialGradient id="visorMaltese" cx="35%" cy="30%" r="70%">
+            <stop offset="0%"  stop-color="#fff5d6" stop-opacity="0.95"/>
+            <stop offset="35%" stop-color="#fde68a" stop-opacity="0.55"/>
+            <stop offset="65%" stop-color="#f59e0b" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#78350f" stop-opacity="0.55"/>
+          </radialGradient>
+          <!-- 마티즈 흰털 (살짝 크림빛) -->
+          <radialGradient id="fur" cx="50%" cy="50%" r="60%">
+            <stop offset="0%"  stop-color="#ffffff"/>
+            <stop offset="60%" stop-color="#fafaf6"/>
+            <stop offset="100%" stop-color="#e8e4d8"/>
+          </radialGradient>
+          <!-- 코 -->
+          <radialGradient id="nose" cx="40%" cy="35%" r="60%">
+            <stop offset="0%"  stop-color="#3a3a3a"/>
+            <stop offset="100%" stop-color="#0a0a0a"/>
+          </radialGradient>
+          <!-- 눈 (반짝임 표현) -->
+          <radialGradient id="eye" cx="35%" cy="30%" r="60%">
+            <stop offset="0%"  stop-color="#3a2a1a"/>
+            <stop offset="40%" stop-color="#1a0e05"/>
+            <stop offset="100%" stop-color="#000"/>
+          </radialGradient>
+          <!-- 백팩(PLSS) -->
+          <linearGradient id="plssMaltese" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%"  stop-color="#fafafa"/>
+            <stop offset="100%" stop-color="#a8b0bd"/>
+          </linearGradient>
+          <!-- 입체감 그림자 -->
+          <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="2.5"/>
+          </filter>
+        </defs>
+
+        <!-- ━━━ 1. 백팩 (어깨 뒤) ━━━ -->
+        <rect x="60" y="135" width="120" height="100" rx="14" fill="url(#plssMaltese)" stroke="#7a8694" stroke-width="1.2"/>
+        <rect x="68" y="148" width="22" height="14" rx="2" fill="#1f2937"/>
+        <rect x="150" y="148" width="22" height="14" rx="2" fill="#1f2937"/>
+        <circle cx="79" cy="180" r="3" fill="#10b981"/>
+        <circle cx="161" cy="180" r="3" fill="#ef4444"/>
+
+        <!-- ━━━ 2. 우주복 — 몸통 ━━━ -->
+        <path d="M70 160 Q70 250 80 280 L160 280 Q170 250 170 160 Q170 145 155 142 L85 142 Q70 145 70 160 Z"
+              fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.4"/>
+        <!-- 몸통 패널 라인 -->
+        <line x1="120" y1="150" x2="120" y2="278" stroke="#9aa3b1" stroke-width="0.7" stroke-dasharray="3,2"/>
+        <!-- 미션 패치 (가슴) -->
+        <circle cx="98" cy="195" r="13" fill="#1e40af" stroke="#fbbf24" stroke-width="1.5"/>
+        <text x="98" y="200" text-anchor="middle" fill="#fbbf24" font-size="10" font-weight="bold" font-family="Arial, sans-serif">🐾</text>
+        <!-- USA 깃발 패치 -->
+        <rect x="135" y="186" width="26" height="16" rx="1.5" fill="#fff" stroke="#1f2937" stroke-width="0.6"/>
+        <rect x="135" y="186" width="11" height="7" fill="#1e3a8a"/>
+        <line x1="135" y1="190.5" x2="161" y2="190.5" stroke="#dc2626" stroke-width="1.3"/>
+        <line x1="135" y1="195"   x2="161" y2="195"   stroke="#dc2626" stroke-width="1.3"/>
+        <line x1="135" y1="199.5" x2="161" y2="199.5" stroke="#dc2626" stroke-width="1.3"/>
+
+        <!-- ━━━ 3. 컨트롤 패널 (아랫배) ━━━ -->
+        <rect x="92" y="232" width="56" height="22" rx="3" fill="#e5e7eb" stroke="#9aa3b1" stroke-width="0.8"/>
+        <circle cx="102" cy="243" r="2.4" fill="#dc2626"/>
+        <circle cx="112" cy="243" r="2.4" fill="#fbbf24"/>
+        <circle cx="122" cy="243" r="2.4" fill="#10b981"/>
+        <rect x="130" y="239" width="14" height="8" rx="1" fill="#1f2937"/>
+
+        <!-- ━━━ 4. 팔 ━━━ -->
+        <path d="M70 165 Q55 200 60 240 Q62 252 76 250 Q72 220 80 175 Z" fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.2"/>
+        <path d="M170 165 Q185 200 180 240 Q178 252 164 250 Q168 220 160 175 Z" fill="url(#suitMaltese)" stroke="#9aa3b1" stroke-width="1.2"/>
+        <!-- 장갑 -->
+        <ellipse cx="64"  cy="252" rx="12" ry="10" fill="#1f2937" stroke="#000" stroke-width="0.8"/>
+        <ellipse cx="176" cy="252" rx="12" ry="10" fill="#1f2937" stroke="#000" stroke-width="0.8"/>
+
+        <!-- ━━━ 5. 헬멧 (외곽) ━━━ -->
+        <ellipse cx="120" cy="92" rx="68" ry="74" fill="#ffffff" stroke="#7a8694" stroke-width="2"/>
+        <!-- 헬멧 림 -->
+        <ellipse cx="120" cy="142" rx="56" ry="6" fill="#9aa3b1"/>
+
+        <!-- ━━━ 6. 바이저 (금빛 유리) ━━━ -->
+        <ellipse cx="120" cy="92" rx="56" ry="60" fill="url(#visorMaltese)" stroke="#92400e" stroke-width="1.5"/>
+
+        <!-- ━━━ 7. 🐶 마티즈 강아지 얼굴 (바이저 안) ━━━ -->
+        <!-- 양쪽 귀 (드리운 흰털) -->
+        <ellipse cx="82"  cy="92"  rx="18" ry="32" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8" transform="rotate(-12 82 92)"/>
+        <ellipse cx="158" cy="92"  rx="18" ry="32" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8" transform="rotate(12 158 92)"/>
+        <!-- 머리 윗부분 (이마 털) -->
+        <ellipse cx="120" cy="68" rx="42" ry="22" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.6"/>
+        <!-- 머리 본체 (둥근 얼굴) -->
+        <ellipse cx="120" cy="98" rx="46" ry="42" fill="url(#fur)" stroke="#d8d2c2" stroke-width="0.8"/>
+        <!-- 털 결 (텍스처) -->
+        <path d="M80 75 Q85 70 90 78 M95 65 Q100 60 105 68 M115 60 Q120 56 125 62 M135 64 Q140 60 145 68 M155 73 Q160 70 165 80"
+              stroke="#e0dac8" stroke-width="1.2" fill="none" opacity="0.7"/>
+        <path d="M82 110 Q86 116 92 112 M155 110 Q158 116 165 112"
+              stroke="#e0dac8" stroke-width="1" fill="none" opacity="0.6"/>
+
+        <!-- 눈 (검은 동그란 단추 눈) — 마티즈 특유 -->
+        <ellipse cx="103" cy="95" rx="6"   ry="6.5" fill="url(#eye)"/>
+        <ellipse cx="137" cy="95" rx="6"   ry="6.5" fill="url(#eye)"/>
+        <!-- 눈 하이라이트 -->
+        <circle cx="101" cy="92" r="1.7" fill="#fff" opacity="0.95"/>
+        <circle cx="135" cy="92" r="1.7" fill="#fff" opacity="0.95"/>
+        <circle cx="105" cy="97" r="0.8" fill="#fff" opacity="0.7"/>
+        <circle cx="139" cy="97" r="0.8" fill="#fff" opacity="0.7"/>
+
+        <!-- 코 주변 머즐 (입 주변 둥근 흰털) -->
+        <ellipse cx="120" cy="115" rx="16" ry="12" fill="#ffffff" stroke="#e0dac8" stroke-width="0.6"/>
+
+        <!-- 코 (검은 하트 모양) -->
+        <ellipse cx="120" cy="108" rx="5" ry="4" fill="url(#nose)"/>
+        <!-- 코 하이라이트 -->
+        <ellipse cx="118.5" cy="106" rx="1.4" ry="1" fill="#fff" opacity="0.7"/>
+
+        <!-- 입 (작은 W모양) -->
+        <path d="M120 113 L120 118 M120 118 Q116 121 113 119 M120 118 Q124 121 127 119"
+              stroke="#3a2a1a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+        <!-- 작은 분홍 혀 -->
+        <ellipse cx="120" cy="121" rx="2.2" ry="1.4" fill="#f87171"/>
+
+        <!-- 양쪽 볼 살짝 핑크 (귀여움) -->
+        <circle cx="92"  cy="113" r="4.5" fill="#fda4af" opacity="0.35"/>
+        <circle cx="148" cy="113" r="4.5" fill="#fda4af" opacity="0.35"/>
+
+        <!-- ━━━ 8. 헬멧 반사광 ━━━ -->
+        <ellipse cx="92" cy="65" rx="14" ry="22" fill="#ffffff" opacity="0.55"/>
+        <ellipse cx="98" cy="55" rx="6"  ry="10" fill="#ffffff" opacity="0.85"/>
+
+        <!-- ━━━ 9. 안테나 ━━━ -->
+        <line x1="120" y1="18" x2="120" y2="6" stroke="#9aa3b1" stroke-width="1.3"/>
+        <circle cx="120" cy="4" r="2.2" fill="#dc2626"/>
+
+        <!-- ━━━ 10. 헬멧 광채 ━━━ -->
+        <ellipse cx="120" cy="92" rx="62" ry="66" fill="#fde68a" opacity="0.06"/>
+      </svg>
     </div>
 
     <script>
@@ -11097,207 +11231,4 @@ window.closeRulesModal = function() {
       const playBell = (when, freq, dur=2.5) => {
         const osc = ctx.createOscillator();
         osc.type = 'sine';
-        osc.frequency.value = freq;
-        // 약간의 주파수 변조 (FM)
-        const fm = ctx.createOscillator();
-        fm.type = 'sine'; fm.frequency.value = freq * 3;
-        const fmGain = ctx.createGain();
-        fmGain.gain.value = freq * 0.05;
-        fm.connect(fmGain).connect(osc.frequency);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, when);
-        g.gain.linearRampToValueAtTime(0.10, when + 0.05); // 빠른 어택
-        g.gain.exponentialRampToValueAtTime(0.001, when + dur); // 자연스런 감쇠
-        osc.connect(g);
-        g.connect(master);
-        g.connect(delay); // 리버브 강조
-        osc.start(when); fm.start(when);
-        osc.stop(when + dur); fm.stop(when + dur);
-        _zaraStops.push(() => { try { osc.stop(); } catch{}; try { fm.stop(); } catch{} });
-      };
-
-      // ━━ 4. 우주 바람 (필터링된 노이즈, 매우 부드럽게) ━━
-      const playSpaceWind = (when, dur) => {
-        const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
-        const data = buf.getChannelData(0);
-        for (let i = 0; i < data.length; i++) data[i] = Math.random()*2-1;
-        const src = ctx.createBufferSource();
-        src.buffer = buf;
-        src.loop = true;
-        const bp = ctx.createBiquadFilter();
-        bp.type = 'bandpass';
-        bp.frequency.value = 800;
-        bp.Q.value = 1.5;
-        // 주파수 천천히 변동 (바람 스윕)
-        const lfo = ctx.createOscillator();
-        lfo.type = 'sine'; lfo.frequency.value = 0.08;
-        const lfoG = ctx.createGain();
-        lfoG.gain.value = 400;
-        lfo.connect(lfoG).connect(bp.frequency);
-        const g = ctx.createGain();
-        g.gain.setValueAtTime(0, when);
-        g.gain.linearRampToValueAtTime(0.04, when + 4);
-        g.gain.linearRampToValueAtTime(0.04, when + dur - 4);
-        g.gain.linearRampToValueAtTime(0, when + dur);
-        src.connect(bp).connect(g).connect(master);
-        src.start(when); lfo.start(when);
-        src.stop(when + dur); lfo.stop(when + dur);
-        _zaraStops.push(() => { try { src.stop(); } catch{}; try { lfo.stop(); } catch{} });
-      };
-
-      const t0 = ctx.currentTime + 0.1;
-
-      // ── 60초 동안 화음 진행 (각 8초) ──
-      let cursor = t0;
-      let chordIdx = 0;
-      while (cursor < t0 + 60) {
-        const c = chords[chordIdx % chords.length];
-        playChord(cursor, 8.5, c.freqs); // 살짝 겹치게
-        // 베이스 드론
-        playBassDrone(cursor, 8.5, c.freqs[0] / 2);
-        cursor += 8;
-        chordIdx++;
-      }
-
-      // ── 우주 바람 60초 내내 ──
-      playSpaceWind(t0, 60);
-
-      // ── 벨 톤 (4초마다 무작위 음, 페이드인 후) ──
-      for (let bt = 6; bt < 60; bt += 3.5 + Math.random()*2.5) {
-        const freq = bellNotes[Math.floor(Math.random()*bellNotes.length)];
-        playBell(t0 + bt, freq, 3 + Math.random()*2);
-      }
-
-      // 60초 후 자동 종료
-      _zaraTimer = setTimeout(() => {
-        if (_zaraCtx && _zaraCtx.state !== 'closed') {
-          try { _zaraCtx.close(); } catch{}
-        }
-        removeBadge();
-        if (_zaraButton) _zaraButton.remove(), _zaraButton = null;
-        _zaraStarted = false;
-      }, 61000);
-
-      makeBadge('🌌 음악 재생 중 · 클릭으로 끄기');
-      if (_zaraButton) { _zaraButton.remove(); _zaraButton = null; }
-    } catch (e) {
-      console.warn('[ambient] 음악 재생 실패:', e);
-      _zaraStarted = false;
-    }
-  }
-
-  // 명시적 큰 재생 버튼 (자동재생 차단 환경 대비)
-  function showPlayButton() {
-    if (_zaraButton || _zaraStarted) return;
-    const btn = document.createElement('button');
-    btn.id = 'zara-play-btn';
-    btn.type = 'button';
-    btn.style.cssText = 'position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:2147483647;padding:5px 12px;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a0f08;border:1px solid rgba(255,255,255,0.4);border-radius:99px;font-size:11px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px -4px rgba(245,158,11,0.55);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Noto Sans KR",sans-serif;letter-spacing:0.2px;animation:zaraIn 0.4s cubic-bezier(0.34,1.56,0.64,1),zaraPulse 2s ease-in-out infinite;line-height:1;white-space:nowrap';
-    btn.innerHTML = '🌌 음악 ▶';
-    // 모바일 — 최상단 0px
-    if (!document.getElementById('zara-mobile-style')) {
-      const ms = document.createElement('style');
-      ms.id = 'zara-mobile-style';
-      ms.textContent = `
-        @media (max-width: 640px) {
-          #zara-play-btn { top: 2px !important; padding: 4px 10px !important; font-size: 10.5px !important; }
-          #zara-badge { top: 2px !important; padding: 5px 12px !important; font-size: 11px !important; }
-        }
-      `;
-      document.head.appendChild(ms);
-    }
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      playZarathustra();
-      if (_zaraStarted) {
-        markPlayed();
-        setupClickStop();
-      }
-    });
-    document.body.appendChild(btn);
-    _zaraButton = btn;
-  }
-
-  function stopZarathustra() {
-    _zaraStops.forEach(fn => { try { fn(); } catch{} });
-    _zaraStops = [];
-    if (_zaraCtx) {
-      try { _zaraCtx.close(); } catch{}
-      _zaraCtx = null;
-    }
-    removeBadge();
-  }
-
-  // 시작 트리거 — 자동재생 시도 + 첫 사용자 상호작용 fallback
-  function tryStart() {
-    if (_zaraStarted) return;
-    playZarathustra();
-  }
-
-  // 클릭 → 음악 중지
-  function setupClickStop() {
-    // 약간 지연 후 등록 (시작 클릭과 분리)
-    setTimeout(() => {
-      const handler = (e) => {
-        if (_zaraStarted) {
-          stopZarathustra();
-          document.removeEventListener('click', handler, true);
-          document.removeEventListener('touchstart', handler, true);
-        }
-      };
-      document.addEventListener('click', handler, true);
-      document.addEventListener('touchstart', handler, true);
-    }, 600);
-  }
-
-  function markPlayed() { /* no-op */ }
-
-  // 자동재생 시도 + 첫 사용자 gesture(아무것이나)에 즉시 시작
-  function tryAutoplay() {
-    if (_zaraStarted) return;
-    try {
-      playZarathustra();
-      if (_zaraStarted) {
-        setupClickStop();
-        return true;
-      }
-    } catch {}
-    return false;
-  }
-
-  function attachFirstGestureListeners() {
-    if (_zaraStarted || window.__zaraGestureAttached) return;
-    window.__zaraGestureAttached = true;
-    const events = ['mousemove','mousedown','click','keydown','touchstart','touchmove','scroll','wheel','pointerdown','pointermove'];
-    const onFirst = () => {
-      if (_zaraStarted) return;
-      tryAutoplay();
-      if (_zaraStarted) {
-        events.forEach(ev => {
-          try { window.removeEventListener(ev, onFirst, { capture: true }); } catch{}
-          try { document.removeEventListener(ev, onFirst, { capture: true }); } catch{}
-        });
-      }
-    };
-    events.forEach(ev => {
-      window.addEventListener(ev, onFirst, { capture: true, passive: true });
-      document.addEventListener(ev, onFirst, { capture: true, passive: true });
-    });
-  }
-
-  function init() {
-    if (!document.body) { setTimeout(init, 100); return; }
-    if (_zaraStarted) return;
-    // 1차: 즉시 자동재생 시도 (브라우저 정책 허용 시 작동)
-    if (tryAutoplay()) {
-      console.log('[ambient] 🌌 자동재생 성공');
-      return;
-    }
-    // 2차: 첫 사용자 상호작용으로 자동 시작 (마우스만 움직여도 시작됨)
-    attachFirstGestureListeners();
-    // 3차: 백업 — 작은 재생 버튼도 함께 노출
-    if (!document.getElementById('zara-play-btn')) {
-      showPlayButton();
-    }
-    console.log('[ambient] 🌌 우주 뉴에이지 — 마우스 움직임이나 클릭 시 자�
+        osc.frequency.value
