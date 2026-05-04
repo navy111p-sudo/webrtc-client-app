@@ -1911,7 +1911,25 @@
 
         <!-- ━━━ 4. 팔 (실린더 입체) ━━━ -->
         <path d="M70 165 Q55 200 60 240 Q62 252 76 250 Q72 220 80 175 Z" fill="url(#armL)" stroke="#6b5a25" stroke-width="1.2"/>
-        <path d="M170 165 Q185 200 180 240 Q178 252 164 250 Q168 220 160 175 Z" fill="url(#armR)" stroke="#6b5a25" stroke-width="1.2"/>
+        <g class="dog-wave-arm">
+          <!-- 👋 흔드는 우측 팔 (들어올린 자세) -->
+          <animateTransform attributeName="transform" type="rotate"
+            values="-8 170 165; 18 170 165; -8 170 165"
+            dur="1.4s" repeatCount="indefinite"/>
+          <path d="M170 165 Q190 145 200 110 Q205 100 213 105 Q208 145 180 175 Z" fill="url(#armR)" stroke="#6b5a25" stroke-width="1.2"/>
+          <!-- 들어올린 앞발 -->
+          <ellipse cx="213" cy="95" rx="14" ry="12" fill="url(#fur3D)" stroke="#c4bda8" stroke-width="0.8"/>
+          <ellipse cx="213" cy="99" rx="6" ry="4.5" fill="#3a2418"/>
+          <ellipse cx="205" cy="91" rx="2.6" ry="2" fill="#3a2418"/>
+          <ellipse cx="209.5" cy="88.5" rx="2.6" ry="2" fill="#3a2418"/>
+          <ellipse cx="216.5" cy="88.5" rx="2.6" ry="2" fill="#3a2418"/>
+          <ellipse cx="221" cy="91" rx="2.6" ry="2" fill="#3a2418"/>
+          <ellipse cx="204" cy="88.5" rx="1" ry="0.7" fill="#fdfcf8"/>
+          <ellipse cx="208.5" cy="85.5" rx="1" ry="0.7" fill="#fdfcf8"/>
+          <ellipse cx="217.5" cy="85.5" rx="1" ry="0.7" fill="#fdfcf8"/>
+          <ellipse cx="222" cy="88.5" rx="1" ry="0.7" fill="#fdfcf8"/>
+          <ellipse cx="211.5" cy="98" rx="2.5" ry="1.2" fill="#6b4030" opacity="0.7"/>
+        </g>
         <!-- 팔꿈치 주름 -->
         <path d="M61 205 Q66 207 72 205" stroke="#9aa3b1" stroke-width="0.6" fill="none" opacity="0.6"/>
         <path d="M179 205 Q174 207 168 205" stroke="#9aa3b1" stroke-width="0.6" fill="none" opacity="0.6"/>
@@ -1929,19 +1947,7 @@
           <ellipse cx="73" cy="251.5" rx="1" ry="0.7" fill="#fdfcf8"/>
           <ellipse cx="62.5" cy="261" rx="2.5" ry="1.2" fill="#6b4030" opacity="0.7"/>
         </g>
-        <g>
-          <ellipse cx="176" cy="258" rx="14" ry="12" fill="url(#fur3D)" stroke="#c4bda8" stroke-width="0.8"/>
-          <ellipse cx="176" cy="262" rx="6" ry="4.5" fill="#3a2418"/>
-          <ellipse cx="168" cy="254" rx="2.6" ry="2" fill="#3a2418"/>
-          <ellipse cx="172.5" cy="251.5" rx="2.6" ry="2" fill="#3a2418"/>
-          <ellipse cx="179.5" cy="251.5" rx="2.6" ry="2" fill="#3a2418"/>
-          <ellipse cx="184" cy="254" rx="2.6" ry="2" fill="#3a2418"/>
-          <ellipse cx="167" cy="251.5" rx="1" ry="0.7" fill="#fdfcf8"/>
-          <ellipse cx="171.5" cy="248.5" rx="1" ry="0.7" fill="#fdfcf8"/>
-          <ellipse cx="180.5" cy="248.5" rx="1" ry="0.7" fill="#fdfcf8"/>
-          <ellipse cx="185" cy="251.5" rx="1" ry="0.7" fill="#fdfcf8"/>
-          <ellipse cx="174.5" cy="261" rx="2.5" ry="1.2" fill="#6b4030" opacity="0.7"/>
-        </g>
+        <!-- 우측 앞발은 dog-wave-arm 그룹 안으로 이동됨 -->
         <!-- 손목 링 -->
         <ellipse cx="64" cy="246" rx="11" ry="3" fill="#475569"/>
         <ellipse cx="176" cy="246" rx="11" ry="3" fill="#475569"/>
@@ -2058,10 +2064,19 @@
         <circle cx="121" cy="107" r="0.6" fill="#ffffff" opacity="0.6"/>
 
         <!-- ━━━ 입 + 혀 ━━━ -->
-        <path d="M120 113 L120 118 M120 118 Q116 122 112 119 M120 118 Q124 122 128 119"
-              stroke="#3a2a1a" stroke-width="1.7" fill="none" stroke-linecap="round"/>
-        <ellipse cx="120" cy="121" rx="2.5" ry="1.6" fill="#ef4444"/>
-        <ellipse cx="120" cy="120.5" rx="1.5" ry="0.7" fill="#fca5a5" opacity="0.8"/>
+        <!-- 😄 웃는 입 (활짝 웃음 + 혀) -->
+        <line x1="120" y1="112" x2="120" y2="116" stroke="#3a2a1a" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- 입 외곽 (열린 웃음) -->
+        <path d="M105 117 Q120 134 135 117 Q132 122 120 124 Q108 122 105 117 Z" fill="#1a0808" stroke="#3a2a1a" stroke-width="1.4" stroke-linejoin="round"/>
+        <!-- 윗니 살짝 -->
+        <rect x="113" y="117.5" width="14" height="1.5" rx="0.5" fill="#fdfcf8" opacity="0.95"/>
+        <line x1="116" y1="117.5" x2="116" y2="119" stroke="#9aa3b1" stroke-width="0.3" opacity="0.5"/>
+        <line x1="120" y1="117.5" x2="120" y2="119" stroke="#9aa3b1" stroke-width="0.3" opacity="0.5"/>
+        <line x1="124" y1="117.5" x2="124" y2="119" stroke="#9aa3b1" stroke-width="0.3" opacity="0.5"/>
+        <!-- 큰 분홍 혀 (튀어나옴) -->
+        <path d="M113 122 Q120 134 127 122 Q124 130 120 130 Q116 130 113 122 Z" fill="#ef4444"/>
+        <ellipse cx="120" cy="126" rx="3.5" ry="1.2" fill="#fca5a5" opacity="0.75"/>
+        <line x1="120" y1="124" x2="120" y2="129" stroke="#dc2626" stroke-width="0.4" opacity="0.5"/>
 
         <!-- ━━━ 볼터치 ━━━ -->
         <ellipse cx="92" cy="113" rx="5.5" ry="4" fill="#fda4af" opacity="0.5"/>
