@@ -256,6 +256,7 @@ export default {
         path === '/api/admin/students/erp-seed' ||
         path === '/api/community/posts' ||
         path === '/api/teacher-profiles' ||
+        path === '/api/_bootstrap' ||
         path === '/api/dashboard') {
       const res = await handleMangoApi(request, url, env);
       if (res) return res;
@@ -1201,6 +1202,4 @@ async function handleHealthCheck(request: Request, env: Env): Promise<Response> 
     buildInfo,
     bindings
   }, null, 2), {
-    status: 200,
-    headers: {
-      'Content-Typ
+    status: 
