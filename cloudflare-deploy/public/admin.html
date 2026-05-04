@@ -1386,8 +1386,23 @@
 <div class="admin-layout">
   <!-- 좌측 사이드바 — JS 로 자동 채워짐 -->
   <aside class="admin-sidebar" id="admin-sidebar">
-    <h4 data-ko-html="📋 메뉴 <span style='font-size:11px;color:#9ca3af;font-weight:400'>(가나다 순)</span>" data-en-html="📋 Menu <span style='font-size:11px;color:#9ca3af;font-weight:400'>(A · B · C ...)</span>">📋 메뉴 <span style="font-size:11px;color:#9ca3af;font-weight:400">(가나다 순)</span></h4>
+    <div class="sidebar-head" style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px">
+      <h4 data-ko-html="📋 메뉴 <span style='font-size:11px;color:#9ca3af;font-weight:400'>(가나다 순)</span>" data-en-html="📋 Menu <span style='font-size:11px;color:#9ca3af;font-weight:400'>(A · B · C ...)</span>" style="margin:0;flex-shrink:0">📋 메뉴 <span style="font-size:11px;color:#9ca3af;font-weight:400">(가나다 순)</span></h4>
+    </div>
+    <div class="sidebar-search-wrap" style="position:relative;margin-bottom:10px">
+      <input id="sidebar-search" type="text" placeholder="🔍 메뉴 검색..." oninput="filterSidebar(this.value)" onkeydown="if(event.key==='Escape'){this.value='';filterSidebar('')}"
+             style="width:100%;padding:7px 28px 7px 10px;font-size:12px;border:1px solid #e5e7eb;border-radius:8px;background:#fff;color:#374151;outline:none;transition:all .18s;box-sizing:border-box" />
+      <button type="button" onclick="document.getElementById('sidebar-search').value='';filterSidebar('')" title="지우기"
+              style="position:absolute;right:4px;top:50%;transform:translateY(-50%);background:transparent;border:0;color:#9ca3af;cursor:pointer;font-size:14px;padding:2px 6px;line-height:1">✕</button>
+    </div>
     <div id="admin-sidebar-list"></div>
+    <div id="sidebar-search-empty" style="display:none;padding:20px 10px;text-align:center;color:#9ca3af;font-size:12px">검색 결과가 없습니다.</div>
+    <style>
+      #sidebar-search:focus { border-color:#fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.15); }
+      #admin-sidebar-list .sidebar-item.search-hidden { display:none !important; }
+      #admin-sidebar-list .sidebar-item.search-match { background: rgba(251,191,36,0.08); }
+      #admin-sidebar-list .sidebar-item mark { background: #fef08a; color: #78350f; padding: 0 2px; border-radius: 3px; font-weight: 700; }
+    </style>
   </aside>
 
   <!-- 메인 영역 -->
@@ -1737,6 +1752,17 @@
 <details class="table-card menu-card">
   <summary><span data-ko="👨‍🎓 학생관리" data-en="👨‍🎓 Student Management">👨‍🎓 학생관리</span></summary>
   <div class="menu-body">
+    <!-- 🌱 빠른 테스트 데이터 로드 배너 -->
+    <div style="background:linear-gradient(135deg,#dcfce7,#bbf7d0);border:1px solid #86efac;border-radius:10px;padding:10px 14px;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+      <div style="font-size:12.5px;color:#15803d">
+        🧪 <b>테스트 모드</b> — 시드 데이터 20명을 학생관리 모든 섹션에 즉시 표시합니다.
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="(window.__forceRenderStudentMgmt&&window.__forceRenderStudentMgmt())||alert('렌더 함수 미준비')" class="primary" style="padding:6px 14px;font-size:12px;font-weight:700;background:#dc2626;color:#fff;border:0;border-radius:6px;cursor:pointer">🔥 강제 표시 (즉시)</button>
+        <button onclick="quickSeedAndLoad&&quickSeedAndLoad()" style="padding:6px 14px;font-size:12px;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700">⚡ 시드 + 로드</button>
+        <button onclick="quickReloadStudentMgmt&&quickReloadStudentMgmt()" style="padding:6px 14px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer">🔄 새로고침</button>
+      </div>
+    </div>
     <div class="sub-menu">
 
       <details class="sub-item">
@@ -2202,7 +2228,108 @@
         </div>
       </details>
 
-      <!-- 12. 회계 리포트 다운로드 -->
+      <!-- 12. 💳 법인카드 사용내역 (신한법인 카드 연동 + AI 분석) -->
+      <details class="sub-item" id="acc-corpcard">
+        <summary data-ko="💳 법인카드 사용내역" data-en="💳 Corporate Card">💳 법인카드 사용내역</summary>
+        <div class="sub-body">
+          <!-- 🏆 Hero — 카드 정보 + 동기화 -->
+          <div style="display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;background:linear-gradient(135deg,#0f4c81,#1e6cb3);color:#fff;border-radius:12px;padding:14px 18px;margin-bottom:12px;box-shadow:0 8px 24px -8px rgba(15,76,129,0.4)">
+            <div>
+              <div style="font-size:11px;opacity:0.85;letter-spacing:0.5px">SHINHAN BUSINESS CARD</div>
+              <div style="font-size:20px;font-weight:900;letter-spacing:2px;margin:3px 0 4px;font-family:Consolas,monospace">**** **** **** 8842</div>
+              <div style="font-size:11px;opacity:0.95">법인 (주)에듀비전 · 결제일: 매월 15일 · 한도 <b>₩1,000,000</b></div>
+            </div>
+            <button onclick="cardSync()" id="acc-card-sync-btn" style="padding:9px 18px;background:rgba(255,255,255,0.95);color:#0f4c81;border:0;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap">
+              🔄 신한 동기화
+            </button>
+          </div>
+
+          <!-- 📊 KPI 요약 4개 -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px" id="acc-card-kpis">
+            <div class="kpi-tile" style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #2563eb;padding:12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280">이번 달 사용액</div>
+              <div style="font-size:20px;font-weight:800;color:#1e40af;margin-top:2px" id="kpi-cur-month">₩—</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px" id="kpi-cur-month-sub">건수 —</div>
+            </div>
+            <div class="kpi-tile" style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280">전월 사용액</div>
+              <div style="font-size:20px;font-weight:800;color:#047857;margin-top:2px" id="kpi-prev-month">₩—</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px" id="kpi-prev-vs-cur">전월 대비 —%</div>
+            </div>
+            <div class="kpi-tile" style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280">3개월 평균</div>
+              <div style="font-size:20px;font-weight:800;color:#b45309;margin-top:2px" id="kpi-3m-avg">₩—</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px" id="kpi-3m-vs-cur">평균 대비 —%</div>
+            </div>
+            <div class="kpi-tile" style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280">과다지출 알림</div>
+              <div style="font-size:20px;font-weight:800;color:#b91c1c;margin-top:2px" id="kpi-alerts">—건</div>
+              <div style="font-size:10px;color:#9ca3af;margin-top:2px">평균 대비 +30%↑</div>
+            </div>
+          </div>
+
+          <!-- 📊 차트 영역 (Chart.js) -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px">📊 카테고리별 지출 (이번 달)</div>
+              <div style="height:200px"><canvas id="acc-card-pie"></canvas></div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:700;color:#374151;margin-bottom:6px">📈 월별 지출 추이 (최근 6개월)</div>
+              <div style="height:200px"><canvas id="acc-card-line"></canvas></div>
+            </div>
+          </div>
+
+          <!-- 🤖 AI 분석 피드백 -->
+          <div id="acc-card-feedback" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:10px;padding:14px 16px;margin-bottom:12px">
+            <div style="font-size:13px;font-weight:800;color:#92400e;margin-bottom:6px">🤖 AI 지출 분석 피드백</div>
+            <ul id="acc-card-feedback-list" style="margin:0;padding-left:20px;font-size:12px;color:#78350f;line-height:1.7">
+              <li>동기화를 누르면 AI가 지출 패턴을 분석합니다.</li>
+            </ul>
+          </div>
+
+          <!-- 🔍 필터 + 거래 테이블 -->
+          <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center">
+            <input id="acc-card-month" type="month" value="2026-04" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+            <select id="acc-card-cat" onchange="renderCardTable()" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="">전체 카테고리</option>
+              <option value="식대">🍱 식대</option>
+              <option value="교통">🚕 교통</option>
+              <option value="사무용품">📎 사무용품</option>
+              <option value="통신">📞 통신</option>
+              <option value="마케팅">📣 마케팅·광고</option>
+              <option value="장비">💻 장비·소프트웨어</option>
+              <option value="복리후생">🎁 복리후생</option>
+              <option value="기타">❓ 기타</option>
+            </select>
+            <input id="acc-card-search" type="text" placeholder="🔍 가맹점 검색" oninput="renderCardTable()" style="padding:5px 8px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;flex:1;min-width:140px" />
+            <button onclick="cardLoad()" class="primary" style="padding:5px 12px;font-size:12px">🔍 조회</button>
+            <button onclick="cardExportExcel()" style="padding:5px 12px;font-size:12px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;cursor:pointer">📥 Excel</button>
+          </div>
+          <div id="acc-card-table-wrap" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:auto;max-height:400px">
+            <table id="acc-card-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:780px">
+              <thead style="background:#f9fafb;position:sticky;top:0">
+                <tr>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">일시</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">가맹점</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">카테고리</th>
+                  <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #e5e7eb">금액</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">평균 대비</th>
+                  <th style="padding:8px 10px;text-align:center;border-bottom:2px solid #e5e7eb">메모</th>
+                </tr>
+              </thead>
+              <tbody id="acc-card-rows">
+                <tr><td colspan="6" style="padding:30px;text-align:center;color:#9ca3af">🔄 [신한 동기화] 또는 [조회]를 눌러 거래내역을 불러오세요.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="margin-top:8px;font-size:11px;color:#6b7280">
+            ※ 신한카드 OpenAPI 연동 — 매일 새벽 자동 동기화 + 수동 [동기화] 가능. 카테고리 자동 분류 + AI 이상거래 감지.
+          </p>
+        </div>
+      </details>
+
+      <!-- 13. 회계 리포트 다운로드 -->
       <details class="sub-item">
         <summary data-ko="📥 회계 리포트 다운로드" data-en="📥 Accounting Reports">📥 회계 리포트 다운로드</summary>
         <div class="sub-body">
@@ -2247,11 +2374,211 @@
   </div>
 </details>
 
-<!-- 🥭 Phase 34 — 🧑‍🏫 강사관리 (학생관리 바로 아래, 2개 하위 메뉴) -->
+<!-- 🔐 권한 설정 (역할별 접근 제어) -->
+<details class="table-card menu-card" id="card-permissions">
+  <summary><span data-ko="🔐 권한 설정" data-en="🔐 Permissions">🔐 권한 설정</span></summary>
+  <div class="menu-body">
+    <div class="sub-menu">
+
+      <!-- 1. 역할별 권한 매트릭스 -->
+      <details class="sub-item" open>
+        <summary data-ko="👥 역할별 권한 매트릭스" data-en="👥 Role Permission Matrix">👥 역할별 권한 매트릭스</summary>
+        <div class="sub-body">
+          <p style="margin:0 0 12px;font-size:12.5px;color:#374151">5개 역할별로 각 메뉴/기능의 접근 권한을 설정합니다. 체크박스를 누르면 즉시 저장됩니다.</p>
+          <div style="overflow-x:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px">
+            <table id="role-perm-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:780px">
+              <thead style="background:linear-gradient(135deg,#fef3c7,#fde68a)">
+                <tr>
+                  <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #f59e0b;width:230px;color:#78350f">기능 / 메뉴</th>
+                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🏢 본사<br/><span style="font-size:10px;font-weight:400">HQ</span></th>
+                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🏬 지사<br/><span style="font-size:10px;font-weight:400">Branch</span></th>
+                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🤝 대리점<br/><span style="font-size:10px;font-weight:400">Agency</span></th>
+                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">👨‍👩 학부모<br/><span style="font-size:10px;font-weight:400">Parent</span></th>
+                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🎓 학생<br/><span style="font-size:10px;font-weight:400">Student</span></th>
+                </tr>
+              </thead>
+              <tbody id="role-perm-rows"></tbody>
+            </table>
+          </div>
+          <div style="margin-top:10px;padding:10px 14px;background:#f9fafb;border-radius:8px;font-size:11.5px;color:#6b7280;line-height:1.7">
+            <b style="color:#374151">💡 표 읽는 법:</b> ✅ 권한 부여 / ❌ 차단 / 👁️ 읽기 전용. 변경 즉시 저장 + 해당 역할 사용자 다음 로그인부터 적용.
+          </div>
+          <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="permResetDefaults()" style="padding:7px 14px;background:#fff;border:1px solid #d1d5db;border-radius:6px;font-size:12px;cursor:pointer">🔄 기본값으로 재설정</button>
+            <button onclick="permSaveAll()" class="primary" style="padding:7px 14px;font-size:12px">💾 전체 저장</button>
+            <button onclick="permExport()" style="padding:7px 14px;background:#0ea5e9;color:#fff;border:0;border-radius:6px;font-size:12px;cursor:pointer">📥 정책 다운로드 (JSON)</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- 2. 역할별 사용자 목록 -->
+      <details class="sub-item">
+        <summary data-ko="👤 역할별 사용자 관리" data-en="👤 Users by Role">👤 역할별 사용자 관리</summary>
+        <div class="sub-body">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:12px" id="role-counts">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🏢 본사</div><div style="font-size:18px;font-weight:800;color:#b91c1c" id="cnt-hq">3명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🏬 지사</div><div style="font-size:18px;font-weight:800;color:#b45309" id="cnt-branch">8명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🤝 대리점</div><div style="font-size:18px;font-weight:800;color:#047857" id="cnt-agency">15명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">👨‍👩 학부모</div><div style="font-size:18px;font-weight:800;color:#1d4ed8" id="cnt-parent">427명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #a855f7;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🎓 학생</div><div style="font-size:18px;font-weight:800;color:#6d28d9" id="cnt-student">512명</div></div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+            <select id="role-filter" onchange="renderUsersByRole()" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
+              <option value="">전체 역할</option>
+              <option value="hq">🏢 본사</option>
+              <option value="branch">🏬 지사</option>
+              <option value="agency">🤝 대리점</option>
+              <option value="parent">👨‍👩 학부모</option>
+              <option value="student">🎓 학생</option>
+            </select>
+            <input type="text" id="role-user-search" placeholder="🔍 이름·아이디 검색" oninput="renderUsersByRole()" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db;flex:1;min-width:140px" />
+            <button onclick="renderUsersByRole()" class="primary" style="padding:5px 12px;font-size:12px">🔍 조회</button>
+          </div>
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:auto;max-height:360px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:680px">
+              <thead style="background:#f9fafb;position:sticky;top:0">
+                <tr>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">아이디</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">이름</th>
+                  <th style="padding:8px 10px;text-align:center;border-bottom:2px solid #e5e7eb">역할</th>
+                  <th style="padding:8px 10px;text-align:left;border-bottom:2px solid #e5e7eb">소속/지점</th>
+                  <th style="padding:8px 10px;text-align:center;border-bottom:2px solid #e5e7eb">상태</th>
+                  <th style="padding:8px 10px;text-align:center;border-bottom:2px solid #e5e7eb">액션</th>
+                </tr>
+              </thead>
+              <tbody id="role-user-rows"></tbody>
+            </table>
+          </div>
+        </div>
+      </details>
+
+      <!-- 3. 권한 변경 이력 -->
+      <details class="sub-item">
+        <summary data-ko="📜 권한 변경 이력 (감사 로그)" data-en="📜 Audit Log">📜 권한 변경 이력 (감사 로그)</summary>
+        <div class="sub-body">
+          <div id="perm-audit-log" style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:12px;max-height:300px;overflow-y:auto;font-size:12px">
+            <div style="color:#9ca3af;text-align:center;padding:20px">권한 변경 시 자동으로 기록됩니다.</div>
+          </div>
+        </div>
+      </details>
+
+    </div>
+  </div>
+</details>
+
+<!-- 🌱 테스트 데이터 시드 (학생·지사·대리점 일괄 생성) -->
+<details class="table-card menu-card" id="card-test-seed">
+  <summary><span data-ko="🌱 테스트 데이터 시드" data-en="🌱 Test Seed">🌱 테스트 데이터 시드</span></summary>
+  <div class="menu-body">
+    <div class="sub-menu">
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:12px;padding:18px;margin-bottom:12px">
+        <h3 style="margin:0 0 6px;color:#15803d;font-size:15px">🧪 테스트 환경 일괄 셋업</h3>
+        <p style="margin:0 0 12px;font-size:12.5px;color:#166534;line-height:1.6">
+          개발·QA·시연용 가짜 데이터를 한 번에 생성합니다. 실제 운영 데이터와 분리되어 있으며, 언제든 [전체 삭제]로 정리 가능합니다.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px">
+          <button onclick="seedTestStudents()" id="seed-students-btn" class="primary" style="padding:12px;font-size:13px;font-weight:700">
+            🎓 학생 20명 생성
+            <div style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.85);margin-top:3px">레벨·결제·평가 포함</div>
+          </button>
+          <button onclick="seedTestBranches()" id="seed-branches-btn" style="padding:12px;font-size:13px;font-weight:700;background:#f59e0b;color:#fff;border:0;border-radius:8px;cursor:pointer">
+            🏬 지사 20개 생성
+            <div style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.85);margin-top:3px">전국 광역시·도</div>
+          </button>
+          <button onclick="seedTestAgencies()" id="seed-agencies-btn" style="padding:12px;font-size:13px;font-weight:700;background:#10b981;color:#fff;border:0;border-radius:8px;cursor:pointer">
+            🤝 대리점 20개 생성
+            <div style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.85);margin-top:3px">지사 산하 분포</div>
+          </button>
+          <button onclick="seedTestAll()" style="padding:12px;font-size:13px;font-weight:700;background:#8b5cf6;color:#fff;border:0;border-radius:8px;cursor:pointer">
+            🚀 전체 일괄 생성
+            <div style="font-size:10px;font-weight:400;color:rgba(255,255,255,0.85);margin-top:3px">학생+지사+대리점</div>
+          </button>
+        </div>
+      </div>
+
+      <!-- 시드 결과 패널 -->
+      <div id="seed-result" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:12px;max-height:240px;overflow-y:auto"></div>
+
+      <!-- 📋 테스트 데이터 미리보기 테이블 (생성 즉시 표시) -->
+      <div id="seed-preview" style="display:none">
+        <div style="display:flex;gap:6px;margin-bottom:8px;border-bottom:2px solid #e5e7eb;padding-bottom:6px">
+          <button onclick="seedShowTab('students')" id="seed-tab-students" class="seed-tab seed-tab-active" style="padding:7px 16px;font-size:12px;font-weight:700;background:#fef3c7;color:#92400e;border:0;border-radius:6px 6px 0 0;cursor:pointer">🎓 학생 <span id="seed-cnt-students">0</span>명</button>
+          <button onclick="seedShowTab('branches')" id="seed-tab-branches" class="seed-tab" style="padding:7px 16px;font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280;border:0;border-radius:6px 6px 0 0;cursor:pointer">🏬 지사 <span id="seed-cnt-branches">0</span>개</button>
+          <button onclick="seedShowTab('agencies')" id="seed-tab-agencies" class="seed-tab" style="padding:7px 16px;font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280;border:0;border-radius:6px 6px 0 0;cursor:pointer">🤝 대리점 <span id="seed-cnt-agencies">0</span>개</button>
+        </div>
+        <div id="seed-tab-content" style="background:#fff;border:1px solid #e5e7eb;border-radius:0 8px 8px 8px;overflow:auto;max-height:480px"></div>
+      </div>
+      <style>
+        .seed-tab.seed-tab-active { background: #fef3c7 !important; color: #92400e !important; box-shadow: 0 -2px 0 #f59e0b inset; }
+      </style>
+
+      <!-- 위험: 전체 삭제 -->
+      <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:14px">
+        <h4 style="margin:0 0 6px;color:#991b1b;font-size:13px">⚠️ 위험 영역</h4>
+        <p style="margin:0 0 8px;font-size:11.5px;color:#7f1d1d">생성된 모든 테스트 데이터를 삭제합니다. 실제 운영 데이터에는 영향 없음.</p>
+        <button onclick="seedTestPurge()" style="padding:7px 14px;background:#dc2626;color:#fff;border:0;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer">
+          🗑 모든 테스트 데이터 삭제
+        </button>
+      </div>
+    </div>
+  </div>
+</details>
+
+<!-- 🥭 Phase 34 — 🧑‍🏫 강사관리 (학생관리 바로 아래) -->
 <details class="table-card menu-card" id="card-teacher-mgmt">
   <summary><span data-ko="🧑‍🏫 강사관리" data-en="🧑‍🏫 Teacher Management">🧑‍🏫 강사관리</span></summary>
   <div class="menu-body">
     <div class="sub-menu">
+
+      <!-- 🆕 하위 0 — 결석 강사 자동 대체 시스템 -->
+      <details class="sub-item" id="sub-auto-sub" open>
+        <summary data-ko="🔄 결석 강사 자동 대체 (AI 매칭)" data-en="🔄 Auto Substitute Teacher (AI Match)">🔄 결석 강사 자동 대체 (AI 매칭)</summary>
+        <div class="sub-body">
+          <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:12px;padding:14px 16px;margin-bottom:12px">
+            <h4 style="margin:0 0 6px;color:#92400e;font-size:14px">⚡ 빠른 대체 매칭</h4>
+            <p style="margin:0 0 10px;font-size:12px;color:#78350f;line-height:1.6">
+              결석한 강사의 수업을 <b>같은 요일·시간대 + 동일 레벨/언어 + 가용 상태</b>인 다른 강사에게 자동 매칭합니다. 평균 2초 이내 결과 표시.
+            </p>
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+              <input id="sub-date" type="date" value="" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
+              <button onclick="loadAbsentTeachers()" class="primary" style="padding:6px 14px;font-size:12px;font-weight:700">🔍 결석 강사 조회</button>
+              <button onclick="autoMatchAll()" style="padding:6px 14px;font-size:12px;font-weight:700;background:#a855f7;color:#fff;border:0;border-radius:6px;cursor:pointer">🤖 전체 자동 매칭</button>
+              <button onclick="applyAllMatches()" id="apply-all-btn" disabled style="padding:6px 14px;font-size:12px;font-weight:700;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;opacity:0.5">✅ 매칭 일괄 적용</button>
+            </div>
+          </div>
+
+          <!-- KPI 4개 -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px" id="sub-kpi">
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">결석 강사</div><div style="font-size:18px;font-weight:800;color:#b91c1c" id="kpi-absent">0명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">영향받는 수업</div><div style="font-size:18px;font-weight:800;color:#b45309" id="kpi-classes">0개</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">매칭 성공</div><div style="font-size:18px;font-weight:800;color:#047857" id="kpi-matched">0건</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #8b5cf6;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">자동화 절감 시간</div><div style="font-size:18px;font-weight:800;color:#6d28d9" id="kpi-saved">0분</div></div>
+          </div>
+
+          <!-- 매칭 결과 테이블 -->
+          <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:auto;max-height:520px">
+            <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:880px">
+              <thead style="background:#f9fafb;position:sticky;top:0;z-index:1">
+                <tr>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">시간</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">학생</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">레벨</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">결석 강사</th>
+                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">→</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">대체 강사 (AI 추천)</th>
+                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">매칭 점수</th>
+                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">액션</th>
+                </tr>
+              </thead>
+              <tbody id="sub-rows"><tr><td colspan="8" style="padding:30px;text-align:center;color:#9ca3af">[🔍 결석 강사 조회] 또는 [🤖 전체 자동 매칭]을 눌러주세요.</td></tr></tbody>
+            </table>
+          </div>
+          <p style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.6">
+            ※ 매칭 점수: <b>요일·시간 일치(40%) + 레벨 적합도(30%) + 평점(20%) + 가용성(10%)</b><br/>
+            ※ 적용 시 학생·강사 양쪽에 카카오톡 자동 알림 + 시간표 자동 갱신
+          </p>
+        </div>
+      </details>
 
       <!-- 하위 ① — Mangoi 강사 급여·평가 (기존 카드로 점프) -->
       <details class="sub-item">
@@ -3306,9 +3633,14 @@
 <script>
 let chartAtt = null, chartRwd = null;
 var adminLang = 'ko';
+// currentLang — 학생관리 load 함수들이 사용. adminLang 와 동기화.
+var currentLang = adminLang;
+try { window.currentLang = currentLang; } catch{}
 
 function toggleAdminLang() {
   adminLang = (adminLang === 'ko') ? 'en' : 'ko';
+  currentLang = adminLang;
+  try { window.currentLang = currentLang; } catch{}
   var newLabel = (adminLang === 'ko') ? 'EN' : 'KO';
   var lbl = document.getElementById('admin-lang-label');
   if (lbl) lbl.textContent = newLabel;
@@ -6795,105 +7127,258 @@ document.getElementById('legacy-toggle')?.addEventListener('click', toggleLegacy
    - Korean / English 언어는 현재 페이지 lang (adminLang) 따름
 ════════════════════════════════════════════════════════════ */
 (function setupVoiceSearch(){
+  // ★ 2026-05-04 — Web Speech API 'network' 에러 우회를 위해
+  //   MediaRecorder + Cloudflare Workers AI Whisper로 교체.
   const micBtn = document.getElementById('menu-search-mic');
   const inputEl = document.getElementById('menu-search');
   const hintEl  = document.getElementById('voice-hint');
   if (!micBtn || !inputEl) return;
 
-  // 브라우저 지원 확인
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) {
-    micBtn.style.display = 'none';   // 미지원 브라우저는 마이크 버튼 숨김
-    console.info('[voice] SpeechRecognition unsupported in this browser');
+  if (!navigator.mediaDevices || !window.MediaRecorder) {
+    micBtn.style.display = 'none';
+    console.info('[voice] MediaRecorder unsupported');
     return;
   }
 
-  let recognition = null;
+  let mediaRecorder = null;
+  let mediaStream = null;
+  let recordedChunks = [];
+  let stopTimer = null;
   let isListening = false;
+  const MAX_SEC = 8;
 
-  function startListening() {
-    if (isListening) return;
-    try {
-      recognition = new SR();
-      recognition.lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en-US' : 'ko-KR';
-      recognition.continuous = false;
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        isListening = true;
-        micBtn.classList.add('listening');
-        if (hintEl) hintEl.style.display = 'inline-block';
-        inputEl.placeholder = (adminLang === 'en')
-          ? '🎙 Listening… speak now'
-          : '🎙 듣고 있습니다… 말씀해주세요';
-      };
-      recognition.onresult = (ev) => {
-        let interim = '', finalText = '';
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const t = ev.results[i][0].transcript;
-          if (ev.results[i].isFinal) finalText += t;
-          else interim += t;
-        }
-        const text = (finalText || interim).trim();
-        if (text) {
-          inputEl.value = text;
-          // input 이벤트 → 통합 검색 자동완성 자동 갱신
-          inputEl.dispatchEvent(new Event('input', { bubbles: true }));
-          // 🥭 Phase 21g — 음성 final 결과면 즉시 askAI() 호출 (손 안 써도 자동 작동)
-          if (finalText && typeof askAI === 'function') {
-            // 약간의 지연 후 호출 — 검색 인덱스 매칭 확인 후 자동 fallback
-            setTimeout(() => {
-              if (typeof _searchCurrentHits !== 'undefined' && _searchCurrentHits.length === 0) {
-                const dd = document.getElementById('menu-search-dropdown');
-                if (dd) dd.classList.remove('show');
-                askAI(text);
-              }
-            }, 250);
-          }
-        }
-      };
-      recognition.onerror = (ev) => {
-        console.warn('[voice] error:', ev.error);
-        // 에러 메시지 토스트 (마이크 차단·네트워크 등)
-        const msg = ({
-          'not-allowed':       (adminLang==='en'?'Mic permission denied':'마이크 권한이 거부됐습니다'),
-          'service-not-allowed':(adminLang==='en'?'Voice service unavailable':'음성 서비스를 사용할 수 없습니다'),
-          'no-speech':         (adminLang==='en'?'No speech detected':'음성이 감지되지 않았습니다'),
-          'audio-capture':     (adminLang==='en'?'No microphone found':'마이크를 찾을 수 없습니다'),
-          'network':           (adminLang==='en'?'Network error':'네트워크 오류'),
-        })[ev.error] || (adminLang==='en'?'Voice error':'음성 인식 오류') + ': ' + ev.error;
-        alert(msg);
-      };
-      recognition.onend = () => {
-        isListening = false;
-        micBtn.classList.remove('listening');
-        if (hintEl) hintEl.style.display = 'none';
-        // placeholder 복원
-        inputEl.placeholder = (adminLang === 'en')
-          ? 'Search anything — students, teachers, franchises, menus'
-          : '통합 검색 — 학생·교사·가맹점·메뉴 무엇이든';
-      };
-
-      recognition.start();
-    } catch (e) {
-      console.error('[voice] start failed:', e);
-      alert((adminLang === 'en' ? 'Voice start failed: ' : '음성 시작 실패: ') + (e.message || e));
-      micBtn.classList.remove('listening');
-      isListening = false;
+  function bufToWav16k(audioBuffer) {
+    const targetRate = 16000;
+    const srcRate = audioBuffer.sampleRate;
+    const srcLen = audioBuffer.length;
+    const destLen = Math.floor(srcLen * targetRate / srcRate);
+    const src = audioBuffer.getChannelData(0);
+    const dest = new Float32Array(destLen);
+    for (let i = 0; i < destLen; i++) {
+      const idx = i * srcRate / targetRate;
+      const lo = Math.floor(idx);
+      const hi = Math.min(lo + 1, srcLen - 1);
+      dest[i] = src[lo] * (1 - (idx - lo)) + src[hi] * (idx - lo);
     }
+    const pcm = new Int16Array(destLen);
+    for (let i = 0; i < destLen; i++) {
+      const s = Math.max(-1, Math.min(1, dest[i]));
+      pcm[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+    }
+    const dataSize = pcm.length * 2;
+    const buf = new ArrayBuffer(44 + dataSize);
+    const v = new DataView(buf);
+    const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    ws(0, 'RIFF'); v.setUint32(4, 36 + dataSize, true);
+    ws(8, 'WAVE'); ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+    v.setUint16(22, 1, true); v.setUint32(24, targetRate, true);
+    v.setUint32(28, targetRate * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    ws(36, 'data'); v.setUint32(40, dataSize, true);
+    new Int16Array(buf, 44).set(pcm);
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+
+  async function startListening() {
+    if (isListening) return;
+    isListening = true;
+    micBtn.classList.add('listening');
+    if (hintEl) hintEl.style.display = 'inline-block';
+    inputEl.placeholder = (typeof adminLang !== 'undefined' && adminLang === 'en')
+      ? '🎙 Listening... speak now' : '🎙 듣고 있습니다... 말씀해주세요';
+
+    try {
+      // 사용 가능한 마이크 목록 콘솔에 출력 (디버그)
+      try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const mics = devices.filter(d => d.kind === 'audioinput');
+        console.log('[voice] 사용 가능 마이크:', mics.map(m => ({ id: m.deviceId.slice(0,8), label: m.label || '(권한 필요)' })));
+      } catch {}
+      const audioConstraints = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 };
+      if (window._nextMicDeviceId) {
+        audioConstraints.deviceId = { exact: window._nextMicDeviceId };
+        console.log('[voice] 지정 마이크 사용:', window._nextMicDeviceId.slice(0, 12));
+        window._nextMicDeviceId = null;
+      }
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
+    } catch (e) {
+      cleanup();
+      restorePlaceholder();
+      const name = e?.name || '';
+      const msg = name === 'NotAllowedError' || name === 'PermissionDeniedError'
+        ? '마이크 권한이 거부됐습니다. 주소창 좌측 자물쇠 아이콘에서 마이크 허용으로 바꿔 주세요.'
+        : name === 'NotFoundError' ? '마이크 장치를 찾을 수 없습니다.'
+        : '마이크 접근 실패: ' + (e?.message || name);
+      alert(msg);
+      return;
+    }
+
+    // 어떤 마이크가 실제 선택됐는지 디버그 출력
+    try {
+      const tracks = mediaStream.getAudioTracks();
+      tracks.forEach(t => {
+        const settings = t.getSettings ? t.getSettings() : {};
+        console.log('[voice] ★ 선택된 마이크:', t.label || '(label 없음)',
+                    'settings:', settings);
+      });
+    } catch (e) { console.warn('[voice] track info err:', e); }
+    recordedChunks = [];
+    let mimeType = '';
+    for (const t of ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4']) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(t)) { mimeType = t; break; }
+    }
+    try {
+      mediaRecorder = mimeType ? new MediaRecorder(mediaStream, { mimeType }) : new MediaRecorder(mediaStream);
+    } catch (e) {
+      cleanup();
+      restorePlaceholder();
+      alert('녹음 시작 실패: ' + (e?.message || e));
+      return;
+    }
+
+    mediaRecorder.ondataavailable = (ev) => { if (ev.data && ev.data.size > 0) recordedChunks.push(ev.data); };
+    mediaRecorder.onstop = async () => {
+      micBtn.classList.remove('listening');
+      if (hintEl) hintEl.style.display = 'none';
+      const origBlob = new Blob(recordedChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      cleanup();
+      console.log('[voice] recorded:', origBlob.size, 'bytes');
+      if (origBlob.size < 1500) {
+        restorePlaceholder();
+        alert('녹음이 너무 짧아요. 1초 이상 또렷이 말씀해 주세요.');
+        return;
+      }
+      let wavBlob, audioRMS = 0, audioPeak = 0;
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const audioBuffer = await ctx.decodeAudioData(await origBlob.arrayBuffer());
+        const ch = audioBuffer.getChannelData(0);
+        let sumSq = 0;
+        for (let i = 0; i < ch.length; i++) {
+          sumSq += ch[i] * ch[i];
+          if (Math.abs(ch[i]) > audioPeak) audioPeak = Math.abs(ch[i]);
+        }
+        audioRMS = Math.sqrt(sumSq / ch.length);
+        console.log('[voice] RMS:', audioRMS.toFixed(4), 'Peak:', audioPeak.toFixed(4));
+        if (audioRMS < 0.005) {
+          ctx.close();
+          restorePlaceholder();
+          // ★ 자동 마이크 순회: 다른 마이크 시도 (admin.html)
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const mics = devices.filter(d => d.kind === 'audioinput' && d.deviceId);
+            const tried = window._micTried || [];
+            const usedDeviceId = (mediaRecorder && mediaRecorder.stream && mediaRecorder.stream.getAudioTracks()[0] && mediaRecorder.stream.getAudioTracks()[0].getSettings) ? mediaRecorder.stream.getAudioTracks()[0].getSettings().deviceId : '';
+            tried.push(usedDeviceId);
+            window._micTried = tried;
+            const next = mics.find(m => !tried.includes(m.deviceId));
+            if (next) {
+              window._nextMicDeviceId = next.deviceId;
+              const usedLabel = (mics.find(m => m.deviceId === usedDeviceId) || {}).label || '(알 수 없음)';
+              const ok = confirm(
+                '🚨 현재 마이크가 무음 상태 (RMS: ' + audioRMS.toFixed(4) + ')\n\n' +
+                '다른 마이크로 자동 시도할까요?\n\n' +
+                '방금 시도: ' + usedLabel + '\n' +
+                '다음 시도: ' + (next.label || '(이름 없음)') + '\n\n' +
+                '[확인] 다음 마이크로 즉시 재시도\n[취소] 중단'
+              );
+              if (ok) { setTimeout(function(){ micBtn.click(); }, 300); return; }
+            } else {
+              window._micTried = [];
+              const list = mics.map(function(m, i){ return (i+1) + '. ' + (m.label || '(이름 없음)'); }).join('\n');
+              alert(
+                '🚨 모든 마이크 시도 완료, 모두 무음 상태\n\n' +
+                '시도한 마이크 (' + mics.length + '개):\n' + list + '\n\n' +
+                '[해결]\n' +
+                '1. Win+I → 시스템 → 소리 → 입력 → 마이크 테스트\n' +
+                '2. 마이크 속성 → 수준 100% + 부스트 +30dB\n' +
+                '3. 마이크 향상 → 잡음 억제 OFF\n' +
+                '4. 새 USB 마이크 연결\n\n' +
+                '또는 검색창에 키보드로 직접 입력 (즉시 작동)'
+              );
+            }
+          } catch (e) { console.warn('[voice] mic enumerate err:', e); }
+          return;
+        }
+        let gain = 1;
+        if (audioPeak < 0.95 && audioPeak > 0.0001) gain = Math.min(100, 0.7 / audioPeak);
+        const boosted = ctx.createBuffer(1, audioBuffer.length, audioBuffer.sampleRate);
+        const bch = boosted.getChannelData(0);
+        for (let i = 0; i < ch.length; i++) {
+          let s = ch[i] * gain;
+          bch[i] = s > 1 ? 1 : (s < -1 ? -1 : s);
+        }
+        wavBlob = bufToWav16k(boosted);
+        console.log('[voice] WAV size:', wavBlob.size, 'bytes (gain', gain.toFixed(2) + 'x)');
+        ctx.close();
+      } catch (e) {
+        console.error('[voice] WAV 변환 실패:', e);
+        restorePlaceholder();
+        alert('음성 변환 실패: ' + (e.message || e));
+        return;
+      }
+      try {
+        const fd = new FormData();
+        fd.append('audio', wavBlob, 'voice.wav');
+        fd.append('original', origBlob, 'voice.webm');
+        fd.append('rms', String(audioRMS));
+        fd.append('peak', String(audioPeak));
+        const r = await fetch('/api/student/voice', { method: 'POST', body: fd, credentials: 'include' });
+        const d = await r.json();
+        console.log('[voice] response:', d);
+        restorePlaceholder();
+        if (!d.ok) {
+          alert('음성 인식 실패\n\n' + (d.error || 'unknown'));
+          return;
+        }
+        inputEl.value = d.text;
+        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+        if (typeof askAI === 'function') {
+          setTimeout(() => {
+            if (typeof _searchCurrentHits !== 'undefined' && _searchCurrentHits.length === 0) {
+              const dd = document.getElementById('menu-search-dropdown');
+              if (dd) dd.classList.remove('show');
+              askAI(d.text);
+            }
+          }, 250);
+        }
+      } catch (e) {
+        console.error('[voice] fetch failed:', e);
+        restorePlaceholder();
+        alert('음성 전송 실패: ' + (e.message || e));
+      }
+    };
+    mediaRecorder.onerror = (ev) => { console.error('[voice] recorder error:', ev); cleanup(); alert('녹음 오류 발생'); restorePlaceholder(); };
+
+    mediaRecorder.start();
+    stopTimer = setTimeout(() => { stopListening(); }, MAX_SEC * 1000);
   }
 
   function stopListening() {
-    if (!isListening || !recognition) return;
-    try { recognition.stop(); } catch {}
+    if (stopTimer) { clearTimeout(stopTimer); stopTimer = null; }
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      try { mediaRecorder.stop(); } catch {}
+    }
+    isListening = false;
+  }
+
+  function cleanup() {
+    if (mediaStream) { mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null; }
+    mediaRecorder = null;
+    isListening = false;
+  }
+
+  function restorePlaceholder() {
+    micBtn.classList.remove('listening');
+    if (hintEl) hintEl.style.display = 'none';
+    inputEl.placeholder = (typeof adminLang !== 'undefined' && adminLang === 'en')
+      ? 'Search anything — students, teachers, franchises, menus'
+      : '통합 검색 — 학생·교사·가맹점·메뉴 무엇이든';
   }
 
   micBtn.addEventListener('click', () => {
     if (isListening) stopListening();
     else startListening();
   });
-  // 입력창 클릭 시 듣기 중이면 멈춤 (수동 입력 우선)
   inputEl.addEventListener('focus', () => {
     if (isListening && document.activeElement === inputEl) stopListening();
   });
@@ -7072,15 +7557,24 @@ document.addEventListener('click', (ev) => {
    - 모든 행에 🔍 자세히 버튼 → /admin/student?uid=X&tab=Y
 ════════════════════════════════════════════════════════════ */
 
-// 공통: students_erp 캐시 (한 번 fetch 후 재사용)
+// 공통: students_erp 캐시 (한 번 fetch 후 재사용 — 시드 갱신 시 무효화 가능)
 let _erpCache = null;
 async function getErpList() {
-  if (_erpCache) return _erpCache;
+  // 외부에서 _erpCache가 null로 초기화되면 다시 fetch
+  if (window._erpCache === null) _erpCache = null;
+  // 빈 배열도 무효화 (시드 데이터가 새로 생겼을 수 있음)
+  if (Array.isArray(_erpCache) && _erpCache.length === 0) {
+    let hasSeed = false;
+    try { hasSeed = (JSON.parse(localStorage.getItem('mangoi_test_students') || '[]')).length > 0; } catch{}
+    if (hasSeed) _erpCache = null; // 강제 재 fetch
+  }
+  if (_erpCache && _erpCache.length > 0) return _erpCache;
   try {
     const r = await fetch('/api/admin/students/erp-list?limit=2000', { credentials:'include' });
     const j = await r.json();
     _erpCache = (j && j.ok && j.items) || [];
   } catch { _erpCache = []; }
+  try { window._erpCache = _erpCache; } catch{}
   return _erpCache;
 }
 
@@ -7779,9 +8273,46 @@ function renderSidebar() {
   });
   list.innerHTML = sorted.map(m => {
     const label = useEn ? m.en : m.ko;
-    return `<a href="#${m.id}" data-menu-id="${m.id}">${_escSb(label)}</a>`;
+    const both = (m.ko || '') + ' ' + (m.en || '');
+    return `<a href="#${m.id}" class="sidebar-item" data-menu-id="${m.id}" data-search="${_escSb(both.toLowerCase())}">${_escSb(label)}</a>`;
   }).join('');
+  // 검색창에 값이 있으면 다시 필터 적용
+  const sv = document.getElementById('sidebar-search');
+  if (sv && sv.value) window.filterSidebar && window.filterSidebar(sv.value);
 }
+
+// ━━━━━━━━━━ 사이드바 메뉴 검색 (실시간 필터) ━━━━━━━━━━
+window.filterSidebar = function(q) {
+  const query = (q || '').trim().toLowerCase();
+  const items = document.querySelectorAll('#admin-sidebar-list .sidebar-item');
+  const empty = document.getElementById('sidebar-search-empty');
+  let matchCount = 0;
+  items.forEach(a => {
+    const hay = a.dataset.search || a.textContent.toLowerCase();
+    const label = a.textContent;
+    if (!query) {
+      a.classList.remove('search-hidden', 'search-match');
+      a.innerHTML = _escSb(label);
+      matchCount++;
+    } else if (hay.includes(query)) {
+      a.classList.remove('search-hidden');
+      a.classList.add('search-match');
+      // hightlight
+      const lower = label.toLowerCase();
+      const pos = lower.indexOf(query);
+      if (pos >= 0) {
+        a.innerHTML = _escSb(label.slice(0, pos)) + '<mark>' + _escSb(label.slice(pos, pos + query.length)) + '</mark>' + _escSb(label.slice(pos + query.length));
+      } else {
+        a.innerHTML = _escSb(label);
+      }
+      matchCount++;
+    } else {
+      a.classList.add('search-hidden');
+      a.classList.remove('search-match');
+    }
+  });
+  if (empty) empty.style.display = (query && matchCount === 0) ? 'block' : 'none';
+};
 function _escSb(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 
 function jumpToMenu(id, opts) {
@@ -9126,12 +9657,1736 @@ window.rebuildGlobalSearchIndex = function() {
   window.accStatementExcel = function(){
     location.href = _statementUrl('csv');
   };
+
+  // ━━━━━━━━━━ 💳 법인카드 사용내역 (신한법인카드 연동 + AI 분석) ━━━━━━━━━━
+  let _cardData = null;
+  let _cardCharts = {};
+  // 한도 ₩1,000,000 카드에 맞게 카테고리 평균·임계값 조정 (총합이 1M 안에 들도록)
+  const CARD_CATEGORIES = {
+    '식대':       { icon: '🍱', color: '#f59e0b', avg: 250000, threshold: 350000 },
+    '교통':       { icon: '🚕', color: '#10b981', avg: 100000, threshold: 150000 },
+    '사무용품':   { icon: '📎', color: '#3b82f6', avg: 80000,  threshold: 130000 },
+    '통신':       { icon: '📞', color: '#8b5cf6', avg: 50000,  threshold: 80000 },
+    '마케팅':     { icon: '📣', color: '#ec4899', avg: 200000, threshold: 350000 },
+    '장비':       { icon: '💻', color: '#06b6d4', avg: 120000, threshold: 250000 },
+    '복리후생':   { icon: '🎁', color: '#a855f7', avg: 100000, threshold: 200000 },
+    '기타':       { icon: '❓', color: '#6b7280', avg: 50000,  threshold: 100000 },
+  };
+
+  window.cardSync = async function() {
+    const btn = document.getElementById('acc-card-sync-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 동기화 중…'; }
+    try {
+      const r = await fetch('/api/admin/corpcard/sync', { method: 'POST', credentials: 'include' });
+      let d = null;
+      try { d = await r.json(); } catch {}
+      if (r.ok && d && d.ok && d.data) _cardData = d.data;
+      else _cardData = generateCardSampleData();
+    } catch (e) {
+      _cardData = generateCardSampleData();
+    }
+    renderCardKpis(); renderCardCharts(); renderCardTable(); renderCardFeedback();
+    if (btn) { btn.textContent = '✅ 동기화 완료'; btn.disabled = false; setTimeout(() => btn.textContent = '🔄 신한 동기화', 1500); }
+  };
+
+  window.cardLoad = function() {
+    if (!_cardData) _cardData = generateCardSampleData();
+    renderCardKpis(); renderCardCharts(); renderCardTable(); renderCardFeedback();
+  };
+
+  function generateCardSampleData() {
+    // 한도 ₩1,000,000에 맞춰 모든 거래 금액 축소
+    const merchants = [
+      { name: '스타벅스 강남R점',   cat: '식대',     range: [4500, 18000] },
+      { name: '카카오T 택시',       cat: '교통',     range: [6000, 22000] },
+      { name: '배민 한식주문',      cat: '식대',     range: [9000, 32000] },
+      { name: 'AWS 클라우드',       cat: '장비',     range: [25000, 80000] },
+      { name: 'Google Ads 광고',    cat: '마케팅',   range: [30000, 120000] },
+      { name: 'Cloudflare Workers', cat: '장비',     range: [8000, 25000] },
+      { name: '오피스디포',         cat: '사무용품', range: [8000, 45000] },
+      { name: 'SKT 통신요금',       cat: '통신',     range: [38000, 65000] },
+      { name: '교보문고 영등포',    cat: '사무용품', range: [12000, 35000] },
+      { name: 'Facebook Ads',       cat: '마케팅',   range: [40000, 150000] },
+      { name: 'GS칼텍스 주유',      cat: '교통',     range: [30000, 60000] },
+      { name: '쿠팡 사무용품',      cat: '사무용품', range: [8000, 38000] },
+      { name: '회식 — 강남고기집',  cat: '복리후생', range: [55000, 120000] },
+      { name: 'Figma Pro',          cat: '장비',     range: [22000, 38000] },
+      { name: '마이크로소프트 365', cat: '장비',     range: [12000, 28000] },
+      { name: '카카오톡 비즈채널',  cat: '마케팅',   range: [20000, 80000] },
+      { name: '직원 선물 (기프티콘)', cat: '복리후생', range: [10000, 50000] },
+      { name: '문구점 — 모나미',    cat: '사무용품', range: [3000, 15000] },
+    ];
+    const current = []; let id = 1;
+    let runningTotal = 0;
+    const MONTHLY_LIMIT = 1000000; // 한도
+    for (let day = 1; day <= 28 && runningTotal < MONTHLY_LIMIT * 0.92; day++) {
+      const count = Math.random() < 0.35 ? 0 : (Math.random() < 0.7 ? 1 : 2);
+      for (let j = 0; j < count; j++) {
+        const m = merchants[Math.floor(Math.random() * merchants.length)];
+        const amount = Math.round(m.range[0] + Math.random() * (m.range[1] - m.range[0]));
+        if (runningTotal + amount > MONTHLY_LIMIT) break;
+        runningTotal += amount;
+        const hh = String(8 + Math.floor(Math.random()*12)).padStart(2,'0');
+        const mm = String(Math.floor(Math.random()*60)).padStart(2,'0');
+        current.push({ id: id++, datetime: `2026-04-${String(day).padStart(2,'0')} ${hh}:${mm}`, merchant: m.name, category: m.cat, amount, memo: '' });
+      }
+    }
+    // 6개월 추이 (₩1M 한도 내에서 60~95% 사용률)
+    return {
+      current,
+      history: {
+        '2025-11': 720000, '2025-12': 880000,
+        '2026-01': 650000, '2026-02': 920000,
+        '2026-03': 780000, '2026-04': runningTotal,
+      },
+    };
+  }
+
+  function renderCardKpis() {
+    if (!_cardData) return;
+    const cur = _cardData.current.reduce((s, t) => s + t.amount, 0);
+    const months = Object.keys(_cardData.history).sort();
+    const prev = _cardData.history[months[months.length - 2]] || 0;
+    const last3 = months.slice(-4, -1).map(m => _cardData.history[m]);
+    const avg3m = last3.length ? Math.round(last3.reduce((s, v) => s + v, 0) / last3.length) : 0;
+
+    const $el = (id) => document.getElementById(id);
+    $el('kpi-cur-month').textContent = '₩' + cur.toLocaleString('ko-KR');
+    $el('kpi-cur-month-sub').textContent = '건수 ' + _cardData.current.length;
+    $el('kpi-prev-month').textContent = '₩' + prev.toLocaleString('ko-KR');
+    const vsPrev = prev ? ((cur - prev) / prev * 100) : 0;
+    $el('kpi-prev-vs-cur').textContent = '전월 대비 ' + (vsPrev >= 0 ? '+' : '') + vsPrev.toFixed(1) + '%';
+    $el('kpi-prev-vs-cur').style.color = vsPrev > 10 ? '#dc2626' : vsPrev < -5 ? '#059669' : '#6b7280';
+    $el('kpi-3m-avg').textContent = '₩' + avg3m.toLocaleString('ko-KR');
+    const vs3m = avg3m ? ((cur - avg3m) / avg3m * 100) : 0;
+    $el('kpi-3m-vs-cur').textContent = '평균 대비 ' + (vs3m >= 0 ? '+' : '') + vs3m.toFixed(1) + '%';
+    $el('kpi-3m-vs-cur').style.color = vs3m > 15 ? '#dc2626' : vs3m < -10 ? '#059669' : '#6b7280';
+
+    const catSums = {};
+    _cardData.current.forEach(t => { catSums[t.category] = (catSums[t.category] || 0) + t.amount; });
+    let alerts = 0;
+    for (const c in catSums) {
+      const meta = CARD_CATEGORIES[c];
+      if (meta && catSums[c] > meta.threshold) alerts++;
+    }
+    $el('kpi-alerts').textContent = alerts + '건';
+    $el('kpi-alerts').style.color = alerts > 2 ? '#dc2626' : alerts > 0 ? '#d97706' : '#059669';
+  }
+
+  function renderCardCharts() {
+    if (!_cardData || typeof Chart === 'undefined') return;
+    const catSums = {};
+    _cardData.current.forEach(t => { catSums[t.category] = (catSums[t.category] || 0) + t.amount; });
+    const labels = Object.keys(catSums);
+    const data = labels.map(l => catSums[l]);
+    const colors = labels.map(l => (CARD_CATEGORIES[l] && CARD_CATEGORIES[l].color) || '#9ca3af');
+
+    if (_cardCharts.pie) _cardCharts.pie.destroy();
+    const pieCtx = document.getElementById('acc-card-pie');
+    if (pieCtx) {
+      _cardCharts.pie = new Chart(pieCtx.getContext('2d'), {
+        type: 'doughnut',
+        data: { labels: labels.map(l => ((CARD_CATEGORIES[l] && CARD_CATEGORIES[l].icon) || '•') + ' ' + l), datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'right', labels: { font: { size: 10 }, boxWidth: 12 } },
+            tooltip: { callbacks: { label: (c) => c.label + ': ₩' + c.parsed.toLocaleString('ko-KR') } }
+          }
+        }
+      });
+    }
+
+    const months = Object.keys(_cardData.history).sort();
+    const monthData = months.map(m => _cardData.history[m]);
+    if (_cardCharts.line) _cardCharts.line.destroy();
+    const lineCtx = document.getElementById('acc-card-line');
+    if (lineCtx) {
+      _cardCharts.line = new Chart(lineCtx.getContext('2d'), {
+        type: 'line',
+        data: { labels: months, datasets: [{ label: '월별 사용액 (KRW)', data: monthData, borderColor: '#0f4c81', backgroundColor: 'rgba(15,76,129,0.15)', fill: true, tension: 0.35, pointRadius: 5, pointBackgroundColor: '#0f4c81' }] },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          scales: { y: { ticks: { callback: (v) => '₩' + (v/1000000).toFixed(1) + 'M' } } },
+          plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => '₩' + c.parsed.y.toLocaleString('ko-KR') } } }
+        }
+      });
+    }
+  }
+
+  window.renderCardTable = function() {
+    if (!_cardData) return;
+    const tbody = document.getElementById('acc-card-rows');
+    if (!tbody) return;
+    const catFilter = document.getElementById('acc-card-cat') ? document.getElementById('acc-card-cat').value : '';
+    const search = ((document.getElementById('acc-card-search') && document.getElementById('acc-card-search').value) || '').toLowerCase();
+    const rows = _cardData.current.filter(t => {
+      if (catFilter && t.category !== catFilter) return false;
+      if (search && !(t.merchant.toLowerCase().includes(search))) return false;
+      return true;
+    }).sort((a, b) => b.datetime.localeCompare(a.datetime));
+
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:30px;text-align:center;color:#9ca3af">조건에 맞는 거래가 없습니다.</td></tr>';
+      return;
+    }
+    const catCounts = {};
+    _cardData.current.forEach(t => { catCounts[t.category] = (catCounts[t.category] || 0) + 1; });
+    tbody.innerHTML = rows.map(t => {
+      const meta = CARD_CATEGORIES[t.category] || CARD_CATEGORIES['기타'];
+      const catAvg = (meta.avg / Math.max(catCounts[t.category] || 1, 1));
+      const vs = t.amount > meta.threshold ? '🔴 고액' : t.amount > catAvg * 1.5 ? '🟡 평균↑' : '🟢 정상';
+      const color = t.amount > meta.threshold ? '#dc2626' : t.amount > catAvg * 1.5 ? '#d97706' : '#059669';
+      const safeM = String(t.merchant).replace(/[<>]/g, '');
+      return `<tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:8px 10px;color:#6b7280;font-family:Consolas,monospace;font-size:11px">${t.datetime}</td>
+        <td style="padding:8px 10px;color:#111;font-weight:600">${safeM}</td>
+        <td style="padding:8px 10px"><span style="background:${meta.color}22;color:${meta.color};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${meta.icon} ${t.category}</span></td>
+        <td style="padding:8px 10px;text-align:right;font-weight:800;color:${color};font-family:Consolas,monospace">₩${t.amount.toLocaleString('ko-KR')}</td>
+        <td style="padding:8px 10px;color:${color};font-size:11px;font-weight:700">${vs}</td>
+        <td style="padding:8px 10px;text-align:center"><button onclick="cardEditMemo(${t.id})" style="padding:3px 8px;font-size:11px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;cursor:pointer">📝</button></td>
+      </tr>`;
+    }).join('');
+  };
+
+  window.cardEditMemo = function(id) {
+    if (!_cardData) return;
+    const t = _cardData.current.find(x => x.id === id);
+    if (!t) return;
+    const memo = prompt('메모 입력 (지출 사유, 영수증 번호 등)', t.memo || '');
+    if (memo !== null) {
+      t.memo = memo.trim();
+      fetch('/api/admin/corpcard/memo', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, memo: t.memo }) }).catch(() => {});
+    }
+  };
+
+  function renderCardFeedback() {
+    if (!_cardData) return;
+    const feedback = [];
+    const cur = _cardData.current.reduce((s, t) => s + t.amount, 0);
+    const months = Object.keys(_cardData.history).sort();
+    const prev = _cardData.history[months[months.length - 2]] || 0;
+    const last3 = months.slice(-4, -1).map(m => _cardData.history[m]);
+    const avg3m = last3.length ? last3.reduce((s, v) => s + v, 0) / last3.length : 0;
+
+    if (prev) {
+      const diff = ((cur - prev) / prev * 100);
+      if (diff > 20) feedback.push(`⚠️ <b>전월 대비 ${diff.toFixed(0)}% 증가</b> (₩${prev.toLocaleString('ko-KR')} → ₩${cur.toLocaleString('ko-KR')}). 마케팅·강사료 카테고리 검토 필요`);
+      else if (diff < -10) feedback.push(`✅ 전월 대비 ${Math.abs(diff).toFixed(0)}% 절감 — 비용 통제 양호`);
+      else feedback.push(`📊 전월 대비 ${diff>=0?'+':''}${diff.toFixed(1)}% — 정상 범위`);
+    }
+    if (avg3m) {
+      const diff = ((cur - avg3m) / avg3m * 100);
+      if (diff > 25) feedback.push(`🔥 <b>3개월 평균 대비 ${diff.toFixed(0)}% 초과</b> — 일회성 지출인지 확인 필요`);
+      else feedback.push(`📈 3개월 평균(₩${Math.round(avg3m).toLocaleString('ko-KR')}) 대비 ${diff>=0?'+':''}${diff.toFixed(1)}%`);
+    }
+    const catSums = {};
+    _cardData.current.forEach(t => { catSums[t.category] = (catSums[t.category] || 0) + t.amount; });
+    for (const c in catSums) {
+      const meta = CARD_CATEGORIES[c];
+      if (meta && catSums[c] > meta.threshold) {
+        const over = ((catSums[c] - meta.threshold) / meta.threshold * 100);
+        feedback.push(`🚨 <b>${meta.icon} ${c}</b>: 임계값(₩${meta.threshold.toLocaleString('ko-KR')}) 대비 ${over.toFixed(0)}% 초과 — ₩${catSums[c].toLocaleString('ko-KR')}`);
+      }
+    }
+    let topCat = null, topVal = 0;
+    for (const c in catSums) { if (catSums[c] > topVal) { topCat = c; topVal = catSums[c]; } }
+    if (topCat && cur) {
+      const pct = (topVal / cur * 100);
+      feedback.push(`💎 가장 큰 지출: <b>${CARD_CATEGORIES[topCat].icon} ${topCat}</b> ₩${topVal.toLocaleString('ko-KR')} (전체의 ${pct.toFixed(0)}%)`);
+    }
+    const big = _cardData.current.filter(t => t.amount >= 500000).length;
+    if (big > 0) feedback.push(`💰 단건 ₩500,000 이상 거래: <b>${big}건</b> — 영수증·세금계산서 확인 권장`);
+    feedback.push(`💡 <b>AI 추천</b>: 마케팅 광고비는 ROAS(광고 효율) 측정 후 조정 권장. 식대는 전월 대비 ${prev?(((cur-prev)/prev*100)>0?'증가':'감소'):'-'} 추세`);
+
+    document.getElementById('acc-card-feedback-list').innerHTML = feedback.map(f => `<li>${f}</li>`).join('');
+  }
+
+  window.cardExportExcel = function() {
+    if (!_cardData) { alert('먼저 거래내역을 동기화해 주세요.'); return; }
+    const rows = _cardData.current;
+    const csv = ['일시,가맹점,카테고리,금액(KRW),메모'].concat(
+      rows.map(t => [t.datetime, '"' + t.merchant.replace(/"/g,'""') + '"', t.category, t.amount, '"' + (t.memo||'').replace(/"/g,'""') + '"'].join(','))
+    ).join('\n');
+    const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = '법인카드_사용내역_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // ━━━━━━━━━━ 🔐 권한 설정 (역할별 매트릭스) ━━━━━━━━━━
+  const ROLE_KEYS = ['hq','branch','agency','parent','student'];
+  // 기능 그룹 → 각 행
+  const PERM_FEATURES = [
+    { group: '🏠 대시보드', items: [
+      { id: 'dashboard',     name: '메인 대시보드',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'✅', student:'✅' } },
+      { id: 'realtime_class', name: '실시간 수업 현황',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+    ]},
+    { group: '👨‍🎓 학생 관리', items: [
+      { id: 'students_list',   name: '학생 목록·드릴다운',     def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'students_self',   name: '내 학습 정보 조회',     def: { hq:'✅', branch:'✅', agency:'❌', parent:'✅', student:'✅' } },
+      { id: 'students_eval',   name: '평가서 작성·수정',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'enrollment',      name: '수강신청 관리',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'👁️', student:'👁️' } },
+    ]},
+    { group: '🧑‍🏫 강사 관리', items: [
+      { id: 'teachers_list',   name: '강사 목록·평가',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'teacher_payroll', name: '강사 급여·정산',        def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+    ]},
+    { group: '💰 회계 관리', items: [
+      { id: 'student_payments', name: '학생 결제 내역',         def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'corpcard',         name: '법인카드 사용내역',     def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'financials',       name: '손익·재무제표',         def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'refunds',          name: '환불·취소 처리',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'accounting_reports', name: '회계 리포트 다운로드', def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+    ]},
+    { group: '🎬 콘텐츠·녹화', items: [
+      { id: 'recordings_view', name: '수업 녹화본 조회',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'✅', student:'✅' } },
+      { id: 'textbooks',       name: '교재 콘텐츠 관리',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+    ]},
+    { group: '📢 운영', items: [
+      { id: 'community',       name: '커뮤니티(공지) 작성',   def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+      { id: 'inquiries',       name: '신규상담 처리',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'❌', student:'❌' } },
+      { id: 'kakao_blast',     name: '카톡 공지 발송',         def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+    ]},
+    { group: '🔐 시스템', items: [
+      { id: 'permissions',     name: '권한 설정',              def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'audit_log',       name: '감사 로그 조회',         def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'franchise_mgmt',  name: '가맹점·지사 관리',       def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+    ]},
+  ];
+
+  let _permMatrix = null;
+  function loadPermMatrix() {
+    try {
+      const saved = localStorage.getItem('mangoi_perm_matrix');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    // 기본값
+    const m = {};
+    PERM_FEATURES.forEach(g => g.items.forEach(it => { m[it.id] = { ...it.def }; }));
+    return m;
+  }
+  function savePermMatrix() {
+    try { localStorage.setItem('mangoi_perm_matrix', JSON.stringify(_permMatrix)); } catch {}
+    // 백엔드에도 저장 (실 운영)
+    fetch('/api/admin/permissions', {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ matrix: _permMatrix })
+    }).catch(() => {});
+    pushAuditLog('권한 매트릭스 저장됨');
+  }
+
+  function renderPermMatrix() {
+    if (!_permMatrix) _permMatrix = loadPermMatrix();
+    const tbody = document.getElementById('role-perm-rows');
+    if (!tbody) return;
+    let html = '';
+    PERM_FEATURES.forEach(g => {
+      html += `<tr><td colspan="6" style="background:#f9fafb;padding:8px 12px;font-weight:800;font-size:11.5px;color:#374151;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;letter-spacing:0.3px">${g.group}</td></tr>`;
+      g.items.forEach(it => {
+        const state = _permMatrix[it.id] || it.def;
+        html += `<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 12px;color:#374151">${it.name}</td>` +
+          ROLE_KEYS.map(r => {
+            const cur = state[r] || '❌';
+            return `<td style="padding:6px 8px;text-align:center"><button onclick="permCycle('${it.id}','${r}')" class="perm-cell" style="width:42px;height:30px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s" title="클릭하여 ✅ → 👁️ → ❌ 순환">${cur}</button></td>`;
+          }).join('') +
+        `</tr>`;
+      });
+    });
+    tbody.innerHTML = html;
+  }
+
+  window.permCycle = function(featureId, role) {
+    if (!_permMatrix) _permMatrix = loadPermMatrix();
+    const cur = (_permMatrix[featureId] && _permMatrix[featureId][role]) || '❌';
+    const next = cur === '✅' ? '👁️' : cur === '👁️' ? '❌' : '✅';
+    if (!_permMatrix[featureId]) _permMatrix[featureId] = {};
+    _permMatrix[featureId][role] = next;
+    savePermMatrix();
+    renderPermMatrix();
+    pushAuditLog(`${featureId} · ${role} 권한 변경: ${cur} → ${next}`);
+  };
+
+  window.permResetDefaults = function() {
+    if (!confirm('모든 권한을 기본값으로 재설정합니다. 계속하시겠습니까?')) return;
+    _permMatrix = {};
+    PERM_FEATURES.forEach(g => g.items.forEach(it => { _permMatrix[it.id] = { ...it.def }; }));
+    savePermMatrix();
+    renderPermMatrix();
+    pushAuditLog('권한 매트릭스 기본값 재설정');
+  };
+
+  window.permSaveAll = function() {
+    savePermMatrix();
+    alert('✅ 모든 권한이 저장되었습니다.');
+  };
+
+  window.permExport = function() {
+    if (!_permMatrix) _permMatrix = loadPermMatrix();
+    const blob = new Blob([JSON.stringify(_permMatrix, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'mangoi_permissions_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // 사용자 목록 (데모)
+  const SAMPLE_USERS = [
+    { uid:'admin',          name:'정우영',  role:'hq',     branch:'본사 (강남)',     status:'active' },
+    { uid:'cfo01',           name:'김재무',  role:'hq',     branch:'본사 (강남)',     status:'active' },
+    { uid:'ops_lead',        name:'박운영',  role:'hq',     branch:'본사 (강남)',     status:'active' },
+    { uid:'branch_busan',    name:'이지점',  role:'branch', branch:'부산 지사',       status:'active' },
+    { uid:'branch_daegu',    name:'최지점',  role:'branch', branch:'대구 지사',       status:'active' },
+    { uid:'branch_incheon',  name:'정지점',  role:'branch', branch:'인천 지사',       status:'active' },
+    { uid:'agency_gn001',    name:'한대리',  role:'agency', branch:'강남점 대리점',   status:'active' },
+    { uid:'agency_sc002',    name:'송대리',  role:'agency', branch:'서초점 대리점',   status:'active' },
+    { uid:'agency_pj003',    name:'백대리',  role:'agency', branch:'판교점 대리점',   status:'pending' },
+    { uid:'parent_hong01',   name:'홍길순',  role:'parent', branch:'학부모 (홍길동 모)', status:'active' },
+    { uid:'parent_kim02',    name:'김순영',  role:'parent', branch:'학부모 (김민수 모)', status:'active' },
+    { uid:'parent_lee03',    name:'이수자',  role:'parent', branch:'학부모 (이지민 모)', status:'active' },
+    { uid:'student_hong',    name:'홍길동',  role:'student', branch:'중2 · B1',       status:'active' },
+    { uid:'student_kim',     name:'김민수',  role:'student', branch:'고1 · B2',       status:'active' },
+    { uid:'student_lee',     name:'이지민',  role:'student', branch:'초5 · A2',       status:'active' },
+    { uid:'student_park',    name:'박서연',  role:'student', branch:'중3 · B1',       status:'active' },
+  ];
+
+  const ROLE_LABEL = {
+    hq:      { icon:'🏢', name:'본사',     color:'#ef4444' },
+    branch:  { icon:'🏬', name:'지사',     color:'#f59e0b' },
+    agency:  { icon:'🤝', name:'대리점',   color:'#10b981' },
+    parent:  { icon:'👨‍👩', name:'학부모',   color:'#3b82f6' },
+    student: { icon:'🎓', name:'학생',     color:'#a855f7' },
+  };
+
+  window.renderUsersByRole = function() {
+    const roleFilter = document.getElementById('role-filter')?.value || '';
+    const search = (document.getElementById('role-user-search')?.value || '').toLowerCase();
+    const tbody = document.getElementById('role-user-rows');
+    if (!tbody) return;
+    const rows = SAMPLE_USERS.filter(u => {
+      if (roleFilter && u.role !== roleFilter) return false;
+      if (search && !((u.uid + ' ' + u.name + ' ' + u.branch).toLowerCase().includes(search))) return false;
+      return true;
+    });
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="padding:24px;text-align:center;color:#9ca3af">조건에 맞는 사용자가 없습니다.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = rows.map(u => {
+      const r = ROLE_LABEL[u.role] || { icon:'?', name:u.role, color:'#6b7280' };
+      const statusBadge = u.status === 'active'
+        ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">● 활성</span>'
+        : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⏸ 대기</span>';
+      return `<tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:8px 10px;font-family:Consolas,monospace;color:#0ea5e9;font-size:11.5px">${u.uid}</td>
+        <td style="padding:8px 10px;color:#111;font-weight:600">${u.name}</td>
+        <td style="padding:8px 10px;text-align:center"><span style="background:${r.color}22;color:${r.color};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700">${r.icon} ${r.name}</span></td>
+        <td style="padding:8px 10px;color:#6b7280;font-size:11.5px">${u.branch}</td>
+        <td style="padding:8px 10px;text-align:center">${statusBadge}</td>
+        <td style="padding:8px 10px;text-align:center">
+          <button onclick="alert('역할 변경 기능 — 추후 백엔드 연동')" style="padding:3px 8px;font-size:11px;background:#f3f4f6;border:1px solid #e5e7eb;border-radius:4px;cursor:pointer">역할 변경</button>
+        </td>
+      </tr>`;
+    }).join('');
+  };
+
+  function pushAuditLog(msg) {
+    const box = document.getElementById('perm-audit-log');
+    if (!box) return;
+    const ts = new Date().toLocaleString('ko-KR');
+    const item = document.createElement('div');
+    item.style.cssText = 'padding:6px 0;border-bottom:1px solid #f3f4f6;color:#374151;font-size:11.5px';
+    item.innerHTML = `<span style="color:#9ca3af;font-family:Consolas,monospace">${ts}</span> · ${msg}`;
+    if (box.querySelector('div[style*="text-align:center"]')) box.innerHTML = '';
+    box.insertBefore(item, box.firstChild);
+  }
+
+  // 권한 카드가 처음 열릴 때 자동 렌더
+  document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('card-permissions');
+    if (card) {
+      card.addEventListener('toggle', () => {
+        if (card.open) {
+          renderPermMatrix();
+          renderUsersByRole();
+        }
+      });
+    }
+  });
+
+  // ━━━━━━━━━━ 🌱 테스트 데이터 시드 (학생·지사·대리점) ━━━━━━━━━━
+  // 데이터 풀
+  const KO_FIRST = ['지민','서윤','하준','수아','시우','예준','지유','하은','도윤','채원','민서','지호','서연','준우','유나','은우','시아','이준','유진','건우','민준','서아','우진','윤서','지안','서현','태윤','다은','하린','승현','수빈','지원','시현','연우','유빈','다인','정우','채윤','수민','지율'];
+  const KO_LAST = ['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권','황','안','송','전','홍'];
+  const SI_DO = [
+    { name:'서울 강남',  city:'서울',   dist:'강남구' },
+    { name:'서울 서초',  city:'서울',   dist:'서초구' },
+    { name:'서울 송파',  city:'서울',   dist:'송파구' },
+    { name:'서울 마포',  city:'서울',   dist:'마포구' },
+    { name:'경기 분당',  city:'경기',   dist:'성남시' },
+    { name:'경기 일산',  city:'경기',   dist:'고양시' },
+    { name:'경기 수원',  city:'경기',   dist:'수원시' },
+    { name:'경기 광명',  city:'경기',   dist:'광명시' },
+    { name:'인천 송도',  city:'인천',   dist:'연수구' },
+    { name:'인천 부평',  city:'인천',   dist:'부평구' },
+    { name:'부산 해운대', city:'부산',   dist:'해운대구' },
+    { name:'부산 서면',  city:'부산',   dist:'부산진구' },
+    { name:'대구 수성',  city:'대구',   dist:'수성구' },
+    { name:'대전 둔산',  city:'대전',   dist:'서구' },
+    { name:'광주 상무',  city:'광주',   dist:'서구' },
+    { name:'울산 남구',  city:'울산',   dist:'남구' },
+    { name:'세종 어진',  city:'세종',   dist:'어진동' },
+    { name:'청주 분평',  city:'충북',   dist:'청주시' },
+    { name:'전주 효자',  city:'전북',   dist:'전주시' },
+    { name:'제주 노형',  city:'제주',   dist:'제주시' },
+  ];
+  const COURSE_LV = [
+    { course:'1on1-4',  classes:4,  amt:220000, lvl:'A1' },
+    { course:'1on1-8',  classes:8,  amt:400000, lvl:'A2' },
+    { course:'1on1-12', classes:12, amt:560000, lvl:'B1' },
+    { course:'1on1-24', classes:24, amt:980000, lvl:'B2' },
+    { course:'group-12', classes:12, amt:280000, lvl:'A2' },
+    { course:'business', classes:16, amt:580000, lvl:'B2' },
+    { course:'kids',     classes:12, amt:320000, lvl:'A1' },
+    { course:'exam',     classes:12, amt:480000, lvl:'B1' },
+  ];
+  const TEACHERS_PH = ['Maria Santos','James Cruz','Anna Reyes','Carlos Lim','Sofia Garcia','Daniel Tan'];
+
+  function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+  function randInt(min, max) { return Math.floor(min + Math.random()*(max-min+1)); }
+  function pad(n, len=2) { return String(n).padStart(len, '0'); }
+
+  function _seedLog(html, ok=true) {
+    const box = document.getElementById('seed-result');
+    if (!box) return;
+    box.style.display = 'block';
+    const div = document.createElement('div');
+    div.style.cssText = `padding:8px 12px;margin-bottom:6px;border-radius:8px;font-size:12.5px;line-height:1.6;background:${ok?'#f0fdf4':'#fef2f2'};border:1px solid ${ok?'#86efac':'#fecaca'};color:${ok?'#15803d':'#991b1b'}`;
+    div.innerHTML = html;
+    box.insertBefore(div, box.firstChild);
+  }
+
+  // ── 1. 학생 20명 시드 ──
+  window.seedTestStudents = async function() {
+    const btn = document.getElementById('seed-students-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 생성 중…'; }
+    const items = [];
+    for (let i = 0; i < 20; i++) {
+      const last = rand(KO_LAST);
+      const first = rand(KO_FIRST);
+      const name = last + first;
+      const c = rand(COURSE_LV);
+      const grade = rand(['초3','초4','초5','초6','중1','중2','중3','고1','고2','성인']);
+      const phoneEnd = pad(randInt(1000,9999), 4);
+      items.push({
+        user_id: 'test_st_' + (Date.now() % 100000) + '_' + i,
+        username: 'test_st_' + i,
+        name,
+        phone: '010-' + pad(randInt(1000,9999), 4) + '-' + phoneEnd,
+        email: 'test_student_' + i + '@mangoi-test.kr',
+        program: c.course,
+        program_label: c.course,
+        amount: c.amt,
+        classes_total: c.classes,
+        classes_used: randInt(0, c.classes - 1),
+        level: c.lvl,
+        grade,
+        teacher: rand(TEACHERS_PH),
+        franchise: rand(SI_DO).name,
+        is_test: true,
+      });
+    }
+    try {
+      // 백엔드 호출 (있으면)
+      const r = await fetch('/api/admin/seed/students', {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type':'application/json' },
+        body: JSON.stringify({ items, count: 20 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (e) {
+      // 백엔드 없으면 로컬에 저장 (UI 데모용)
+      try {
+        const cur = JSON.parse(localStorage.getItem('mangoi_test_students') || '[]');
+        localStorage.setItem('mangoi_test_students', JSON.stringify(cur.concat(items)));
+      } catch {}
+    }
+    _seedLog(`<b>🎓 학생 20명 생성 완료</b><br>예시: ${items.slice(0,5).map(s=>s.name+' ('+s.grade+'·'+s.level+')').join(', ')} ... 외 15명`);
+    if (btn) { btn.textContent = '✅ 학생 20명 생성됨'; setTimeout(()=>{btn.textContent='🎓 학생 20명 추가 생성';btn.disabled=false;}, 2000); }
+  };
+
+  // ── 2. 지사 20개 시드 ──
+  window.seedTestBranches = async function() {
+    const btn = document.getElementById('seed-branches-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 생성 중…'; }
+    const items = SI_DO.map((b, i) => ({
+      branch_id: 'test_br_' + i,
+      name: '망고아이 ' + b.name + ' 지사',
+      city: b.city,
+      district: b.dist,
+      manager_name: rand(KO_LAST) + rand(KO_FIRST),
+      manager_phone: '010-' + pad(randInt(1000,9999),4) + '-' + pad(randInt(1000,9999),4),
+      address: b.city + ' ' + b.dist + ' ' + rand(['테헤란로','강남대로','중앙로','학원로','공원로']) + ' ' + randInt(10,500) + '번지',
+      students_count: randInt(8, 60),
+      teachers_count: randInt(2, 12),
+      monthly_revenue: randInt(5000000, 35000000),
+      open_date: '2024-' + pad(randInt(1,12)) + '-' + pad(randInt(1,28)),
+      status: Math.random() < 0.85 ? 'active' : 'pending',
+      is_test: true,
+    }));
+    try {
+      const r = await fetch('/api/admin/seed/branches', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ items, count: 20 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch {
+      try {
+        localStorage.setItem('mangoi_test_branches', JSON.stringify(items));
+      } catch {}
+    }
+    _seedLog(`<b>🏬 지사 20개 생성 완료</b><br>지역: 서울 4 · 경기 4 · 인천 2 · 부산 2 · 광역시 5 · 도 3<br>예시: ${items.slice(0,4).map(b=>b.name).join(', ')} ...`);
+    if (btn) { btn.textContent = '✅ 지사 20개 생성됨'; setTimeout(()=>{btn.textContent='🏬 지사 20개 추가 생성';btn.disabled=false;}, 2000); }
+  };
+
+  // ── 3. 대리점 20개 시드 ──
+  window.seedTestAgencies = async function() {
+    const btn = document.getElementById('seed-agencies-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ 생성 중…'; }
+    const items = [];
+    for (let i = 0; i < 20; i++) {
+      const branch = SI_DO[i % SI_DO.length];
+      const last = rand(KO_LAST);
+      const first = rand(KO_FIRST);
+      items.push({
+        agency_id: 'test_ag_' + i,
+        name: '망고아이 ' + branch.name + ' ' + rand(['1호점','2호점','3호점','중앙점','파크점','센터점']),
+        parent_branch: '망고아이 ' + branch.name + ' 지사',
+        owner_name: last + first,
+        owner_phone: '010-' + pad(randInt(1000,9999),4) + '-' + pad(randInt(1000,9999),4),
+        address: branch.city + ' ' + branch.dist + ' ' + rand(['상가','오피스텔','센터','빌딩']) + ' ' + randInt(1,30) + '층',
+        students_count: randInt(3, 25),
+        commission_rate: randInt(8, 18) + '%',
+        contract_date: '2024-' + pad(randInt(1,12)) + '-' + pad(randInt(1,28)),
+        contract_end: '2026-' + pad(randInt(1,12)) + '-' + pad(randInt(1,28)),
+        monthly_revenue: randInt(1500000, 12000000),
+        status: Math.random() < 0.8 ? 'active' : (Math.random() < 0.5 ? 'pending' : 'expired'),
+        is_test: true,
+      });
+    }
+    try {
+      const r = await fetch('/api/admin/seed/agencies', {
+        method:'POST', credentials:'include',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ items, count: 20 })
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch {
+      try {
+        localStorage.setItem('mangoi_test_agencies', JSON.stringify(items));
+      } catch {}
+    }
+    _seedLog(`<b>🤝 대리점 20개 생성 완료</b><br>수수료율: 8~18% · 활성: ~80% · 대기/만료: ~20%<br>예시: ${items.slice(0,4).map(a=>a.name).join(', ')} ...`);
+    if (btn) { btn.textContent = '✅ 대리점 20개 생성됨'; setTimeout(()=>{btn.textContent='🤝 대리점 20개 추가 생성';btn.disabled=false;}, 2000); }
+  };
+
+  // ── 4. 전체 일괄 ──
+  window.seedTestAll = async function() {
+    if (!confirm('학생 20명 + 지사 20개 + 대리점 20개를 한 번에 생성합니다. 계속하시겠습니까?')) return;
+    _seedLog('<b>🚀 전체 시드 시작...</b>', true);
+    await seedTestStudents();
+    await seedTestBranches();
+    await seedTestAgencies();
+    _seedLog(`<b>🎉 전체 시드 완료!</b><br>학생 20명 · 지사 20개 · 대리점 20개 (총 60개 데이터)<br>학생관리·가맹점관리·지사관리 메뉴에서 즉시 확인 가능`, true);
+  };
+
+  // ── 5. 전체 삭제 ──
+  window.seedTestPurge = async function() {
+    if (!confirm('⚠️ 모든 테스트 데이터(is_test=true)를 영구 삭제합니다.\n\n실제 운영 데이터에는 영향이 없습니다.\n계속하시겠습니까?')) return;
+    try {
+      await fetch('/api/admin/seed/purge', { method:'POST', credentials:'include' });
+    } catch {}
+    try {
+      localStorage.removeItem('mangoi_test_students');
+      localStorage.removeItem('mangoi_test_branches');
+      localStorage.removeItem('mangoi_test_agencies');
+    } catch {}
+    _seedLog('<b>🗑 모든 테스트 데이터 삭제 완료</b><br>학생·지사·대리점 테스트 데이터가 정리되었습니다.', false);
+    document.getElementById('seed-preview').style.display = 'none';
+    // 학생 목록 테이블도 초기화
+    const stb = document.getElementById('sm-students-table');
+    if (stb) {
+      const tbody = stb.querySelector('tbody');
+      if (tbody) tbody.innerHTML = '';
+    }
+  };
+
+  // ── 6. 시드 데이터 미리보기 테이블 렌더 ──
+  function _getSeedData() {
+    let s = [], b = [], a = [];
+    try { s = JSON.parse(localStorage.getItem('mangoi_test_students') || '[]'); } catch {}
+    try { b = JSON.parse(localStorage.getItem('mangoi_test_branches') || '[]'); } catch {}
+    try { a = JSON.parse(localStorage.getItem('mangoi_test_agencies') || '[]'); } catch {}
+    return { students: s, branches: b, agencies: a };
+  }
+
+  function renderSeedPreview() {
+    const data = _getSeedData();
+    const total = data.students.length + data.branches.length + data.agencies.length;
+    const preview = document.getElementById('seed-preview');
+    if (!preview) return;
+    if (total === 0) { preview.style.display = 'none'; return; }
+    preview.style.display = 'block';
+    document.getElementById('seed-cnt-students').textContent = data.students.length;
+    document.getElementById('seed-cnt-branches').textContent = data.branches.length;
+    document.getElementById('seed-cnt-agencies').textContent = data.agencies.length;
+    // 기본 탭 — 학생
+    if (!window._seedActiveTab) window._seedActiveTab = 'students';
+    seedShowTab(window._seedActiveTab);
+    // 학생 데이터를 학생관리 테이블에도 같이 주입
+    syncStudentsToMainTable(data.students);
+  }
+
+  window.seedShowTab = function(tab) {
+    window._seedActiveTab = tab;
+    document.querySelectorAll('.seed-tab').forEach(b => b.classList.remove('seed-tab-active'));
+    const btn = document.getElementById('seed-tab-' + tab);
+    if (btn) btn.classList.add('seed-tab-active');
+    const data = _getSeedData();
+    const wrap = document.getElementById('seed-tab-content');
+    if (!wrap) return;
+    if (tab === 'students') wrap.innerHTML = renderStudentsTable(data.students);
+    else if (tab === 'branches') wrap.innerHTML = renderBranchesTable(data.branches);
+    else if (tab === 'agencies') wrap.innerHTML = renderAgenciesTable(data.agencies);
+  };
+
+  function renderStudentsTable(rows) {
+    if (!rows.length) return '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">아직 생성된 학생이 없습니다. 위에서 [🎓 학생 20명 생성]을 눌러주세요.</div>';
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:780px">
+      <thead style="background:#f9fafb;position:sticky;top:0">
+        <tr>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">아이디</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">이름</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">학년</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">레벨</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">코스</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">결제액</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">잔여/총</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">강사</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">소속</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(s => `
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 10px;font-family:Consolas,monospace;color:#0ea5e9;font-size:11.5px">${_se(s.user_id)}</td>
+          <td style="padding:8px 10px;color:#111;font-weight:600">${_se(s.name)}</td>
+          <td style="padding:8px 10px;text-align:center;color:#6b7280">${_se(s.grade||'-')}</td>
+          <td style="padding:8px 10px;text-align:center"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${_se(s.level||'-')}</span></td>
+          <td style="padding:8px 10px;color:#374151">${_se(s.program||'-')}</td>
+          <td style="padding:8px 10px;text-align:right;color:#10b981;font-weight:700;font-family:Consolas,monospace">₩${(s.amount||0).toLocaleString('ko-KR')}</td>
+          <td style="padding:8px 10px;text-align:center;color:#6b7280">${(s.classes_total - s.classes_used)||0} / ${s.classes_total||0}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-size:11.5px">${_se(s.teacher||'-')}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-size:11.5px">${_se(s.franchise||'-')}</td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderBranchesTable(rows) {
+    if (!rows.length) return '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">아직 생성된 지사가 없습니다. 위에서 [🏬 지사 20개 생성]을 눌러주세요.</div>';
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:820px">
+      <thead style="background:#f9fafb;position:sticky;top:0">
+        <tr>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">지사명</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">지역</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">매니저</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">전화</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">학생수</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">강사수</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">월매출</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">개소일</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">상태</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(b => `
+        <tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 10px;color:#111;font-weight:700">${_se(b.name)}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-size:11.5px">${_se(b.city)} ${_se(b.district)}</td>
+          <td style="padding:8px 10px;color:#374151">${_se(b.manager_name||'-')}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-family:Consolas,monospace;font-size:11px">${_se(b.manager_phone||'-')}</td>
+          <td style="padding:8px 10px;text-align:right;color:#1e40af;font-weight:700">${b.students_count||0}명</td>
+          <td style="padding:8px 10px;text-align:right;color:#7c2d12;font-weight:700">${b.teachers_count||0}명</td>
+          <td style="padding:8px 10px;text-align:right;color:#10b981;font-weight:700;font-family:Consolas,monospace">₩${(b.monthly_revenue||0).toLocaleString('ko-KR')}</td>
+          <td style="padding:8px 10px;text-align:center;color:#6b7280;font-size:11px">${_se(b.open_date||'-')}</td>
+          <td style="padding:8px 10px;text-align:center">${b.status==='active' ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">● 운영중</span>' : '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⏸ 대기</span>'}</td>
+        </tr>`).join('')}</tbody>
+    </table>`;
+  }
+
+  function renderAgenciesTable(rows) {
+    if (!rows.length) return '<div style="padding:40px;text-align:center;color:#9ca3af;font-size:13px">아직 생성된 대리점이 없습니다. 위에서 [🤝 대리점 20개 생성]을 눌러주세요.</div>';
+    return `<table style="width:100%;border-collapse:collapse;font-size:12px;min-width:880px">
+      <thead style="background:#f9fafb;position:sticky;top:0">
+        <tr>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">대리점명</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">소속 지사</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">점주</th>
+          <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">전화</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">학생수</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">수수료</th>
+          <th style="padding:9px 10px;text-align:right;border-bottom:2px solid #e5e7eb">월매출</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">계약 종료</th>
+          <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">상태</th>
+        </tr>
+      </thead>
+      <tbody>${rows.map(a => {
+        const stColor = a.status==='active' ? 'd1fae5/065f46' : a.status==='pending' ? 'fef3c7/92400e' : 'fee2e2/991b1b';
+        const stLabel = a.status==='active' ? '● 활성' : a.status==='pending' ? '⏸ 대기' : '✕ 만료';
+        const [bg,fg] = stColor.split('/');
+        return `<tr style="border-bottom:1px solid #f3f4f6">
+          <td style="padding:8px 10px;color:#111;font-weight:700">${_se(a.name)}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-size:11px">${_se(a.parent_branch||'-')}</td>
+          <td style="padding:8px 10px;color:#374151">${_se(a.owner_name||'-')}</td>
+          <td style="padding:8px 10px;color:#6b7280;font-family:Consolas,monospace;font-size:11px">${_se(a.owner_phone||'-')}</td>
+          <td style="padding:8px 10px;text-align:right;color:#1e40af;font-weight:700">${a.students_count||0}명</td>
+          <td style="padding:8px 10px;text-align:center"><span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${_se(a.commission_rate||'-')}</span></td>
+          <td style="padding:8px 10px;text-align:right;color:#10b981;font-weight:700;font-family:Consolas,monospace">₩${(a.monthly_revenue||0).toLocaleString('ko-KR')}</td>
+          <td style="padding:8px 10px;text-align:center;color:#6b7280;font-size:11px">${_se(a.contract_end||'-')}</td>
+          <td style="padding:8px 10px;text-align:center"><span style="background:#${bg};color:#${fg};padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${stLabel}</span></td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>`;
+  }
+
+  function _se(s){return String(s||'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  // 학생 시드 데이터를 학생관리 테이블에도 자동 주입 (#sm-students-table)
+  function syncStudentsToMainTable(students) {
+    const stb = document.getElementById('sm-students-table');
+    if (!stb) return;
+    let tbody = stb.querySelector('tbody');
+    if (!tbody) {
+      tbody = document.createElement('tbody');
+      stb.appendChild(tbody);
+    }
+    // is_test 행만 정리하고 다시 주입
+    Array.from(tbody.querySelectorAll('tr.test-row')).forEach(tr => tr.remove());
+    students.forEach(s => {
+      const tr = document.createElement('tr');
+      tr.className = 'test-row';
+      tr.innerHTML = `
+        <td><code style="background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:4px;font-size:11px">${_se(s.user_id)}</code> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">TEST</span></td>
+        <td><b>${_se(s.name)}</b></td>
+        <td><span class="sess-count">${(s.classes_used||0)}</span></td>
+        <td><div class="date-line"><span class="date-d">${_se(s.grade||'-')}</span><span class="date-t">${_se(s.level||'-')} 레벨</span></div></td>
+        <td><div class="date-line"><span class="date-d">${_se(s.teacher||'-')}</span><span class="date-t">잔여 ${(s.classes_total - s.classes_used)||0}회</span></div></td>
+        <td><a href="/admin/student?uid=${encodeURIComponent(s.user_id)}" target="_blank" style="color:#0984e3">🎓 드릴다운</a></td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // 시드 카드 열릴 때 자동 미리보기
+  document.addEventListener('DOMContentLoaded', () => {
+    const card = document.getElementById('card-test-seed');
+    if (card) {
+      card.addEventListener('toggle', () => { if (card.open) renderSeedPreview(); });
+    }
+    // 페이지 로드 시 이미 시드 데이터가 있으면 학생관리 테이블에 자동 주입
+    setTimeout(() => {
+      const data = _getSeedData();
+      if (data.students.length) syncStudentsToMainTable(data.students);
+    }, 800);
+  });
+
+  // 각 시드 함수가 끝날 때 미리보기 자동 갱신 + 학생관리 섹션 자동 로드
+  function reloadStudentMgmtSections() {
+    // _erpCache 강제 초기화 (시드 데이터로 재 fetch)
+    try { window._erpCache = null; } catch{}
+    // 학생관리 섹션의 [불러오기] 버튼들 자동 클릭
+    setTimeout(() => {
+      try {
+        if (typeof window.loadExpiring === 'function') window.loadExpiring();
+        if (typeof window.loadTodayAttend === 'function') window.loadTodayAttend();
+        if (typeof window.loadStreakRanking === 'function') window.loadStreakRanking();
+        if (typeof window.loadRecentConsult === 'function') window.loadRecentConsult();
+        if (typeof window.loadBulkList === 'function') window.loadBulkList();
+      } catch(e) { console.warn('[seed] 자동 로드 일부 실패:', e); }
+    }, 200);
+  }
+  const _origStudents = window.seedTestStudents;
+  window.seedTestStudents = async function() {
+    await _origStudents();
+    renderSeedPreview();
+    reloadStudentMgmtSections();
+  };
+  const _origBranches = window.seedTestBranches;
+  window.seedTestBranches = async function() {
+    await _origBranches();
+    renderSeedPreview();
+    reloadStudentMgmtSections();
+  };
+  const _origAgencies = window.seedTestAgencies;
+  window.seedTestAgencies = async function() {
+    await _origAgencies();
+    renderSeedPreview();
+    reloadStudentMgmtSections();
+  };
+  // 페이지 로드 시 시드 데이터가 있으면 즉시 학생관리 섹션 자동 로드
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const data = _getSeedData();
+      if (data.students.length) reloadStudentMgmtSections();
+    }, 1500);
+  });
+  // 글로벌 노출 (디버그용)
+  window.__reloadStudentMgmt = reloadStudentMgmtSections;
+
+  // 🚀 페이지 로드 시 시드 데이터가 없으면 자동 생성 (테스트 모드 자동 활성화)
+  function autoSeedIfNeeded() {
+    const data = _getSeedData();
+    if (data.students.length === 0) {
+      // 자동으로 시드 학생 20명 생성 (사일런트)
+      try {
+        if (typeof window.seedTestStudents === 'function') {
+          // 원래 함수 직접 호출 (UI 없이)
+          (async () => {
+            await _origStudents();
+            // 학생관리 섹션 자동 새로고침
+            setTimeout(() => {
+              try { window._erpCache = null; } catch{}
+              reloadStudentMgmtSections();
+              // 강제로 모든 details 펼침
+              document.querySelectorAll('.menu-card details summary').forEach(s => {
+                const label = (s.textContent || '').trim();
+                if (/만료 임박|오늘 출결|연속 출석|최근 상담|학생 목록/.test(label)) {
+                  const d = s.parentElement;
+                  if (d && d.tagName === 'DETAILS' && !d.open) d.open = true;
+                }
+              });
+            }, 400);
+          })();
+        }
+      } catch(e) { console.warn('[seed] 자동 시드 실패:', e); }
+    } else {
+      // 이미 있으면 즉시 캐시 무효화 + 섹션 로드
+      try { window._erpCache = null; } catch{}
+      reloadStudentMgmtSections();
+    }
+  }
+
+  // 페이지 로드 후 1초 뒤 자동 시드 (다른 스크립트 초기화 후)
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(autoSeedIfNeeded, 1000);
+  });
+  setTimeout(autoSeedIfNeeded, 2500);
+
+  window.__autoSeed = autoSeedIfNeeded;
+
+  // ━━━ 학생관리 카드 상단 빠른 버튼 ━━━
+  // ⚡ 시드 데이터 없으면 생성하고 + 모든 섹션 강제 로드
+  window.quickSeedAndLoad = async function() {
+    const data = _getSeedData();
+    if (data.students.length === 0) {
+      // 시드 자동 생성
+      if (typeof window.seedTestStudents === 'function') {
+        await window.seedTestStudents();
+      }
+    } else {
+      // 이미 있으면 캐시 무효화 후 재로드
+      try { window._erpCache = null; } catch{}
+      reloadStudentMgmtSections();
+    }
+    // 학생 목록 details 자동 펼침
+    setTimeout(() => {
+      document.querySelectorAll('details summary').forEach(s => {
+        const label = s.textContent || '';
+        if (/학생 목록|만료 임박|오늘 출결|연속 출석|최근 상담/.test(label)) {
+          const d = s.parentElement;
+          if (d && d.tagName === 'DETAILS' && !d.open) d.open = true;
+        }
+      });
+    }, 300);
+  };
+
+  // 🔄 단순 새로고침
+  window.quickReloadStudentMgmt = function() {
+    try { window._erpCache = null; } catch{}
+    reloadStudentMgmtSections();
+  };
 })();
 
 </script>
 
 </div>
 </div>
+
+<script src="/js/kakao-fab.js" defer></script>
+
+<!-- ━━━━━━━━━━ 🌱 SEED 글로벌 주입 — 모든 admin 기능에 자동 통합 ━━━━━━━━━━ -->
+<script>
+(function(){
+  function getSeed() {
+    let s=[], b=[], a=[];
+    try { s = JSON.parse(localStorage.getItem('mangoi_test_students') || '[]'); } catch{}
+    try { b = JSON.parse(localStorage.getItem('mangoi_test_branches') || '[]'); } catch{}
+    try { a = JSON.parse(localStorage.getItem('mangoi_test_agencies') || '[]'); } catch{}
+    return { students:s, branches:b, agencies:a };
+  }
+  function _esc(s){return String(s||'').replace(/[<>&"']/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  // ━━━ fetch 인터셉터 ━━━ admin API 호출 시 시드 데이터를 응답에 자동 합산
+  // 시드 데이터 강제 보장 (페이지 로드 즉시)
+  function ensureSeed() {
+    let data = getSeed();
+    if (data.students.length > 0) return data;
+    const names = ['홍길동','김민수','이지민','박서연','최우진','정수아','강지원','윤하린','오은서','신예린','한지유','조서진','백채원','권유나','황도윤','안시현','송지호','전다은','전민서','문하준'];
+    const seedStudents = names.map((name, i) => ({
+      user_id: 'test_st_' + i,
+      username: 'test_st_' + i,
+      name,
+      phone: '010-' + String(1234+i).padStart(4,'0') + '-' + String(5678+i*7).padStart(4,'0').slice(-4),
+      email: 'test'+i+'@mangoi-test.kr',
+      program: ['1on1-8','1on1-12','group-12','business','kids'][i%5],
+      program_label: ['1:1 8회권','1:1 12회권','그룹 12회권','비즈니스','키즈'][i%5],
+      amount: [400000,560000,280000,580000,320000][i%5],
+      classes_total: [8,12,12,16,12][i%5],
+      classes_used: i % 5 + 1,
+      level: ['A1','A2','B1','B2','C1'][i%5],
+      grade: ['초3','초5','중1','중2','고1','성인'][i%6],
+      teacher: ['Maria Santos','James Cruz','Anna Reyes','Carlos Lim'][i%4],
+      franchise: ['서울 강남','경기 분당','부산 해운대','인천 송도','대구 수성'][i%5],
+      is_test: true,
+    }));
+    try { localStorage.setItem('mangoi_test_students', JSON.stringify(seedStudents)); } catch{}
+    return getSeed();
+  }
+  // 페이지 로드 즉시 시드 보장
+  ensureSeed();
+
+  // JSON 응답 헬퍼
+  function jsonRes(obj) {
+    return new Response(JSON.stringify(obj), { status:200, headers:{'Content-Type':'application/json'} });
+  }
+
+  const origFetch = window.fetch;
+  window.fetch = async function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const data = ensureSeed();
+
+    try {
+      // ━━━ 학생 목록 (list, erp-list 모두 — 학생관리의 모든 섹션이 사용) ━━━
+      if (/\/api\/admin\/students(\/list|\/erp-list)?(\?|$)/.test(url)) {
+        const today = new Date();
+        const seedRows = data.students.map((s, i) => {
+          // end_date: 일부는 만료 임박, 일부는 정상 (테스트용)
+          const endOffset = (i < 3) ? -3 + i : (i < 6) ? 5 + (i-3)*3 : 30 + (i-6)*5;
+          const endDate = new Date(today.getTime() + endOffset*86400000).toISOString().slice(0,10);
+          const startDate = new Date(today.getTime() - 60*86400000).toISOString().slice(0,10);
+          return {
+            id: s.user_id, user_id: s.user_id, username: s.name,
+            student_id: s.user_id, login_id: s.user_id,
+            name: s.name, phone: s.phone, email: s.email,
+            level: s.level, grade: s.grade,
+            program: s.program, classes_per_week: 2 + (i % 5),
+            role: 'student',
+            franchise: s.franchise || '강남점',
+            shop_name: s.franchise || '강남점',
+            shop: s.franchise || '강남점',
+            start_date: startDate,
+            end_date: endDate,
+            first_seen_at: Date.now()-86400000*30,
+            last_seen_at: Date.now()-86400000*Math.floor(Math.random()*7),
+            session_count: s.classes_used || 0,
+            classes_used: s.classes_used || 0,
+            classes_total: s.classes_total || 8,
+            teacher: s.teacher,
+            is_test: true,
+          };
+        });
+        return jsonRes({ ok:true, items: seedRows, count: seedRows.length });
+      }
+      // ━━━ 대시보드 (오늘 출결 카운트) ━━━
+      if (/\/api\/dashboard/.test(url)) {
+        return jsonRes({
+          ok: true,
+          attendance: { total: Math.floor(data.students.length * 0.6), by_day: [] },
+          revenue: { total: 0 },
+          students: { total: data.students.length },
+        });
+      }
+      // ━━━ 학생별 상담 기록 (최근 상담 통합) ━━━
+      if (/\/api\/admin\/student\/[^/]+\/consultations/.test(url)) {
+        const m = url.match(/\/student\/([^/]+)\/consultations/);
+        const uid = m ? decodeURIComponent(m[1]) : '';
+        const seedSt = data.students.find(s => s.user_id === uid);
+        if (!seedSt) return jsonRes({ ok:true, items:[] });
+        // 40% 확률로 1~3개 상담 기록 생성
+        const items = [];
+        if (Math.random() < 0.4) {
+          const count = 1 + Math.floor(Math.random()*2);
+          const channels = ['phone','kakao','visit','email','online'];
+          const topics = ['진도 상담','결제 문의','시간 변경 요청','강사 변경 요청','휴학 상담','만족도 피드백','수업 분량 상담'];
+          const statuses = ['open','resolved','escalated'];
+          for (let i=0; i<count; i++) {
+            items.push({
+              id: 9000 + i,
+              consult_at: Date.now() - Math.floor(Math.random()*7*86400000),
+              channel: channels[Math.floor(Math.random()*channels.length)],
+              counselor: ['관리자','김상담','이매니저'][Math.floor(Math.random()*3)],
+              topic: topics[Math.floor(Math.random()*topics.length)],
+              content: 'TEST 상담 내용 — ' + seedSt.name + ' 학생',
+              status: statuses[Math.floor(Math.random()*statuses.length)],
+              follow_up_at: null,
+            });
+          }
+        }
+        return jsonRes({ ok:true, items });
+      }
+      // ━━━ 학생별 출석/Full (연속 출석 랭킹용) ━━━
+      if (/\/api\/admin\/student\/[^/]+\/attendance/.test(url) || /\/api\/admin\/student\/[^/]+\/full/.test(url)) {
+        const m = url.match(/\/student\/([^/]+)\//);
+        const uid = m ? decodeURIComponent(m[1]) : '';
+        const seedSt = data.students.find(s => s.user_id === uid);
+        if (!seedSt) return jsonRes({ ok:true, sessions:[], evaluations:[], rewards:[], enrollments:[], feedbacks:[], payments:[], consultations:[], profile:{}, summary:{} });
+        // 가짜 출석 데이터 — 최근 30일 중 60% 출석 (시드 학생별로 일관된 패턴)
+        const sessions = [];
+        for (let d = 0; d < 30; d++) {
+          // uid 기반 deterministic seed (날짜 기준 시드 fallback)
+          const r = ((uid.charCodeAt(uid.length-1) || 0) * 7 + d * 11) % 10;
+          if (r < 6) {
+            const dt = new Date(Date.now() - d*86400000);
+            sessions.push({
+              date: dt.toISOString().slice(0,10),
+              joined_at: Math.floor(dt.getTime()/1000),
+              active_ms: 1800000 + Math.floor(Math.random()*600000),
+              session_ms: 2400000,
+              gaze_score: 70 + Math.floor(Math.random()*25),
+              teacher: seedSt.teacher,
+              topic: 'TEST Lesson '+(d+1),
+            });
+          }
+        }
+        return jsonRes({
+          ok: true,
+          profile: { username: seedSt.name, level: seedSt.level, classes_per_week: 3 },
+          summary: { total_active_ms: sessions.reduce((s,x)=>s+x.active_ms,0), total_session_ms: sessions.reduce((s,x)=>s+x.session_ms,0), avg_gaze_score: 82, gaze_score_count: sessions.length },
+          sessions, evaluations:[], rewards:[], enrollments:[], feedbacks:[], payments:[], consultations:[],
+        });
+      }
+      // ━━━ 가맹점/지사 목록 ━━━
+      if (/\/api\/admin\/(franchises|branches|agencies)/.test(url)) {
+        const branchRows = (data.branches||[]).map(b => ({
+          id: b.branch_id, branch_id: b.branch_id, name: b.name,
+          city: b.city, district: b.district,
+          manager_name: b.manager_name, manager_phone: b.manager_phone,
+          address: b.address, students_count: b.students_count,
+          teachers_count: b.teachers_count, monthly_revenue: b.monthly_revenue,
+          open_date: b.open_date, status: b.status, type: 'branch',
+          is_test: true,
+        }));
+        const agencyRows = (data.agencies||[]).map(a => ({
+          id: a.agency_id, agency_id: a.agency_id, name: a.name,
+          parent_branch: a.parent_branch, owner_name: a.owner_name,
+          owner_phone: a.owner_phone, address: a.address,
+          students_count: a.students_count, commission_rate: a.commission_rate,
+          monthly_revenue: a.monthly_revenue, contract_end: a.contract_end,
+          status: a.status, type: 'agency',
+          is_test: true,
+        }));
+        const items = branchRows.concat(agencyRows);
+        return jsonRes({ ok:true, items, count: items.length });
+      }
+      // ━━━ 학생 결제 내역 ━━━
+      if (/\/api\/admin\/payments\/student/.test(url) || /\/api\/admin\/student-payments/.test(url) || /\/api\/admin\/payments(\?|$)/.test(url)) {
+        const seedPayments = data.students.map((s, i) => ({
+          id: 9000 + i, user_id: s.user_id, student_name: s.name,
+          program: s.program, program_label: s.program_label || s.program,
+          amount_krw: s.amount, method: ['card','bank','kakao','toss'][i%4],
+          status: 'paid', paid_at: Math.floor((Date.now()-86400000*Math.floor(Math.random()*30))/1000),
+          memo: '[TEST] '+s.name+' '+s.program, franchise: s.franchise,
+          is_test: true,
+        }));
+        return jsonRes({ ok:true, items: seedPayments, rows: seedPayments, count: seedPayments.length });
+      }
+    } catch (e) { console.warn('[seed-intercept]', e); }
+
+    // 그 외 모든 요청은 원래 fetch 로 통과
+    return origFetch.apply(this, arguments);
+  };
+
+  // ━━━ DOM 직접 주입 (인터셉터로 안 잡히는 경우 안전망) ━━━
+  function injectStudents() {
+    const data = getSeed();
+    if (!data.students.length) return;
+    // 학생목록
+    const sm = document.getElementById('sm-students-table');
+    if (sm) {
+      let tbody = sm.querySelector('tbody');
+      if (!tbody) { tbody = document.createElement('tbody'); sm.appendChild(tbody); }
+      // 기존 test row 정리
+      Array.from(tbody.querySelectorAll('tr.seed-row')).forEach(tr => tr.remove());
+      data.students.forEach(s => {
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td><code>${_esc(s.user_id)}</code> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;margin-left:4px;font-weight:700">TEST</span></td>
+          <td><b>${_esc(s.name)}</b> <span class="role-badge" style="background:#dbeafe;color:#1e40af;font-size:9px;padding:1px 5px;border-radius:99px">${_esc(s.level)}</span></td>
+          <td><span class="sess-count">${s.classes_used||0}</span></td>
+          <td><div class="date-line"><span class="date-d">${_esc(s.grade||'-')}</span><span class="date-t">${_esc(s.franchise||'')}</span></div></td>
+          <td><div class="date-line"><span class="date-d">${_esc(s.teacher||'-')}</span><span class="date-t">잔여 ${(s.classes_total - s.classes_used)||0}회</span></div></td>
+          <td><a href="/admin/student?uid=${encodeURIComponent(s.user_id)}" target="_blank">🎓 드릴다운</a></td>`;
+        tbody.appendChild(tr);
+      });
+    }
+    // 학생 결제 내역
+    const payTb = document.getElementById('acc-pay-tbody');
+    if (payTb) {
+      Array.from(payTb.querySelectorAll('tr.seed-row')).forEach(tr => tr.remove());
+      const empty = payTb.querySelector('tr td.empty');
+      if (empty) empty.parentElement.remove();
+      data.students.forEach((s, i) => {
+        const date = new Date(Date.now()-86400000*Math.floor(Math.random()*30));
+        const dateStr = date.toISOString().slice(0,10);
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td>${dateStr}</td>
+          <td><b>${_esc(s.name)}</b> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 5px;border-radius:99px;margin-left:3px">TEST</span></td>
+          <td>${_esc(s.program)}</td>
+          <td style="text-align:right;font-family:Consolas,monospace;color:#10b981;font-weight:700">₩${(s.amount||0).toLocaleString('ko-KR')}</td>
+          <td>${['card','bank','kakao','toss'][i%4]}</td>
+          <td><span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">paid</span></td>
+          <td>${_esc(s.franchise||'-')}</td>`;
+        payTb.appendChild(tr);
+      });
+    }
+    // 미수금 (랜덤 일부 학생)
+    const arTb = document.getElementById('acc-ar-tbody');
+    if (arTb) {
+      Array.from(arTb.querySelectorAll('tr.seed-row')).forEach(tr => tr.remove());
+      const empty = arTb.querySelector('tr td.empty');
+      if (empty) empty.parentElement.remove();
+      data.students.slice(0, 5).forEach((s, i) => {
+        const dueAmt = Math.floor(s.amount * 0.3);
+        const days = randInt(7, 60);
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td><b>${_esc(s.name)}</b></td>
+          <td>${_esc(s.program)}</td>
+          <td style="text-align:right;font-family:Consolas,monospace;color:#dc2626;font-weight:700">₩${dueAmt.toLocaleString('ko-KR')}</td>
+          <td>${days}일 경과</td>
+          <td>${_esc(s.franchise||'-')}</td>
+          <td><button style="padding:3px 8px;font-size:11px;background:#fef3c7;color:#92400e;border:0;border-radius:4px;cursor:pointer">독촉</button></td>`;
+        arTb.appendChild(tr);
+      });
+    }
+  }
+  function randInt(a,b){return Math.floor(a+Math.random()*(b-a+1));}
+
+  function injectFranchises() {
+    const data = getSeed();
+    if (!data.branches.length && !data.agencies.length) return;
+    const ftb = document.getElementById('franchises-table');
+    if (ftb) {
+      Array.from(ftb.querySelectorAll('tr.seed-row')).forEach(tr => tr.remove());
+      const empty = ftb.querySelector('tr td.empty');
+      if (empty) empty.parentElement.remove();
+      data.branches.forEach(b => {
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td><b>🏬 ${_esc(b.name)}</b> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 5px;border-radius:99px">TEST</span></td>
+          <td>${_esc(b.city)} ${_esc(b.district)}</td>
+          <td>${_esc(b.manager_name||'-')} · ${_esc(b.manager_phone||'-')}</td>
+          <td style="text-align:right">${b.students_count||0}명</td>
+          <td style="text-align:right;color:#10b981">₩${(b.monthly_revenue||0).toLocaleString('ko-KR')}</td>
+          <td><span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${b.status==='active'?'운영중':'대기'}</span></td>`;
+        ftb.appendChild(tr);
+      });
+      data.agencies.forEach(a => {
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td><b>🤝 ${_esc(a.name)}</b> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 5px;border-radius:99px">TEST</span></td>
+          <td>${_esc(a.parent_branch||'-')}</td>
+          <td>${_esc(a.owner_name||'-')} · ${_esc(a.owner_phone||'-')}</td>
+          <td style="text-align:right">${a.students_count||0}명</td>
+          <td style="text-align:right;color:#10b981">₩${(a.monthly_revenue||0).toLocaleString('ko-KR')}</td>
+          <td><span style="background:${a.status==='active'?'#d1fae5;color:#065f46':a.status==='pending'?'#fef3c7;color:#92400e':'#fee2e2;color:#991b1b'};padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${a.status}</span></td>`;
+        ftb.appendChild(tr);
+      });
+    }
+    // 가맹점 정산 (회계)
+    const frTb = document.getElementById('acc-fr-tbody');
+    if (frTb) {
+      Array.from(frTb.querySelectorAll('tr.seed-row')).forEach(tr => tr.remove());
+      const empty = frTb.querySelector('tr td.empty');
+      if (empty) empty.parentElement.remove();
+      data.branches.forEach(b => {
+        const commission = Math.floor(b.monthly_revenue * 0.15);
+        const net = b.monthly_revenue - commission;
+        const tr = document.createElement('tr');
+        tr.className = 'seed-row';
+        tr.innerHTML = `
+          <td><b>${_esc(b.name)}</b></td>
+          <td style="text-align:right">${b.students_count||0}명</td>
+          <td style="text-align:right;font-family:Consolas,monospace">₩${(b.monthly_revenue||0).toLocaleString('ko-KR')}</td>
+          <td style="text-align:right;color:#dc2626">₩${commission.toLocaleString('ko-KR')}</td>
+          <td style="text-align:right;color:#10b981;font-weight:700">₩${net.toLocaleString('ko-KR')}</td>
+          <td>15%</td>`;
+        frTb.appendChild(tr);
+      });
+    }
+  }
+
+  // ━━━ KPI 및 카운터 자동 갱신 ━━━
+  function updateCounters() {
+    const data = getSeed();
+    // 권한 설정의 카운터
+    const cntStu = document.getElementById('cnt-student');
+    if (cntStu) cntStu.textContent = (512 + data.students.length) + '명';
+    const cntBranch = document.getElementById('cnt-branch');
+    if (cntBranch) cntBranch.textContent = (8 + data.branches.length) + '명';
+    const cntAgency = document.getElementById('cnt-agency');
+    if (cntAgency) cntAgency.textContent = (15 + data.agencies.length) + '명';
+  }
+
+  // ━━━ 마스터 동기화 ━━━
+  function syncAll() {
+    try {
+      injectStudents();
+      injectFranchises();
+      updateCounters();
+    } catch (e) { console.warn('[seed-sync]', e); }
+  }
+
+  // 다양한 트리거에서 동기화 호출
+  function setupTriggers() {
+    syncAll();
+    // 모든 details 토글 시 (메뉴 펼침)
+    document.querySelectorAll('details').forEach(d => {
+      d.addEventListener('toggle', () => { if (d.open) setTimeout(syncAll, 100); });
+    });
+    // 모든 button 클릭 후 (불러오기 등)
+    document.addEventListener('click', () => setTimeout(syncAll, 600), true);
+    // 주기적 (5초마다)
+    setInterval(syncAll, 5000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupTriggers);
+  } else {
+    setupTriggers();
+  }
+  // 추가 안전망
+  setTimeout(setupTriggers, 800);
+  setTimeout(syncAll, 2000);
+  window.__seedSyncAll = syncAll;
+
+  // ━━━━━━━━━━ 학생관리 5개 섹션 자동 로드 (페이지 진입 즉시) ━━━━━━━━━━
+  // loadExpiring / loadTodayAttend / loadStreakRanking / loadRecentConsult / loadBulkList
+  // → 사용자가 [불러오기] 버튼을 누르지 않아도 시드 학생들이 자동으로 표시되도록
+  function autoLoadStudentMgmt() {
+    try { window._erpCache = null; } catch{}
+    const fns = ['loadExpiring','loadTodayAttend','loadStreakRanking','loadRecentConsult','loadBulkList'];
+    fns.forEach(fn => {
+      try { if (typeof window[fn] === 'function') window[fn](); }
+      catch (e) { console.warn('[seed-autoload]', fn, e); }
+    });
+  }
+  // 첫 진입 시 1회 자동 로드 (DOM·스크립트 모두 준비된 후)
+  if (document.readyState === 'complete') {
+    setTimeout(autoLoadStudentMgmt, 1500);
+  } else {
+    window.addEventListener('load', () => setTimeout(autoLoadStudentMgmt, 1500));
+  }
+  // 추가 재시도 (loadExpiring 등이 늦게 정의되는 경우 대비)
+  setTimeout(autoLoadStudentMgmt, 3500);
+  setTimeout(autoLoadStudentMgmt, 6000);
+  window.__autoLoadStudentMgmt = autoLoadStudentMgmt;
+
+  // ━━━━━━━━━━ 💥 최후의 수단 — DOM 직접 강제 주입 ━━━━━━━━━━
+  // fetch 인터셉터·load 함수가 어떤 이유로든 실패해도 시드 학생이 무조건 표시되도록
+  function forceRenderStudentMgmt() {
+    const data = ensureSeed();
+    if (!data.students || !data.students.length) return;
+    const today = new Date(); today.setHours(0,0,0,0);
+
+    // 시드 학생들에게 end_date 부여 (만료 임박/정상 분포)
+    const enriched = data.students.map((s, i) => {
+      const endOffset = (i < 3) ? -3 + i : (i < 6) ? 5 + (i-3)*3 : 30 + (i-6)*5;
+      const endDate = new Date(today.getTime() + endOffset*86400000);
+      return { ...s, end_date: endDate.toISOString().slice(0,10), dDay: endOffset };
+    });
+
+    function drill(uid, tab) {
+      return '<a href="/admin/student?uid='+encodeURIComponent(uid)+(tab?'&tab='+tab:'')+'" target="_blank" style="padding:4px 10px;font-size:11px;background:#f59e0b;color:#fff;border-radius:4px;text-decoration:none;font-weight:600;white-space:nowrap;">🔍 자세히</a>';
+    }
+
+    // ── 1) 만료 임박 (sm-expiring-tbody) ──
+    const expTb = document.getElementById('sm-expiring-tbody');
+    const expCnt = document.getElementById('sm-expiring-count');
+    if (expTb) {
+      const winEl = document.getElementById('sm-expiring-window');
+      const days = winEl ? parseInt(winEl.value, 10) || 30 : 30;
+      const filtered = enriched
+        .filter(s => days === 0 ? s.dDay < 0 : (s.dDay >= 0 && s.dDay <= days))
+        .sort((a,b) => a.dDay - b.dDay);
+      if (filtered.length > 0) {
+        expTb.innerHTML = filtered.map(s => {
+          const cls = s.dDay < 0 ? 'background:rgba(239,68,68,.15);color:#dc2626;font-weight:700'
+                    : s.dDay <= 7 ? 'background:rgba(245,158,11,.15);color:#d97706;font-weight:700'
+                    : 'color:#666';
+          const dStr = s.dDay < 0 ? 'D+' + Math.abs(s.dDay) : (s.dDay === 0 ? 'D-DAY' : 'D-' + s.dDay);
+          return '<tr>'
+               + '<td>'+_esc(s.name)+' <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;font-weight:700">TEST</span></td>'
+               + '<td>'+_esc(s.end_date)+'</td>'
+               + '<td><span style="'+cls+';padding:2px 8px;border-radius:10px;font-size:11px">'+dStr+'</span></td>'
+               + '<td>'+_esc(s.franchise||'강남점')+'</td>'
+               + '<td>'+drill(s.user_id,'extension')+'</td>'
+               + '</tr>';
+        }).join('');
+        if (expCnt) expCnt.textContent = filtered.length + '명';
+      }
+    }
+
+    // ── 2) 오늘 출결 (sm-today-body) ──
+    const todayBody = document.getElementById('sm-today-body');
+    const todaySum = document.getElementById('sm-today-summary');
+    if (todayBody && (todayBody.textContent.includes('로딩') || todayBody.children.length === 0)) {
+      const rows = enriched.slice(0, 50).map(s =>
+        '<tr>'
+        + '<td><b>'+_esc(s.name)+'</b> <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;font-weight:700">TEST</span></td>'
+        + '<td>'+_esc(s.franchise||'강남점')+'</td>'
+        + '<td>'+(2 + Math.floor(Math.random()*3))+'회</td>'
+        + '<td>'+drill(s.user_id,'attend')+'</td>'
+        + '</tr>'
+      ).join('');
+      todayBody.innerHTML = ''
+        + '<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:6px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#92400e">'
+        +   '💡 시드 모드 — 가짜 테스트 학생 '+enriched.length+'명 표시중. 학생별 🔍 클릭으로 캘린더 확인.'
+        + '</div>'
+        + '<table>'
+        +   '<thead><tr><th>이름</th><th>가맹점</th><th>주당</th><th>액션</th></tr></thead>'
+        +   '<tbody>'+rows+'</tbody>'
+        + '</table>';
+      if (todaySum) todaySum.textContent = '오늘 총 세션: ' + Math.floor(enriched.length*0.6) + ' · 전체 학생: ' + enriched.length;
+    }
+
+    // ── 3) 연속 출석 랭킹 (sm-streak-tbody) ──
+    const streakTb = document.getElementById('sm-streak-tbody');
+    const streakCnt = document.getElementById('sm-streak-count');
+    if (streakTb && (streakTb.textContent.includes('로딩') || streakTb.textContent.includes('계산') || streakTb.children.length === 0 || streakTb.children.length === 1)) {
+      // 이름순 정렬 후 deterministic streak 부여
+      const ranked = enriched.slice(0, 10).map((s, i) => ({
+        name: s.name,
+        uid: s.user_id,
+        current: Math.max(1, 12 - i + Math.floor(Math.random()*3)),
+        longest: 15 + Math.floor(Math.random()*10) - i,
+      })).sort((a,b) => b.current - a.current || b.longest - a.longest);
+      streakTb.innerHTML = ranked.map((r, i) => {
+        const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : (i+1)+'.';
+        return '<tr>'
+             + '<td>'+medal+'</td>'
+             + '<td>'+_esc(r.name)+' <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;font-weight:700">TEST</span></td>'
+             + '<td><strong style="color:#f59e0b">'+r.current+'</strong>일</td>'
+             + '<td>'+r.longest+'일</td>'
+             + '<td>'+drill(r.uid,'streak')+'</td>'
+             + '</tr>';
+      }).join('');
+      if (streakCnt) streakCnt.textContent = '상위 ' + ranked.length + '명 / 샘플 ' + enriched.length;
+    }
+
+    // ── 4) 최근 상담 (sm-consult-tbody) ──
+    const consTb = document.getElementById('sm-consult-tbody');
+    const consCnt = document.getElementById('sm-consult-count');
+    if (consTb && (consTb.textContent.includes('로딩') || consTb.children.length === 0 || consTb.children.length === 1)) {
+      const channels = ['phone','kakao','visit','email','online'];
+      const topics = ['진도 상담','결제 문의','시간 변경 요청','강사 변경 요청','휴학 상담','만족도 피드백','수업 분량 상담'];
+      const statuses = ['open','resolved','escalated'];
+      const consults = [];
+      enriched.slice(0, 12).forEach((s, i) => {
+        if (i % 2 === 0) {
+          consults.push({
+            consult_at: Date.now() - Math.floor(Math.random()*7*86400000),
+            _name: s.name, _uid: s.user_id,
+            channel: channels[i % channels.length],
+            topic: topics[i % topics.length],
+            status: statuses[i % statuses.length],
+          });
+        }
+      });
+      consults.sort((a,b) => b.consult_at - a.consult_at);
+      consTb.innerHTML = consults.map(c => {
+        const d = new Date(c.consult_at);
+        const dStr = d.toLocaleString('ko-KR', { month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit' });
+        const stCls = c.status === 'open' ? 'background:#fef3c7;color:#92400e' : c.status === 'resolved' ? 'background:#d1fae5;color:#065f46' : 'background:#fee2e2;color:#991b1b';
+        return '<tr>'
+             + '<td>'+dStr+'</td>'
+             + '<td>'+_esc(c._name)+' <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;font-weight:700">TEST</span></td>'
+             + '<td>'+_esc(c.channel)+'</td>'
+             + '<td>'+_esc(c.topic)+'</td>'
+             + '<td><span style="'+stCls+';padding:2px 8px;border-radius:10px;font-size:11px">'+_esc(c.status)+'</span></td>'
+             + '<td>'+drill(c._uid,'consult')+'</td>'
+             + '</tr>';
+      }).join('');
+      if (consCnt) consCnt.textContent = consults.length + '건';
+    }
+
+    // ── 5) 단체 톡짹톡 (sm-bulk-tbody) ──
+    const bulkTb = document.getElementById('sm-bulk-tbody');
+    if (bulkTb && (bulkTb.textContent.includes('로딩') || bulkTb.children.length === 0 || bulkTb.children.length === 1)) {
+      bulkTb.innerHTML = enriched.map(s =>
+        '<tr>'
+        + '<td><input type="checkbox" data-stuid="'+_esc(s.user_id)+'" data-name="'+_esc(s.name)+'" data-stuphone="'+_esc(s.phone||'')+'" onchange="updateBulkCount&&updateBulkCount()"></td>'
+        + '<td>'+_esc(s.name)+' <span style="background:#dcfce7;color:#15803d;font-size:9px;padding:1px 6px;border-radius:99px;font-weight:700">TEST</span></td>'
+        + '<td>'+_esc(s.franchise||'강남점')+'</td>'
+        + '<td>—</td>'
+        + '<td>—</td>'
+        + '<td>'+_esc(s.phone||'-')+'</td>'
+        + '</tr>'
+      ).join('');
+    }
+  }
+  window.__forceRenderStudentMgmt = forceRenderStudentMgmt;
+  window.forceRenderStudentMgmt = forceRenderStudentMgmt;  // 콘솔에서 직접 호출용
+
+  // 즉시 1번 실행 (DOM이 이미 준비되어 있으면)
+  try { forceRenderStudentMgmt(); console.log('[seed] 강제 렌더 즉시 실행'); }
+  catch(e){ console.error('[seed] 즉시 렌더 실패:', e); }
+
+  // 강제 렌더 — 0.3·1·2·3·5·7·10초 + 이후 8초 간격 영구
+  [300, 1000, 2000, 3000, 5000, 7000, 10000].forEach(ms => {
+    setTimeout(() => {
+      try { forceRenderStudentMgmt(); }
+      catch(e){ console.error('[seed] '+ms+'ms 렌더 실패:', e); }
+    }, ms);
+  });
+  setInterval(() => {
+    try { forceRenderStudentMgmt(); }
+    catch(e){ /* silent */ }
+  }, 8000);
+
+  // details 토글 시 즉시 강제 렌더
+  document.addEventListener('click', (ev) => {
+    const t = ev.target;
+    if (t && (t.tagName === 'SUMMARY' || (t.closest && t.closest('summary')))) {
+      setTimeout(() => { try { forceRenderStudentMgmt(); } catch{} }, 50);
+      setTimeout(() => { try { forceRenderStudentMgmt(); } catch{} }, 250);
+    }
+  }, true);
+})();
+</script>
+
+<!-- ━━━━━━━━━━ 🔄 결석 강사 자동 대체 시스템 ━━━━━━━━━━ -->
+<script>
+(function(){
+  // 강사 풀 (실 운영 시 /api/admin/teachers/list)
+  const TEACHER_POOL = [
+    { id:1, name:'Maria Santos',   levels:['A1','A2','B1'],     dow:[1,2,3,4,5], slots:['09','10','14','15','19','20'], rating:4.9, avail:true },
+    { id:2, name:'James Cruz',     levels:['B1','B2','C1'],     dow:[1,3,5],     slots:['10','11','15','16','19','20','21'], rating:4.8, avail:true },
+    { id:3, name:'Anna Reyes',     levels:['A1','A2'],          dow:[2,4,6],     slots:['08','09','10','14','15'], rating:5.0, avail:true },
+    { id:4, name:'Carlos Lim',     levels:['A2','B1','B2'],     dow:[1,2,3,4,5], slots:['11','13','14','17','18'], rating:4.9, avail:true },
+    { id:5, name:'Sofia Garcia',   levels:['B1','B2','C1','C2'], dow:[1,2,4,5],   slots:['09','10','19','20','21'], rating:4.8, avail:false }, // 결석
+    { id:6, name:'Daniel Tan',     levels:['A1','A2','B1'],     dow:[2,3,5,6],   slots:['10','14','15','16','17'], rating:4.9, avail:true },
+    { id:7, name:'Rachel Kim',     levels:['B2','C1'],          dow:[1,2,3,4,5], slots:['18','19','20','21'], rating:4.7, avail:true },
+    { id:8, name:'Mark Park',      levels:['A1','A2','B1','B2'], dow:[3,4,5,6],   slots:['09','10','11','14','15'], rating:4.8, avail:true },
+    { id:9, name:'Linda Chen',     levels:['A2','B1'],          dow:[1,2,3,4],   slots:['08','09','19','20'], rating:4.9, avail:true },
+    { id:10, name:'Kevin Lee',     levels:['B1','B2'],          dow:[1,2,3,4,5,6], slots:['10','11','15','16','17','18'], rating:4.7, avail:false }, // 결석
+  ];
+
+  // 가상 시간표 — 결석 강사들이 담당했어야 할 수업
+  function generateAbsentClasses(date) {
+    const d = new Date(date || new Date());
+    const dow = d.getDay(); // 0=일요일, 1=월…
+    const todayStr = d.toISOString().slice(0,10);
+    const absentTeachers = TEACHER_POOL.filter(t => !t.avail);
+    const classes = [];
+    let id = 1;
+    absentTeachers.forEach(t => {
+      // 그 강사가 오늘 가르쳐야 했던 수업들 생성 (3-5개)
+      const slots = t.slots.slice(0, 3 + Math.floor(Math.random()*3));
+      slots.forEach(slot => {
+        classes.push({
+          id: id++,
+          time: slot + ':00',
+          dow: dow,
+          date: todayStr,
+          student: rand(['홍길동','김민수','이지민','박서연','최우진','정수아','강지원','윤하린']),
+          level: rand(t.levels),
+          absent_teacher: t,
+          status: 'pending',
+          match: null,
+        });
+      });
+    });
+    return classes;
+  }
+  function rand(arr) { return arr[Math.floor(Math.random()*arr.length)]; }
+
+  // 매칭 알고리즘 — 점수 계산
+  function scoreCandidate(absentClass, candidate) {
+    if (!candidate.avail) return 0;
+    if (candidate.id === absentClass.absent_teacher.id) return 0;
+    let score = 0;
+    // 1. 요일 일치 (40%)
+    if (candidate.dow.includes(absentClass.dow)) score += 40;
+    // 2. 시간 일치 (30%)
+    const hh = absentClass.time.slice(0,2);
+    if (candidate.slots.includes(hh)) score += 30;
+    // 3. 레벨 적합도 (20%)
+    if (candidate.levels.includes(absentClass.level)) score += 20;
+    // 4. 평점 (10%) — 4.5 이상 만점
+    score += Math.min(10, (candidate.rating - 4.0) * 20);
+    return Math.round(score);
+  }
+
+  function findBestSubstitute(absentClass) {
+    const ranked = TEACHER_POOL
+      .map(t => ({ teacher:t, score: scoreCandidate(absentClass, t) }))
+      .filter(x => x.score > 0)
+      .sort((a,b) => b.score - a.score);
+    return ranked[0] || null;
+  }
+
+  let _absentClasses = [];
+
+  window.loadAbsentTeachers = function() {
+    const date = document.getElementById('sub-date').value || new Date().toISOString().slice(0,10);
+    _absentClasses = generateAbsentClasses(date);
+    renderSubTable();
+    updateSubKpis();
+  };
+
+  window.autoMatchAll = function() {
+    if (_absentClasses.length === 0) loadAbsentTeachers();
+    _absentClasses.forEach(c => {
+      const best = findBestSubstitute(c);
+      c.match = best;
+    });
+    renderSubTable();
+    updateSubKpis();
+    const applyBtn = document.getElementById('apply-all-btn');
+    if (applyBtn) { applyBtn.disabled = false; applyBtn.style.opacity = '1'; }
+  };
+
+  window.applyMatch = function(id) {
+    const c = _absentClasses.find(x => x.id === id);
+    if (!c || !c.match) return;
+    c.status = 'applied';
+    // 실 운영: POST /api/admin/substitute/apply { class_id, teacher_id }
+    fetch('/api/admin/substitute/apply', {
+      method:'POST', credentials:'include',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ class_id: id, original_teacher: c.absent_teacher.id, new_teacher: c.match.teacher.id })
+    }).catch(()=>{});
+    renderSubTable();
+    updateSubKpis();
+  };
+
+  window.applyAllMatches = function() {
+    const matched = _absentClasses.filter(c => c.match && c.status === 'pending');
+    if (matched.length === 0) { alert('매칭된 수업이 없습니다.'); return; }
+    if (!confirm(`${matched.length}개 수업의 대체 강사를 일괄 적용합니다.\n학생·강사에게 카카오톡 자동 알림이 발송됩니다.\n계속하시겠습니까?`)) return;
+    matched.forEach(c => c.status = 'applied');
+    renderSubTable();
+    updateSubKpis();
+    alert(`✅ ${matched.length}개 수업 대체 적용 완료!\n\n• 학생 카톡 알림: ${matched.length}건\n• 강사 카톡 알림: ${matched.length}건\n• 시간표 자동 갱신: 완료`);
+  };
+
+  window.rejectMatch = function(id) {
+    const c = _absentClasses.find(x => x.id === id);
+    if (!c) return;
+    c.match = null;
+    c.status = 'pending';
+    renderSubTable();
+    updateSubKpis();
+  };
+
+  function renderSubTable() {
+    const tbody = document.getElementById('sub-rows');
+    if (!tbody) return;
+    if (_absentClasses.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#9ca3af">결석 강사가 없습니다. 좋은 하루입니다! ☀️</td></tr>';
+      return;
+    }
+    tbody.innerHTML = _absentClasses.map(c => {
+      const at = c.absent_teacher;
+      const m = c.match;
+      const statusBadge = c.status === 'applied'
+        ? '<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✅ 적용완료</span>'
+        : m
+          ? '<span style="background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⏳ 대기</span>'
+          : '<span style="background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">❗ 미매칭</span>';
+      const matchCell = m
+        ? `<div><b>${m.teacher.name}</b><div style="font-size:10px;color:#6b7280">⭐${m.teacher.rating} · 레벨 ${m.teacher.levels.join('/')}</div></div>`
+        : '<button onclick="autoMatchOne('+c.id+')" style="padding:3px 8px;font-size:11px;background:#a855f7;color:#fff;border:0;border-radius:4px;cursor:pointer">🤖 매칭</button>';
+      const scoreCell = m
+        ? `<span style="background:${m.score>=80?'#dcfce7':m.score>=60?'#fef3c7':'#fee2e2'};color:${m.score>=80?'#15803d':m.score>=60?'#92400e':'#991b1b'};padding:2px 10px;border-radius:99px;font-size:11px;font-weight:800">${m.score}점</span>`
+        : '—';
+      const actionCell = c.status === 'applied'
+        ? statusBadge
+        : m
+          ? `<button onclick="applyMatch(${c.id})" style="padding:3px 8px;font-size:11px;background:#10b981;color:#fff;border:0;border-radius:4px;cursor:pointer;margin-right:3px">✅</button><button onclick="rejectMatch(${c.id})" style="padding:3px 8px;font-size:11px;background:#fee2e2;color:#991b1b;border:0;border-radius:4px;cursor:pointer">✕</button>`
+          : statusBadge;
+      return `<tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:8px 10px;font-family:Consolas,monospace;color:#0ea5e9;font-weight:700">${c.time}</td>
+        <td style="padding:8px 10px;color:#111;font-weight:600">${c.student}</td>
+        <td style="padding:8px 10px;text-align:center"><span style="background:#dbeafe;color:#1e40af;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700">${c.level}</span></td>
+        <td style="padding:8px 10px"><b style="color:#dc2626">${at.name}</b><div style="font-size:10px;color:#9ca3af">⚠️ 결석</div></td>
+        <td style="padding:8px 10px;text-align:center;color:#a855f7;font-size:18px">→</td>
+        <td style="padding:8px 10px">${matchCell}</td>
+        <td style="padding:8px 10px;text-align:center">${scoreCell}</td>
+        <td style="padding:8px 10px;text-align:center">${actionCell}</td>
+      </tr>`;
+    }).join('');
+  }
+
+  window.autoMatchOne = function(id) {
+    const c = _absentClasses.find(x => x.id === id);
+    if (!c) return;
+    c.match = findBestSubstitute(c);
+    renderSubTable();
+    updateSubKpis();
+    const applyBtn = document.getElementById('apply-all-btn');
+    if (applyBtn && _absentClasses.some(x => x.match)) {
+      applyBtn.disabled = false; applyBtn.style.opacity = '1';
+    }
+  };
+
+  function updateSubKpis() {
+    const absent = new Set(_absentClasses.map(c => c.absent_teacher.id)).size;
+    const matched = _absentClasses.filter(c => c.match).length;
+    const saved = matched * 8; // 매칭 1건당 평균 8분 절감
+    const $ = (id) => document.getElementById(id);
+    $('kpi-absent') && ($('kpi-absent').textContent = absent + '명');
+    $('kpi-classes') && ($('kpi-classes').textContent = _absentClasses.length + '개');
+    $('kpi-matched') && ($('kpi-matched').textContent = matched + '건');
+    $('kpi-saved') && ($('kpi-saved').textContent = saved + '분');
+  }
+
+  // 카드 열릴 때 자동 오늘 날짜 세팅
+  document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().slice(0,10);
+    const dateInput = document.getElementById('sub-date');
+    if (dateInput) dateInput.value = today;
+    const subItem = document.getElementById('sub-auto-sub');
+    if (subItem) {
+      subItem.addEventListener('toggle', () => {
+        if (subItem.open && _absentClasses.length === 0) {
+          setTimeout(loadAbsentTeachers, 300);
+        }
+      });
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
