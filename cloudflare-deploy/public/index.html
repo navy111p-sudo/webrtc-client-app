@@ -7480,8 +7480,9 @@ window.addEventListener('DOMContentLoaded', () => {
   }
   window.closeInfoModal = function(){
     modal.style.display = 'none';
-    // 모달 닫을 때 음성 재생 중이면 중지
+    // 모달 닫을 때 음성 재생 중이면 중지 (TTS + mp3 둘 다)
     try { if (window.speechSynthesis && window.speechSynthesis.speaking) window.speechSynthesis.cancel(); } catch{}
+    try { if (_franchiseAudio && !_franchiseAudio.paused) { _franchiseAudio.pause(); _franchiseAudio.currentTime = 0; } } catch{}
     // 정보 모달 닫으면 히트맵 그리드(메뉴)로 자동 복귀
     const gmEl = document.getElementById('grid-menu');
     if (gmEl) gmEl.style.display = 'block';
@@ -8396,7 +8397,15 @@ window.addEventListener('DOMContentLoaded', () => {
     learnguide:  () => { closeGrid(); showModal(LEARNGUIDE); },
     event:       () => { closeGrid(); showModal(EVENT); },
     contact:     () => { closeGrid(); showModal(CONTACT); },
-    franchise:   () => { closeGrid(); showModal(FRANCHISE); },
+    franchise:   () => {
+      closeGrid();
+      showModal(FRANCHISE);
+      // 모달 열리자마자 음성 자동 재생 — 사용자가 카드를 클릭한 직후라 autoplay 정책 통과
+      setTimeout(() => {
+        const btn = document.querySelector('#info-modal-content .franchise-voice-btn');
+        if (btn && window.playFranchiseVoice) window.playFranchiseVoice(btn);
+      }, 350);
+    },
     adminmgr:    () => { closeGrid(); location.href = '/admin.html'; },
     callcenter:  () => { closeGrid(); showModal(CALLCENTER); },
     videolesson: () => { closeGrid(); showModal(VIDEOLESSON); },
@@ -11470,14 +11479,4 @@ window.showRulesModal = function() {
           <!-- ☎️ 문의 -->
           <div style="margin-top:18px;padding:14px 16px;background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(245,158,11,0.04));border:1px solid rgba(251,191,36,0.25);border-radius:12px;text-align:center">
             <div style="color:#fde68a;font-size:12px;margin-bottom:6px;font-weight:700">📞 규정 관련 문의</div>
-            <a href="tel:1644-0561" style="color:#fff;font-size:18px;font-weight:900;text-decoration:none;letter-spacing:0.5px">1644-0561</a>
-            <div style="color:#94a3b8;font-size:11px;margin-top:4px">평일 10:00 ~ 20:00 (주말·공휴일 휴무)</div>
-          </div>
-
-          <p style="margin:14px 0 0;font-size:11px;color:#64748b;text-align:center">
-            ※ 위 규정은 ㈜에듀비전(망고아이) 표준 약관에 따르며, 일부 상품·이벤트별로 별도 적용될 수 있습니다.
-          </p>
-        </div>
-
-        <!-- 푸터 버튼 -->
-        <div style="padding:16px 26px;border-to
+            <a href="tel:1644-0561" style="color:#fff;font-size:18px;font-weight:900;text-decoration:none;letter-spacing:0.5px">1644-056
