@@ -387,6 +387,68 @@ export async function handleMangoApi(
       return json(result);
     }
 
+    // ===== 📼 공개 학생 녹화본 조회 (본인이 참여한 수업만) =====
+    //   /api/student/recordings?uid=정우영&limit=50
+    //   recordings 테이블에서 participant_ids LIKE '%uid%' 또는 teacher_name = uid
+    //   재생 URL: file_url 우선, 없으면 R2 blob URL 자동 생성
+    if (path === '/api/student/recordings' && method === 'GET') {
+      const uid = (url.searchParams.get('uid') || '').trim();
+      const limit = Math.min(100, Math.max(1, parseInt(url.searchParams.get('limit') || '50', 10)));
+      if (!uid) return json({ ok: true, rows: [], count: 0 });
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
+        const likePattern = '%' + JSON.stringify(uid).slice(1, -1) + '%';
+        const rs = await env.DB.prepare(
+          `SELECT id, room_id, teacher_id, teacher_name, filename, file_url, size_bytes, duration_ms,
+                  started_at, ended_at, status, storage, participant_names, participant_ids
+             FROM recordings
+            WHERE (participant_ids LIKE ? OR participant_names LIKE ? OR teacher_name = ? OR teacher_id = ?)
+              AND status != 'deleted'
+            ORDER BY started_at DESC
+            LIMIT ?`
+        ).bind(likePattern, likePattern, uid, uid, limit).all();
+        const raw = (rs.results || []) as any[];
+        const rows = raw.map((r: any) => {
+          const startMs = r.started_at || 0;
+          const date = startMs ? new Date(startMs).toISOString().slice(0,10) : '-';
+          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+          const durStr = durSec >= 60 ? Math.round(durSec / 60) + '분' : (durSec + '초');
+          const sizeMB = r.size_bytes
+            ? (r.size_bytes >= 1048576 ? (Math.round(r.size_bytes / 104857.6) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB')
+            : '-';
+          // 🎬 file_url 은 실제 R2 키(rec/{room}/{id}_{ts}.webm). blob endpoint 로 직접 가리킴
+          let playUrl = '';
+          if (r.file_url) {
+            // file_url 이 http(s) URL 이면 그대로, 아니면 R2 키로 보고 blob endpoint 경유
+            if (/^https?:\/\//.test(String(r.file_url))) {
+              playUrl = String(r.file_url);
+            } else {
+              playUrl = '/api/recordings/blob/' + encodeURIComponent(String(r.file_url));
+            }
+          } else if (r.filename) {
+            // legacy fallback — file_url 없는 옛날 row
+            const blobKey = String(r.filename).startsWith('rec/') || String(r.filename).startsWith('recordings/')
+              ? r.filename
+              : ('recordings/' + r.filename);
+            playUrl = '/api/recordings/blob/' + encodeURIComponent(blobKey);
+          }
+          return {
+            id: r.id,
+            date,
+            topic: '방 ' + (r.room_id || '-') + ' 수업',
+            teacher: r.teacher_name || '-',
+            duration: durStr,
+            size: sizeMB,
+            url: playUrl,
+            status: r.status || 'completed',
+          };
+        });
+        return json({ ok: true, rows, recordings: rows, count: rows.length });
+      } catch (e: any) {
+        return json({ ok: true, rows: [], count: 0, _err: String(e?.message || e) });
+      }
+    }
+
     // ===== 👨‍🏫 공개 강사 목록 (학생 홈페이지 강사진 미리보기용) =====
     if (path === '/api/teacher-profiles' && method === 'GET') {
       try {

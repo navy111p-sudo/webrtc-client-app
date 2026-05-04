@@ -154,8 +154,16 @@ export default {
         if (!env.RECORDINGS) return new Response(JSON.stringify({ ok:false, error:'R2 not configured' }), { headers:{'Content-Type':'application/json'} });
         const k = url.searchParams.get('key') || '';
         if (!k) {
-          const list = await env.RECORDINGS.list({ prefix: 'recordings/', limit: 20 });
-          return new Response(JSON.stringify({ ok:true, total: list.objects.length, items: list.objects.map(o=>({ key:o.key, size:o.size, uploaded:o.uploaded })) }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
+          // 🎬 두 prefix 모두 검사: rec/ (multipart 자동녹화) + recordings/ (옛날 단일 업로드)
+          const [recList, recordingsList] = await Promise.all([
+            env.RECORDINGS.list({ prefix: 'rec/', limit: 50 }),
+            env.RECORDINGS.list({ prefix: 'recordings/', limit: 50 }),
+          ]);
+          const items = [
+            ...recList.objects.map(o=>({ key:o.key, size:o.size, uploaded:o.uploaded, prefix:'rec/' })),
+            ...recordingsList.objects.map(o=>({ key:o.key, size:o.size, uploaded:o.uploaded, prefix:'recordings/' })),
+          ];
+          return new Response(JSON.stringify({ ok:true, total: items.length, recCount: recList.objects.length, recordingsCount: recordingsList.objects.length, items }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
         }
         const obj = await env.RECORDINGS.head(k);
         return new Response(JSON.stringify({
