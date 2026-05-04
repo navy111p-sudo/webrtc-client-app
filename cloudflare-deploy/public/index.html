@@ -2206,10 +2206,10 @@
             <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
           </svg>
         </span>
-        <input id="ai-home-input" type="search" autocomplete="off"
+        <input id="ai-home-input" type="search" autocomplete="off" name="ai-home-q-no-autofill"
                placeholder="🤖 AI에게 물어보기 - 원하시는 것을 알려주세요."
                data-ko-placeholder="🤖 AI에게 물어보기 - 원하시는 것을 알려주세요."
-               data-en-placeholder="🤖 Ask AI - tell me what you need." />
+               data-en-placeholder="🤖 Ask AI - tell me what you need." value="" />
         <button class="ai-search-mic" id="ai-home-mic" type="button" title="음성 검색 — 클릭 후 말하세요" aria-label="Voice search">
           <span class="mic-ring mic-ring-1"></span>
           <span class="mic-ring mic-ring-2"></span>
@@ -5997,6 +5997,10 @@ window.addEventListener('DOMContentLoaded', () => {
   const listening = document.getElementById('ai-home-listening');
   const suggest = document.getElementById('ai-home-suggest');
   if (!input) return;
+
+  // 🔄 검색창 초기화 — 브라우저 자동완성/이전 검색어 강제 제거 (정우영 등 잔존값 방지)
+  try { input.value = ''; } catch(e){}
+  window.addEventListener('pageshow', () => { try { input.value = ''; } catch(e){} });
 
   // ========== 키워드 → 액션 룰 (오프라인 fallback) ==========
   const RULES = [
