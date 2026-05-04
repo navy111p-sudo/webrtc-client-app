@@ -7491,6 +7491,191 @@ window.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Escape' && modal.style.display !== 'none') closeInfoModal();
   });
 
+  // 👨‍🏫 강사 소개 모달 — ERP 등록 강사로 동적 갱신 (DOM API 만 사용해 syntax 에러 방지)
+  window.loadDynamicTeacherGallery = async function() {
+    const box = document.getElementById('ph-gallery-dynamic');
+    if (!box) return;
+    async function tryFetch(url) {
+      try {
+        const r = await fetch(url, { credentials: 'include' });
+        const ct = (r.headers.get('content-type') || '').toLowerCase();
+        if (!ct.includes('json')) return null;
+        const d = await r.json().catch(() => null);
+        if (!d) return null;
+        const items = d.items || d.rows || [];
+        return Array.isArray(items) ? items : null;
+      } catch (e) { return null; }
+    }
+    let teachers = await tryFetch('/api/teacher-profiles?limit=30');
+    if (!teachers || !teachers.length) {
+      teachers = await tryFetch('/api/admin/teacher-profiles');
+    }
+    if (!teachers || !teachers.length) return;  // 폴백 — 기존 정적 6명 그대로 유지
+
+    const GRADS = ['#fcd34d,#f59e0b','#86efac,#10b981','#f9a8d4,#ec4899','#93c5fd,#3b82f6','#c4b5fd,#8b5cf6','#fda4af,#f43f5e','#a7f3d0,#06b6d4','#fde68a,#ea580c'];
+    const EMOJIS = ['👩🏻‍🏫','👨🏻‍🏫','👩🏻‍🎓','🧑🏻‍🏫','👩🏻‍💼','👨🏻‍🎓'];
+
+    box.innerHTML = '';
+    teachers.slice(0, 12).forEach((t, i) => {
+      const card = document.createElement('div');
+      card.className = 'ph-card';
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', () => { if (window.openTeacherDetail) window.openTeacherDetail(t); });
+
+      const photo = document.createElement('div');
+      photo.className = 'ph-photo';
+      photo.style.position = 'relative';
+      if (t.image_url) {
+        // CSS url() 안에서 안전하게 escape
+        const safeUrl = String(t.image_url).split("'").join("\\'");
+        photo.style.backgroundImage = "url('" + safeUrl + "')";
+        photo.style.backgroundSize = 'cover';
+        photo.style.backgroundPosition = 'center';
+      } else {
+        photo.style.background = 'linear-gradient(135deg,' + GRADS[i % GRADS.length] + ')';
+        const emo = document.createElement('span');
+        emo.className = 'ph-emoji';
+        emo.textContent = EMOJIS[i % EMOJIS.length];
+        photo.appendChild(emo);
+      }
+      const flag = document.createElement('span');
+      flag.className = 'ph-flag';
+      flag.textContent = '🇵🇭';
+      photo.appendChild(flag);
+
+      if (t.intro_video_url) {
+        const vbtn = document.createElement('button');
+        vbtn.textContent = '▶';
+        vbtn.title = '소개 영상';
+        vbtn.style.cssText = 'position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.6);color:#fff;border:0;border-radius:50%;width:24px;height:24px;font-size:11px;cursor:pointer;display:flex;align-items:center;justify-content:center';
+        vbtn.addEventListener('click', (ev) => {
+          ev.stopPropagation();
+          if (window.openTeacherDetail) window.openTeacherDetail(t);
+        });
+        photo.appendChild(vbtn);
+      }
+      card.appendChild(photo);
+
+      const name = t.english_name || t.korean_name || '강사';
+      const spec = t.group_name || t.certifications || '영어 회화';
+      const career = t.career || '';
+      const careerStr = career ? (career + (/^\d+$/.test(career) ? '년차' : '')) : '';
+      const star = '⭐ 4.9' + (careerStr ? ' · ' + careerStr : '');
+
+      const nameEl = document.createElement('div'); nameEl.className = 'ph-name'; nameEl.textContent = name; card.appendChild(nameEl);
+      const specEl = document.createElement('div'); specEl.className = 'ph-spec'; specEl.textContent = spec; card.appendChild(specEl);
+      const starEl = document.createElement('div'); starEl.className = 'ph-star'; starEl.textContent = star; card.appendChild(starEl);
+
+      box.appendChild(card);
+    });
+
+    // ERP 표시 뱃지
+    const badge = document.createElement('div');
+    badge.style.cssText = 'grid-column:1/-1;text-align:center;font-size:11px;color:#10b981;margin-top:6px';
+    badge.textContent = '✓ 본사 ERP 등록 강사 ' + teachers.length + '명 표시';
+    box.appendChild(badge);
+  };
+
+  // 강사 카드 클릭 시 상세 모달 (사진·학력·경력·자격증·영상)
+  window.openTeacherDetail = function(t) {
+    if (!t || typeof t !== 'object') return;
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.8);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.addEventListener('click', () => overlay.remove());
+
+    const box = document.createElement('div');
+    box.style.cssText = 'background:linear-gradient(135deg,#0f172a,#1e293b);border:1px solid rgba(251,191,36,0.4);border-radius:16px;padding:24px;max-width:560px;width:100%;max-height:90vh;overflow:auto;color:#e2e8f0;position:relative';
+    box.addEventListener('click', (ev) => ev.stopPropagation());
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;background:transparent;border:0;color:#94a3b8;font-size:22px;cursor:pointer';
+    closeBtn.addEventListener('click', () => overlay.remove());
+    box.appendChild(closeBtn);
+
+    // 헤더 (사진 + 이름)
+    const head = document.createElement('div');
+    head.style.cssText = 'display:flex;align-items:center;gap:16px;margin-bottom:14px';
+    if (t.image_url) {
+      const img = document.createElement('img');
+      img.src = t.image_url;
+      img.style.cssText = 'width:120px;height:120px;border-radius:50%;object-fit:cover;border:3px solid #fbbf24';
+      img.onerror = function() { this.style.display = 'none'; };
+      head.appendChild(img);
+    } else {
+      const ph = document.createElement('div');
+      ph.style.cssText = 'width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,#fcd34d,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:60px';
+      ph.textContent = '👩🏻‍🏫';
+      head.appendChild(ph);
+    }
+    const headInfo = document.createElement('div');
+    const nameDiv = document.createElement('div');
+    nameDiv.style.cssText = 'font-size:20px;font-weight:800;color:#fbbf24';
+    nameDiv.textContent = t.english_name || t.korean_name || '강사';
+    headInfo.appendChild(nameDiv);
+    const specDiv = document.createElement('div');
+    specDiv.style.cssText = 'font-size:13px;color:#94a3b8;margin-top:4px';
+    specDiv.textContent = '🇵🇭 ' + (t.group_name || '영어 회화');
+    headInfo.appendChild(specDiv);
+    const statDiv = document.createElement('div');
+    statDiv.style.cssText = 'font-size:12px;color:#10b981;margin-top:2px';
+    statDiv.textContent = '● ' + (t.status || '활동중');
+    headInfo.appendChild(statDiv);
+    head.appendChild(headInfo);
+    box.appendChild(head);
+
+    // 필드 표
+    const fields = [
+      ['🎓 학력', t.education],
+      ['💼 경력', t.career],
+      ['📜 자격증', t.certifications],
+      ['🌏 출신', t.origin_region],
+      ['📅 가능 요일', t.available_days],
+      ['⏰ 가능 시간', t.available_hours],
+      ['👥 그룹', t.group_name],
+    ].filter(function(p) { return p[1]; });
+
+    if (fields.length > 0) {
+      const fieldsBox = document.createElement('div');
+      fieldsBox.style.marginTop = '14px';
+      fields.forEach(function(p) {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;font-size:13px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06)';
+        const label = document.createElement('div');
+        label.style.cssText = 'min-width:100px;color:#94a3b8;font-weight:600';
+        label.textContent = p[0];
+        row.appendChild(label);
+        const val = document.createElement('div');
+        val.style.color = '#e2e8f0';
+        val.textContent = p[1];
+        row.appendChild(val);
+        fieldsBox.appendChild(row);
+      });
+      box.appendChild(fieldsBox);
+    }
+
+    // 소개 영상 (있을 때)
+    if (t.intro_video_url) {
+      const url = t.intro_video_url;
+      let video;
+      if (/youtube\.com|youtu\.be/.test(url)) {
+        video = document.createElement('iframe');
+        video.src = url.replace('watch?v=', 'embed/');
+        video.allowFullscreen = true;
+        video.style.cssText = 'width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-top:12px';
+      } else {
+        video = document.createElement('video');
+        video.src = url;
+        video.controls = true;
+        video.style.cssText = 'width:100%;border-radius:10px;margin-top:12px';
+      }
+      box.appendChild(video);
+    }
+
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+  };
+
   // 🔊 가맹점 감성 호소문 — 사전 녹음 mp3 우선, 실패 시 Web Speech API 폴백
   let _franchiseAudio = null;
   window.playFranchiseVoice = function(btn) {
@@ -8008,7 +8193,7 @@ window.addEventListener('DOMContentLoaded', () => {
     </div>
 
     <h3 style="margin-top:14px">🌴 필리핀 강사진 미리보기</h3>
-    <div class="ph-gallery">
+    <div class="ph-gallery" id="ph-gallery-dynamic">
       <div class="ph-card">
         <div class="ph-photo" style="background:linear-gradient(135deg,#fcd34d,#f59e0b)">
           <span class="ph-emoji">👩🏻‍🏫</span>
@@ -8387,7 +8572,12 @@ window.addEventListener('DOMContentLoaded', () => {
     faq:         () => { closeGrid(); showModal(FAQ); },
     leveltest:   () => { closeGrid(); showLevelTestModal(); },
     speech:      () => { closeGrid(); window.open('https://mangoi-speech.pages.dev/practice', '_blank'); },
-    teachers:    () => { closeGrid(); showModal(TEACHERS); },
+    teachers:    () => {
+      closeGrid();
+      showModal(TEACHERS);
+      // 모달 렌더 후 ERP 등록 강사로 갤러리 동적 갱신
+      setTimeout(() => { if (window.loadDynamicTeacherGallery) window.loadDynamicTeacherGallery(); }, 200);
+    },
     reviews:     () => { closeGrid(); showModal(REVIEWS); },
     diagnosis:   () => { closeGrid(); runDiagnosis(); },
     kakao:       () => { closeGrid(); window.open('https://pf.kakao.com/_mangoi', '_blank'); },
@@ -11380,103 +11570,4 @@ window.showRulesModal = function() {
           <p style="color:#cbd5e1;font-size:12.5px;margin:0">결제 전 반드시 확인 부탁드립니다.</p>
         </div>
 
-        <!-- 본문 -->
-        <div style="padding:20px 26px 24px;max-height:75vh;overflow-y:auto;color:#cbd5e1;font-size:13px;line-height:1.7">
-
-          <!-- 🎓 수강 안내 -->
-          <h3 style="color:#fde68a;font-size:15px;margin:0 0 10px;font-weight:800">🎓 수강 안내</h3>
-          <div style="background:rgba(251,191,36,0.05);border:1px solid rgba(251,191,36,0.15);border-radius:10px;padding:14px 16px;margin-bottom:18px">
-            <ul style="margin:0;padding-left:18px">
-              <li><b style="color:#fff">수업 콘텐츠</b>: 망고아이 자체 개발 교재 (MES · BTS · SIU) + 토픽카드</li>
-              <li><b style="color:#fff">교재</b>: 안나스이 교재 외 다양하게 제공</li>
-              <li><b style="color:#fff">수업 운영시간</b>: 24시간 365일 (KST 기준)</li>
-              <li><b style="color:#fff">주 1회·3회·7회</b>: 월 4회부터 신청 가능 (예: 4회권 수강자는 주 1회 기준)</li>
-              <li><b style="color:#fff">그룹 수업</b>: 2~5명, 24구비 만 4명까지 수강 가능</li>
-            </ul>
-          </div>
-
-          <!-- 🔁 수강 변경·연기 -->
-          <h3 style="color:#fde68a;font-size:15px;margin:0 0 10px;font-weight:800">🔁 수강 변경 / 연기</h3>
-          <ul style="margin:0 0 18px;padding-left:18px">
-            <li>수강 시작 이후 수강자의 30%까지(누구나) 수강 가능 기간을 연장하여 부득이 일정 변경이 가능합니다.</li>
-            <li>2회차 수업까지는 수강 일정을 12회차까지 자유롭게 변경할 수 있습니다.</li>
-            <li>수업이 추가된 후 수업의 100% 수강 후 정상 출석 인정됩니다.</li>
-            <li>(월 5회), 30분 단위 변경 가능</li>
-            <li>무료 일정 시 학생의 수업 가용 / 학생 수업이 신청자 의지 없을 가능성 있을 시 제외 처리.</li>
-          </ul>
-
-          <!-- 💰 환불 규정 -->
-          <h3 style="color:#fde68a;font-size:15px;margin:0 0 10px;font-weight:800">💰 수강료 환불 규정</h3>
-          <p style="margin:0 0 8px;font-size:12px;color:#94a3b8">아래 기준에 따라 환불 비율이 적용됩니다 (수강료 100,000원 기준 예시)</p>
-          <div style="overflow-x:auto;margin-bottom:8px">
-            <table style="width:100%;border-collapse:collapse;font-size:12.5px;background:rgba(0,0,0,0.25);border-radius:10px;overflow:hidden">
-              <thead>
-                <tr style="background:linear-gradient(135deg,#ec4899,#f97316);color:#fff;font-weight:800">
-                  <th style="padding:10px 12px;text-align:left">환불 요구 시기</th>
-                  <th style="padding:10px 12px;text-align:center">환불 산정비</th>
-                  <th style="padding:10px 12px;text-align:right">예 수강료 (100,000원 기준)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:10px 12px"><b style="color:#86efac">수업 시작 전</b></td><td style="padding:10px 12px;text-align:center;color:#fbbf24">납부원금의 100%</td><td style="padding:10px 12px;text-align:right;color:#86efac;font-weight:700">100,000원 환불</td></tr>
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:10px 12px"><b>총 수업시간의 1/3 이전</b></td><td style="padding:10px 12px;text-align:center;color:#fbbf24">납부원금의 2/3</td><td style="padding:10px 12px;text-align:right;color:#fde68a;font-weight:700">70,000원 환불</td></tr>
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.06)"><td style="padding:10px 12px"><b>총 수업시간의 1/2 경과 전</b></td><td style="padding:10px 12px;text-align:center;color:#fbbf24">납부원금의 1/2</td><td style="padding:10px 12px;text-align:right;color:#fde68a;font-weight:700">50,000원 환불</td></tr>
-                <tr><td style="padding:10px 12px"><b style="color:#fca5a5">총 수업시간의 1/2 경과 후</b></td><td style="padding:10px 12px;text-align:center;color:#fca5a5">환불 불가</td><td style="padding:10px 12px;text-align:right;color:#fca5a5">환불 안 됨</td></tr>
-              </tbody>
-            </table>
-          </div>
-          <p style="margin:0 0 18px;font-size:11px;color:#94a3b8">※ 단, 환불은 영업일 1주일 이내 신청 시에만 적용됩니다.</p>
-
-          <!-- 📚 수강 규정 -->
-          <h3 style="color:#fde68a;font-size:15px;margin:14px 0 10px;font-weight:800">📚 수강 규정 — 학습 약속</h3>
-
-          <div style="background:rgba(78,201,255,0.05);border-left:3px solid rgba(78,201,255,0.4);padding:12px 14px;border-radius:0 10px 10px 0;margin-bottom:14px">
-            <h4 style="color:#9ee5ff;font-size:13.5px;margin:0 0 6px;font-weight:800">📖 교재 수령 가이드</h4>
-            <ul style="margin:0;padding-left:16px;font-size:12.5px">
-              <li>수강 시작 전 24시간 내에 등록 메일/우편으로 교재 코드와 다운로드 링크 발송</li>
-              <li>수업 운영 시간(0시~24시): 학생이 원하는 시간에 강사 매칭</li>
-              <li>수업 후 사용 후 일대 다 형태의 그룹 수업도 가능 (그룹 신청 시)</li>
-            </ul>
-          </div>
-
-          <div style="background:rgba(34,197,94,0.05);border-left:3px solid rgba(74,222,128,0.4);padding:12px 14px;border-radius:0 10px 10px 0;margin-bottom:14px">
-            <h4 style="color:#86efac;font-size:13.5px;margin:0 0 6px;font-weight:800">📅 일정 사전 변경</h4>
-            <ul style="margin:0;padding-left:16px;font-size:12.5px">
-              <li>1회만 일정 변경 가능 (수업 24시간 전까지)</li>
-              <li>수강이력에서 마이페이지 → 수강 관리 → 변경 또는 취소 클릭</li>
-              <li>수강이력에서 마이페이지(My Page) + 강사인증서 + 마이페이지에서 1대 1 수업이 진행 시: 1대 1 수업의 교사 분들이</li>
-              <li>강사 매니저 1대1 변경(My Page) → 강사인증서 → 마이페이지에서 진행 시 학생 1대 1 수업 가능</li>
-            </ul>
-          </div>
-
-          <div style="background:rgba(168,85,247,0.05);border-left:3px solid rgba(168,85,247,0.4);padding:12px 14px;border-radius:0 10px 10px 0;margin-bottom:14px">
-            <h4 style="color:#c4b5fd;font-size:13.5px;margin:0 0 6px;font-weight:800">⏰ 수업 시간 연동</h4>
-            <ul style="margin:0;padding-left:16px;font-size:12.5px">
-              <li>수업 시간이 지난 학생 분들이 1회분의 수업까지 연동을 원하실 때, 수업 시간 변경(예: 16시→18시)이 가능합니다.</li>
-              <li>변경된 시간에 수업이 신청된 경우, 수업 변경이 가능합니다.</li>
-              <li>학생이 수업 후 무료의 결제 가능합니다.</li>
-            </ul>
-          </div>
-
-          <div style="background:rgba(251,191,36,0.05);border-left:3px solid rgba(251,191,36,0.4);padding:12px 14px;border-radius:0 10px 10px 0;margin-bottom:14px">
-            <h4 style="color:#fde68a;font-size:13.5px;margin:0 0 6px;font-weight:800">📝 학생 정보 변경</h4>
-            <ul style="margin:0;padding-left:16px;font-size:12.5px">
-              <li>학생/이용자 본인 또는 학부모 정보(연락처·이메일·주소 등)는 마이페이지에서 직접 변경하실 수 있습니다.</li>
-              <li>학생 변경의 경우는 변경 후 수강 가능합니다 (양도/이전).</li>
-              <li>학생 정보 변경 시 강사가 수업 시 학생 학습 분석 기록이 한께 이전 됩니다.</li>
-            </ul>
-          </div>
-
-          <div style="background:rgba(239,68,68,0.05);border-left:3px solid rgba(239,68,68,0.4);padding:12px 14px;border-radius:0 10px 10px 0">
-            <h4 style="color:#fca5a5;font-size:13.5px;margin:0 0 6px;font-weight:800">🎓 종로 수강 안내</h4>
-            <ul style="margin:0;padding-left:16px;font-size:12.5px">
-              <li>강사진의 정확한 수업 출결과 진도분석을 위해서 수업 후 5분 이내 평가를 진행해 주십시오.</li>
-              <li>수업이 1/3 이상 진행된 경우에는 결석 처리, 그 이전에는 무단으로 결석 처리됩니다.</li>
-              <li>수업이 진행된 후에 부득이한 사유로 출석할 수 없는 경우, 다음 수업으로 미루실 수 있습니다.</li>
-            </ul>
-          </div>
-
-          <!-- ☎️ 문의 -->
-          <div style="margin-top:18px;padding:14px 16px;background:linear-gradient(135deg,rgba(251,191,36,0.08),rgba(245,158,11,0.04));border:1px solid rgba(251,191,36,0.25);border-radius:12px;text-align:center">
-            <div style="color:#fde68a;font-size:12px;margin-bottom:6px;font-weight:700">📞 규정 관련 문의</div>
-            <a href="tel:1644-0561" style="color:#fff;font-size:18px;font-weight:900;text-decoration:none;letter-spacing:0.5px">1644-056
+        <!-- 본문 --
