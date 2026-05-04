@@ -2535,24 +2535,42 @@
         <summary data-ko="🔄 결석 강사 자동 대체 (AI 매칭)" data-en="🔄 Auto Substitute Teacher (AI Match)">🔄 결석 강사 자동 대체 (AI 매칭)</summary>
         <div class="sub-body">
           <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border:1px solid #f59e0b;border-radius:12px;padding:14px 16px;margin-bottom:12px">
-            <h4 style="margin:0 0 6px;color:#92400e;font-size:14px">⚡ 빠른 대체 매칭</h4>
-            <p style="margin:0 0 10px;font-size:12px;color:#78350f;line-height:1.6">
+            <h4 style="margin:0 0 6px;color:#92400e;font-size:14px"
+                data-ko="⚡ 빠른 대체 매칭" data-en="⚡ Fast Substitute Matching">⚡ 빠른 대체 매칭</h4>
+            <p style="margin:0 0 10px;font-size:12px;color:#78350f;line-height:1.6"
+               data-ko-html="결석한 강사의 수업을 <b>같은 요일·시간대 + 동일 레벨/언어 + 가용 상태</b>인 다른 강사에게 자동 매칭합니다. 평균 2초 이내 결과 표시."
+               data-en-html="Automatically matches absent teachers' classes to other teachers with the <b>same day·time + same level/language + available status</b>. Results within 2 seconds on average.">
               결석한 강사의 수업을 <b>같은 요일·시간대 + 동일 레벨/언어 + 가용 상태</b>인 다른 강사에게 자동 매칭합니다. 평균 2초 이내 결과 표시.
             </p>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
               <input id="sub-date" type="date" value="" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db" />
-              <button onclick="loadAbsentTeachers()" class="primary" style="padding:6px 14px;font-size:12px;font-weight:700">🔍 결석 강사 조회</button>
-              <button onclick="autoMatchAll()" style="padding:6px 14px;font-size:12px;font-weight:700;background:#a855f7;color:#fff;border:0;border-radius:6px;cursor:pointer">🤖 전체 자동 매칭</button>
-              <button onclick="applyAllMatches()" id="apply-all-btn" disabled style="padding:6px 14px;font-size:12px;font-weight:700;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;opacity:0.5">✅ 매칭 일괄 적용</button>
+              <button onclick="loadAbsentTeachers()" class="primary" style="padding:6px 14px;font-size:12px;font-weight:700"
+                      data-ko="🔍 결석 강사 조회" data-en="🔍 Find Absent Teachers">🔍 결석 강사 조회</button>
+              <button onclick="autoMatchAll()" style="padding:6px 14px;font-size:12px;font-weight:700;background:#a855f7;color:#fff;border:0;border-radius:6px;cursor:pointer"
+                      data-ko="🤖 전체 자동 매칭" data-en="🤖 Auto Match All">🤖 전체 자동 매칭</button>
+              <button onclick="applyAllMatches()" id="apply-all-btn" disabled style="padding:6px 14px;font-size:12px;font-weight:700;background:#10b981;color:#fff;border:0;border-radius:6px;cursor:pointer;opacity:0.5"
+                      data-ko="✅ 매칭 일괄 적용" data-en="✅ Apply All Matches">✅ 매칭 일괄 적용</button>
             </div>
           </div>
 
           <!-- KPI 4개 -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px;margin-bottom:12px" id="sub-kpi">
-            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">결석 강사</div><div style="font-size:18px;font-weight:800;color:#b91c1c" id="kpi-absent">0명</div></div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">영향받는 수업</div><div style="font-size:18px;font-weight:800;color:#b45309" id="kpi-classes">0개</div></div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">매칭 성공</div><div style="font-size:18px;font-weight:800;color:#047857" id="kpi-matched">0건</div></div>
-            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #8b5cf6;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">자동화 절감 시간</div><div style="font-size:18px;font-weight:800;color:#6d28d9" id="kpi-saved">0분</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280" data-ko="결석 강사" data-en="Absent Teachers">결석 강사</div>
+              <div style="font-size:18px;font-weight:800;color:#b91c1c" id="kpi-absent" data-ko="0명" data-en="0">0명</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280" data-ko="영향받는 수업" data-en="Affected Classes">영향받는 수업</div>
+              <div style="font-size:18px;font-weight:800;color:#b45309" id="kpi-classes" data-ko="0개" data-en="0">0개</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280" data-ko="매칭 성공" data-en="Matched">매칭 성공</div>
+              <div style="font-size:18px;font-weight:800;color:#047857" id="kpi-matched" data-ko="0건" data-en="0">0건</div>
+            </div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #8b5cf6;padding:10px 12px;border-radius:8px">
+              <div style="font-size:11px;color:#6b7280" data-ko="자동화 절감 시간" data-en="Time Saved by Automation">자동화 절감 시간</div>
+              <div style="font-size:18px;font-weight:800;color:#6d28d9" id="kpi-saved" data-ko="0분" data-en="0 min">0분</div>
+            </div>
           </div>
 
           <!-- 매칭 결과 테이블 -->
@@ -2560,20 +2578,24 @@
             <table style="width:100%;border-collapse:collapse;font-size:12px;min-width:880px">
               <thead style="background:#f9fafb;position:sticky;top:0;z-index:1">
                 <tr>
-                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">시간</th>
-                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">학생</th>
-                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">레벨</th>
-                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">결석 강사</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb" data-ko="시간" data-en="Time">시간</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb" data-ko="학생" data-en="Student">학생</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb" data-ko="레벨" data-en="Level">레벨</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb" data-ko="결석 강사" data-en="Absent Teacher">결석 강사</th>
                   <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">→</th>
-                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb">대체 강사 (AI 추천)</th>
-                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">매칭 점수</th>
-                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb">액션</th>
+                  <th style="padding:9px 10px;text-align:left;border-bottom:2px solid #e5e7eb" data-ko="대체 강사 (AI 추천)" data-en="Substitute Teacher (AI Suggested)">대체 강사 (AI 추천)</th>
+                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb" data-ko="매칭 점수" data-en="Match Score">매칭 점수</th>
+                  <th style="padding:9px 10px;text-align:center;border-bottom:2px solid #e5e7eb" data-ko="액션" data-en="Action">액션</th>
                 </tr>
               </thead>
-              <tbody id="sub-rows"><tr><td colspan="8" style="padding:30px;text-align:center;color:#9ca3af">[🔍 결석 강사 조회] 또는 [🤖 전체 자동 매칭]을 눌러주세요.</td></tr></tbody>
+              <tbody id="sub-rows"><tr><td colspan="8" style="padding:30px;text-align:center;color:#9ca3af"
+                  data-ko="[🔍 결석 강사 조회] 또는 [🤖 전체 자동 매칭]을 눌러주세요."
+                  data-en="Click [🔍 Find Absent Teachers] or [🤖 Auto Match All] to start.">[🔍 결석 강사 조회] 또는 [🤖 전체 자동 매칭]을 눌러주세요.</td></tr></tbody>
             </table>
           </div>
-          <p style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.6">
+          <p style="margin-top:8px;font-size:11px;color:#6b7280;line-height:1.6"
+             data-ko-html="※ 매칭 점수: <b>요일·시간 일치(40%) + 레벨 적합도(30%) + 평점(20%) + 가용성(10%)</b><br/>※ 적용 시 학생·강사 양쪽에 카카오톡 자동 알림 + 시간표 자동 갱신"
+             data-en-html="※ Match Score: <b>Day·Time match (40%) + Level fit (30%) + Rating (20%) + Availability (10%)</b><br/>※ When applied: KakaoTalk auto-notification to both student and teacher + auto-updated schedule">
             ※ 매칭 점수: <b>요일·시간 일치(40%) + 레벨 적합도(30%) + 평점(20%) + 가용성(10%)</b><br/>
             ※ 적용 시 학생·강사 양쪽에 카카오톡 자동 알림 + 시간표 자동 갱신
           </p>
@@ -11341,61 +11363,4 @@ window.rebuildGlobalSearchIndex = function() {
 
   function findBestSubstitute(absentClass) {
     const ranked = TEACHER_POOL
-      .map(t => ({ teacher:t, score: scoreCandidate(absentClass, t) }))
-      .filter(x => x.score > 0)
-      .sort((a,b) => b.score - a.score);
-    return ranked[0] || null;
-  }
-
-  let _absentClasses = [];
-
-  window.loadAbsentTeachers = function() {
-    const date = document.getElementById('sub-date').value || new Date().toISOString().slice(0,10);
-    _absentClasses = generateAbsentClasses(date);
-    renderSubTable();
-    updateSubKpis();
-  };
-
-  window.autoMatchAll = function() {
-    if (_absentClasses.length === 0) loadAbsentTeachers();
-    _absentClasses.forEach(c => {
-      const best = findBestSubstitute(c);
-      c.match = best;
-    });
-    renderSubTable();
-    updateSubKpis();
-    const applyBtn = document.getElementById('apply-all-btn');
-    if (applyBtn) { applyBtn.disabled = false; applyBtn.style.opacity = '1'; }
-  };
-
-  window.applyMatch = function(id) {
-    const c = _absentClasses.find(x => x.id === id);
-    if (!c || !c.match) return;
-    c.status = 'applied';
-    // 실 운영: POST /api/admin/substitute/apply { class_id, teacher_id }
-    fetch('/api/admin/substitute/apply', {
-      method:'POST', credentials:'include',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ class_id: id, original_teacher: c.absent_teacher.id, new_teacher: c.match.teacher.id })
-    }).catch(()=>{});
-    renderSubTable();
-    updateSubKpis();
-  };
-
-  window.applyAllMatches = function() {
-    const matched = _absentClasses.filter(c => c.match && c.status === 'pending');
-    if (matched.length === 0) { alert('매칭된 수업이 없습니다.'); return; }
-    if (!confirm(`${matched.length}개 수업의 대체 강사를 일괄 적용합니다.\n학생·강사에게 카카오톡 자동 알림이 발송됩니다.\n계속하시겠습니까?`)) return;
-    matched.forEach(c => c.status = 'applied');
-    renderSubTable();
-    updateSubKpis();
-    alert(`✅ ${matched.length}개 수업 대체 적용 완료!\n\n• 학생 카톡 알림: ${matched.length}건\n• 강사 카톡 알림: ${matched.length}건\n• 시간표 자동 갱신: 완료`);
-  };
-
-  window.rejectMatch = function(id) {
-    const c = _absentClasses.find(x => x.id === id);
-    if (!c) return;
-    c.match = null;
-    c.status = 'pending';
-    renderSubTable();
-    updateSubKp
+      .map(t => ({ teacher:t, scor
