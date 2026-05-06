@@ -3783,7 +3783,7 @@
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 <script>
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // 📑 회의록 v2 — 클릭 위주 + 컬러 PDF/Excel
@@ -4094,59 +4094,170 @@
     if (typeof XLSX === 'undefined') { alert('XLSX library not loaded'); return null; }
     const en = isEn();
     const L = en
-      ? { title:'Meeting Minutes', date:'Date', time:'Time', loc:'Location', subj:'Subject', auth:'Author', att:'Attendees', ag:'Agenda', disc:'Discussion', dec:'Decisions', act:'Action Items', nxt:'Next Meeting', file:'Attachments' }
-      : { title:'회의록', date:'일자', time:'시간', loc:'장소', subj:'주제', auth:'작성자', att:'참석자', ag:'안건', disc:'논의', dec:'결정 사항', act:'액션 아이템', nxt:'다음 회의', file:'첨부' };
+      ? { title:'Meeting Minutes', date:'Date', time:'Time', loc:'Location', subj:'Subject', auth:'Author', att:'Attendees', ag:'Agenda', disc:'Discussion', dec:'Decisions', act:'Action Items', nxt:'Next Meeting', file:'Attachments', sub:'Mango-i Video English' }
+      : { title:'회의록', date:'일자', time:'시간', loc:'장소', subj:'주제', auth:'작성자', att:'참석자', ag:'안건', disc:'논의 내용', dec:'결정 사항', act:'액션 아이템', nxt:'다음 회의', file:'첨부 자료', sub:'망고아이 화상영어' };
     const time = (m.start || '') + (m.end ? ' ~ ' + m.end : '');
+    // 행 데이터
     const aoa = [
-      [L.title, ''],
+      [L.title + ' / ' + L.sub, ''],   // 1: 큰 제목
+      [m.subject || '', ''],            // 2: 주제 (서브타이틀)
+      ['', ''],                          // 3: 빈 줄
+      ['📅 ' + L.date, m.date || ''],
+      ['🕒 ' + L.time, time || ''],
+      ['📍 ' + L.loc, m.location || ''],
+      ['🪪 ' + L.auth, m.author || ''],
+      ['👥 ' + L.att, m.attendees || ''],
       ['', ''],
-      [L.subj, m.subject || ''],
-      [L.date, m.date || ''],
-      [L.time, time || ''],
-      [L.loc, m.location || ''],
-      [L.auth, m.author || ''],
-      [L.att, m.attendees || ''],
+      ['📋 ' + L.ag, ''],
+      ['', m.agenda || ''],
       ['', ''],
-      [L.ag, m.agenda || ''],
+      ['💬 ' + L.disc, ''],
+      ['', m.discussion || ''],
       ['', ''],
-      [L.disc, m.discussion || ''],
+      ['✅ ' + L.dec, ''],
+      ['', m.decisions || ''],
       ['', ''],
-      [L.dec, m.decisions || ''],
+      ['🎯 ' + L.act, ''],
+      ['', m.actions || ''],
       ['', ''],
-      [L.act, m.actions || ''],
-      ['', ''],
-      [L.nxt, m.next || ''],
-      [L.file, m.attachments || ''],
+      ['🔁 ' + L.nxt, m.next || ''],
+      ['📎 ' + L.file, m.attachments || ''],
     ];
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    // 열 너비
-    ws['!cols'] = [{ wch: 18 }, { wch: 80 }];
-    // 첫 행 (제목) 머지
-    ws['!merges'] = [{ s: { r:0, c:0 }, e: { r:0, c:1 } }];
-    // 셀 스타일 (xlsx-js-style 가 아니라 community SheetJS 라 스타일은 제한적이지만 cell type/val 로 강조)
-    const setCell = (addr, value, style) => {
-      ws[addr] = ws[addr] || { t:'s', v: value };
-      if (style) ws[addr].s = style;
-    };
-    // 제목
-    setCell('A1', L.title, { font:{ bold:true, sz:18, color:{ rgb:'FFFFFF' } }, fill:{ fgColor:{ rgb:'F59E0B' } }, alignment:{ horizontal:'center', vertical:'center' } });
-    // 라벨 컬럼 굵게 + 노란 배경
-    ['A3','A4','A5','A6','A7','A8','A10','A12','A14','A16','A18','A19'].forEach(addr => {
-      setCell(addr, ws[addr]?.v || '', { font:{ bold:true, color:{ rgb:'92400E' } }, fill:{ fgColor:{ rgb:'FFFBEB' } } });
+
+    // 열 너비 / 행 높이
+    ws['!cols'] = [{ wch: 22 }, { wch: 90 }];
+    ws['!rows'] = [
+      { hpt: 38 },   // 1: 큰 제목
+      { hpt: 26 },   // 2: 주제
+      { hpt: 8 },    // 3: 공백
+      { hpt: 22 },   // 4: 일자
+      { hpt: 22 },   // 5: 시간
+      { hpt: 22 },   // 6: 장소
+      { hpt: 22 },   // 7: 작성자
+      { hpt: 22 },   // 8: 참석자
+      { hpt: 8 },    // 9: 공백
+      { hpt: 22 },   // 10: 안건 헤더
+      { hpt: 70 },   // 11: 안건 본문
+      { hpt: 8 },
+      { hpt: 22 },   // 13: 논의 헤더
+      { hpt: 110 },  // 14: 논의 본문
+      { hpt: 8 },
+      { hpt: 22 },   // 16: 결정 헤더
+      { hpt: 70 },   // 17: 결정 본문
+      { hpt: 8 },
+      { hpt: 22 },   // 19: 액션 헤더
+      { hpt: 80 },   // 20: 액션 본문
+      { hpt: 8 },
+      { hpt: 22 },   // 22: 다음
+      { hpt: 22 },   // 23: 첨부
+    ];
+
+    // 머지
+    ws['!merges'] = [
+      { s: { r:0, c:0 }, e: { r:0, c:1 } },  // 큰 제목
+      { s: { r:1, c:0 }, e: { r:1, c:1 } },  // 주제
+      { s: { r:9, c:0 }, e: { r:9, c:1 } },  // 안건 헤더
+      { s: { r:12, c:0 }, e: { r:12, c:1 } }, // 논의 헤더
+      { s: { r:15, c:0 }, e: { r:15, c:1 } }, // 결정 헤더
+      { s: { r:18, c:0 }, e: { r:18, c:1 } }, // 액션 헤더
+    ];
+
+    // 스타일 헬퍼
+    function setStyle(addr, style) {
+      if (!ws[addr]) ws[addr] = { t:'s', v:'' };
+      ws[addr].s = style;
+    }
+    const border = (rgb) => ({
+      top:    { style:'thin', color:{ rgb } },
+      bottom: { style:'thin', color:{ rgb } },
+      left:   { style:'thin', color:{ rgb } },
+      right:  { style:'thin', color:{ rgb } },
     });
-    // 결정사항 강조 (초록)
-    setCell('B14', m.decisions || '', { fill:{ fgColor:{ rgb:'D1FAE5' } }, alignment:{ wrapText:true, vertical:'top' } });
-    // 액션 강조 (노랑)
-    setCell('B16', m.actions || '', { fill:{ fgColor:{ rgb:'FEF3C7' } }, alignment:{ wrapText:true, vertical:'top' } });
-    // 일반 본문 줄바꿈
-    ['B10','B12'].forEach(addr => setCell(addr, ws[addr]?.v || '', { alignment:{ wrapText:true, vertical:'top' } }));
-    // 행 높이
-    ws['!rows'] = [{ hpt: 30 }];
+
+    // ── 1행: 큰 제목 (망고 노랑 그라디언트 → 단색) ──
+    setStyle('A1', {
+      font:{ bold:true, sz:22, color:{ rgb:'FFFFFF' }, name:'맑은 고딕' },
+      fill:{ patternType:'solid', fgColor:{ rgb:'F59E0B' } },
+      alignment:{ horizontal:'center', vertical:'center' },
+      border: border('D97706'),
+    });
+    setStyle('B1', {
+      fill:{ patternType:'solid', fgColor:{ rgb:'F59E0B' } },
+      border: border('D97706'),
+    });
+
+    // ── 2행: 주제 (서브타이틀, 살구색) ──
+    setStyle('A2', {
+      font:{ bold:true, sz:14, color:{ rgb:'92400E' } },
+      fill:{ patternType:'solid', fgColor:{ rgb:'FEF3C7' } },
+      alignment:{ horizontal:'center', vertical:'center' },
+      border: border('FBBF24'),
+    });
+    setStyle('B2', {
+      fill:{ patternType:'solid', fgColor:{ rgb:'FEF3C7' } },
+      border: border('FBBF24'),
+    });
+
+    // ── 메타 행들 (A4~A8: 라벨 / B4~B8: 값) ──
+    const labelStyle = {
+      font:{ bold:true, color:{ rgb:'92400E' } },
+      fill:{ patternType:'solid', fgColor:{ rgb:'FFFBEB' } },
+      alignment:{ horizontal:'left', vertical:'center', indent:1 },
+      border: border('FDE68A'),
+    };
+    const valueStyle = {
+      font:{ color:{ rgb:'1F2937' } },
+      alignment:{ horizontal:'left', vertical:'center', wrapText:true, indent:1 },
+      border: border('E5E7EB'),
+    };
+    ['A4','A5','A6','A7','A8'].forEach(a => setStyle(a, labelStyle));
+    ['B4','B5','B6','B7','B8'].forEach(a => setStyle(a, valueStyle));
+
+    // ── 섹션 헤더들 (각 색상) ──
+    const sectionHeader = (rgb, fontColor) => ({
+      font:{ bold:true, sz:13, color:{ rgb: fontColor || 'FFFFFF' } },
+      fill:{ patternType:'solid', fgColor:{ rgb } },
+      alignment:{ horizontal:'left', vertical:'center', indent:1 },
+      border: border(rgb),
+    });
+    setStyle('A10', sectionHeader('3B82F6'));   // 안건: 파랑
+    setStyle('A13', sectionHeader('6366F1'));   // 논의: 보라
+    setStyle('A16', sectionHeader('10B981'));   // 결정: 초록
+    setStyle('A19', sectionHeader('F59E0B'));   // 액션: 노랑
+
+    // ── 섹션 본문 (셀 색상 강조) ──
+    const bodyBase = {
+      alignment:{ horizontal:'left', vertical:'top', wrapText:true, indent:1 },
+      font:{ sz:11, color:{ rgb:'1F2937' } },
+      border: border('E5E7EB'),
+    };
+    setStyle('B11', { ...bodyBase, fill:{ patternType:'solid', fgColor:{ rgb:'EFF6FF' } } }); // 안건: 연파랑
+    setStyle('B14', { ...bodyBase, fill:{ patternType:'solid', fgColor:{ rgb:'EEF2FF' } } }); // 논의: 연보라
+    setStyle('B17', { ...bodyBase, font:{ sz:11, bold:true, color:{ rgb:'065F46' } }, fill:{ patternType:'solid', fgColor:{ rgb:'D1FAE5' } } }); // 결정: 초록 (강조)
+    setStyle('B20', { ...bodyBase, font:{ sz:11, bold:true, color:{ rgb:'92400E' } }, fill:{ patternType:'solid', fgColor:{ rgb:'FEF3C7' } } }); // 액션: 노랑 (강조)
+
+    // ── 다음 회의 / 첨부 ──
+    setStyle('A22', {
+      font:{ bold:true, color:{ rgb:'5B21B6' } },
+      fill:{ patternType:'solid', fgColor:{ rgb:'F5F3FF' } },
+      alignment:{ horizontal:'left', vertical:'center', indent:1 },
+      border: border('C4B5FD'),
+    });
+    setStyle('B22', { ...valueStyle, fill:{ patternType:'solid', fgColor:{ rgb:'F5F3FF' } } });
+    setStyle('A23', {
+      font:{ bold:true, color:{ rgb:'334155' } },
+      fill:{ patternType:'solid', fgColor:{ rgb:'F1F5F9' } },
+      alignment:{ horizontal:'left', vertical:'center', indent:1 },
+      border: border('CBD5E1'),
+    });
+    setStyle('B23', { ...valueStyle, fill:{ patternType:'solid', fgColor:{ rgb:'F1F5F9' } } });
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, en ? 'Minutes' : '회의록');
     return wb;
   }
-  function exportExcel(m) {
+    function exportExcel(m) {
     const wb = buildExcelWB(m); if (!wb) return;
     const safe = (m.subject||'minutes').replace(/[^\w가-힣]+/g,'_').slice(0,30);
     XLSX.writeFile(wb, 'meeting_' + (m.date || 'draft') + '_' + safe + '.xlsx');
