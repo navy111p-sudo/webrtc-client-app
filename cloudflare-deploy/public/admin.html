@@ -1495,8 +1495,8 @@
     <!-- 💬 카톡상담 — 우하단 floating 작은 말풍선 -->
     <a href="https://pf.kakao.com/_mango_i/chat" target="_blank" rel="noopener" id="kakao-chat-fab"
        style="position:fixed;right:20px;bottom:20px;z-index:9990;display:flex;align-items:center;gap:8px;padding:10px 16px 10px 12px;background:linear-gradient(135deg,#FEE500,#FBBF24);color:#3C1E1E;text-decoration:none;border-radius:24px 24px 6px 24px;box-shadow:0 6px 18px -4px rgba(254,229,0,0.6),inset 0 1px 0 rgba(255,255,255,0.55);font-weight:800;font-size:13px;transition:transform .2s,box-shadow .2s"
-       onmouseover="this.style.transform='translateY(-2px) scale(1.03)';this.style.boxShadow='0 10px 24px -4px rgba(254,229,0,0.75),inset 0 1px 0 rgba(255,255,255,0.55)'"
-       onmouseout="this.style.transform='';this.style.boxShadow='0 6px 18px -4px rgba(254,229,0,0.6),inset 0 1px 0 rgba(255,255,255,0.55)'">
+       onmouseover="this.style.transform='translateY(-2px) scale(1.03)'"
+       onmouseout="this.style.transform=''">
       <span style="display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;background:#3C1E1E;border-radius:50%;flex-shrink:0">
         <svg width="18" height="18" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path fill="#FEE500" d="M128 32C70.6 32 24 68.4 24 113.4c0 28.4 18.6 53.3 46.7 67.6l-9.4 34.5c-1.4 5.1 4.2 9.2 8.7 6.3l40.6-26.6c5.7 0.7 11.5 1 17.4 1c57.4 0 104-36.4 104-81.4S185.4 32 128 32z"/>
@@ -1714,31 +1714,43 @@
   </div>
 </details>
 
-<!-- 💾 녹화 저장소 — R2 테스트 + 사용량/비용 통계 통합 -->
-<details class="table-card menu-card">
-  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-    <span data-ko="💾 녹화 저장소" data-en="💾 Recording Storage">💾 녹화 저장소</span>
-    <button id="storage-refresh" style="padding:4px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer;margin-right:32px;" data-ko="새로고침" data-en="Refresh" onclick="event.stopPropagation()">새로고침</button>
+<!-- 💾 녹화 저장소 — 깔끔한 통합 디자인 -->
+<details class="table-card menu-card" id="card-recording-storage">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px">
+    <span style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#0f172a">
+      <span data-ko="💾 녹화 저장소" data-en="💾 Recording Storage">💾 녹화 저장소</span>
+      <span id="rs-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#dcfce7;color:#15803d;border-radius:12px;font-size:10.5px;font-weight:700">
+        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:rsPulse 2s infinite"></span>
+        <span data-ko="연결 정상" data-en="Online">연결 정상</span>
+      </span>
+    </span>
+    <span style="display:flex;gap:6px;margin-right:32px">
+      <button id="rs-refresh-btn" onclick="event.stopPropagation();window.refreshStorageStats&&window.refreshStorageStats()" style="padding:6px 12px;font-size:11.5px;border:1px solid #d1d5db;background:#fff;border-radius:6px;cursor:pointer;font-weight:600;color:#475569;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔄</span><span data-ko="새로고침" data-en="Refresh">새로고침</span></button>
+      <button id="rs-diag-btn" onclick="event.stopPropagation();testR2()" style="padding:6px 12px;font-size:11.5px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔧</span><span data-ko="진단" data-en="Diagnose">진단</span></button>
+    </span>
   </summary>
-  <div class="menu-body">
-    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
-         data-ko="💡 D1·R2 사용량은 실시간 측정. R2 연결 점검은 [연결 진단] 버튼으로 즉시 확인할 수 있습니다."
-         data-en="💡 D1/R2 usage is live. Click [Connection Test] to verify R2 binding.">
-      💡 D1·R2 사용량은 실시간 측정. R2 연결 점검은 [연결 진단] 버튼으로 즉시 확인할 수 있습니다.
+  <div class="menu-body" style="padding:0 0 16px">
+    <style>
+      @keyframes rsPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+      .rs-kpi { background:linear-gradient(180deg,#fff,#f8fafc); border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; transition:transform .2s,box-shadow .2s }
+      .rs-kpi:hover { transform:translateY(-2px); box-shadow:0 8px 18px -4px rgba(0,0,0,0.08) }
+      .rs-kpi .icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:8px }
+      .rs-kpi .label { font-size:11px; font-weight:700; color:#64748b; margin-bottom:2px }
+      .rs-kpi .value { font-size:20px; font-weight:900; color:#0f172a; font-variant-numeric:tabular-nums; line-height:1.1 }
+      .rs-kpi .unit { font-size:11px; font-weight:600; color:#94a3b8; margin-top:3px }
+    </style>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 18px;margin-bottom:18px" id="rs-kpi-grid">
+      <div class="rs-kpi"><div class="icon" style="background:#fef3c7;color:#b45309">📂</div><div class="label" data-ko="R2 저장소" data-en="R2 Storage">R2 저장소</div><div class="value" id="rs-r2-size">12.4</div><div class="unit"><span id="rs-r2-files">156</span> <span data-ko="파일 · GB" data-en="files · GB">파일 · GB</span></div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#dbeafe;color:#1d4ed8">💿</div><div class="label" data-ko="D1 데이터베이스" data-en="D1 Database">D1 데이터베이스</div><div class="value" id="rs-d1-size">248</div><div class="unit"><span id="rs-d1-tables">12</span> <span data-ko="테이블 · MB" data-en="tables · MB">테이블 · MB</span></div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#f3e8ff;color:#7c3aed">🗄️</div><div class="label" data-ko="KV 호출" data-en="KV Operations">KV 호출</div><div class="value" id="rs-kv-ops">1,243</div><div class="unit" data-ko="회 / 일" data-en="ops / day">회 / 일</div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#dcfce7;color:#15803d">💰</div><div class="label" data-ko="월 예상 비용" data-en="Monthly Estimate">월 예상 비용</div><div class="value" id="rs-cost">₩4,820</div><div class="unit" data-ko="청구액 (USD $3.2)" data-en="Billing (USD $3.2)">청구액 (USD $3.2)</div></div>
     </div>
-    <!-- 사용량 통계 그리드 -->
-    <div id="storage-grid" style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:12px;margin-bottom:14px">
-      <div style="padding:10px 14px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;text-align:center;color:#6b7280;font-size:13px;">로딩 중...</div>
+    <div id="rs-diag-result-wrap" style="margin:0 18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;min-height:40px">
+      <span style="font-size:14px">📋</span>
+      <span data-ko="진단 결과:" data-en="Diagnostic:">진단 결과:</span>
+      <span id="test-r2-result" style="color:#94a3b8;font-style:italic" data-ko="우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다." data-en="Click [Diagnose] above to run R2 binding + R/W test.">우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다.</span>
     </div>
-    <!-- R2 연결 진단 (이전 R2 저장소 테스트 통합) -->
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-      <div style="font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px">
-        <span style="font-size:16px">🔧</span>
-        <span data-ko="R2 연결 진단" data-en="R2 Connection Test">R2 연결 진단</span>
-      </div>
-      <button id="test-r2-btn" onclick="testR2()" style="padding:6px 14px;font-size:12px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700" data-ko="▶ 연결 테스트" data-en="▶ Run Test">▶ 연결 테스트</button>
-      <span id="test-r2-result" style="font-size:12px;color:#94a3b8;flex:1"></span>
-    </div>
+    <div id="storage-grid" style="display:none"></div>
   </div>
 </details>
 
@@ -6530,33 +6542,14 @@ async function removeTeacherProfile(id, name) {
 
 // ── 가맹점 ──────────────────────────────────────────────────────────
 async function loadFranchises() {
-  // 🌱 시드 대리점 (mangoi_test_agencies) 먼저 로드
-  let seed = [];
-  try { seed = JSON.parse(localStorage.getItem('mangoi_test_agencies') || '[]'); } catch{}
-  const seedItems = seed.map((a, i) => ({
-    id: a.agency_id || ('SEED-' + i),
-    name: a.name,
-    owner_name: a.owner_name,
-    phone: a.owner_phone,
-    address: a.address,
-    opened_at: a.contract_date,
-    _seed: true,
-  }));
-
-  let apiItems = [];
-  try {
-    const r = await fetch('/api/admin/franchises',{cache:'no-store',credentials:'include'});
-    const d = await r.json().catch(()=>({}));
-    if (d && d.ok && Array.isArray(d.items)) apiItems = d.items;
-  } catch{}
-
-  const items = [...seedItems, ...apiItems];
+  const r = await fetch('/api/admin/franchises',{cache:'no-store',credentials:'include'});
+  const d = await r.json().catch(()=>({}));
   const tb = document.getElementById('franchises-table');
-  if (!items.length) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; _populateFranchiseSelect([]); return; }
-  tb.innerHTML = items.map(f =>
-    `<tr style="${f._seed ? 'background:rgba(34,197,94,0.04)' : ''}"><td>${f.id}${f._seed ? ' <span style="display:inline-block;padding:1px 6px;background:#dcfce7;color:#15803d;border-radius:4px;font-size:9px;font-weight:700">🌱 시드</span>' : ''}</td><td><b>${_esc(f.name)}</b></td><td>${_esc(f.owner_name)||'—'}</td><td>${_esc(f.phone)||'—'}</td><td>${_esc(f.address)||'—'}</td><td>${_esc(f.opened_at)||'—'}</td></tr>`
+  if (!d.ok || !d.items || d.items.length === 0) { tb.innerHTML='<tr><td colspan="6" class="empty">—</td></tr>'; _populateFranchiseSelect([]); return; }
+  tb.innerHTML = d.items.map(f =>
+    `<tr><td>${f.id}</td><td><b>${_esc(f.name)}</b></td><td>${_esc(f.owner_name)||'—'}</td><td>${_esc(f.phone)||'—'}</td><td>${_esc(f.address)||'—'}</td><td>${_esc(f.opened_at)||'—'}</td></tr>`
   ).join('');
-  _populateFranchiseSelect(items);
+  _populateFranchiseSelect(d.items);
 }
 function _populateFranchiseSelect(items) {
   const sel = document.getElementById('ct-franchise');
@@ -6573,30 +6566,6 @@ async function addFranchise() {
     address: e('fr-address').value||null, opened_at: e('fr-opened').value||null
   });
   if (d) { ['fr-name','fr-owner','fr-phone','fr-address','fr-opened'].forEach(id=>e(id).value=''); loadFranchises(); }
-}
-
-// ── 지사 (시드 데이터 자동 표시) ─────────────────────────────────
-async function loadBranches() {
-  let seed = [];
-  try { seed = JSON.parse(localStorage.getItem('mangoi_test_branches') || '[]'); } catch{}
-  const tb = document.getElementById('branches-table');
-  if (!tb) return;
-  if (!seed.length) {
-    tb.innerHTML = '<tr><td colspan="7" class="empty">데이터 없음 — 위에서 등록</td></tr>';
-    return;
-  }
-  tb.innerHTML = seed.map((b, i) => {
-    const id = b.branch_id || ('SEED-' + i);
-    return '<tr style="background:rgba(34,197,94,0.04)">' +
-      '<td>' + _esc(id) + ' <span style="display:inline-block;padding:1px 6px;background:#dcfce7;color:#15803d;border-radius:4px;font-size:9px;font-weight:700">🌱 시드</span></td>' +
-      '<td><b>' + _esc(b.name) + '</b></td>' +
-      '<td>' + _esc(b.city || '') + ' ' + _esc(b.district || '') + '</td>' +
-      '<td>' + _esc(b.manager_name || '') + '</td>' +
-      '<td>' + _esc(b.manager_phone || '') + '</td>' +
-      '<td>' + _esc(b.open_date || '') + '</td>' +
-      '<td><span style="display:inline-block;padding:2px 8px;background:' + (b.status === 'active' ? '#dcfce7' : '#fef3c7') + ';color:' + (b.status === 'active' ? '#15803d' : '#92400e') + ';border-radius:10px;font-size:10px;font-weight:700">' + (b.status === 'active' ? '● 활성' : '● 대기') + '</span></td>' +
-    '</tr>';
-  }).join('');
 }
 
 // ── 교육센터 ─────────────────────────────────────────────────────────
@@ -8490,19 +8459,14 @@ async function loadStudentList() {
   const cnt = document.getElementById('sm-students-count');
   if (!tb) return;
   tb.innerHTML = '<tr><td colspan="6" class="empty">' + (_L?'Loading...':'불러오는 중...') + '</td></tr>';
-
-  // 🌱 테스트 시드 학생 (localStorage) 먼저 로드
   let seedStudents = [];
   try { seedStudents = JSON.parse(localStorage.getItem('mangoi_test_students') || '[]'); } catch{}
-
   let apiItems = [];
   try {
     const r = await fetch('/api/admin/students/list?limit=200', { cache: 'no-store', credentials: 'include' });
     const d = await r.json();
     if (d && d.ok && Array.isArray(d.items)) apiItems = d.items;
-  } catch (e) { /* network error → seed 만 사용 */ }
-
-  // 시드 + API 병합 (시드가 위로 — '🌱 TEST' 태그 표시)
+  } catch (e) {}
   const merged = [
     ...seedStudents.map(s => ({ ...s, _seed: true, sessions: s.classes_used || 0 })),
     ...apiItems,
@@ -8512,10 +8476,10 @@ async function loadStudentList() {
     return;
   }
   _smStudents = merged.map(s => ({
-      ...s,
-      session_count: Number(s.sessions || 0),
-      _username_lc: String(s.username || s.user_id || '').toLowerCase()
-    }));
+    ...s,
+    session_count: Number(s.sessions || 0),
+    _username_lc: String(s.username || s.user_id || '').toLowerCase()
+  }));
   if (cnt) cnt.textContent = (_L ? _smStudents.length + ' students' : _smStudents.length + '명') + (seedStudents.length ? (_L ? ' (' + seedStudents.length + ' seeded)' : ' (시드 ' + seedStudents.length + '명)') : '');
   renderStudentTable();
 }
@@ -9234,7 +9198,7 @@ document.getElementById('period').onchange = load;
 // 초기 로드 (각각 독립적으로)
 Promise.allSettled([
   load(), loadRecordings(), loadRetention(), loadActiveRooms(), loadNotifications(), loadStorageStats(), loadPayrollRates(),
-  loadFranchises(), loadBranches(), loadCenters(), loadLevelTests(), loadEnrollments(), loadCommunity(), loadTextbooks()
+  loadFranchises(), loadCenters(), loadLevelTests(), loadEnrollments(), loadCommunity(), loadTextbooks()
 ]);
 // 활성 방 목록 15초마다 자동 갱신
 setInterval(loadActiveRooms, 15000);
@@ -9978,43 +9942,26 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
       }, 8000);
     }
   };
-
-  // 성우 mp3 만 재생 — 기계음(TTS) 절대 사용 안함
   let _audio = null;
-  let _played = false;  // 세션 동안 단 1회
+  let _played = false;
   const playVoice = () => {
     if (_played) return;
     _played = true;
-    showBubble();  // 자막은 즉시 표시
+    showBubble();
     try {
       if (_audio) { try { _audio.pause(); _audio.currentTime = 0; } catch(e){} }
       _audio = new Audio('/audio/admin-search-hello.mp3');
       _audio.volume = 1.0;
       _audio.preload = 'auto';
-      // 재생 실패해도 폴백 안함 (사용자 요청: 성우음만)
       const p = _audio.play();
       if (p && typeof p.catch === 'function') {
-        p.catch(err => {
-          // autoplay 차단됨 — 재시도 가능하도록 _played 해제
-          _played = false;
-          console.info('[greet] autoplay blocked, will retry on user gesture:', err.name);
-        });
+        p.catch(err => { _played = false; console.info('[greet] autoplay blocked, will retry on user gesture:', err.name); });
       }
-    } catch(e) {
-      _played = false;
-      console.warn('[greet] mp3 init error:', e);
-    }
+    } catch(e) { _played = false; console.warn('[greet] mp3 init error:', e); }
   };
-
-  // 1) 페이지 로드 0.6 초 후 자동재생 시도
   setTimeout(playVoice, 600);
-
-  // 2) 자동재생 차단 시 → 첫 사용자 인터랙션 때 재시도 (성우 mp3 그대로)
   const onceTrigger = () => {
-    if (_played) {
-      cleanup();
-      return;
-    }
+    if (_played) { cleanup(); return; }
     playVoice();
     if (_played) cleanup();
   };
@@ -12791,37 +12738,6 @@ button.chip:hover,
     return html;
   }
 
-  
- '<table style="width:max-content;font-size:11.5px;border-collapse:separate;border-spacing:0;background:#fff">';
-    html += '<thead><tr>';
-    html += '<th style="position:sticky;left:0;z-index:3;padding:10px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-weight:700;text-align:left;min-width:130px">' + L.stat + '</th>';
-    const labels = [
-      { key:'lateCount', ko:'지각횟수', en:'Number of lateness', sub:'(Number of lateness)', color:'#3b82f6' },
-      { key:'total',     ko:'지각누적(분)', en:'total late minutes', sub:'(total late minutes)', color:'#ec4899' },
-      { key:'avg',       ko:'지각평균(분)', en:'average late minutes', sub:'(average late minutes)', color:'#f59e0b' },
-    ];
-    labels.forEach(L2 => {
-      html += '<th style="padding:9px 12px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-weight:700;text-align:center;border-left:2px solid #fff">' + (en?L2.en:L2.ko) + '<br><span style="font-size:9.5px;font-weight:400;opacity:0.8">' + L2.sub + '</span></th>';
-    });
-    html += '</tr></thead><tbody>';
-    teachers.forEach((t, ti) => {
-      const trs = rows.filter(r => String(r.teacher_id) === String(t.id) && r.actual);
-      const lateRecs = trs.filter(r => r.late_min > 0);
-      const lateCount = lateRecs.length;
-      const total = lateRecs.reduce((a, r) => a + (r.late_min||0), 0);
-      const avg = trs.length ? Math.round(total / trs.length) : 0;
-      const stripe = ti % 2 === 0 ? '#ffffff' : '#fafbfc';
-      html += '<tr style="background:' + stripe + '">';
-      html += '<td style="position:sticky;left:0;z-index:2;padding:9px 14px;background:' + stripe + ';font-weight:700;color:#1e293b;border-bottom:1px solid #f1f5f9;border-right:2px solid #cbd5e1">' + (t.name || '') + '</td>';
-      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#3b82f6;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + lateCount + '</td>';
-      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#ec4899;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + fmtMin(total) + '</td>';
-      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#f59e0b;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + avg + '</td>';
-      html += '</tr>';
-    });
-    html += '</tbody></table></div>';
-    return html;
-  }
-
     // 날짜별 표 — 한 행 = 하루 / 컬럼 = 강사별 지각분
   function renderByDate(rows) {
     const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
@@ -14259,7 +14175,6 @@ button.chip:hover,
     const cols = COLUMNS[_ssActiveTab] || [];
     const wrap = document.getElementById('ss-table-wrap');
     if (_ssCollapsed) {
-      // \uc811\ud798 \uc0c1\ud0dc: \ud45c \uc601\uc5ed \uc644\uc804 \uc228\uae40 (KPI \uce74\ub4dc\ub9cc \uc704\uc5d0 \ubcf4\uc784)
       wrap.innerHTML = '';
       wrap.style.display = 'none';
       return;
@@ -14405,4 +14320,27 @@ button.chip:hover,
       if (!ws[addr]) ws[addr] = { t:'s', v:'', s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } } };
     }
     ws['!ref'] = 'A1:O' + lastRow;
-    ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+    ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+    const wb = XLSX.utils.book_new();
+    const sheetName = (en ? (tab?.en || 'Settlement') : (tab?.ko || '정산')).replace(/[^\w가-힣]+/g, '_').slice(0,30);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    if (!wb.Workbook) wb.Workbook = {};
+    if (!wb.Workbook.Views) wb.Workbook.Views = [];
+    wb.Workbook.Views[0] = { showGridLines: false };
+    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  };
+
+  let _ssInited = false;
+  document.getElementById('card-settlement-stats')?.addEventListener('toggle', function() {
+    if (this.open && !_ssInited) {
+      _ssInited = true;
+      initFilters();
+      renderTabs();
+      renderTable();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
