@@ -13341,55 +13341,171 @@ button.chip:hover,
       return { name: t.name, total, onTime, late, absent, totalPenalty };
     });
 
-    wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px"><div style="background:#fff;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="ca-chart-1"></canvas></div><div style="background:#fff;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="ca-chart-2"></canvas></div></div><div style="background:#fff;border-radius:12px;padding:14px;min-height:300px;margin-top:14px;position:relative"><canvas id="ca-chart-3"></canvas></div>';
+    wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px"><div style="background:linear-gradient(180deg,#ffffff,#f8fafc);border-radius:14px;padding:16px;min-height:380px;position:relative;box-shadow:0 4px 16px -6px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.9)"><canvas id="ca-chart-1"></canvas></div><div style="background:linear-gradient(180deg,#ffffff,#f8fafc);border-radius:14px;padding:16px;min-height:380px;position:relative;box-shadow:0 4px 16px -6px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.9)"><canvas id="ca-chart-2"></canvas></div></div><div style="background:linear-gradient(180deg,#ffffff,#f8fafc);border-radius:14px;padding:16px;min-height:300px;margin-top:14px;position:relative;box-shadow:0 4px 16px -6px rgba(0,0,0,0.10),0 1px 3px rgba(0,0,0,0.04),inset 0 1px 0 rgba(255,255,255,0.9)"><canvas id="ca-chart-3"></canvas></div>';
 
-    // 1) 누적 막대: 강사별 정시/지각/결강
+    // ── 입체 효과 헬퍼: 막대용 세로 그라디언트 fill ──
+    function makeBarGrad(ctx, area, top, bottom) {
+      if (!area) return top;
+      const g = ctx.createLinearGradient(0, area.top, 0, area.bottom);
+      g.addColorStop(0, top);
+      g.addColorStop(1, bottom);
+      return g;
+    }
+    // ── 입체 효과: 도넛 그림자 + 외곽 글로우 (chart 영역에 drawShadow plugin 등록) ──
+    const shadowPlugin = {
+      id: 'shadowPlugin',
+      beforeDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.shadowColor = 'rgba(15,23,42,0.18)';
+        ctx.shadowBlur = 14;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 6;
+      },
+      afterDatasetsDraw(chart) { chart.ctx.restore(); }
+    };
+    const en = isEn();
+
+    // ━━━ 1) 누적 막대: 강사별 정시·지각·결강 ━━━
     _caCharts.push(new Chart(document.getElementById('ca-chart-1').getContext('2d'), {
       type: 'bar',
       data: {
         labels: data.map(d => d.name),
         datasets: [
-          { label: '정시', data: data.map(d => d.onTime), backgroundColor: 'rgba(16,185,129,0.85)', borderColor: '#059669', borderWidth: 1, borderRadius: 4 },
-          { label: '지각', data: data.map(d => d.late), backgroundColor: 'rgba(245,158,11,0.85)', borderColor: '#d97706', borderWidth: 1, borderRadius: 4 },
-          { label: '결강', data: data.map(d => d.absent), backgroundColor: 'rgba(239,68,68,0.85)', borderColor: '#b91c1c', borderWidth: 1, borderRadius: 4 },
+          {
+            label: en ? 'On time' : '정시',
+            data: data.map(d => d.onTime),
+            backgroundColor: ctx => makeBarGrad(ctx.chart.ctx, ctx.chart.chartArea, '#34d399', '#059669'),
+            borderColor: '#047857', borderWidth: 1.5, borderRadius: 8,
+            borderSkipped: false,
+          },
+          {
+            label: en ? 'Late' : '지각',
+            data: data.map(d => d.late),
+            backgroundColor: ctx => makeBarGrad(ctx.chart.ctx, ctx.chart.chartArea, '#fcd34d', '#d97706'),
+            borderColor: '#b45309', borderWidth: 1.5, borderRadius: 8,
+            borderSkipped: false,
+          },
+          {
+            label: en ? 'Absent' : '결강',
+            data: data.map(d => d.absent),
+            backgroundColor: ctx => makeBarGrad(ctx.chart.ctx, ctx.chart.chartArea, '#fca5a5', '#b91c1c'),
+            borderColor: '#991b1b', borderWidth: 1.5, borderRadius: 8,
+            borderSkipped: false,
+          },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top' }, title: { display: true, text: '강사별 출석 분포 (수업 단위)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } },
-        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } } }
+        animation: { duration: 1100, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12, weight: 600 }, padding: 14, boxWidth: 14, boxHeight: 14, usePointStyle: false, color: '#1e293b' } },
+          title: { display: true, text: en ? 'Class Attendance by Teacher (per class)' : '강사별 출석 분포 (수업 단위)', font: { size: 14, weight: 800 }, color: '#0f172a', padding: { top: 4, bottom: 14 } },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont:{size:13,weight:700}, bodyFont:{size:12}, cornerRadius: 10, padding: 12, displayColors: true, borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1 },
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: 600 }, color: '#475569' } },
+          y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11 }, color: '#64748b' } },
+        }
       }
     }));
 
-    // 2) 도넛: 전체 비율
+    // ━━━ 2) 도넛: 전체 출석 비율 ━━━
     const allTotal = data.reduce((a,d)=>a+d.total,0);
     const allOnTime = data.reduce((a,d)=>a+d.onTime,0);
     const allLate = data.reduce((a,d)=>a+d.late,0);
     const allAbsent = data.reduce((a,d)=>a+d.absent,0);
+    // 도넛 그라디언트 (반경 방향)
+    function makeRadialGrad(ctx, cx, cy, r, inner, outer) {
+      const g = ctx.createRadialGradient(cx, cy, r * 0.4, cx, cy, r);
+      g.addColorStop(0, inner);
+      g.addColorStop(1, outer);
+      return g;
+    }
     _caCharts.push(new Chart(document.getElementById('ca-chart-2').getContext('2d'), {
       type: 'doughnut',
       data: {
-        labels: ['정시','지각','결강'],
-        datasets: [{ data: [allOnTime, allLate, allAbsent], backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderColor: '#fff', borderWidth: 3 }]
+        labels: en ? ['On time','Late','Absent'] : ['정시','지각','결강'],
+        datasets: [{
+          data: [allOnTime, allLate, allAbsent],
+          backgroundColor: ctx => {
+            const chart = ctx.chart;
+            const area = chart.chartArea;
+            if (!area) return ['#10b981','#f59e0b','#ef4444'][ctx.dataIndex];
+            const cx = (area.left + area.right) / 2;
+            const cy = (area.top + area.bottom) / 2;
+            const r = Math.min(area.right - area.left, area.bottom - area.top) / 2;
+            const palettes = [['#6ee7b7','#047857'], ['#fde68a','#b45309'], ['#fca5a5','#991b1b']];
+            const [inner, outer] = palettes[ctx.dataIndex] || ['#94a3b8','#475569'];
+            return makeRadialGrad(chart.ctx, cx, cy, r, inner, outer);
+          },
+          borderColor: '#fff', borderWidth: 4,
+          hoverOffset: 14,
+          hoverBorderColor: '#fff', hoverBorderWidth: 5,
+        }]
       },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' }, title: { display: true, text: '전체 출석 비율 (총 ' + allTotal + '건)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } } }
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        cutout: '62%',
+        animation: { animateRotate: true, animateScale: true, duration: 1200, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12, weight: 600 }, padding: 14, boxWidth: 14, color: '#1e293b' } },
+          title: {
+            display: true,
+            text: en ? ('Total Attendance Ratio (' + allTotal + ' classes)') : ('전체 출석 비율 (총 ' + allTotal + '건)'),
+            font: { size: 14, weight: 800 }, color: '#0f172a', padding: { top: 4, bottom: 14 }
+          },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont:{size:13,weight:700}, bodyFont:{size:12}, cornerRadius: 10, padding: 12,
+            callbacks: {
+              label: ctx => {
+                const v = ctx.parsed;
+                const pct = allTotal ? Math.round(v / allTotal * 100) : 0;
+                return ' ' + ctx.label + ': ' + v + (en ? ' classes' : '건') + ' (' + pct + '%)';
+              }
+            }
+          }
+        }
+      },
+      plugins: [shadowPlugin]
     }));
 
-    // 3) 별점 합계 가로 막대 (강사별, 음수 → 빨강)
+    // ━━━ 3) 가로 막대: 강사별 누적 별점 (낮은 순) ━━━
     const sortedByPenalty = [...data].sort((a,b)=>a.totalPenalty - b.totalPenalty);
     _caCharts.push(new Chart(document.getElementById('ca-chart-3').getContext('2d'), {
       type: 'bar',
       data: {
         labels: sortedByPenalty.map(d => d.name),
         datasets: [{
-          label: '별점 합계',
+          label: en ? 'Total Penalty' : '별점 합계',
           data: sortedByPenalty.map(d => d.totalPenalty),
-          backgroundColor: sortedByPenalty.map(d => d.totalPenalty <= -20 ? 'rgba(239,68,68,0.85)' : (d.totalPenalty < 0 ? 'rgba(245,158,11,0.85)' : 'rgba(16,185,129,0.85)')),
-          borderColor: sortedByPenalty.map(d => d.totalPenalty <= -20 ? '#b91c1c' : (d.totalPenalty < 0 ? '#d97706' : '#059669')),
-          borderWidth: 1.5, borderRadius: 4,
+          backgroundColor: ctx => {
+            const v = ctx.parsed?.x ?? 0;
+            const area = ctx.chart.chartArea;
+            const cv = ctx.chart.ctx;
+            if (!area) return v <= -20 ? '#b91c1c' : (v < 0 ? '#d97706' : '#059669');
+            const g = cv.createLinearGradient(area.left, 0, area.right, 0);
+            if (v <= -20) { g.addColorStop(0, '#fca5a5'); g.addColorStop(1, '#991b1b'); }
+            else if (v < 0) { g.addColorStop(0, '#fcd34d'); g.addColorStop(1, '#b45309'); }
+            else { g.addColorStop(0, '#6ee7b7'); g.addColorStop(1, '#047857'); }
+            return g;
+          },
+          borderColor: sortedByPenalty.map(d => d.totalPenalty <= -20 ? '#7f1d1d' : (d.totalPenalty < 0 ? '#92400e' : '#065f46')),
+          borderWidth: 2, borderRadius: 10, borderSkipped: false,
         }]
       },
-      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '강사별 누적 별점 (낮은 순)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } }, scales: { x: { grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } } }
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        animation: { duration: 1100, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: en ? 'Cumulative Penalty by Teacher (lowest first)' : '강사별 누적 별점 (낮은 순)', font: { size: 14, weight: 800 }, color: '#0f172a', padding: { top: 4, bottom: 14 } },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont:{size:13,weight:700}, bodyFont:{size:12}, cornerRadius: 10, padding: 12 }
+        },
+        scales: {
+          x: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 11 }, color: '#64748b' } },
+          y: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 }, color: '#1e293b' } }
+        }
+      }
     }));
   }
 
