@@ -4253,8 +4253,15 @@
     });
     setStyle('B23', { ...valueStyle, fill:{ patternType:'solid', fgColor:{ rgb:'F1F5F9' } } });
 
+    // 🚫 눈금선 제거 (showGridLines: false)
+    ws['!sheetViews'] = [{ showGridLines: false, showRowColHeaders: false }];
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, en ? 'Minutes' : '회의록');
+    // 🚫 워크북 레벨 기본값도 비활성 (편집기에서 새 시트 추가해도 일관)
+    if (!wb.Workbook) wb.Workbook = {};
+    if (!wb.Workbook.Views) wb.Workbook.Views = [];
+    wb.Workbook.Views[0] = Object.assign({}, wb.Workbook.Views[0] || {}, { showGridLines: false });
     return wb;
   }
     function exportExcel(m) {
