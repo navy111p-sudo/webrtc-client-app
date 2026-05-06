@@ -14221,6 +14221,10 @@ button.chip:hover,
     const en = isEnSS();
     const cols = COLUMNS[_ssActiveTab] || [];
     const wrap = document.getElementById('ss-table-wrap');
+    if (_ssCollapsed) {
+      wrap.innerHTML = '<div style="padding:36px;text-align:center;color:#64748b;background:linear-gradient(135deg,#f8fafc,#e2e8f0);border-radius:12px"><div style="font-size:36px;margin-bottom:8px">' + String.fromCodePoint(0x1F648) + '</div><div style="font-size:14px;font-weight:700">' + (en?'Tab collapsed':'\ud0ed\uc774 \uc811\ud600\uc788\uc2b5\ub2c8\ub2e4') + '</div><div style="font-size:11.5px;margin-top:4px;color:#94a3b8">' + (en?'Click the active tab again to expand':'\ud65c\uc131 \ud0ed\uc744 \ub2e4\uc2dc \ud074\ub9ad\ud558\uba74 \ud3bc\uccd0\uc9d1\ub2c8\ub2e4') + '</div></div>';
+      return;
+    }
     if (!rows.length) {
       wrap.innerHTML = '<div style="padding:60px;text-align:center;color:#9ca3af">' + (en?'No data':'데이터가 없습니다.') + '</div>';
       return;
@@ -14270,7 +14274,13 @@ button.chip:hover,
     const wrap = document.getElementById('ss-tabs');
     wrap.innerHTML = SS_TABS.map(t => {
       const active = t.id === _ssActiveTab;
-      return '<button type="button" onclick="ssSetTab(\'' + t.id + '\')" style="padding:7px 14px;font-size:12px;border-radius:8px;cursor:pointer;border:0;background:' + (active?'linear-gradient(135deg,#1e40af,#1e3a8a)':'#fff') + ';color:' + (active?'#fff':'#1e40af') + ';font-weight:' + (active?'800':'600') + ';box-shadow:' + (active?'0 4px 12px -2px rgba(30,64,175,0.4)':'0 1px 2px rgba(0,0,0,0.05)') + ';transition:all .15s">' + (en?t.en:t.ko) + '</button>';
+      const isCollapsed = active && _ssCollapsed;
+      const arrow = active ? (isCollapsed ? ' ▶' : ' ▼') : '';
+      const bg = active
+        ? (isCollapsed ? 'linear-gradient(135deg,#94a3b8,#64748b)' : 'linear-gradient(135deg,#1e40af,#1e3a8a)')
+        : '#fff';
+      const tooltip = active ? (en ? 'Click to ' + (isCollapsed ? 'expand' : 'collapse') : '클릭하여 ' + (isCollapsed ? '펼침' : '접힘')) : '';
+      return '<button type="button" onclick="ssSetTab(\'' + t.id + '\')" title="' + tooltip + '" style="padding:7px 14px;font-size:12px;border-radius:8px;cursor:pointer;border:0;background:' + bg + ';color:' + (active?'#fff':'#1e40af') + ';font-weight:' + (active?'800':'600') + ';box-shadow:' + (active?'0 4px 12px -2px rgba(30,64,175,0.4)':'0 1px 2px rgba(0,0,0,0.05)') + ';transition:all .15s">' + (en?t.en:t.ko) + arrow + '</button>';
     }).join('');
   }
 
@@ -14291,7 +14301,17 @@ button.chip:hover,
     if (rep.options.length === 1) ['망고아이','slpmangoi','제퍼슨','코리아'].forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; rep.appendChild(o); });
   }
 
-  window.ssSetTab = function(id) { _ssActiveTab = id; renderTabs(); renderTable(); };
+  let _ssCollapsed = false;
+  window.ssSetTab = function(id) {
+    if (id === _ssActiveTab) {
+      _ssCollapsed = !_ssCollapsed;
+    } else {
+      _ssActiveTab = id;
+      _ssCollapsed = false;
+    }
+    renderTabs();
+    renderTable();
+  };
   window.ssRender = function() { renderTabs(); renderTable(); };
 
   window.ssExportExcel = function() {
