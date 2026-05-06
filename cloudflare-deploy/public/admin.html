@@ -1340,6 +1340,9 @@
     .th-subtitle { display: none; }                     /* 정말 좁은 화면에서는 부제 숨김 */
     .th-btn-amber span:not(.icon) { font-size: 11px; }
   }
+
+  /* 인사평가·순위 컬럼 토글 */
+  #tp-list-table.hr-hidden .hr-eval-col { display: none !important; }
 </style>
 </head>
 <body>
@@ -2777,8 +2780,8 @@
             </div>
           </details>
 
-          <!-- 필터 + 새로고침 -->
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0">
+          <!-- 필터 + 새로고침 + 인사평가 토글 -->
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin:10px 0;align-items:center">
             <select id="tp-filter-status" style="padding:5px 10px;font-size:12px;border:1px solid #d1d5db;border-radius:6px">
               <option value="" data-ko="전체 상태" data-en="All Status">전체 상태</option>
               <option value="활동중" data-ko="🟢 활동중" data-en="🟢 Active">🟢 활동중</option>
@@ -2792,6 +2795,8 @@
             </select>
             <button id="tp-refresh-btn" type="button" style="padding:5px 12px;font-size:12px;border:1px solid #d1d5db;border-radius:6px;background:#fff;cursor:pointer" data-ko="🔄 새로고침" data-en="🔄 Refresh">🔄 새로고침</button>
             <span id="tp-count" style="font-size:11px;color:#6b7280;align-self:center">—</span>
+            <span style="flex:1"></span>
+            <button id="tp-hr-toggle" type="button" onclick="window.toggleHrEval()" style="padding:6px 14px;font-size:12px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700;box-shadow:0 2px 4px rgba(168,85,247,0.3);transition:all .15s" data-ko-show="🏆 인사평가·순위 표시" data-ko-hide="🙈 인사평가·순위 숨김" data-en-show="🏆 Show HR Score · Rank" data-en-hide="🙈 Hide HR Score · Rank">🙈 인사평가·순위 숨김</button>
           </div>
 
           <!-- 강사 목록 표 -->
@@ -2807,8 +2812,8 @@
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="10분 수수료" data-en="Fee/10min">10분 수수료</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="연락처" data-en="Contact">연락처</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="입사일" data-en="Join Date">입사일</th>
-                  <th style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(124,58,237,0.18))" data-ko="인사평가" data-en="HR Score" data-ko-title="수업 25% · 재등록 30% · 근태 20% · 행정 15% · 조직 10% 가중평균" data-en-title="Weighted: Class 25% · Retention 30% · Punct 20% · Admin 15% · Contrib 10%">인사평가</th>
-                  <th style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(245,158,11,0.18))" data-ko="순위" data-en="Rank">순위</th>
+                  <th class="hr-eval-col" style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(124,58,237,0.18))" data-ko="인사평가" data-en="HR Score" data-ko-title="수업 25% · 재등록 30% · 근태 20% · 행정 15% · 조직 10% 가중평균" data-en-title="Weighted: Class 25% · Retention 30% · Punct 20% · Admin 15% · Contrib 10%">인사평가</th>
+                  <th class="hr-eval-col" style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(245,158,11,0.18))" data-ko="순위" data-en="Rank">순위</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="액션" data-en="Actions">액션</th>
                 </tr>
               </thead>
@@ -6222,6 +6227,23 @@ function _hrRankBadge(rank) {
   return '<span style="display:inline-block;color:#6b7280;font-weight:700;font-size:13px">' + rank + '</span>';
 }
 
+// 🏆 강사 인사평가·순위 컬럼 토글 (사용자가 버튼 클릭으로 보기/숨김)
+window.toggleHrEval = function() {
+  const table = document.getElementById('tp-list-table');
+  const btn = document.getElementById('tp-hr-toggle');
+  if (!table || !btn) return;
+  const hidden = table.classList.toggle('hr-hidden');
+  // 버튼 라벨 토글 (한·영 모두 동기화)
+  const en = (typeof adminLang !== 'undefined' && adminLang === 'en');
+  if (hidden) {
+    btn.textContent = en ? (btn.dataset.enShow || '🏆 Show HR Score · Rank') : (btn.dataset.koShow || '🏆 인사평가·순위 표시');
+    btn.style.background = 'linear-gradient(135deg,#94a3b8,#64748b)';
+  } else {
+    btn.textContent = en ? (btn.dataset.enHide || '🙈 Hide HR Score · Rank') : (btn.dataset.koHide || '🙈 인사평가·순위 숨김');
+    btn.style.background = 'linear-gradient(135deg,#a855f7,#7c3aed)';
+  }
+};
+
 async function loadTeacherProfiles() {
   const status = document.getElementById('tp-filter-status')?.value || '';
   const group  = document.getElementById('tp-filter-group')?.value || '';
@@ -6269,13 +6291,13 @@ async function loadTeacherProfiles() {
       '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right">' + fee + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb">' + _aiEsc(phone) + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb">' + join + '</td>' +
-      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center" title="' + _aiEsc(tip) + '">' +
+      '<td class="hr-eval-col" style="padding:6px;border:1px solid #e5e7eb;text-align:center" title="' + _aiEsc(tip) + '">' +
         '<div style="display:inline-flex;align-items:center;gap:5px">' +
           '<span style="font-size:13px;font-weight:800;color:' + grade.color + ';font-variant-numeric:tabular-nums">' + score.total.toFixed(1) + '</span>' +
           '<span style="display:inline-block;padding:2px 8px;background:' + grade.bg + ';color:' + grade.color + ';border-radius:10px;font-size:10.5px;font-weight:800">' + grade.label + '</span>' +
         '</div>' +
       '</td>' +
-      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + _hrRankBadge(rank) + '</td>' +
+      '<td class="hr-eval-col" style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + _hrRankBadge(rank) + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center;white-space:nowrap">' +
         '<button onclick="viewTeacherProfile(' + t.id + ')" title="상세 보기" style="padding:3px 8px;font-size:10px;background:#3b82f6;color:#fff;border:0;border-radius:4px;cursor:pointer">🔍</button> ' +
         '<button onclick="editTeacherProfile(' + t.id + ')" title="수정" style="padding:3px 8px;font-size:10px;background:#10b981;color:#fff;border:0;border-radius:4px;cursor:pointer">✏️</button> ' +
