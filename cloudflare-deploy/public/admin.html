@@ -9673,20 +9673,44 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
     speakGreeting(text, lang);
   };
 
+  // 🎤 사용자 업로드 MP3 우선 재생, 실패 시 TTS 폴백
+  let _adminGreetAudio = null;
   const speakGreeting = (text, lang) => {
+    // 1) 한국어일 때: 사용자가 녹음한 mp3 (안녕하세요, 망고아이) 재생
+    if (lang === 'ko') {
+      try {
+        // 진행 중인 TTS 정리
+        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+        // 이전 audio 정리
+        if (_adminGreetAudio) { try { _adminGreetAudio.pause(); _adminGreetAudio.currentTime = 0; } catch(e){} }
+        _adminGreetAudio = new Audio('/audio/admin-search-hello.mp3');
+        _adminGreetAudio.volume = 0.95;
+        _adminGreetAudio.preload = 'auto';
+        // 재생 실패 시 (autoplay 차단 등) → TTS 로 폴백
+        _adminGreetAudio.addEventListener('error', () => { console.warn('[ai-greeting] mp3 load error → TTS fallback'); _ttsFallback(text, lang); });
+        const p = _adminGreetAudio.play();
+        if (p && typeof p.then === 'function') {
+          p.catch(err => { console.warn('[ai-greeting] mp3 play blocked → TTS fallback:', err.name); _ttsFallback(text, lang); });
+        }
+        return;
+      } catch(e) { console.warn('[ai-greeting] mp3 init error:', e); }
+    }
+    // 2) 영어 또는 mp3 init 실패 시 TTS
+    _ttsFallback(text, lang);
+  };
+
+  const _ttsFallback = (text, lang) => {
     if (!('speechSynthesis' in window)) {
       console.info('[ai-greeting] TTS not supported');
       return;
     }
     try {
-      // 진행 중인 발화 정리
       window.speechSynthesis.cancel();
       const utt = new SpeechSynthesisUtterance(text);
       utt.lang = lang === 'en' ? 'en-US' : 'ko-KR';
       utt.rate = 1.0;
       utt.pitch = 1.05;
       utt.volume = 0.85;
-      // 한국어 음성 우선 선택
       const voices = window.speechSynthesis.getVoices();
       if (voices && voices.length) {
         const target = utt.lang.split('-')[0];
