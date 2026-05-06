@@ -9181,51 +9181,63 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // ━━━━━━━━━━ 녹화본 복습 모달 ━━━━━━━━━━
   async function showRecordingsModal() {
-    // 1) 정적 4개 카드 (UI 빠른 반응)
-    let RECS = [
-      { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (4회차)',   teacher:'정우영', dur:'17초',     size:'2.5 MB',  url:'' },
-      { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (3회차)',   teacher:'정우영', dur:'2분 46초', size:'26.5 MB', url:'' },
-      { date:'2026-05-04', topic:'방 1234 — 1:1 영어 회화 (2회차)',   teacher:'정우영', dur:'54초',     size:'8.6 MB',  url:'' },
-      { date:'2026-05-04', topic:'방 9yoqs3 — 1:1 영어 회화 (1회차)', teacher:'정우영', dur:'24초',     size:'3.7 MB',  url:'' },
-    ];
-    // 2) /api/student/recordings 우선 → 정우영 필터
+    // 1) 즉시 로딩 상태 표시
+    showModal(`
+      <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
+      <p style="color:#cbd5e1">최근 자동녹화된 수업 영상을 날짜순으로 보여드립니다.</p>
+      <div id="rec-list-body" style="margin-top:14px;max-height:55vh;overflow-y:auto"><div style="color:#94a3b8;text-align:center;padding:24px">⏳ 불러오는 중…</div></div>
+      <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
+        ※ 녹화본은 수업 종료 후 자동 업로드 (최대 24시간 소요).<br/>
+        ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.
+      </p>
+    `);
+
+    // 2) DB 에서 최근 녹화 목록 (공개 endpoint)
+    let rows = [];
     try {
-      const r = await fetch('/api/student/recordings?uid=' + encodeURIComponent('정우영') + '&limit=50', { credentials: 'include' });
+      const r = await fetch('/api/recordings/list-recent?limit=30', { credentials: 'include' });
       if (r.ok) {
         const j = await r.json();
-        const rows = (j && Array.isArray(j.rows)) ? j.rows : [];
-        rows.slice(0, RECS.length).forEach((rec, i) => {
-          if (rec.url) RECS[i].url = rec.url;
-          else if (rec.file_url) RECS[i].url = /^https?:\/\//.test(String(rec.file_url)) ? String(rec.file_url) : '/api/recordings/blob/' + encodeURIComponent(String(rec.file_url));
-          if (rec.topic) RECS[i].topic = rec.topic;
-          if (rec.duration) RECS[i].dur = rec.duration;
-          if (rec.size) RECS[i].size = rec.size;
-          if (rec.date) RECS[i].date = rec.date;
-        });
+        if (j && Array.isArray(j.rows)) rows = j.rows;
       }
-    } catch(e){}
+    } catch(e) { console.warn('[recordings] list-recent 실패:', e); }
 
-    // 3) 카드 HTML
-    const cards = RECS.map((r, idx) => `
-      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;cursor:pointer"
-           onclick="window.playRecording${idx}&&window.playRecording${idx}()">
-        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px">▶️</div>
+    const body = document.getElementById('rec-list-body');
+    if (!body) return;
+
+    if (!rows.length) {
+      body.innerHTML = `
+        <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:22px;text-align:center">
+          <div style="font-size:36px;margin-bottom:8px">📭</div>
+          <div style="color:#fff;font-weight:700;margin-bottom:4px">아직 녹화본이 없어요</div>
+          <div style="color:#cbd5e1;font-size:12px">수업 종료 후 자동 업로드되면 여기에 표시됩니다.</div>
+        </div>`;
+      return;
+    }
+
+    // 3) 카드 렌더 (날짜순 desc — 백엔드에서 이미 정렬됨)
+    body.innerHTML = rows.map((r, idx) => `
+      <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:12px;margin-bottom:8px;display:grid;grid-template-columns:60px 1fr auto;gap:12px;align-items:center;cursor:${r.playable?'pointer':'default'};transition:transform .15s,box-shadow .15s"
+           ${r.playable ? `onclick="window.playRecording${idx}&&window.playRecording${idx}()"` : ''}
+           onmouseover="${r.playable?`this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(251,191,36,0.3)'`:''}"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div style="background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:8px;height:54px;display:flex;align-items:center;justify-content:center;font-size:24px">${r.playable?'▶️':'⏳'}</div>
         <div>
-          <div style="color:#fbbf24;font-size:11px;font-weight:700">${r.date} · ${r.dur}</div>
+          <div style="color:#fbbf24;font-size:11px;font-weight:700">${r.date} · ${r.duration}</div>
           <div style="color:#fff;font-size:13px;font-weight:700;margin:2px 0">${r.topic}</div>
-          <div style="color:#94a3b8;font-size:11px">강사: ${r.teacher} · ${r.size}${r.url ? ' · <span style=\"color:#10b981\">● 재생 가능</span>' : ' · <span style=\"color:#f59e0b\">⏳ 업로드 대기</span>'}</div>
+          <div style="color:#94a3b8;font-size:11px">강사: ${r.teacher} · ${r.size}${r.playable ? ' · <span style=\"color:#10b981\">● 재생 가능</span>' : ' · <span style=\"color:#f59e0b\">⏳ 업로드 진행 중</span>'}</div>
         </div>
         <div style="display:flex;flex-direction:column;gap:4px;pointer-events:none">
-          <span style="padding:7px 12px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border-radius:6px;color:#1a0f08;font-size:11px;font-weight:800;text-align:center">▶ 시청</span>
+          <span style="padding:7px 12px;background:linear-gradient(135deg,${r.playable?'#fbbf24,#f59e0b':'#475569,#334155'});border-radius:6px;color:${r.playable?'#1a0f08':'#94a3b8'};font-size:11px;font-weight:800;text-align:center">▶ 시청</span>
           <span style="padding:5px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#cbd5e1;font-size:10px;text-align:center">⬇ 다운</span>
         </div>
       </div>`).join('');
 
-    // 4) 클릭 핸들러 등록 (영상 플레이어)
-    RECS.forEach((r, idx) => {
+    // 4) 클릭 핸들러 등록
+    rows.forEach((r, idx) => {
       window['playRecording' + idx] = function() {
-        if (!r.url) {
-          alert('⏳ 영상 업로드 대기 중\n\n수업: ' + r.topic + '\n날짜: ' + r.date);
+        if (!r.playable || !r.url) {
+          alert('⏳ 영상 업로드 진행 중\n\n수업: ' + r.topic + '\n날짜: ' + r.date + '\n\n수업 종료 후 자동 업로드됩니다 (최대 24시간 이내).');
           return;
         }
         const overlay = document.createElement('div');
@@ -9236,15 +9248,15 @@ window.addEventListener('DOMContentLoaded', () => {
         box.addEventListener('click', e => e.stopPropagation());
         box.innerHTML = '<button onclick="this.parentElement.parentElement.remove()" style="position:absolute;top:10px;right:14px;background:transparent;border:0;color:#94a3b8;font-size:24px;cursor:pointer">✕</button>' +
                         '<div style="font-size:16px;font-weight:700;color:#fbbf24;margin-bottom:6px;padding-right:30px">📼 ' + r.topic + '</div>' +
-                        '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">' + r.date + ' · 강사 ' + r.teacher + ' · ' + r.dur + ' · ' + r.size + '</div>';
+                        '<div style="font-size:12px;color:#94a3b8;margin-bottom:12px">' + r.date + ' · 강사 ' + r.teacher + ' · ' + r.duration + ' · ' + r.size + '</div>';
         const video = document.createElement('video');
-        video.src = r.url; video.controls = true; video.autoplay = true;
+        video.src = r.url; video.controls = true; video.autoplay = true; video.preload = 'metadata';
         video.style.cssText = 'width:100%;max-height:65vh;border-radius:10px;background:#000';
         video.addEventListener('error', async () => {
           let diag = ''; try { const h = await fetch(r.url, { method:'HEAD' }); diag = ' (HTTP ' + h.status + ')'; } catch(e){}
           const err = document.createElement('div');
-          err.style.cssText = 'color:#fca5a5;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;margin-top:8px;font-size:12px';
-          err.innerHTML = '⚠ 영상을 불러올 수 없습니다' + diag + '<br><a href="' + r.url + '" target="_blank" style="color:#fbbf24">🔗 새 탭에서 열기</a>';
+          err.style.cssText = 'color:#fca5a5;padding:14px;background:rgba(239,68,68,0.08);border-radius:8px;margin-top:8px;font-size:12px;line-height:1.6;word-break:break-all';
+          err.innerHTML = '⚠ 영상을 불러올 수 없습니다' + diag + '<br><span style="color:#94a3b8">' + r.url + '</span><br><br><a href="' + r.url + '" target="_blank" style="color:#fbbf24;font-weight:700">🔗 새 탭에서 직접 열기</a>';
           box.appendChild(err);
         });
         box.appendChild(video);
@@ -9252,66 +9264,6 @@ window.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(overlay);
       };
     });
-
-    function renderCards() {
-      showModal(`
-        <h2>📼 녹화본 복습 — 지난수업 다시보기</h2>
-        <p style="color:#cbd5e1">정우영 학생 본인 수업 녹화 (총 ${RECS.length}개)</p>
-        <div style="margin-top:14px;max-height:55vh;overflow-y:auto">${cards}</div>
-        <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
-          ※ 녹화본은 수업 종료 후 자동으로 업로드됩니다 (최대 24시간 소요).<br/>
-          ※ 본인 수업 녹화만 시청할 수 있으며, 1달간 보관됩니다.
-        </p>
-      `);
-    }
-
-    // 5) 항상 로그인 폼 먼저 표시 (정우영 / 1234 미리 입력)
-    showModal(`
-      <h2>📼 녹화본 복습 — 로그인</h2>
-      <p style="color:#cbd5e1">본인 수업 녹화본을 시청하려면 로그인이 필요합니다.</p>
-      <div style="background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);border-radius:12px;padding:22px;margin-top:14px">
-        <div style="text-align:center;margin-bottom:18px">
-          <div style="font-size:36px;margin-bottom:6px">🔒</div>
-          <div style="color:#fff;font-weight:700;font-size:15px">로그인 후 시청 가능</div>
-          <div style="color:#cbd5e1;font-size:12px;margin-top:4px">본인의 수업 녹화 영상만 시청하실 수 있습니다.</div>
-        </div>
-        <div style="display:grid;gap:10px;max-width:340px;margin:0 auto">
-          <div>
-            <label style="display:block;color:#fbbf24;font-size:11px;font-weight:700;margin-bottom:4px">아이디</label>
-            <input id="rec-uid" value="정우영" autocomplete="username"
-                   style="width:100%;padding:11px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:14px;outline:none;box-sizing:border-box" />
-          </div>
-          <div>
-            <label style="display:block;color:#fbbf24;font-size:11px;font-weight:700;margin-bottom:4px">비밀번호</label>
-            <input id="rec-pw" type="password" value="1234" autocomplete="current-password"
-                   style="width:100%;padding:11px 12px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.18);border-radius:8px;color:#fff;font-size:14px;outline:none;box-sizing:border-box" />
-          </div>
-          <div id="rec-login-err" style="display:none;color:#fca5a5;font-size:12px;text-align:center;padding:8px;background:rgba(239,68,68,0.08);border-radius:6px"></div>
-          <button id="rec-login-btn"
-                  style="padding:12px 22px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:10px;color:#1a0f08;font-size:13px;font-weight:800;cursor:pointer;margin-top:6px">
-            🔑 로그인 후 녹화본 보기
-          </button>
-        </div>
-      </div>
-    `);
-    setTimeout(() => {
-      const btn = document.getElementById('rec-login-btn');
-      const uidEl = document.getElementById('rec-uid');
-      const pwEl = document.getElementById('rec-pw');
-      const errEl = document.getElementById('rec-login-err');
-      function tryLogin() {
-        const uid = (uidEl?.value || '').trim();
-        const pw = (pwEl?.value || '').trim();
-        if ((uid === '정우영' && pw === '1234') || (uid === 'demo' && pw === 'demo')) {
-          renderCards();
-        } else {
-          if (errEl) { errEl.style.display='block'; errEl.textContent = '❌ 정우영 / 1234 로 로그인해 주세요.'; }
-        }
-      }
-      btn?.addEventListener('click', tryLogin);
-      pwEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryLogin(); });
-      uidEl?.addEventListener('keydown', (e) => { if (e.key === 'Enter') pwEl?.focus(); });
-    }, 50);
   }
 
   window.closeAndOpenReport = function() {

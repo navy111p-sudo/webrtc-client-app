@@ -148,6 +148,58 @@ export default {
       if (res) return res;
     }
 
+    // 📋 학생 홈페이지 — 최근 녹화 목록 (날짜순 desc, 공개)
+    //   응답: { ok, rows: [{ id, room_id, teacher, date, duration, size, url, status }] }
+    if (path === '/api/recordings/list-recent' && request.method === 'GET') {
+      try {
+        await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
+        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
+        const rs = await env.DB.prepare(
+          `SELECT id, room_id, teacher_name, teacher_id, filename, file_url, size_bytes, duration_ms,
+                  started_at, ended_at, status, storage
+             FROM recordings
+            WHERE COALESCE(status, '') != 'deleted'
+            ORDER BY COALESCE(started_at, id) DESC
+            LIMIT ?`
+        ).bind(limit).all();
+        const raw = (rs.results || []) as any[];
+        const rows = raw.map((r: any) => {
+          const startMs = r.started_at || 0;
+          const date = startMs ? new Date(startMs).toISOString().slice(0,10) : '-';
+          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
+          const durStr = durSec >= 60 ? Math.floor(durSec / 60) + '분 ' + (durSec % 60) + '초' : (durSec + '초');
+          const sizeStr = r.size_bytes
+            ? (r.size_bytes >= 1048576 ? (Math.round(r.size_bytes / 104857.6) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB')
+            : '-';
+          let playUrl = '';
+          if (r.file_url) {
+            playUrl = /^https?:\/\//.test(String(r.file_url))
+              ? String(r.file_url)
+              : '/api/recordings/blob/' + encodeURIComponent(String(r.file_url));
+          } else if (r.filename) {
+            const k = String(r.filename).startsWith('rec/') || String(r.filename).startsWith('recordings/')
+              ? r.filename : ('recordings/' + r.filename);
+            playUrl = '/api/recordings/blob/' + encodeURIComponent(k);
+          }
+          return {
+            id: r.id,
+            date,
+            room_id: r.room_id || '-',
+            teacher: r.teacher_name || r.teacher_id || '-',
+            topic: '방 ' + (r.room_id || '-') + ' — 1:1 영어 회화',
+            duration: durStr,
+            size: sizeStr,
+            url: playUrl,
+            status: r.status || 'unknown',
+            playable: !!playUrl && (r.status === 'completed' || !!r.file_url),
+          };
+        });
+        return new Response(JSON.stringify({ ok: true, count: rows.length, rows }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
+      } catch (e: any) {
+        return new Response(JSON.stringify({ ok: false, error: e?.message, rows: [] }), { headers:{'Content-Type':'application/json'} });
+      }
+    }
+
     // 🩺 R2 녹화 파일 공개 진단 (학생용) — file 존재여부 확인
     if (path === '/api/recordings/check' && request.method === 'GET') {
       try {
