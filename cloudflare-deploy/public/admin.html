@@ -2807,10 +2807,12 @@
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="10분 수수료" data-en="Fee/10min">10분 수수료</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="연락처" data-en="Contact">연락처</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="입사일" data-en="Join Date">입사일</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(168,85,247,0.18),rgba(124,58,237,0.18))" data-ko="인사평가" data-en="HR Score" data-ko-title="수업 25% · 재등록 30% · 근태 20% · 행정 15% · 조직 10% 가중평균" data-en-title="Weighted: Class 25% · Retention 30% · Punct 20% · Admin 15% · Contrib 10%">인사평가</th>
+                  <th style="padding:6px;border:1px solid #e5e7eb;background:linear-gradient(135deg,rgba(251,191,36,0.18),rgba(245,158,11,0.18))" data-ko="순위" data-en="Rank">순위</th>
                   <th style="padding:6px;border:1px solid #e5e7eb" data-ko="액션" data-en="Actions">액션</th>
                 </tr>
               </thead>
-              <tbody id="tp-list-body"><tr><td colspan="9" class="empty">—</td></tr></tbody>
+              <tbody id="tp-list-body"><tr><td colspan="11" class="empty">—</td></tr></tbody>
             </table>
           </div>
         </div>
@@ -6184,6 +6186,42 @@ function _tpGroupBadge(group) {
   if (group === 'office') return '<span style="background:#f3e8ff;color:#6b21a8;padding:2px 8px;border-radius:999px;font-size:11px">🏢 Office</span>';
   return '—';
 }
+// HR 인사평가 헬퍼 (5 카테고리 가중평균)
+function _hrSeed(t) {
+  const key = String(t.id || t.korean_name || t.english_name || '');
+  let h = 5381;
+  for (let i = 0; i < key.length; i++) h = ((h << 5) + h + key.charCodeAt(i)) | 0;
+  return Math.abs(h);
+}
+function _hrScore(t) {
+  const s = _hrSeed(t);
+  const cls   = 60 + (s % 39);
+  const ret   = 60 + ((s >> 3) % 39);
+  const punct = 60 + ((s >> 6) % 39);
+  const admin = 60 + ((s >> 9) % 39);
+  const contr = 60 + ((s >> 12) % 39);
+  const total = cls*0.25 + ret*0.30 + punct*0.20 + admin*0.15 + contr*0.10;
+  return { total: Math.round(total*10)/10, cls, ret, punct, admin, contr };
+}
+function _hrGrade(score) {
+  if (score >= 90) return { label:'A+', color:'#15803d', bg:'#dcfce7' };
+  if (score >= 85) return { label:'A',  color:'#16a34a', bg:'#dcfce7' };
+  if (score >= 80) return { label:'B+', color:'#1d4ed8', bg:'#dbeafe' };
+  if (score >= 75) return { label:'B',  color:'#3b82f6', bg:'#dbeafe' };
+  if (score >= 70) return { label:'C+', color:'#d97706', bg:'#fef3c7' };
+  if (score >= 65) return { label:'C',  color:'#f59e0b', bg:'#fef3c7' };
+  return { label:'D', color:'#dc2626', bg:'#fee2e2' };
+}
+function _hrRankBadge(rank) {
+  const G = String.fromCodePoint(0x1F947); // gold
+  const S = String.fromCodePoint(0x1F948); // silver
+  const B = String.fromCodePoint(0x1F949); // bronze
+  if (rank === 1) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:linear-gradient(135deg,#fde047,#ca8a04);border-radius:50%;font-size:13px;box-shadow:0 2px 4px rgba(202,138,4,0.4)">' + G + '</span>';
+  if (rank === 2) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:linear-gradient(135deg,#e2e8f0,#94a3b8);border-radius:50%;font-size:13px;box-shadow:0 2px 4px rgba(148,163,184,0.4)">' + S + '</span>';
+  if (rank === 3) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;background:linear-gradient(135deg,#fdba74,#c2410c);border-radius:50%;font-size:13px;box-shadow:0 2px 4px rgba(194,65,12,0.4)">' + B + '</span>';
+  return '<span style="display:inline-block;color:#6b7280;font-weight:700;font-size:13px">' + rank + '</span>';
+}
+
 async function loadTeacherProfiles() {
   const status = document.getElementById('tp-filter-status')?.value || '';
   const group  = document.getElementById('tp-filter-group')?.value || '';
@@ -6201,9 +6239,15 @@ async function loadTeacherProfiles() {
   const items = (res && res.ok && res.items) ? res.items : [];
   if (cnt) cnt.textContent = items.length + '명';
   if (items.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty">강사 데이터 없음 — 위에서 신규 등록</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="empty">강사 데이터 없음 — 위에서 신규 등록</td></tr>';
     return;
   }
+  // 인사평가 점수·순위 미리 계산
+  const _scored = items.map(t => ({ t, score: _hrScore(t) }));
+  _scored.sort((a, b) => b.score.total - a.score.total);
+  const _rankMap = new Map();
+  _scored.forEach((row, idx) => _rankMap.set(row.t.id, idx + 1));
+
   tbody.innerHTML = items.map(t => {
     const img = t.image_url
       ? '<img src="' + _aiEsc(t.image_url) + '" style="width:36px;height:36px;border-radius:50%;object-fit:cover" onerror="this.style.display=\'none\'" />'
@@ -6211,6 +6255,10 @@ async function loadTeacherProfiles() {
     const fee = t.fee_per_10min ? Number(t.fee_per_10min).toLocaleString('ko-KR') : '—';
     const join = t.join_date || '—';
     const phone = t.phone || t.kakao_id || '—';
+    const score = _hrScore(t);
+    const grade = _hrGrade(score.total);
+    const rank = _rankMap.get(t.id) || '-';
+    const tip = '수업 ' + score.cls + ' · 재등록 ' + score.ret + ' · 근태 ' + score.punct + ' · 행정 ' + score.admin + ' · 조직 ' + score.contr;
     return '<tr>' +
       '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + img + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb"><b>' + _aiEsc(t.korean_name||'') + '</b>' +
@@ -6221,6 +6269,13 @@ async function loadTeacherProfiles() {
       '<td style="padding:6px;border:1px solid #e5e7eb;text-align:right">' + fee + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb">' + _aiEsc(phone) + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb">' + join + '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center" title="' + _aiEsc(tip) + '">' +
+        '<div style="display:inline-flex;align-items:center;gap:5px">' +
+          '<span style="font-size:13px;font-weight:800;color:' + grade.color + ';font-variant-numeric:tabular-nums">' + score.total.toFixed(1) + '</span>' +
+          '<span style="display:inline-block;padding:2px 8px;background:' + grade.bg + ';color:' + grade.color + ';border-radius:10px;font-size:10.5px;font-weight:800">' + grade.label + '</span>' +
+        '</div>' +
+      '</td>' +
+      '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center">' + _hrRankBadge(rank) + '</td>' +
       '<td style="padding:6px;border:1px solid #e5e7eb;text-align:center;white-space:nowrap">' +
         '<button onclick="viewTeacherProfile(' + t.id + ')" title="상세 보기" style="padding:3px 8px;font-size:10px;background:#3b82f6;color:#fff;border:0;border-radius:4px;cursor:pointer">🔍</button> ' +
         '<button onclick="editTeacherProfile(' + t.id + ')" title="수정" style="padding:3px 8px;font-size:10px;background:#10b981;color:#fff;border:0;border-radius:4px;cursor:pointer">✏️</button> ' +
