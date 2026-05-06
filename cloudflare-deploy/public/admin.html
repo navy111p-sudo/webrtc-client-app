@@ -12481,86 +12481,132 @@ button.chip:hover,
     return pad2(h) + ':' + pad2(m);
   }
 
-  // 강사별 표 — 가로 스크롤
+  // 강사별 표 — 강사=행, 날짜=열 (3컬럼씩 규정/실제/경과)
   function renderByTeacher(rows) {
     const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
       const t = _awTeachers.find(x => String(x.id) === String(id));
       return { id, name: t ? t.name : id };
-    });
+    }).sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
     const dates = Array.from(new Set(rows.map(r => r.date))).sort();
     if (!teachers.length || !dates.length) return '<div style="padding:30px;text-align:center;color:#9ca3af">데이터가 없습니다.</div>';
 
     const en = isEn();
-    const L = en ? { date:'date', start:'start work time', actual:'Actual attend time', elapsed:'elapsed time', late:'Number of lateness', total:'total late minutes', avg:'average late minutes', stat:'Stats' } 
-                 : { date:'날짜', start:'규정출근시간', actual:'실제출근시간', elapsed:'경과시간', late:'지각횟수', total:'지각누적(분)', avg:'지각평균(분)', stat:'통계' };
+    const L = en ? { name:'Name', start:'start work time', actual:'Actual attend time', elapsed:'elapsed time', stat:'Stats' }
+                 : { name:'이름', start:'규정출근시간', actual:'실제출근시간', elapsed:'경과시간', stat:'통계' };
 
-    let html = '<table style="width:max-content;font-size:12px;border-collapse:collapse;background:#fff">';
-    // 헤더: 첫 컬럼 = 날짜, 그 다음 강사별로 3컬럼씩
-    html += '<thead><tr style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(99,102,241,0.08))">';
-    html += '<th rowspan="2" style="padding:8px 10px;border:1px solid #d1d5db;font-weight:700;color:#374151;min-width:90px">- </th>';
-    teachers.forEach(t => {
-      html += '<th colspan="3" style="padding:8px 10px;border:1px solid #d1d5db;font-weight:700;color:#1e3a8a">' + t.name + '</th>';
-    });
-    html += '</tr><tr style="background:rgba(241,245,249,0.6);font-size:10px;color:#475569;font-weight:600">';
-    html += '<th style="padding:6px 10px;border:1px solid #d1d5db">' + L.date + '<br><span style="font-weight:400;color:#94a3b8">(date)</span></th>';
-    teachers.forEach(() => {
-      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.start + '</th>';
-      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.actual + '</th>';
-      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.elapsed + '</th>';
-    });
-    html += '</tr></thead><tbody>';
+    let html = '<div style="display:inline-block;min-width:100%;background:#fff;border-radius:10px;overflow:hidden">';
+    html += '<table style="width:max-content;font-size:11.5px;border-collapse:separate;border-spacing:0;background:#fff">';
 
-    dates.forEach(date => {
-      html += '<tr><td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:600;color:#1e3a8a;background:#f8fafc">' + date + '</td>';
-      teachers.forEach(t => {
+    // 헤더 1행: 날짜 그룹 (병합)
+    html += '<thead><tr>';
+    html += '<th rowspan="2" style="position:sticky;left:0;z-index:3;padding:10px 14px;background:linear-gradient(135deg,#1e293b,#334155);color:#fff;font-weight:700;min-width:130px;text-align:left">' + L.name + '</th>';
+    dates.forEach((date, i) => {
+      const bg = (i % 2 === 0) ? 'linear-gradient(135deg,#3b82f6,#1d4ed8)' : 'linear-gradient(135deg,#0ea5e9,#0369a1)';
+      html += '<th colspan="3" style="padding:9px 14px;background:' + bg + ';color:#fff;font-weight:700;font-size:13px;text-align:center;letter-spacing:0.3px;border-left:2px solid #fff">' + date + '</th>';
+    });
+    html += '</tr>';
+
+    // 헤더 2행: 서브 컬럼
+    html += '<tr style="background:#f1f5f9">';
+    dates.forEach((_, i) => {
+      const subBg = (i % 2 === 0) ? '#dbeafe' : '#e0f2fe';
+      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-left:2px solid #fff;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.start + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(start work time)</span></th>';
+      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.actual + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(Actual attend time)</span></th>';
+      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.elapsed + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(elapsed time)</span></th>';
+    });
+    html += '</tr></thead>';
+
+    // 본문 — 강사 = 행
+    html += '<tbody>';
+    teachers.forEach((t, ti) => {
+      const stripe = ti % 2 === 0 ? '#ffffff' : '#fafbfc';
+      html += '<tr style="background:' + stripe + '">';
+      html += '<td style="position:sticky;left:0;z-index:2;padding:9px 14px;background:' + stripe + ';font-weight:700;color:#1e293b;border-bottom:1px solid #f1f5f9;border-right:2px solid #cbd5e1;text-align:center">' + (t.name || '') + '</td>';
+      dates.forEach(date => {
         const rec = rows.find(r => String(r.teacher_id) === String(t.id) && r.date === date);
-        if (rec) {
-          const c = lateColor(rec.late_min);
-          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:#475569">' + (rec.scheduled || '-') + '</td>';
-          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:' + c + ';font-weight:700">' + (rec.actual || '-') + '</td>';
-          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:' + c + '">+' + (rec.late_min || 0) + 'm</td>';
+        if (rec && rec.actual) {
+          const lateMin = rec.late_min || 0;
+          const c = lateColor(lateMin);
+          const elapsed = lateMin === 0 ? '0m' : (lateMin > 0 ? '+' + lateMin + 'm' : lateMin + 'm');
+          html += '<td style="padding:8px 10px;color:#475569;text-align:center;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + (rec.scheduled || '-') + '</td>';
+          html += '<td style="padding:8px 10px;color:' + c + ';font-weight:700;text-align:center;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + rec.actual + '</td>';
+          html += '<td style="padding:8px 10px;color:' + c + ';text-align:center;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums;font-size:11px">' + elapsed + '</td>';
+        } else if (rec) {
+          html += '<td style="padding:8px 10px;color:#475569;text-align:center;border-bottom:1px solid #f1f5f9">' + (rec.scheduled || '-') + '</td>';
+          html += '<td colspan="2" style="padding:8px 10px;color:#cbd5e1;text-align:center;border-bottom:1px solid #f1f5f9;font-style:italic">-</td>';
         } else {
-          html += '<td colspan="3" style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:#cbd5e1">-</td>';
+          html += '<td colspan="3" style="padding:8px 10px;color:#e2e8f0;text-align:center;border-bottom:1px solid #f1f5f9">·</td>';
         }
       });
       html += '</tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
 
-    // 통계 표
-    html += '<div style="height:14px"></div>';
-    html += '<table style="width:max-content;font-size:12px;border-collapse:collapse;background:#fff">';
-    html += '<thead><tr style="background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(79,70,229,0.06))">';
-    html += '<th style="padding:8px 10px;border:1px solid #d1d5db;min-width:90px">' + L.stat + '</th>';
-    teachers.forEach(t => { html += '<th style="padding:8px 10px;border:1px solid #d1d5db;color:#1e3a8a">' + t.name + '</th>'; });
-    html += '</tr></thead><tbody>';
-
-    const stats = teachers.map(t => {
-      const trs = rows.filter(r => String(r.teacher_id) === String(t.id));
-      const lateCount = trs.filter(r => r.late_min > 0).length;
-      const total = trs.reduce((a, r) => a + (r.late_min||0), 0);
-      const avg = trs.length ? Math.round(total / trs.length) : 0;
-      return { lateCount, total, avg };
-    });
+    // 통계 (강사 = 행)
+    html += '<div style="height:18px"></div>';
+    html += '<div style="display:inline-block;min-width:100%;background:#fff;border-radius:10px;overflow:hidden">';
+    html += '<table style="width:max-content;font-size:11.5px;border-collapse:separate;border-spacing:0;background:#fff">';
+    html += '<thead><tr>';
+    html += '<th style="position:sticky;left:0;z-index:3;padding:10px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-weight:700;text-align:left;min-width:130px">' + L.stat + '</th>';
     const labels = [
-      { key:'lateCount', ko:'지각횟수', en:'Number of lateness', sub:'(Number of lateness)' },
-      { key:'total',     ko:'지각누적(분)', en:'total late minutes', sub:'(total late minutes)' },
-      { key:'avg',       ko:'지각평균(분)', en:'average late minutes', sub:'(average late minutes)' },
+      { key:'lateCount', ko:'지각횟수', en:'Number of lateness', sub:'(Number of lateness)', color:'#3b82f6' },
+      { key:'total',     ko:'지각누적(분)', en:'total late minutes', sub:'(total late minutes)', color:'#ec4899' },
+      { key:'avg',       ko:'지각평균(분)', en:'average late minutes', sub:'(average late minutes)', color:'#f59e0b' },
     ];
     labels.forEach(L2 => {
-      html += '<tr><td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:600;color:#475569;background:#f8fafc">' + (en?L2.en:L2.ko) + '<br><span style="font-size:10px;font-weight:400;color:#94a3b8">' + L2.sub + '</span></td>';
-      stats.forEach((s, i) => {
-        const v = s[L2.key];
-        const display = (L2.key === 'total') ? fmtMin(v) : v;
-        html += '<td style="padding:7px 10px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1e3a8a">' + display + '</td>';
-      });
+      html += '<th style="padding:9px 12px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-weight:700;text-align:center;border-left:2px solid #fff">' + (en?L2.en:L2.ko) + '<br><span style="font-size:9.5px;font-weight:400;opacity:0.8">' + L2.sub + '</span></th>';
+    });
+    html += '</tr></thead><tbody>';
+    teachers.forEach((t, ti) => {
+      const trs = rows.filter(r => String(r.teacher_id) === String(t.id) && r.actual);
+      const lateRecs = trs.filter(r => r.late_min > 0);
+      const lateCount = lateRecs.length;
+      const total = lateRecs.reduce((a, r) => a + (r.late_min||0), 0);
+      const avg = trs.length ? Math.round(total / trs.length) : 0;
+      const stripe = ti % 2 === 0 ? '#ffffff' : '#fafbfc';
+      html += '<tr style="background:' + stripe + '">';
+      html += '<td style="position:sticky;left:0;z-index:2;padding:9px 14px;background:' + stripe + ';font-weight:700;color:#1e293b;border-bottom:1px solid #f1f5f9;border-right:2px solid #cbd5e1">' + (t.name || '') + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#3b82f6;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + lateCount + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#ec4899;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + fmtMin(total) + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#f59e0b;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + avg + '</td>';
       html += '</tr>';
     });
-    html += '</tbody></table>';
+    html += '</tbody></table></div>';
     return html;
   }
 
-  // 날짜별 표 — 한 행 = 하루 / 컬럼 = 강사별 지각분
+  
+ '<table style="width:max-content;font-size:11.5px;border-collapse:separate;border-spacing:0;background:#fff">';
+    html += '<thead><tr>';
+    html += '<th style="position:sticky;left:0;z-index:3;padding:10px 14px;background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;font-weight:700;text-align:left;min-width:130px">' + L.stat + '</th>';
+    const labels = [
+      { key:'lateCount', ko:'지각횟수', en:'Number of lateness', sub:'(Number of lateness)', color:'#3b82f6' },
+      { key:'total',     ko:'지각누적(분)', en:'total late minutes', sub:'(total late minutes)', color:'#ec4899' },
+      { key:'avg',       ko:'지각평균(분)', en:'average late minutes', sub:'(average late minutes)', color:'#f59e0b' },
+    ];
+    labels.forEach(L2 => {
+      html += '<th style="padding:9px 12px;background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;font-weight:700;text-align:center;border-left:2px solid #fff">' + (en?L2.en:L2.ko) + '<br><span style="font-size:9.5px;font-weight:400;opacity:0.8">' + L2.sub + '</span></th>';
+    });
+    html += '</tr></thead><tbody>';
+    teachers.forEach((t, ti) => {
+      const trs = rows.filter(r => String(r.teacher_id) === String(t.id) && r.actual);
+      const lateRecs = trs.filter(r => r.late_min > 0);
+      const lateCount = lateRecs.length;
+      const total = lateRecs.reduce((a, r) => a + (r.late_min||0), 0);
+      const avg = trs.length ? Math.round(total / trs.length) : 0;
+      const stripe = ti % 2 === 0 ? '#ffffff' : '#fafbfc';
+      html += '<tr style="background:' + stripe + '">';
+      html += '<td style="position:sticky;left:0;z-index:2;padding:9px 14px;background:' + stripe + ';font-weight:700;color:#1e293b;border-bottom:1px solid #f1f5f9;border-right:2px solid #cbd5e1">' + (t.name || '') + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#3b82f6;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + lateCount + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#ec4899;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + fmtMin(total) + '</td>';
+      html += '<td style="padding:9px 12px;text-align:center;font-weight:700;color:#f59e0b;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + avg + '</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+    // 날짜별 표 — 한 행 = 하루 / 컬럼 = 강사별 지각분
   function renderByDate(rows) {
     const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
       const t = _awTeachers.find(x => String(x.id) === String(id));
@@ -12601,12 +12647,9 @@ button.chip:hover,
     const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
       const t = _awTeachers.find(x => String(x.id) === String(id));
       return { id, name: t ? t.name : id };
-    });
-    const totals = teachers.map(t => rows.filter(r => String(r.teacher_id) === String(t.id)).reduce((a, r) => a + (r.late_min||0), 0));
-    const counts = teachers.map(t => rows.filter(r => String(r.teacher_id) === String(t.id) && r.late_min > 0).length);
+    }).sort((a, b) => a.name.localeCompare(b.name, 'ko-KR'));
 
     if (typeof Chart === 'undefined') {
-      // Chart.js CDN 동적 로드
       const s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
       s.onload = () => renderChart(rows);
@@ -12615,20 +12658,144 @@ button.chip:hover,
     }
     const en = isEn();
     if (_awChart) { _awChart.destroy(); _awChart = null; }
-    const ctx = document.getElementById('aw-chart').getContext('2d');
-    _awChart = new Chart(ctx, {
+
+    // 강사별 통계 계산
+    const data = teachers.map(t => {
+      const trs = rows.filter(r => String(r.teacher_id) === String(t.id) && r.actual);
+      const lateRecs = trs.filter(r => r.late_min > 0);
+      const totalLate = lateRecs.reduce((a, r) => a + (r.late_min||0), 0);
+      const totalDays = trs.length;
+      const onTimePct = totalDays ? Math.round(((totalDays - lateRecs.length) / totalDays) * 100) : 0;
+      return { name: t.name, totalLate, lateCount: lateRecs.length, onTimePct, totalDays };
+    });
+    // 정렬: 지각 누적이 많은 순서
+    data.sort((a, b) => b.totalLate - a.totalLate);
+
+    // 색상: 지각이 많을수록 빨강
+    const maxLate = Math.max(...data.map(d => d.totalLate), 1);
+    const barColors = data.map(d => {
+      const ratio = d.totalLate / maxLate;
+      if (ratio > 0.66) return { bg: 'rgba(239,68,68,0.85)', border: '#b91c1c' };
+      if (ratio > 0.33) return { bg: 'rgba(245,158,11,0.85)', border: '#d97706' };
+      if (ratio > 0)    return { bg: 'rgba(59,130,246,0.85)', border: '#1d4ed8' };
+      return { bg: 'rgba(34,197,94,0.85)', border: '#15803d' };
+    });
+
+    // wrap inner — 듀얼 차트
+    wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;padding:6px 0">' +
+      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="aw-chart"></canvas></div>' +
+      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="aw-chart2"></canvas></div>' +
+    '</div>' +
+    '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;min-height:280px;margin-top:14px;position:relative"><canvas id="aw-chart3"></canvas></div>';
+
+    // 1) 막대: 강사별 지각 누적·횟수
+    _awChart = new Chart(document.getElementById('aw-chart').getContext('2d'), {
       type: 'bar',
       data: {
-        labels: teachers.map(t => t.name),
+        labels: data.map(d => d.name),
         datasets: [
-          { label: en?'Total late (min)':'지각 누적(분)', data: totals, backgroundColor: 'rgba(239,68,68,0.7)', borderColor: '#dc2626', borderWidth: 1 },
-          { label: en?'Late count':'지각 횟수', data: counts, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#d97706', borderWidth: 1 },
+          {
+            label: en?'Total late (min)':'지각 누적(분)',
+            data: data.map(d => d.totalLate),
+            backgroundColor: barColors.map(c => c.bg),
+            borderColor: barColors.map(c => c.border),
+            borderWidth: 1.5,
+            borderRadius: 6,
+            yAxisID: 'y'
+          },
+          {
+            label: en?'Late count':'지각 횟수',
+            data: data.map(d => d.lateCount),
+            type: 'line',
+            borderColor: '#7c3aed',
+            backgroundColor: 'rgba(124,58,237,0.1)',
+            borderWidth: 2.5,
+            pointRadius: 4,
+            pointBackgroundColor: '#7c3aed',
+            tension: 0.3,
+            yAxisID: 'y1'
+          }
         ]
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { position: 'top' }, title: { display: true, text: en?'Teacher Attendance Summary':'강사 출근 통계' } },
-        scales: { y: { beginAtZero: true } }
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12, weight: 600 }, padding: 12 } },
+          title: { display: true, text: en?'Teacher Attendance — Late Minutes & Count':'강사별 지각 누적·횟수', font: { size: 14, weight: 700 }, padding: { top: 4, bottom: 14 } },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont: { size: 12, weight: 700 }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 8, borderColor: '#3b82f6', borderWidth: 1 }
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { font: { size: 11 }, maxRotation: 45 } },
+          y: { beginAtZero: true, position: 'left', title: { display: true, text: en?'Minutes':'분', color: '#dc2626' }, ticks: { color: '#dc2626' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+          y1: { beginAtZero: true, position: 'right', title: { display: true, text: en?'Count':'횟수', color: '#7c3aed' }, ticks: { color: '#7c3aed', stepSize: 1 }, grid: { display: false } }
+        }
+      }
+    });
+
+    // 2) 도넛: 정시 vs 지각 비율 (전체 합)
+    const totalDaysAll = data.reduce((a, d) => a + d.totalDays, 0);
+    const totalLateCnt = data.reduce((a, d) => a + d.lateCount, 0);
+    const onTimeCnt = totalDaysAll - totalLateCnt;
+    new Chart(document.getElementById('aw-chart2').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: [en?'On time':'정시 출근', en?'Late':'지각', en?'Absent':'미출근'],
+        datasets: [{
+          data: [onTimeCnt, totalLateCnt, Math.max(0, data.length * 7 - totalDaysAll)],  // 가정: 1주일 기준
+          backgroundColor: ['#10b981','#f59e0b','#94a3b8'],
+          borderColor: '#fff', borderWidth: 3
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 12, weight: 600 }, padding: 14, boxWidth: 14 } },
+          title: { display: true, text: en?'Overall On-time Rate':'전체 정시 출근율', font: { size: 14, weight: 700 }, padding: { top: 4, bottom: 14 } },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont:{size:12,weight:700}, bodyFont:{size:12}, padding:10, cornerRadius:8 }
+        },
+        cutout: '60%'
+      }
+    });
+
+    // 3) 가로 막대: 정시 출근율 % 랭킹 (모든 강사)
+    const sortedByOnTime = [...data].sort((a,b) => b.onTimePct - a.onTimePct);
+    new Chart(document.getElementById('aw-chart3').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: sortedByOnTime.map(d => d.name),
+        datasets: [{
+          label: en?'On-time rate (%)':'정시 출근율 (%)',
+          data: sortedByOnTime.map(d => d.onTimePct),
+          backgroundColor: sortedByOnTime.map(d => {
+            if (d.onTimePct >= 95) return 'rgba(34,197,94,0.85)';
+            if (d.onTimePct >= 80) return 'rgba(59,130,246,0.85)';
+            if (d.onTimePct >= 60) return 'rgba(245,158,11,0.85)';
+            return 'rgba(239,68,68,0.85)';
+          }),
+          borderColor: sortedByOnTime.map(d => {
+            if (d.onTimePct >= 95) return '#15803d';
+            if (d.onTimePct >= 80) return '#1d4ed8';
+            if (d.onTimePct >= 60) return '#d97706';
+            return '#b91c1c';
+          }),
+          borderWidth: 1.5,
+          borderRadius: 4,
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          title: { display: true, text: en?'On-time Rate Ranking':'강사별 정시 출근율 랭킹', font: { size: 14, weight: 700 }, padding: { top: 4, bottom: 14 } },
+          tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', titleFont:{size:12,weight:700}, bodyFont:{size:12}, padding:10, cornerRadius:8,
+            callbacks: { label: ctx => ' ' + ctx.parsed.x + '%' } }
+        },
+        scales: {
+          x: { beginAtZero: true, max: 100, ticks: { callback: v => v + '%', font: { size: 11 } }, grid: { color: 'rgba(0,0,0,0.04)' } },
+          y: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } }
+        }
       }
     });
   }
