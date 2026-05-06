@@ -2382,10 +2382,16 @@
   <div class="menu-body">
 
     <!-- 도움말 -->
-    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:12px;line-height:1.6"
-         data-ko="💡 지사·대리점·SLP·강사·학생·교사 정산을 한 화면에서 — 검색·정렬·엑셀 다운로드 모두 지원."
-         data-en="💡 Branch · Agency · SLP · Teacher · Student · Faculty settlements in one place — search, sort, Excel export.">
-      💡 지사·대리점·SLP·강사·학생·교사 정산을 한 화면에서 — 검색·정렬·엑셀 다운로드 모두 지원.
+    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:12px;line-height:1.7">
+      <div data-ko="💡 지사·대리점·SLP·강사·학생·관리자 정산을 한 화면에서 — 검색·정렬·엑셀 다운로드 모두 지원." data-en="💡 Branch · Agency · SLP · Instructor · Student · Admin settlements in one place — search, sort, Excel export.">💡 지사·대리점·SLP·강사·학생·관리자 정산을 한 화면에서.</div>
+      <div style="margin-top:6px;font-size:11px;color:#475569">
+        <span style="display:inline-block;padding:2px 8px;background:#dbeafe;color:#1e40af;border-radius:10px;margin-right:6px;font-weight:700">👨‍🏫 강사 / Instructor</span>
+        <span data-ko="= 학생을 직접 가르치는 사람" data-en="= staff who teach students directly">= 학생을 직접 가르치는 사람</span>
+      </div>
+      <div style="margin-top:4px;font-size:11px;color:#475569">
+        <span style="display:inline-block;padding:2px 8px;background:#fef3c7;color:#92400e;border-radius:10px;margin-right:6px;font-weight:700">🧑‍💼 관리자 / Admin</span>
+        <span data-ko="= 본사 직원, 지사장, 학습 컨설턴트 등 운영·관리 담당" data-en="= HQ staff, branch managers, learning consultants — operations and management">= 본사 직원, 지사장, 학습 컨설턴트 등 운영·관리 담당</span>
+      </div>
     </div>
 
     <!-- Tab 메뉴 (11개) -->
@@ -13674,11 +13680,11 @@ button.chip:hover,
     { id:'slp_aid',    ko:'💵 SLP (지원금)',      en:'💵 SLP (Subsidy)' },
     { id:'slp_royalty', ko:'👑 SLP (본사 로열티)', en:'👑 SLP (HQ Royalty)' },
     { id:'slp_income', ko:'💰 SLP 수입현황',     en:'💰 SLP Income' },
-    { id:'teacher',   ko:'👨‍🏫 강사별 정산',     en:'👨‍🏫 By Teacher' },
+    { id:'teacher',   ko:'👨‍🏫 강사별 정산 (가르치는 사람)',  en:'👨‍🏫 Instructors (teaching staff)' },
     { id:'hq_revenue', ko:'🏢 본사 매출 통계',  en:'🏢 HQ Revenue' },
     { id:'student_income', ko:'👨‍🎓 학생수입 통계', en:'👨‍🎓 Student Income' },
     { id:'branch_income', ko:'🏬 지사수입 통계', en:'🏬 Branch Income' },
-    { id:'faculty_income', ko:'🎓 교사수입 통계', en:'🎓 Faculty Income' },
+    { id:'faculty_income', ko:'🧑‍💼 관리자수입 통계 (운영진)', en:'🧑‍💼 Admin Income (managers)' },
   ];
   let _ssActiveTab = 'branch';
 
@@ -13813,16 +13819,20 @@ button.chip:hover,
     { rank:7, branch:'미소에듀지사', students:62, teachers:5, revenue:21936968, settled:13650310, net:8286658 },
     { rank:8, branch:'캐피 제주', students:48, teachers:4, revenue:15292265, settled:9489938, net:5802327 },
   ];
-  // 11) 교사수입 통계 (full-time staff)
+  // 11) 교사수입 통계 (full-time staff) — 매출·인건비·이익·이익률 추가
+  //   매출: students × 350,000 (월평균 학생당 결제) — 본사 직원은 0 (cost center)
+  //   인건비: salary + bonus (회사 부담)
+  //   이익: revenue - cost (음수면 cost center 의미)
+  //   이익률: profit / revenue × 100, revenue 0 이면 N/A
   const SEED_FACULTY = [
-    { rank:1, name:'정우영', dept:'본사 운영팀', students:0, classes:0, salary:5500000, bonus:1200000, tax:837000, net:5863000 },
-    { rank:2, name:'김재무', dept:'본사 회계팀', students:0, classes:0, salary:5200000, bonus:800000, tax:744000, net:5256000 },
-    { rank:3, name:'박운영', dept:'본사 운영팀', students:0, classes:0, salary:4800000, bonus:600000, tax:680000, net:4720000 },
-    { rank:4, name:'이지점', dept:'부산 지사', students:65, classes:280, salary:4500000, bonus:550000, tax:625000, net:4425000 },
-    { rank:5, name:'최지점', dept:'대구 지사', students:58, classes:248, salary:4300000, bonus:480000, tax:594000, net:4186000 },
-    { rank:6, name:'정지점', dept:'인천 지사', students:52, classes:225, salary:4100000, bonus:420000, tax:560000, net:3960000 },
-    { rank:7, name:'한매니저', dept:'마케팅팀', students:0, classes:0, salary:3800000, bonus:350000, tax:512000, net:3638000 },
-    { rank:8, name:'송컨설턴트', dept:'학습 컨설팅', students:35, classes:142, salary:3500000, bonus:300000, tax:472000, net:3328000 },
+    { rank:1, name:'정우영', dept:'본사 운영팀', students:0, classes:0, revenue:0, cost:6700000, profit:-6700000, margin:null, salary:5500000, bonus:1200000, tax:837000, net:5863000 },
+    { rank:2, name:'김재무', dept:'본사 회계팀', students:0, classes:0, revenue:0, cost:6000000, profit:-6000000, margin:null, salary:5200000, bonus:800000, tax:744000, net:5256000 },
+    { rank:3, name:'박운영', dept:'본사 운영팀', students:0, classes:0, revenue:0, cost:5400000, profit:-5400000, margin:null, salary:4800000, bonus:600000, tax:680000, net:4720000 },
+    { rank:4, name:'이지점', dept:'부산 지사', students:65, classes:280, revenue:22750000, cost:5050000, profit:17700000, margin:77.8, salary:4500000, bonus:550000, tax:625000, net:4425000 },
+    { rank:5, name:'최지점', dept:'대구 지사', students:58, classes:248, revenue:20300000, cost:4780000, profit:15520000, margin:76.5, salary:4300000, bonus:480000, tax:594000, net:4186000 },
+    { rank:6, name:'정지점', dept:'인천 지사', students:52, classes:225, revenue:18200000, cost:4520000, profit:13680000, margin:75.2, salary:4100000, bonus:420000, tax:560000, net:3960000 },
+    { rank:7, name:'한매니저', dept:'마케팅팀', students:0, classes:0, revenue:0, cost:4150000, profit:-4150000, margin:null, salary:3800000, bonus:350000, tax:512000, net:3638000 },
+    { rank:8, name:'송컨설턴트', dept:'학습 컨설팅', students:35, classes:142, revenue:12250000, cost:3800000, profit:8450000, margin:69.0, salary:3500000, bonus:300000, tax:472000, net:3328000 },
   ];
 
   // ━━━━━━━━━━ 컬럼 정의 (각 탭) ━━━━━━━━━━
@@ -13891,7 +13901,10 @@ button.chip:hover,
       { key:'salary', ko:'정산액', en:'Salary', type:'currency', color:'#3b82f6' },
       { key:'bonus', ko:'보너스', en:'Bonus', type:'currency', color:'#10b981' },
       { key:'deduct', ko:'차감', en:'Deduction', type:'currency', color:'#ef4444' },
-      { key:'final', ko:'실수령', en:'Net Pay', type:'currency', color:'#16a34a', bold:true },
+      { key:'final', ko:'강사 실수령', en:'Teacher Net', type:'currency', color:'#16a34a' },
+      // 회사 관점 이익 = fee(매출) - final(강사에게 지급) — 자동 계산
+      { key:'_companyProfit', ko:'회사 이익', en:'Co. Profit', type:'computedProfit', color:'#7c3aed', bold:true },
+      { key:'_profitMargin', ko:'이익률', en:'Margin', type:'computedMargin' },
     ],
     hq_revenue: [
       { key:'month', ko:'월', en:'Month', type:'text', bold:true },
@@ -13926,8 +13939,14 @@ button.chip:hover,
       { key:'rank', ko:'순위', en:'Rank', type:'rank' },
       { key:'name', ko:'성명', en:'Name', type:'text', bold:true },
       { key:'dept', ko:'부서', en:'Department', type:'text' },
-      { key:'students', ko:'담당학생', en:'Students', type:'number' },
-      { key:'classes', ko:'수업수', en:'Classes', type:'number' },
+      { key:'students', ko:'관리 학생', en:'Managed Students', type:'number' },
+      { key:'classes', ko:'관리 수업', en:'Managed Classes', type:'number' },
+      // 매출·인건비·이익·이익률 — 회사 관점
+      { key:'revenue', ko:'매출', en:'Revenue', type:'currency', color:'#dc2626' },
+      { key:'cost', ko:'인건비', en:'Labor Cost', type:'currency', color:'#f59e0b' },
+      { key:'profit', ko:'이익', en:'Profit', type:'currency', color:'#16a34a', bold:true },
+      { key:'margin', ko:'이익률', en:'Margin', type:'marginPct' },
+      // 개인 관점 — 받는 급여
       { key:'salary', ko:'기본급', en:'Salary', type:'currency', color:'#3b82f6' },
       { key:'bonus', ko:'보너스', en:'Bonus', type:'currency', color:'#10b981' },
       { key:'tax', ko:'세금', en:'Tax', type:'currency', color:'#ef4444' },
@@ -13956,7 +13975,7 @@ button.chip:hover,
     hq_revenue:    [['총매출','Total Revenue','total','currency','💰','#dc2626','#fee2e2'], ['B2C','B2C','b2c','currency','👥','#a855f7','#f3e8ff'], ['B2B','B2B','b2b','currency','🏢','#f59e0b','#fef3c7'], ['평균 MoM','Avg MoM','mom_pct','avgPct','📈','#16a34a','#dcfce7']],
     student_income: [['총 결제','Total Paid','total','currency','💰','#dc2626','#fee2e2'], ['총 환불','Total Refund','refund','currency','↩️','#ef4444','#fee2e2'], ['순 결제','Net','net','currency','✨','#16a34a','#dcfce7'], ['학생 수','Students','_count','count','👨‍🎓','#a855f7','#f3e8ff']],
     branch_income: [['총 매출','Total Revenue','revenue','currency','💰','#dc2626','#fee2e2'], ['총 정산','Total Settled','settled','currency','📤','#3b82f6','#dbeafe'], ['총 순수익','Net Profit','net','currency','✨','#16a34a','#dcfce7'], ['지사 수','Branches','_count','count','🏬','#a855f7','#f3e8ff']],
-    faculty_income: [['총 기본급','Total Salary','salary','currency','💰','#3b82f6','#dbeafe'], ['총 보너스','Total Bonus','bonus','currency','🎁','#10b981','#dcfce7'], ['총 세금','Total Tax','tax','currency','📋','#ef4444','#fee2e2'], ['총 실수령','Net Pay','net','currency','✨','#16a34a','#dcfce7']],
+    faculty_income: [['총 매출','Total Revenue','revenue','currency','💰','#dc2626','#fee2e2'], ['총 인건비','Total Labor Cost','cost','currency','💸','#f59e0b','#fef3c7'], ['총 이익','Total Profit','profit','currency','✨','#16a34a','#dcfce7'], ['평균 이익률','Avg Margin','margin','avgMargin','📊','#a855f7','#f3e8ff']],
   };
 
   // 상태 배지 (지원금 상태)
@@ -14014,6 +14033,12 @@ button.chip:hover,
         const sum = rows.reduce((a,r)=>a + (Number(r[key])||0), 0);
         value = rows.length ? (sum / rows.length).toFixed(1) + '%' : '0%';
       }
+      else if (kind === 'avgMargin') {
+        // null margin (revenue=0) 행 제외하고 평균
+        const valid = rows.filter(r => r[key] !== null && r[key] !== undefined);
+        const sum = valid.reduce((a,r)=>a + (Number(r[key])||0), 0);
+        value = valid.length ? (sum / valid.length).toFixed(1) + '%' : 'N/A';
+      }
       else if (kind === 'count') value = rows.length + (isEnSS() ? '' : '개');
       else if (kind === 'pct')   value = (Number(rows[0]?.[key])||0).toFixed(1) + '%';
       else { // currency
@@ -14051,9 +14076,31 @@ button.chip:hover,
       }
       case 'pct':      return '<span style="color:' + (col.color || '#1f2937') + ';font-weight:700;font-variant-numeric:tabular-nums">' + fmtPct(v) + '</span>';
       case 'momPct':   return momBadge(v);
+      case 'marginPct': {
+        if (v === null || v === undefined || v === '') return '<span style="color:#9ca3af;font-size:11px">N/A</span>';
+        const n = Number(v) || 0;
+        const c = n >= 70 ? '#16a34a' : (n >= 50 ? '#3b82f6' : (n >= 30 ? '#f59e0b' : '#dc2626'));
+        const bg = n >= 70 ? '#dcfce7' : (n >= 50 ? '#dbeafe' : (n >= 30 ? '#fef3c7' : '#fee2e2'));
+        return '<span style="display:inline-block;padding:3px 10px;background:' + bg + ';color:' + c + ';border-radius:12px;font-weight:800;font-size:11.5px;font-variant-numeric:tabular-nums">' + n.toFixed(1) + '%</span>';
+      }
       case 'number':   return '<span style="color:#1f2937;font-weight:600;font-variant-numeric:tabular-nums">' + ((Number(v)||0).toLocaleString('ko-KR')) + '</span>';
       case 'badge':    return productBadge(v);
       case 'status':   return statusBadge(v);
+      case 'computedProfit': {
+        const fee = Number(row.fee) || 0;
+        const finalPay = Number(row.final) || 0;
+        const profit = fee - finalPay;
+        return '<span style="color:' + (col.color || '#7c3aed') + ';font-weight:800;font-variant-numeric:tabular-nums">' + (profit < 0 ? '-' : '') + fmtKRW(Math.abs(profit)) + '</span>';
+      }
+      case 'computedMargin': {
+        const fee = Number(row.fee) || 0;
+        const finalPay = Number(row.final) || 0;
+        if (fee === 0) return '<span style="color:#9ca3af;font-size:11px">N/A</span>';
+        const margin = ((fee - finalPay) / fee) * 100;
+        const c = margin >= 50 ? '#16a34a' : (margin >= 30 ? '#3b82f6' : (margin >= 15 ? '#f59e0b' : '#dc2626'));
+        const bg = margin >= 50 ? '#dcfce7' : (margin >= 30 ? '#dbeafe' : (margin >= 15 ? '#fef3c7' : '#fee2e2'));
+        return '<span style="display:inline-block;padding:3px 10px;background:' + bg + ';color:' + c + ';border-radius:12px;font-weight:800;font-size:11.5px">' + margin.toFixed(1) + '%</span>';
+      }
       case 'text':
       default:         return '<span style="color:#1e293b' + (col.bold ? ';font-weight:700' : '') + '">' + escSS(v) + '</span>';
     }
@@ -14132,6 +14179,13 @@ button.chip:hover,
     const aoa = [headers];
     rows.forEach(r => aoa.push(cols.map(c => {
       const v = r[c.key];
+      if (c.type === 'computedProfit') return (Number(r.fee)||0) - (Number(r.final)||0);
+      if (c.type === 'computedMargin') {
+        const fee = Number(r.fee) || 0;
+        if (!fee) return '';
+        return Number((((fee - (Number(r.final)||0)) / fee) * 100).toFixed(1));
+      }
+      if (c.type === 'marginPct') return v == null ? '' : Number(v);
       if (c.type === 'currency') return Number(v) || 0;
       if (c.type === 'number')   return Number(v) || 0;
       if (c.type === 'pct')      return Number(v) || 0;
