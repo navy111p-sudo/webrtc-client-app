@@ -4253,12 +4253,31 @@
     });
     setStyle('B23', { ...valueStyle, fill:{ patternType:'solid', fgColor:{ rgb:'F1F5F9' } } });
 
-    // 🚫 눈금선 제거 (showGridLines: false)
-    ws['!sheetViews'] = [{ showGridLines: false, showRowColHeaders: false }];
+    // 🚫 눈금선 제거 — 다중 안전장치
+    // 1) sheetView 레벨: showGridLines false (Excel 데스크톱 인식)
+    ws['!sheetViews'] = [{ showGridLines: false, showRowColHeaders: true }];
+
+    // 2) 시각적 안전장치: 빈 셀에도 흰 배경 fill 추가 (모든 뷰어에서 격자선 완전 가림)
+    //    A1:Z40 범위 전체를 순회 — 기존 스타일 있는 셀은 건드리지 않고, 비어있는 셀만 흰 fill
+    const whiteFill = { fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } };
+    for (let r = 0; r < 40; r++) {
+      for (let c = 0; c < 26; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) {
+          // 빈 셀 — 흰 fill 만 (값 없음)
+          ws[addr] = { t:'s', v:'', s: whiteFill };
+        } else if (!ws[addr].s || !ws[addr].s.fill) {
+          // 값은 있는데 fill 없는 셀 — 흰 fill 추가
+          ws[addr].s = Object.assign({}, ws[addr].s || {}, { fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } });
+        }
+      }
+    }
+    // 범위를 명시 (없으면 흰 fill 만 한 셀이 무시될 수 있음)
+    ws['!ref'] = 'A1:Z40';
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, en ? 'Minutes' : '회의록');
-    // 🚫 워크북 레벨 기본값도 비활성 (편집기에서 새 시트 추가해도 일관)
+    // 3) 워크북 레벨: 새 시트 추가해도 격자선 비활성
     if (!wb.Workbook) wb.Workbook = {};
     if (!wb.Workbook.Views) wb.Workbook.Views = [];
     wb.Workbook.Views[0] = Object.assign({}, wb.Workbook.Views[0] || {}, { showGridLines: false });
