@@ -9087,6 +9087,10 @@ window.addEventListener('DOMContentLoaded', () => {
         <button type="button" onclick="submitLevelTestSignup()" id="lt-submit" style="width:100%;padding:13px;background:linear-gradient(135deg,#fbbf24,#f59e0b);border:0;border-radius:10px;color:#1a0f08;font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 6px 16px -4px rgba(245,158,11,0.5)">
           ✅ 회원가입 완료 + 레벨테스트 신청
         </button>
+        <!-- 📊 결과보기 보조 버튼 (이미 신청한 경우) -->
+        <button type="button" onclick="window.openLevelTestResults && window.openLevelTestResults()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid rgba(251,191,36,0.5);border-radius:10px;color:#fde68a;font-size:12.5px;font-weight:600;cursor:pointer;transition:all .15s" onmouseover="this.style.background='rgba(251,191,36,0.08)'" onmouseout="this.style.background='transparent'">
+          📊 이미 신청하셨나요? 레벨테스트 결과보기
+        </button>
       </div>
 
       <p style="margin:14px 0 6px;color:#94a3b8;font-size:12px;text-align:center">또는</p>
@@ -9151,6 +9155,27 @@ window.addEventListener('DOMContentLoaded', () => {
         }
         return;
       }
+      // 🔗 학생 홈피 → 관리자 대시보드 결과 자동 연동 (localStorage 공유 키)
+      try {
+        const arr = JSON.parse(localStorage.getItem('mangoi_level_test_results') || '[]');
+        // 데모 점수 — 추후 실 평가 결과로 교체
+        const demoLevel = ['A1','A2','B1','B2','C1'][Math.floor(Math.random()*5)];
+        const demoScore = Math.round((50 + Math.random()*45)*10)/10;
+        arr.unshift({
+          student_name: name,
+          student_user_id: uid,
+          phone: phone,
+          email: email,
+          age: age,
+          level: demoLevel,
+          score: demoScore,
+          tested_at: Date.now(),
+          status: 'pending',  // pending = 신청 접수, scored = 채점 완료
+        });
+        // 최근 200건만 유지
+        localStorage.setItem('mangoi_level_test_results', JSON.stringify(arr.slice(0, 200)));
+      } catch (e) { /* localStorage 미지원 환경 무시 */ }
+
       // 성공 — 가입+신청 완료 화면
       showModal(`
         <h2 style="color:#86efac">🎉 회원가입 + 레벨테스트 신청 완료!</h2>
@@ -9178,6 +9203,70 @@ window.addEventListener('DOMContentLoaded', () => {
   };
 
   function escapeLT(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+
+  // ━━━━━━━━━━ 📊 레벨테스트 결과 조회 모달 ━━━━━━━━━━
+  window.openLevelTestResults = function() {
+    showModal(`
+      <h2>📊 레벨테스트 결과 조회</h2>
+      <p style="color:#cbd5e1">신청 시 입력한 <b style="color:#fde68a">아이디</b>와 <b style="color:#fde68a">이름</b>으로 결과를 확인할 수 있어요.</p>
+      <div class="info-grid" style="margin:14px 0">
+        <div class="info-tile" style="flex:1;min-width:180px">
+          <b>📌 아이디</b>
+          <input id="ltr-uid" type="text" placeholder="가입 시 입력한 아이디" style="width:100%;margin-top:4px;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:13px;outline:none" />
+        </div>
+        <div class="info-tile" style="flex:1;min-width:180px">
+          <b>👤 이름</b>
+          <input id="ltr-name" type="text" placeholder="학생 이름" style="width:100%;margin-top:4px;padding:8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:#fff;font-size:13px;outline:none" />
+        </div>
+      </div>
+      <div id="ltr-result" style="margin:14px 0;min-height:30px"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <button type="button" onclick="window.checkLevelTestResults && window.checkLevelTestResults()" class="info-cta" style="margin:0;text-align:center;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#1a0f08;border:0;cursor:pointer;font-weight:800">🔎 결과 조회</button>
+        <button type="button" onclick="closeInfoModal()" class="info-cta" style="margin:0;text-align:center;background:transparent;border:1px solid rgba(255,255,255,0.2);color:#cbd5e1;cursor:pointer">↩ 닫기</button>
+      </div>
+      <p style="margin-top:14px;color:#94a3b8;font-size:11px;line-height:1.6">
+        ※ 결과는 응시일로부터 영업일 1일 내에 채점되어 표시됩니다.<br>
+        ※ 신청 직후 조회 시 "채점 진행 중"으로 표시될 수 있습니다.
+      </p>
+    `);
+  };
+
+  window.checkLevelTestResults = function() {
+    const $ = (id) => document.getElementById(id);
+    const uid = ($('ltr-uid')?.value || '').trim();
+    const name = ($('ltr-name')?.value || '').trim();
+    const out = $('ltr-result');
+    if (!out) return;
+    if (!uid && !name) {
+      out.innerHTML = '<div style="padding:10px 14px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;color:#fca5a5;font-size:12.5px">⚠️ 아이디 또는 이름을 입력해 주세요.</div>';
+      return;
+    }
+    let arr = [];
+    try { arr = JSON.parse(localStorage.getItem('mangoi_level_test_results') || '[]'); } catch (e) {}
+    const found = arr.filter(r =>
+      (uid && r.student_user_id === uid) ||
+      (name && r.student_name === name)
+    );
+    if (found.length === 0) {
+      out.innerHTML = '<div style="padding:12px 14px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);border-radius:8px;color:#bfdbfe;font-size:12.5px;line-height:1.7">🔍 일치하는 결과가 없습니다.<br><span style="color:#94a3b8;font-size:11.5px">※ 가입 직후라면 영업일 1일 정도 기다려 주세요. 카카오톡 채널로 결과가 발송됩니다.</span></div>';
+      return;
+    }
+    out.innerHTML = '<div style="display:flex;flex-direction:column;gap:8px">' + found.map(r => {
+      const status = r.status === 'scored' ? '<span style="background:#86efac;color:#14532d;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">✅ 채점 완료</span>' : '<span style="background:#fde68a;color:#78350f;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">⏳ 채점 진행 중</span>';
+      const dt = new Date(r.tested_at || Date.now()).toLocaleString('ko-KR');
+      return `<div style="padding:12px 14px;background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.25);border-radius:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <b style="color:#fde68a;font-size:14px">${escapeLT(r.student_name)} (${escapeLT(r.student_user_id||'—')})</b>${status}
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;font-size:12px;color:#e2e8f0">
+          <div><b style="color:#86efac">레벨</b><br>${escapeLT(r.level||'—')}</div>
+          <div><b style="color:#86efac">점수</b><br>${r.score!=null?Number(r.score).toFixed(1):'—'} / 100</div>
+          <div><b style="color:#86efac">응시일</b><br><span style="font-size:11px">${dt}</span></div>
+        </div>
+      </div>`;
+    }).join('') + '</div>';
+  };
+
 
   // ━━━━━━━━━━ 녹화본 복습 모달 ━━━━━━━━━━
   async function showRecordingsModal() {
