@@ -203,6 +203,19 @@ export default {
           // room_id 추출: rec/{roomId}/{...}.webm
           const m = /^rec\/([^\/]+)\//.exec(String(o.key));
           const roomId = (db.room_id) || (m ? m[1] : '-');
+          // 🕒 시간: started_at HH:MM ~ ended_at HH:MM (DB started_at 우선, 없으면 R2 uploaded 사용)
+          const fmtHM = (ms: number) => {
+            if (!ms) return '';
+            const d = new Date(ms);
+            const hh = String(d.getHours()).padStart(2, '0');
+            const mm = String(d.getMinutes()).padStart(2, '0');
+            return hh + ':' + mm;
+          };
+          const sourceStartMs = startMs || (o.uploaded ? new Date(o.uploaded).getTime() : 0);
+          const endedMs = db.ended_at || (sourceStartMs && durMs ? (sourceStartMs + durMs) : 0);
+          const startHM = fmtHM(sourceStartMs);
+          const endHM = fmtHM(endedMs);
+          const timeRange = (startHM && endHM) ? (startHM + '~' + endHM) : startHM;
           return {
             id: db.id || ('r2_' + i),
             date,
@@ -210,6 +223,9 @@ export default {
             teacher: db.teacher_name || db.teacher_id || '정우영',
             topic: '방 ' + roomId + ' — 1:1 영어 회화',
             duration: durStr,
+            time_range: timeRange,
+            started_at_ms: sourceStartMs,
+            ended_at_ms: endedMs,
             size: sizeStr,
             url: '/api/recordings/blob/' + encodeURIComponent(String(o.key)),
             status: db.status || 'completed',
