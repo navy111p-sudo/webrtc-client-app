@@ -1740,14 +1740,14 @@
       .rs-kpi .unit { font-size:11px; font-weight:600; color:#94a3b8; margin-top:3px }
     </style>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 18px;margin-bottom:18px" id="rs-kpi-grid">
-      <div class="rs-kpi"><div class="icon" style="background:#fef3c7;color:#b45309">📂</div><div class="label" data-ko="R2 저장소" data-en="R2 Storage">R2 저장소</div><div class="value" id="rs-r2-size">12.4</div><div class="unit"><span id="rs-r2-files">156</span> <span data-ko="파일 · GB" data-en="files · GB">파일 · GB</span></div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#fef3c7;color:#b45309">📂</div><div class="label" data-ko="R2 저장소 (Cloudflare 객체 저장소)" data-en="R2 Storage (Cloudflare Object Storage)">R2 저장소 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span></div><div class="value" id="rs-r2-size">12.4</div><div class="unit"><span id="rs-r2-files">156</span> <span data-ko="파일 · GB" data-en="files · GB">파일 · GB</span></div></div>
       <div class="rs-kpi"><div class="icon" style="background:#dbeafe;color:#1d4ed8">💿</div><div class="label" data-ko="D1 데이터베이스" data-en="D1 Database">D1 데이터베이스</div><div class="value" id="rs-d1-size">248</div><div class="unit"><span id="rs-d1-tables">12</span> <span data-ko="테이블 · MB" data-en="tables · MB">테이블 · MB</span></div></div>
       <div class="rs-kpi"><div class="icon" style="background:#f3e8ff;color:#7c3aed">🗄️</div><div class="label" data-ko="KV 호출" data-en="KV Operations">KV 호출</div><div class="value" id="rs-kv-ops">1,243</div><div class="unit" data-ko="회 / 일" data-en="ops / day">회 / 일</div></div>
       <div class="rs-kpi"><div class="icon" style="background:#dcfce7;color:#15803d">💰</div><div class="label" data-ko="월 예상 비용" data-en="Monthly Estimate">월 예상 비용</div><div class="value" id="rs-cost">₩4,820</div><div class="unit" data-ko="청구액 (USD $3.2)" data-en="Billing (USD $3.2)">청구액 (USD $3.2)</div></div>
     </div>
     <div id="rs-diag-result-wrap" style="margin:0 18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;min-height:40px">
       <span style="font-size:14px">📋</span>
-      <span data-ko="진단 결과:" data-en="Diagnostic:">진단 결과:</span>
+      <span data-ko="R2 (Cloudflare 객체 저장소) 진단 결과:" data-en="R2 (Cloudflare Object Storage) Diagnostic:">R2 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span> 진단 결과:</span>
       <span id="test-r2-result" style="color:#94a3b8;font-style:italic" data-ko="우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다." data-en="Click [Diagnose] above to run R2 binding + R/W test.">우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다.</span>
     </div>
     <div id="storage-grid" style="display:none"></div>
@@ -9161,8 +9161,8 @@ async function testR2() {
       const recCount = (d.recordingFiles || []).length;
       el.style.color = '#22c55e';
       el.textContent = adminLang==='en'
-        ? '✅ R2 OK! Read/Write OK. Files: ' + recCount
-        : '✅ R2 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
+        ? '✅ R2 (Cloudflare Object Storage) OK! Read/Write OK. Files: ' + recCount
+        : '✅ R2 (Cloudflare 객체 저장소) 연결 성공! 쓰기/읽기 OK. 녹화 파일: ' + recCount + '개';
       if (recCount > 0) {
         el.textContent += ' — ' + d.recordingFiles.map(f => f.key + ' (' + (f.size/1024).toFixed(0) + 'KB)').join(', ');
       }
@@ -14327,20 +14327,4 @@ button.chip:hover,
     if (!wb.Workbook) wb.Workbook = {};
     if (!wb.Workbook.Views) wb.Workbook.Views = [];
     wb.Workbook.Views[0] = { showGridLines: false };
-    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
-  };
-
-  let _ssInited = false;
-  document.getElementById('card-settlement-stats')?.addEventListener('toggle', function() {
-    if (this.open && !_ssInited) {
-      _ssInited = true;
-      initFilters();
-      renderTabs();
-      renderTable();
-    }
-  });
-})();
-</script>
-
-</body>
-</html>
+    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab 
