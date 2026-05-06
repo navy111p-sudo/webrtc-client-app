@@ -9953,9 +9953,9 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
   jumpToMenu(a.dataset.menuId);
 });
 
-// 🥭 Phase 49 — 페이지 진입 시 음성+자막 인사 ("무엇을 도와 드릴까요?")
+// 🎤 대시보드 진입 시 성우 음성 1 회 자동재생 — TTS·버튼 모두 제거, mp3 만
 (function setupAiGreeting() {
-  const showGreeting = () => {
+  const showBubble = () => {
     const lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en' : 'ko';
     const text = lang === 'en' ? 'How can I help you?' : '무엇을 도와 드릴까요?';
     const bubble = document.getElementById('ai-greeting-bubble');
@@ -9963,7 +9963,6 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
     if (bubble && span) {
       span.textContent = text;
       bubble.style.display = 'block';
-      // 8초 후 자동 페이드아웃 (선택사항 — 사용자가 닫기 가능)
       setTimeout(() => {
         if (bubble.style.display !== 'none') {
           bubble.style.transition = 'opacity 0.6s, transform 0.6s';
@@ -9973,112 +9972,57 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
         }
       }, 8000);
     }
-    // TTS 음성 재생 — Web Speech API (브라우저 내장)
-    speakGreeting(text, lang);
   };
 
-  // 🎤 사용자 업로드 MP3 우선 재생, 실패 시 TTS 폴백
-  let _adminGreetAudio = null;
-  const speakGreeting = (text, lang) => {
-    // 1) 한국어일 때: 사용자가 녹음한 mp3 (안녕하세요, 망고아이) 재생
-    if (lang === 'ko') {
-      try {
-        // 진행 중인 TTS 정리
-        if ('speechSynthesis' in window) window.speechSynthesis.cancel();
-        // 이전 audio 정리
-        if (_adminGreetAudio) { try { _adminGreetAudio.pause(); _adminGreetAudio.currentTime = 0; } catch(e){} }
-        _adminGreetAudio = new Audio('/audio/admin-search-hello.mp3');
-        _adminGreetAudio.volume = 0.95;
-        _adminGreetAudio.preload = 'auto';
-        // 재생 실패 시 (autoplay 차단 등) → TTS 로 폴백
-        _adminGreetAudio.addEventListener('error', () => { console.warn('[ai-greeting] mp3 load error → TTS fallback'); _ttsFallback(text, lang); });
-        const p = _adminGreetAudio.play();
-        if (p && typeof p.then === 'function') {
-          p.catch(err => { console.warn('[ai-greeting] mp3 play blocked → TTS fallback:', err.name); _ttsFallback(text, lang); });
-        }
-        return;
-      } catch(e) { console.warn('[ai-greeting] mp3 init error:', e); }
+  // 성우 mp3 만 재생 — 기계음(TTS) 절대 사용 안함
+  let _audio = null;
+  let _played = false;  // 세션 동안 단 1회
+  const playVoice = () => {
+    if (_played) return;
+    _played = true;
+    showBubble();  // 자막은 즉시 표시
+    try {
+      if (_audio) { try { _audio.pause(); _audio.currentTime = 0; } catch(e){} }
+      _audio = new Audio('/audio/admin-search-hello.mp3');
+      _audio.volume = 1.0;
+      _audio.preload = 'auto';
+      // 재생 실패해도 폴백 안함 (사용자 요청: 성우음만)
+      const p = _audio.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          // autoplay 차단됨 — 재시도 가능하도록 _played 해제
+          _played = false;
+          console.info('[greet] autoplay blocked, will retry on user gesture:', err.name);
+        });
+      }
+    } catch(e) {
+      _played = false;
+      console.warn('[greet] mp3 init error:', e);
     }
-    // 2) 영어 또는 mp3 init 실패 시 TTS
-    _ttsFallback(text, lang);
   };
 
-  const _ttsFallback = (text, lang) => {
-    if (!('speechSynthesis' in window)) {
-      console.info('[ai-greeting] TTS not supported');
+  // 1) 페이지 로드 0.6 초 후 자동재생 시도
+  setTimeout(playVoice, 600);
+
+  // 2) 자동재생 차단 시 → 첫 사용자 인터랙션 때 재시도 (성우 mp3 그대로)
+  const onceTrigger = () => {
+    if (_played) {
+      cleanup();
       return;
     }
-    try {
-      window.speechSynthesis.cancel();
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.lang = lang === 'en' ? 'en-US' : 'ko-KR';
-      utt.rate = 1.0;
-      utt.pitch = 1.05;
-      utt.volume = 0.85;
-      const voices = window.speechSynthesis.getVoices();
-      if (voices && voices.length) {
-        const target = utt.lang.split('-')[0];
-        const matched = voices.find(v => v.lang.startsWith(target));
-        if (matched) utt.voice = matched;
-      }
-      window.speechSynthesis.speak(utt);
-    } catch (e) {
-      console.warn('[ai-greeting] TTS error:', e);
-    }
+    playVoice();
+    if (_played) cleanup();
   };
-
-  // 🎤 인사: 매번 대시보드 진입 시 자동 재생
-  //   1) 페이지 로드 직후 자동재생 시도 (Chrome MEI 점수 높으면 통과)
-  //   2) 자동재생 차단 시 → 첫 사용자 인터랙션(click/key/touch/scroll) 때 재생
-  //   3) 우상단에 🔊 수동 재생 버튼도 노출 (언제든 다시 들을 수 있게)
-  if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.addEventListener('voiceschanged', () => {}, { once: true });
+  function cleanup() {
+    document.removeEventListener('click', onceTrigger, { capture: true });
+    document.removeEventListener('keydown', onceTrigger, { capture: true });
+    document.removeEventListener('touchstart', onceTrigger, { capture: true });
+    document.removeEventListener('scroll', onceTrigger, { capture: true });
   }
-
-  let _greeted = false;
-  const playOnce = () => {
-    if (_greeted) return;
-    _greeted = true;
-    showGreeting();
-    document.removeEventListener('click', playOnce, { capture: true });
-    document.removeEventListener('keydown', playOnce, { capture: true });
-    document.removeEventListener('touchstart', playOnce, { capture: true });
-    document.removeEventListener('scroll', playOnce, { capture: true });
-    window.removeEventListener('mousemove', playOnce);
-  };
-
-  // 1) 자동재생 즉시 시도 (Chrome MEI / 재방문 사이트)
-  setTimeout(() => {
-    if (_greeted) return;
-    showGreeting();
-    // 만약 mp3 가 차단됐다면 _adminGreetAudio.error 가 발생 → TTS 폴백
-    // 일단 자막은 항상 보임 — 실제 audio 차단되면 다음 사용자 제스처 때 다시 시도
-  }, 600);
-
-  // 2) 어떤 인터랙션이든 첫 발생 시 다시 시도 (자동재생 실패 대비)
-  document.addEventListener('click', playOnce, { capture: true });
-  document.addEventListener('keydown', playOnce, { capture: true });
-  document.addEventListener('touchstart', playOnce, { capture: true });
-  document.addEventListener('scroll', playOnce, { capture: true, passive: true });
-  window.addEventListener('mousemove', playOnce, { once: true });
-
-  // 3) 수동 재생 버튼 — 우하단 floating 작은 스피커 아이콘
-  setTimeout(() => {
-    if (document.getElementById('greet-replay-btn')) return;
-    const btn = document.createElement('button');
-    btn.id = 'greet-replay-btn';
-    btn.title = '🔊 망고아이 인사 다시 듣기';
-    btn.innerHTML = '🔊';
-    btn.style.cssText = 'position:fixed;right:18px;bottom:78px;z-index:9990;width:42px;height:42px;border-radius:50%;border:0;background:linear-gradient(135deg,#fbbf24,#f59e0b);color:#fff;font-size:20px;cursor:pointer;box-shadow:0 4px 14px -2px rgba(245,158,11,0.5);transition:all .2s';
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      _greeted = false;  // 강제로 다시 재생
-      showGreeting();
-    });
-    btn.addEventListener('mouseover', () => { btn.style.transform = 'scale(1.1) rotate(-10deg)'; });
-    btn.addEventListener('mouseout',  () => { btn.style.transform = ''; });
-    document.body.appendChild(btn);
-  }, 1500);
+  document.addEventListener('click', onceTrigger, { capture: true });
+  document.addEventListener('keydown', onceTrigger, { capture: true });
+  document.addEventListener('touchstart', onceTrigger, { capture: true });
+  document.addEventListener('scroll', onceTrigger, { capture: true, passive: true });
 })();
 
 // 페이지 로드 시 메뉴 인덱스 빌드 + 통합 색인 비동기로 빌드
@@ -14440,3 +14384,20 @@ button.chip:hover,
     });
     // Body styling
     for (let i = 2; i <= aoa.length; i++) {
+      cols.forEach((c, ci) => {
+        const addr = (ci < 26 ? String.fromCharCode(65+ci) : 'A'+String.fromCharCode(65+ci-26)) + i;
+        if (!ws[addr]) ws[addr] = { t:'s', v:'' };
+        const align = (c.type === 'currency' || c.type === 'number' || c.type === 'pct' || c.type === 'momPct') ? 'right' : 'center';
+        const bg = (i % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
+        const fontColor = c.type === 'currency' && Number(rows[i-2][c.key]) < 0 ? 'DC2626' : '1F2937';
+        ws[addr].s = { font:{ sz:10, color:{ rgb: fontColor }, bold: c.bold }, fill:{ patternType:'solid', fgColor:{ rgb: bg } }, alignment:{ horizontal: align, vertical:'center', indent: align === 'left' ? 1 : 0 } };
+      });
+    }
+    ws['!sheetViews'] = [{ showGridLines: false }];
+    const lastRow = aoa.length + 5;
+    for (let r = 0; r < lastRow; r++) for (let c = 0; c < 15; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) ws[addr] = { t:'s', v:'', s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } } };
+    }
+    ws['!ref'] = 'A1:O' + lastRow;
+    ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
