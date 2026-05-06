@@ -4491,6 +4491,8 @@ function toggleAdminLang() {
   loadRecordings();
   loadRetention();
   loadActiveRooms();
+  // 권한 매트릭스 한/영 즉시 갱신
+  if (typeof renderPermMatrix === 'function') { try { renderPermMatrix(); } catch(e){} }
   // Phase 8 v2 동적 갱신
   if (typeof renderPayrollTable === 'function' && _lastPayrollRows && _lastPayrollRows.length > 0) renderPayrollTable();
   if (typeof refreshPayrollSummary === 'function') refreshPayrollSummary();
@@ -10834,40 +10836,40 @@ window.rebuildGlobalSearchIndex = function() {
   const ROLE_KEYS = ['hq','branch','agency','parent','student'];
   // 기능 그룹 → 각 행
   const PERM_FEATURES = [
-    { group: '🏠 대시보드', items: [
-      { id: 'dashboard',     name: '메인 대시보드',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'✅', student:'✅' } },
-      { id: 'realtime_class', name: '실시간 수업 현황',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+    { group_ko: '🏠 대시보드', group_en: '🏠 Dashboard', items: [
+      { id: 'dashboard',     name_ko: '메인 대시보드',     name_en: 'Main Dashboard',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'✅', student:'✅' } },
+      { id: 'realtime_class', name_ko: '실시간 수업 현황',  name_en: 'Live Class Status',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
     ]},
-    { group: '👨‍🎓 학생 관리', items: [
-      { id: 'students_list',   name: '학생 목록·드릴다운',     def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
-      { id: 'students_self',   name: '내 학습 정보 조회',     def: { hq:'✅', branch:'✅', agency:'❌', parent:'✅', student:'✅' } },
-      { id: 'students_eval',   name: '평가서 작성·수정',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'enrollment',      name: '수강신청 관리',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'👁️', student:'👁️' } },
+    { group_ko: '👨‍🎓 학생 관리', group_en: '👨‍🎓 Student Management', items: [
+      { id: 'students_list',   name_ko: '학생 목록·드릴다운', name_en: 'Student List · Drilldown',  def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'students_self',   name_ko: '내 학습 정보 조회',  name_en: 'My Learning Info',          def: { hq:'✅', branch:'✅', agency:'❌', parent:'✅', student:'✅' } },
+      { id: 'students_eval',   name_ko: '평가서 작성·수정',   name_en: 'Evaluation Create · Edit',  def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'enrollment',      name_ko: '수강신청 관리',      name_en: 'Enrollment Management',     def: { hq:'✅', branch:'✅', agency:'✅', parent:'👁️', student:'👁️' } },
     ]},
-    { group: '🧑‍🏫 강사 관리', items: [
-      { id: 'teachers_list',   name: '강사 목록·평가',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'teacher_payroll', name: '강사 급여·정산',        def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+    { group_ko: '🧑‍🏫 강사 관리', group_en: '🧑‍🏫 Teacher Management', items: [
+      { id: 'teachers_list',   name_ko: '강사 목록·평가',     name_en: 'Teacher List · Evaluation', def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'teacher_payroll', name_ko: '강사 급여·정산',     name_en: 'Teacher Payroll · Settle',  def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
     ]},
-    { group: '💰 회계 관리', items: [
-      { id: 'student_payments', name: '학생 결제 내역',         def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
-      { id: 'corpcard',         name: '법인카드 사용내역',     def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'financials',       name: '손익·재무제표',         def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'refunds',          name: '환불·취소 처리',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'accounting_reports', name: '회계 리포트 다운로드', def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+    { group_ko: '💰 회계 관리', group_en: '💰 Accounting', items: [
+      { id: 'student_payments', name_ko: '학생 결제 내역',     name_en: 'Student Payment History',   def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'corpcard',         name_ko: '법인카드 사용내역', name_en: 'Corporate Card Usage',      def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'financials',       name_ko: '손익·재무제표',     name_en: 'P&L · Financial Stmt',      def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'refunds',          name_ko: '환불·취소 처리',    name_en: 'Refund · Cancel',           def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'accounting_reports', name_ko: '회계 리포트 다운로드', name_en: 'Accounting Report Download', def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
     ]},
-    { group: '🎬 콘텐츠·녹화', items: [
-      { id: 'recordings_view', name: '수업 녹화본 조회',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'✅', student:'✅' } },
-      { id: 'textbooks',       name: '교재 콘텐츠 관리',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+    { group_ko: '🎬 콘텐츠·녹화', group_en: '🎬 Content · Recording', items: [
+      { id: 'recordings_view', name_ko: '수업 녹화본 조회',   name_en: 'Class Recordings View',     def: { hq:'✅', branch:'✅', agency:'👁️', parent:'✅', student:'✅' } },
+      { id: 'textbooks',       name_ko: '교재 콘텐츠 관리',   name_en: 'Textbook Content Mgmt',     def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
     ]},
-    { group: '📢 운영', items: [
-      { id: 'community',       name: '커뮤니티(공지) 작성',   def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
-      { id: 'inquiries',       name: '신규상담 처리',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'❌', student:'❌' } },
-      { id: 'kakao_blast',     name: '카톡 공지 발송',         def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+    { group_ko: '📢 운영', group_en: '📢 Operations', items: [
+      { id: 'community',       name_ko: '커뮤니티(공지) 작성', name_en: 'Community / Notice',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+      { id: 'inquiries',       name_ko: '신규상담 처리',       name_en: 'New Inquiries',             def: { hq:'✅', branch:'✅', agency:'✅', parent:'❌', student:'❌' } },
+      { id: 'kakao_blast',     name_ko: '카톡 공지 발송',      name_en: 'KakaoTalk Broadcast',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
     ]},
-    { group: '🔐 시스템', items: [
-      { id: 'permissions',     name: '권한 설정',              def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'audit_log',       name: '감사 로그 조회',         def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'franchise_mgmt',  name: '가맹점·지사 관리',       def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+    { group_ko: '🔐 시스템', group_en: '🔐 System', items: [
+      { id: 'permissions',     name_ko: '권한 설정',           name_en: 'Permission Settings',       def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'audit_log',       name_ko: '감사 로그 조회',      name_en: 'Audit Log View',            def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'franchise_mgmt',  name_ko: '가맹점·지사 관리',    name_en: 'Franchise · Branch Mgmt',   def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
     ]},
   ];
 
@@ -10897,16 +10899,20 @@ window.rebuildGlobalSearchIndex = function() {
     if (!_permMatrix) _permMatrix = loadPermMatrix();
     const tbody = document.getElementById('role-perm-rows');
     if (!tbody) return;
+    const en = (typeof adminLang !== 'undefined' && adminLang === 'en');
+    const tip = en ? 'Click to cycle ✅ → 👁️ → ❌' : '클릭하여 ✅ → 👁️ → ❌ 순환';
     let html = '';
     PERM_FEATURES.forEach(g => {
-      html += `<tr><td colspan="6" style="background:#f9fafb;padding:8px 12px;font-weight:800;font-size:11.5px;color:#374151;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;letter-spacing:0.3px">${g.group}</td></tr>`;
+      const groupLabel = en ? (g.group_en || g.group_ko || g.group || '') : (g.group_ko || g.group_en || g.group || '');
+      html += `<tr><td colspan="6" style="background:#f9fafb;padding:8px 12px;font-weight:800;font-size:11.5px;color:#374151;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;letter-spacing:0.3px">${groupLabel}</td></tr>`;
       g.items.forEach(it => {
+        const itemName = en ? (it.name_en || it.name_ko || it.name || '') : (it.name_ko || it.name_en || it.name || '');
         const state = _permMatrix[it.id] || it.def;
         html += `<tr style="border-bottom:1px solid #f3f4f6">
-          <td style="padding:8px 12px;color:#374151">${it.name}</td>` +
+          <td style="padding:8px 12px;color:#374151">${itemName}</td>` +
           ROLE_KEYS.map(r => {
             const cur = state[r] || '❌';
-            return `<td style="padding:6px 8px;text-align:center"><button onclick="permCycle('${it.id}','${r}')" class="perm-cell" style="width:42px;height:30px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s" title="클릭하여 ✅ → 👁️ → ❌ 순환">${cur}</button></td>`;
+            return `<td style="padding:6px 8px;text-align:center"><button onclick="permCycle('${it.id}','${r}')" class="perm-cell" style="width:42px;height:30px;border:1px solid #e5e7eb;background:#fff;border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s" title="${tip}">${cur}</button></td>`;
           }).join('') +
         `</tr>`;
       });
