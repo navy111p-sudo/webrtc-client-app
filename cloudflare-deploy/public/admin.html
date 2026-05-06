@@ -1400,6 +1400,12 @@
     </div>
     <div id="admin-sidebar-list"></div>
     <div id="sidebar-search-empty" style="display:none;padding:20px 10px;text-align:center;color:#9ca3af;font-size:12px">검색 결과가 없습니다.</div>
+
+    <!-- 📁 하위메뉴 섹션 (가나다 메뉴 인덱스에 포함되지 않는 별도 카테고리) -->
+    <div class="sidebar-submenu" id="admin-sidebar-submenu" style="margin-top:14px;padding-top:12px;border-top:1px dashed #e5e7eb">
+      <h4 data-ko-html="📁 하위메뉴 <span style='font-size:11px;color:#9ca3af;font-weight:400'>(상세 자료)</span>" data-en-html="📁 Sub-menu <span style='font-size:11px;color:#9ca3af;font-weight:400'>(Details)</span>" style="margin:0 0 6px;font-size:12px">📁 하위메뉴 <span style="font-size:11px;color:#9ca3af;font-weight:400">(상세 자료)</span></h4>
+      <a href="#card-meeting-minutes" class="sidebar-item submenu-item" data-ko="📑 회의록" data-en="📑 Meeting Minutes" style="background:rgba(99,102,241,0.05);border-left:3px solid #6366f1">📑 회의록</a>
+    </div>
     <style>
       #sidebar-search:focus { border-color:#fbbf24; box-shadow: 0 0 0 3px rgba(251,191,36,0.15); }
       #admin-sidebar-list .sidebar-item.search-hidden { display:none !important; }
@@ -3867,6 +3873,108 @@
          data-ko="💡 클릭만으로 회의록 작성 — 주제·작성자·참석자를 미리 등록된 목록에서 선택하고, 컬러 PDF·Excel 로 즉시 내보낼 수 있어요."
          data-en="💡 Click-only minutes — pick subject, author and attendees from preset lists, then export as colorful PDF or Excel.">
     </div>
+
+    <!-- 📊 이번 달 회의록 통계 (자동 집계) -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px">
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #bfdbfe;border-radius:10px;padding:11px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:#1e40af;letter-spacing:.3px"><span data-ko="📆 이번 달 회의" data-en="📆 Meetings This Month">📆 이번 달 회의</span></div>
+        <div style="font-size:20px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.1;margin-top:3px"><span id="mm-stat-count">12</span><span style="font-size:11px;font-weight:600;color:#64748b;margin-left:4px" data-ko="건" data-en="meetings">건</span></div>
+      </div>
+      <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #bbf7d0;border-radius:10px;padding:11px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:#166534;letter-spacing:.3px"><span data-ko="👥 평균 참석" data-en="👥 Avg Attendees">👥 평균 참석</span></div>
+        <div style="font-size:20px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.1;margin-top:3px"><span id="mm-stat-avg-attend">8.4</span><span style="font-size:11px;font-weight:600;color:#64748b;margin-left:4px" data-ko="명" data-en="people">명</span></div>
+      </div>
+      <div style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fed7aa;border-radius:10px;padding:11px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:#9a3412;letter-spacing:.3px"><span data-ko="⏱️ 평균 시간" data-en="⏱️ Avg Duration">⏱️ 평균 시간</span></div>
+        <div style="font-size:20px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.1;margin-top:3px"><span id="mm-stat-avg-min">42</span><span style="font-size:11px;font-weight:600;color:#64748b;margin-left:4px" data-ko="분" data-en="min">분</span></div>
+      </div>
+      <div style="background:linear-gradient(135deg,#faf5ff,#f3e8ff);border:1px solid #e9d5ff;border-radius:10px;padding:11px 14px">
+        <div style="font-size:10.5px;font-weight:700;color:#6b21a8;letter-spacing:.3px"><span data-ko="🎯 미완 액션" data-en="🎯 Open Actions">🎯 미완 액션</span></div>
+        <div style="font-size:20px;font-weight:900;color:#0f172a;font-variant-numeric:tabular-nums;line-height:1.1;margin-top:3px"><span id="mm-stat-open-actions">7</span><span style="font-size:11px;font-weight:600;color:#64748b;margin-left:4px" data-ko="건" data-en="items">건</span></div>
+      </div>
+    </div>
+
+    <!-- 🚀 빠른 시작 템플릿 — 클릭 시 일자/주제/참석자 자동 채움 -->
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;margin-bottom:14px">
+      <div style="font-size:11.5px;font-weight:700;color:#475569;margin-bottom:8px;display:flex;align-items:center;gap:6px">
+        <span data-ko="🚀 빠른 시작 템플릿" data-en="🚀 Quick-start Templates">🚀 빠른 시작 템플릿</span>
+        <span style="font-size:10.5px;font-weight:500;color:#94a3b8" data-ko="(클릭하면 주제·일자가 자동으로 채워집니다)" data-en="(Click to auto-fill subject and date)">(클릭하면 주제·일자가 자동으로 채워집니다)</span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='주간 정기 운영회의';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="📅 주간 정기 운영회의" data-en="📅 Weekly Operations">📅 주간 정기 운영회의</button>
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='강사 평가·피드백 회의';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="🧑‍🏫 강사 평가·피드백" data-en="🧑‍🏫 Teacher Review">🧑‍🏫 강사 평가·피드백</button>
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='가맹점·지사 운영회의';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="🏢 가맹점·지사 운영" data-en="🏢 Franchise Ops">🏢 가맹점·지사 운영</button>
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='학부모 간담회';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="👨‍👩‍👧 학부모 간담회" data-en="👨‍👩‍👧 Parent Forum">👨‍👩‍👧 학부모 간담회</button>
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='이사회 / 경영 의사결정';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#dc2626,#991b1b);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="🏛️ 이사회·경영 결정" data-en="🏛️ Board / Exec">🏛️ 이사회·경영 결정</button>
+        <button type="button" class="mm-tpl" onclick="(function(){var s=document.getElementById('mm-subject');if(s){s.value='커리큘럼·교재 검토';s.focus();} var d=document.getElementById('mm-date');if(d&&!d.value){d.valueAsDate=new Date();}})()" style="padding:6px 12px;font-size:12px;background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;border:0;border-radius:18px;cursor:pointer;font-weight:600" data-ko="📚 커리큘럼·교재 검토" data-en="📚 Curriculum Review">📚 커리큘럼·교재 검토</button>
+      </div>
+    </div>
+
+    <!-- ✅ 회의 진행 체크리스트 (회의 전 / 중 / 후) -->
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;margin-bottom:14px">
+      <summary style="padding:10px 14px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;list-style:none">
+        <span data-ko="✅ 회의 진행 체크리스트" data-en="✅ Meeting Checklist">✅ 회의 진행 체크리스트</span>
+        <span style="font-size:10.5px;font-weight:500;color:#94a3b8;margin-left:6px" data-ko="(펼치기)" data-en="(expand)">(펼치기)</span>
+      </summary>
+      <div style="padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#1e40af;margin-bottom:6px;border-bottom:2px solid #bfdbfe;padding-bottom:4px"><span data-ko="🟦 회의 전" data-en="🟦 Before">🟦 회의 전</span></div>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="안건 미리 공유 (24시간 전)" data-en="Share agenda 24h ahead">안건 미리 공유 (24시간 전)</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="참석자 일정 확인" data-en="Confirm attendee schedules">참석자 일정 확인</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="화상회의 링크 / 회의실 예약" data-en="Book room / video link">화상회의 링크 / 회의실 예약</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="이전 회의 액션 아이템 진행률 정리" data-en="Review prior action items">이전 회의 액션 아이템 진행률 정리</span></label>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#166534;margin-bottom:6px;border-bottom:2px solid #bbf7d0;padding-bottom:4px"><span data-ko="🟩 회의 중" data-en="🟩 During">🟩 회의 중</span></div>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="시작 시간 정시 준수" data-en="Start on time">시작 시간 정시 준수</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="안건별 시간 배분 (예: 5/15/15/10분)" data-en="Time-box agenda items">안건별 시간 배분 (예: 5/15/15/10분)</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="결정사항 즉시 받아쓰기" data-en="Capture decisions live">결정사항 즉시 받아쓰기</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="액션 아이템 — 담당자·기한 명시" data-en="Assign owner + deadline per action">액션 아이템 — 담당자·기한 명시</span></label>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#9a3412;margin-bottom:6px;border-bottom:2px solid #fed7aa;padding-bottom:4px"><span data-ko="🟧 회의 후" data-en="🟧 After">🟧 회의 후</span></div>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="회의록 PDF 변환 + 참석자 공유 (24h)" data-en="Share PDF within 24h">회의록 PDF 변환 + 참석자 공유 (24h)</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="액션 아이템을 담당자 캘린더로 등록" data-en="Add actions to owners' calendars">액션 아이템을 담당자 캘린더로 등록</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="다음 회의 일정 확정·공지" data-en="Confirm next meeting date">다음 회의 일정 확정·공지</span></label>
+          <label style="display:block;font-size:12px;color:#374151;margin-bottom:5px"><input type="checkbox" style="margin-right:6px"> <span data-ko="첨부 자료 D1/R2 보관함 업로드" data-en="Upload attachments to D1/R2">첨부 자료 D1/R2 보관함 업로드</span></label>
+        </div>
+      </div>
+    </details>
+
+    <!-- 📚 회의 자료·용어집 -->
+    <details style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0;margin-bottom:14px">
+      <summary style="padding:10px 14px;font-size:12px;font-weight:700;color:#475569;cursor:pointer;list-style:none">
+        <span data-ko="📚 회의 자료·용어집" data-en="📚 References &amp; Glossary">📚 회의 자료·용어집</span>
+        <span style="font-size:10.5px;font-weight:500;color:#94a3b8;margin-left:6px" data-ko="(펼치기)" data-en="(expand)">(펼치기)</span>
+      </summary>
+      <div style="padding:0 16px 14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;font-size:12px;color:#374151;line-height:1.7">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#1e3a8a;margin-bottom:4px"><span data-ko="🏷️ 자주 쓰는 약어" data-en="🏷️ Common Acronyms">🏷️ 자주 쓰는 약어</span></div>
+          <div><b>HQ</b> — <span data-ko="본사 (Headquarters)" data-en="Headquarters">본사</span></div>
+          <div><b>BR</b> — <span data-ko="지사 (Branch)" data-en="Branch">지사</span></div>
+          <div><b>AG</b> — <span data-ko="대리점 (Agency)" data-en="Agency">대리점</span></div>
+          <div><b>AI</b> — <span data-ko="액션 아이템 (Action Item)" data-en="Action Item">액션 아이템</span></div>
+          <div><b>AOB</b> — <span data-ko="기타 안건 (Any Other Business)" data-en="Any Other Business">기타 안건</span></div>
+          <div><b>RACI</b> — <span data-ko="책임/권한 매트릭스" data-en="Responsibility matrix">책임/권한 매트릭스</span></div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#1e3a8a;margin-bottom:4px"><span data-ko="📋 회의록 표준 항목" data-en="📋 Required Fields">📋 회의록 표준 항목</span></div>
+          <div data-ko="• 일자·시간·장소" data-en="• Date / Time / Location">• 일자·시간·장소</div>
+          <div data-ko="• 주제 + 안건 (목적 명시)" data-en="• Subject + agenda (purpose)">• 주제 + 안건 (목적 명시)</div>
+          <div data-ko="• 참석자·작성자·결재자" data-en="• Attendees / author / approver">• 참석자·작성자·결재자</div>
+          <div data-ko="• 논의 → 결정 → 액션" data-en="• Discussion → Decision → Action">• 논의 → 결정 → 액션</div>
+          <div data-ko="• 다음 회의 일정·장소" data-en="• Next meeting schedule">• 다음 회의 일정·장소</div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:700;color:#1e3a8a;margin-bottom:4px"><span data-ko="🔗 연관 자료 / 정책" data-en="🔗 Related Resources">🔗 연관 자료 / 정책</span></div>
+          <div data-ko="• 망고아이 회의 진행 가이드 v2 (사내 위키)" data-en="• Mango-i Meeting Guide v2 (wiki)">• 망고아이 회의 진행 가이드 v2 (사내 위키)</div>
+          <div data-ko="• 보관기간 — 일반 1년 / 임원 5년" data-en="• Retention — Regular 1y / Exec 5y">• 보관기간 — 일반 1년 / 임원 5년</div>
+          <div data-ko="• 외부 공유 시 마스킹 필수" data-en="• Mask PII before external sharing">• 외부 공유 시 마스킹 필수</div>
+          <div data-ko="• 첨부 파일 — D1 메타 + R2 (객체 저장소)" data-en="• Attachments — D1 meta + R2">• 첨부 파일 — D1 메타 + R2 (객체 저장소)</div>
+        </div>
+      </div>
+    </details>
+
 
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
       <!-- 일시 / 장소 -->
