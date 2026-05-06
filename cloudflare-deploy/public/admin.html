@@ -13901,9 +13901,9 @@ button.chip:hover,
       { key:'salary', ko:'정산액', en:'Salary', type:'currency', color:'#3b82f6' },
       { key:'bonus', ko:'보너스', en:'Bonus', type:'currency', color:'#10b981' },
       { key:'deduct', ko:'차감', en:'Deduction', type:'currency', color:'#ef4444' },
-      { key:'final', ko:'강사 실수령', en:'Teacher Net', type:'currency', color:'#16a34a' },
-      // 회사 관점 이익 = fee(매출) - final(강사에게 지급) — 자동 계산
-      { key:'_companyProfit', ko:'회사 이익', en:'Co. Profit', type:'computedProfit', color:'#7c3aed', bold:true },
+      { key:'final', ko:'실수령', en:'Net Pay', type:'currency', color:'#16a34a' },
+      // 이익 = 총매출(fee) - 총급여(final) — 자동 계산
+      { key:'_companyProfit', ko:'이익', en:'Profit', type:'computedProfit', color:'#7c3aed', bold:true },
       { key:'_profitMargin', ko:'이익률', en:'Margin', type:'computedMargin' },
     ],
     hq_revenue: [
