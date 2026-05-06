@@ -3661,6 +3661,221 @@
 
 </div><!-- /.legacy-cards (Phase 14: 기본 숨김 영역 종료) -->
 
+<!-- ━━━━━━━━━━ 📑 협업 도구 (하위메뉴: 회의록) ━━━━━━━━━━ -->
+<details class="table-card menu-card" id="card-meeting-minutes">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+    <span data-ko="📑 협업 도구 — 회의록" data-en="📑 Collaboration — Meeting Minutes">📑 협업 도구 — 회의록</span>
+    <span id="mm-count" style="font-size:12px;font-weight:400;color:#6b7280;margin-right:32px;">—</span>
+  </summary>
+  <div class="menu-body">
+    <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:12px;line-height:1.6;"
+         data-ko="💡 회의록을 기록하고 검색·다운로드할 수 있습니다. 회의 일시, 참석자, 안건, 논의·결정, 액션아이템, 첨부자료까지 한 화면에서 관리하세요."
+         data-en="💡 Record, search and export meeting minutes. Manage date, attendees, agenda, discussion, decisions, action items and attachments — all in one place.">
+      💡 회의록을 기록하고 검색·다운로드할 수 있습니다.
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:10px">
+        <span data-ko="✏️ 회의록 작성 / 편집" data-en="✏️ Create / Edit Minutes">✏️ 회의록 작성 / 편집</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:10px">
+        <label style="font-size:12px;color:#374151"><span data-ko="📅 회의 일자" data-en="📅 Date">📅 회의 일자</span><input id="mm-date" type="date" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+        <label style="font-size:12px;color:#374151"><span data-ko="🕒 시작 시간" data-en="🕒 Start Time">🕒 시작 시간</span><input id="mm-start" type="time" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+        <label style="font-size:12px;color:#374151"><span data-ko="🕓 종료 시간" data-en="🕓 End Time">🕓 종료 시간</span><input id="mm-end" type="time" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+        <label style="font-size:12px;color:#374151"><span data-ko="📍 장소 / 화상링크" data-en="📍 Location / Link">📍 장소 / 화상링크</span><input id="mm-location" type="text" data-ko-placeholder="회의실 또는 Zoom URL" data-en-placeholder="Room or Zoom URL" placeholder="회의실 또는 Zoom URL" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+      </div>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="📌 회의 주제" data-en="📌 Subject">📌 회의 주제</span><input id="mm-subject" type="text" data-ko-placeholder="예) 4월 정기 운영회의" data-en-placeholder="e.g. April Operations Meeting" placeholder="예) 4월 정기 운영회의" style="width:100%;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;margin-top:2px;font-weight:600" /></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="🪪 작성자" data-en="🪪 Author">🪪 작성자</span><input id="mm-author" type="text" data-ko-placeholder="작성자 이름" data-en-placeholder="Author name" placeholder="작성자 이름" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="👥 참석자 (쉼표로 구분)" data-en="👥 Attendees (comma-separated)">👥 참석자 (쉼표로 구분)</span><input id="mm-attendees" type="text" data-ko-placeholder="홍길동, 김영희, Maria" data-en-placeholder="John Doe, Jane Kim, Maria" placeholder="홍길동, 김영희, Maria" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="📋 안건 (한 줄에 하나씩)" data-en="📋 Agenda (one per line)">📋 안건 (한 줄에 하나씩)</span><textarea id="mm-agenda" rows="3" data-ko-placeholder="1. 신규 등록 학생 현황&#10;2. 강사 평가" data-en-placeholder="1. New enrollment status&#10;2. Teacher evaluations" placeholder="1. 신규 등록 학생 현황" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px;resize:vertical;font-family:inherit"></textarea></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="💬 논의 내용" data-en="💬 Discussion">💬 논의 내용</span><textarea id="mm-discussion" rows="5" data-ko-placeholder="주요 논의 흐름, 발언자별 요약" data-en-placeholder="Discussion flow, summary by speaker" placeholder="주요 논의 흐름" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px;resize:vertical;font-family:inherit;line-height:1.6"></textarea></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="✅ 결정 사항" data-en="✅ Decisions">✅ 결정 사항</span><textarea id="mm-decisions" rows="3" data-ko-placeholder="1. 5월부터 신규 강사 채용" data-en-placeholder="1. Hire new teachers from May" placeholder="1. 5월부터 신규 강사 채용" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px;resize:vertical;font-family:inherit;background:rgba(34,197,94,0.04)"></textarea></label>
+      <label style="font-size:12px;color:#374151;display:block;margin-bottom:8px"><span data-ko="🎯 액션 아이템 (담당자 / 마감일 / 내용)" data-en="🎯 Action Items (assignee / due / item)">🎯 액션 아이템</span><textarea id="mm-actions" rows="4" data-ko-placeholder="홍길동 / 2026-05-15 / 채용공고 게시" data-en-placeholder="John / 2026-05-15 / Post hiring ad" placeholder="홍길동 / 2026-05-15 / 채용공고 게시" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px;resize:vertical;font-family:inherit;background:rgba(251,191,36,0.04)"></textarea></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <label style="font-size:12px;color:#374151"><span data-ko="🔁 다음 회의 일정" data-en="🔁 Next Meeting">🔁 다음 회의 일정</span><input id="mm-next" type="text" data-ko-placeholder="2026-05-20 14:00 또는 미정" data-en-placeholder="2026-05-20 14:00 or TBD" placeholder="2026-05-20 14:00" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+        <label style="font-size:12px;color:#374151"><span data-ko="📎 첨부 자료" data-en="📎 Attachments">📎 첨부 자료</span><input id="mm-attachments" type="text" data-ko-placeholder="자료 링크, 슬라이드, 사진" data-en-placeholder="Doc links, slides, photos" placeholder="자료 링크" style="width:100%;padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;margin-top:2px" /></label>
+      </div>
+      <input id="mm-edit-id" type="hidden" value="" />
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">
+        <button type="button" onclick="mmSave()" style="padding:7px 14px;font-size:13px;background:#10b981;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600" data-ko="💾 저장" data-en="💾 Save">💾 저장</button>
+        <button type="button" onclick="mmClearForm()" style="padding:7px 14px;font-size:13px;background:#fff;border:1px solid #d1d5db;color:#374151;border-radius:6px;cursor:pointer" data-ko="🆕 새 회의록" data-en="🆕 New">🆕 새 회의록</button>
+        <button type="button" onclick="mmExportCurrent()" style="padding:7px 14px;font-size:13px;background:#fff;border:1px solid #d1d5db;color:#374151;border-radius:6px;cursor:pointer" data-ko="📥 .txt 내보내기" data-en="📥 Export .txt">📥 .txt 내보내기</button>
+        <button type="button" onclick="mmPrint()" style="padding:7px 14px;font-size:13px;background:#fff;border:1px solid #d1d5db;color:#374151;border-radius:6px;cursor:pointer" data-ko="🖨️ 인쇄" data-en="🖨️ Print">🖨️ 인쇄</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+      <input id="mm-search" type="text" data-ko-placeholder="🔍 주제·참석자·내용 검색" data-en-placeholder="🔍 Search subject/attendees/content" placeholder="🔍 주제·참석자·내용 검색" oninput="mmRender()" style="flex:1;min-width:200px;padding:7px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px" />
+      <button type="button" onclick="mmExportAll()" style="padding:7px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer" data-ko="📥 전체 .json 백업" data-en="📥 Export All .json">📥 전체 .json 백업</button>
+      <label style="padding:7px 12px;font-size:12px;background:#fff;border:1px solid #d1d5db;border-radius:6px;cursor:pointer">
+        <span data-ko="📤 .json 가져오기" data-en="📤 Import .json">📤 .json 가져오기</span>
+        <input type="file" accept=".json" onchange="mmImport(this.files[0])" style="display:none" />
+      </label>
+    </div>
+    <table style="width:100%">
+      <thead>
+        <tr>
+          <th data-ko="일자" data-en="Date">일자</th>
+          <th data-ko="주제" data-en="Subject">주제</th>
+          <th data-ko="참석" data-en="Attendees">참석</th>
+          <th data-ko="작성자" data-en="Author">작성자</th>
+          <th data-ko="액션" data-en="Actions">액션</th>
+        </tr>
+      </thead>
+      <tbody id="mm-list"><tr><td colspan="5" class="empty" data-ko="저장된 회의록이 없습니다." data-en="No saved minutes yet.">저장된 회의록이 없습니다.</td></tr></tbody>
+    </table>
+  </div>
+</details>
+
+<script>
+// 📑 회의록 모듈 — localStorage 저장 + 검색 + 내보내기 (한/영 자동 토글)
+(function(){
+  const KEY = 'mango_meeting_minutes_v1';
+  function load() { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch { return []; } }
+  function store(arr) { localStorage.setItem(KEY, JSON.stringify(arr)); }
+  function esc(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+  function today() { return new Date().toISOString().slice(0,10); }
+  function isEn() { return (typeof adminLang !== 'undefined' && adminLang === 'en'); }
+
+  function readForm() {
+    const g = id => document.getElementById(id);
+    return {
+      id: g('mm-edit-id').value || ('mm_' + Date.now()),
+      date: g('mm-date').value || today(),
+      start: g('mm-start').value || '',
+      end: g('mm-end').value || '',
+      location: g('mm-location').value.trim(),
+      subject: g('mm-subject').value.trim(),
+      author: g('mm-author').value.trim(),
+      attendees: g('mm-attendees').value.trim(),
+      agenda: g('mm-agenda').value.trim(),
+      discussion: g('mm-discussion').value.trim(),
+      decisions: g('mm-decisions').value.trim(),
+      actions: g('mm-actions').value.trim(),
+      next: g('mm-next').value.trim(),
+      attachments: g('mm-attachments').value.trim(),
+      saved_at: Date.now(),
+    };
+  }
+  function fillForm(m) {
+    const set = (id, v) => { const el = document.getElementById(id); if (el) el.value = v || ''; };
+    set('mm-edit-id', m.id); set('mm-date', m.date); set('mm-start', m.start); set('mm-end', m.end);
+    set('mm-location', m.location); set('mm-subject', m.subject); set('mm-author', m.author);
+    set('mm-attendees', m.attendees); set('mm-agenda', m.agenda); set('mm-discussion', m.discussion);
+    set('mm-decisions', m.decisions); set('mm-actions', m.actions); set('mm-next', m.next);
+    set('mm-attachments', m.attachments);
+    document.getElementById('card-meeting-minutes')?.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+  function fmtTxt(m) {
+    const en = isEn();
+    const L = en
+      ? { title:'Meeting Minutes', date:'Date', time:'Time', loc:'Location', subj:'Subject', auth:'Author', att:'Attendees', ag:'Agenda', disc:'Discussion', dec:'Decisions', act:'Action Items', nxt:'Next Meeting', file:'Attachments' }
+      : { title:'회의록', date:'일자', time:'시간', loc:'장소', subj:'주제', auth:'작성자', att:'참석자', ag:'안건', disc:'논의', dec:'결정', act:'액션', nxt:'다음 회의', file:'첨부' };
+    const time = (m.start || '') + (m.end ? ' ~ ' + m.end : '');
+    return '═══════════════════════════════════════\n' +
+      '  ' + L.title + ' — ' + (m.subject || '-') + '\n' +
+      '═══════════════════════════════════════\n\n' +
+      '• ' + L.date + ': ' + (m.date || '-') + '\n' +
+      '• ' + L.time + ': ' + (time || '-') + '\n' +
+      '• ' + L.loc + ': ' + (m.location || '-') + '\n' +
+      '• ' + L.auth + ': ' + (m.author || '-') + '\n' +
+      '• ' + L.att + ': ' + (m.attendees || '-') + '\n\n' +
+      '─── ' + L.ag + ' ───\n' + (m.agenda || '-') + '\n\n' +
+      '─── ' + L.disc + ' ───\n' + (m.discussion || '-') + '\n\n' +
+      '─── ' + L.dec + ' ───\n' + (m.decisions || '-') + '\n\n' +
+      '─── ' + L.act + ' ───\n' + (m.actions || '-') + '\n\n' +
+      '─── ' + L.nxt + ' ───\n' + (m.next || '-') + '\n\n' +
+      '─── ' + L.file + ' ───\n' + (m.attachments || '-') + '\n';
+  }
+  function dl(text, name) {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  window.mmClearForm = function() {
+    ['mm-edit-id','mm-date','mm-start','mm-end','mm-location','mm-subject','mm-author','mm-attendees','mm-agenda','mm-discussion','mm-decisions','mm-actions','mm-next','mm-attachments'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('mm-date').value = today();
+  };
+  window.mmSave = function() {
+    const m = readForm();
+    if (!m.subject) { alert(isEn() ? 'Subject is required.' : '회의 주제를 입력해 주세요.'); return; }
+    const arr = load();
+    const idx = arr.findIndex(x => x.id === m.id);
+    if (idx >= 0) arr[idx] = m; else arr.unshift(m);
+    store(arr); window.mmRender();
+    alert(isEn() ? '✅ Saved.' : '✅ 회의록이 저장됐습니다.'); window.mmClearForm();
+  };
+  window.mmEdit = function(id) { const m = load().find(x => x.id === id); if (m) fillForm(m); };
+  window.mmDelete = function(id) {
+    if (!confirm(isEn() ? 'Delete this meeting minutes?' : '이 회의록을 삭제할까요?')) return;
+    store(load().filter(x => x.id !== id)); window.mmRender();
+  };
+  window.mmRender = function() {
+    const tbody = document.getElementById('mm-list'); if (!tbody) return;
+    const all = load().slice().sort((a,b)=>(b.saved_at||0)-(a.saved_at||0));
+    const q = (document.getElementById('mm-search')?.value || '').trim().toLowerCase();
+    const rows = q ? all.filter(m => (m.subject+' '+m.attendees+' '+m.discussion+' '+m.decisions+' '+m.actions+' '+m.author).toLowerCase().includes(q)) : all;
+    const cnt = document.getElementById('mm-count'); if (cnt) cnt.textContent = isEn() ? (all.length + ' total') : ('총 ' + all.length + '건');
+    if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" class="empty">' + (isEn() ? 'No saved minutes yet.' : '저장된 회의록이 없습니다.') + '</td></tr>'; return; }
+    tbody.innerHTML = rows.map(m => {
+      const editLbl = isEn() ? '✏️ Edit' : '✏️ 편집';
+      const delLbl = isEn() ? '🗑️ Delete' : '🗑️ 삭제';
+      return '<tr>' +
+        '<td>' + esc(m.date || '-') + (m.start ? ' ' + esc(m.start) : '') + '</td>' +
+        '<td><b>' + esc(m.subject || '-') + '</b></td>' +
+        '<td style="font-size:11px;color:#6b7280">' + esc((m.attendees||'').slice(0,40)) + '</td>' +
+        '<td>' + esc(m.author || '-') + '</td>' +
+        '<td style="white-space:nowrap">' +
+          '<button onclick="mmEdit(\'' + m.id + '\')" style="padding:3px 8px;font-size:11px;background:#fff;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;margin-right:3px">' + editLbl + '</button>' +
+          '<button onclick="mmExportOne(\'' + m.id + '\')" style="padding:3px 8px;font-size:11px;background:#fff;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;margin-right:3px">📥</button>' +
+          '<button onclick="mmDelete(\'' + m.id + '\')" style="padding:3px 8px;font-size:11px;background:#fef2f2;border:1px solid #fca5a5;color:#b91c1c;border-radius:4px;cursor:pointer">' + delLbl + '</button>' +
+        '</td>' +
+      '</tr>';
+    }).join('');
+  };
+  window.mmExportCurrent = function() {
+    const m = readForm();
+    dl(fmtTxt(m), 'meeting_' + (m.date || 'draft') + '_' + (m.subject||'minutes').replace(/[^\w가-힣]+/g,'_').slice(0,30) + '.txt');
+  };
+  window.mmExportOne = function(id) {
+    const m = load().find(x => x.id === id); if (!m) return;
+    dl(fmtTxt(m), 'meeting_' + (m.date || 'draft') + '_' + (m.subject||'minutes').replace(/[^\w가-힣]+/g,'_').slice(0,30) + '.txt');
+  };
+  window.mmExportAll = function() {
+    const blob = new Blob([JSON.stringify(load(), null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'meeting_minutes_backup_' + today() + '.json';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  window.mmImport = function(file) {
+    if (!file) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const arr = JSON.parse(r.result);
+        if (!Array.isArray(arr)) throw new Error('Invalid format');
+        const cur = load();
+        const merged = [...arr, ...cur.filter(c => !arr.find(a => a.id === c.id))];
+        store(merged); window.mmRender();
+        alert(isEn() ? ('Imported ' + arr.length + ' items.') : (arr.length + '건 가져왔습니다.'));
+      } catch(e) { alert(isEn() ? ('Import failed: ' + e.message) : ('가져오기 실패: ' + e.message)); }
+    };
+    r.readAsText(file);
+  };
+  window.mmPrint = function() {
+    const m = readForm();
+    const w = window.open('', '_blank');
+    if (!w) { alert(isEn() ? 'Please allow popups.' : '팝업 차단을 해제해 주세요.'); return; }
+    w.document.write('<html><head><title>' + esc(m.subject || 'Meeting Minutes') + '</title></head><body><pre style="font-family:Menlo,monospace;white-space:pre-wrap;padding:24px;line-height:1.7">' + esc(fmtTxt(m)) + '</pre><scr' + 'ipt>window.onload=function(){window.print()}</scr' + 'ipt></body></html>');
+    w.document.close();
+  };
+
+  setTimeout(() => { try { window.mmRender(); document.getElementById('mm-date').value = today(); } catch(e){} }, 200);
+})();
+</script>
+
+
 <!-- 녹화 재생 모달 -->
 <div id="playback-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;align-items:center;justify-content:center;">
   <div style="background:#1e293b;border-radius:16px;padding:24px;max-width:900px;width:95%;max-height:90vh;">
