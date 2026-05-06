@@ -12151,5 +12151,109 @@ window.rebuildGlobalSearchIndex = function() {
 })();
 </script>
 
+<style>
+/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   🎯 메뉴 hover 확대 효과 (상위/하위 모두)
+   사용자 요청: 마우스 가져가면 커지고 빠지면 원복
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+/* 상위 메뉴 카드 (.menu-card = details) */
+.menu-card {
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.22s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  transform-origin: center top;
+  will-change: transform;
+}
+.menu-card:hover {
+  transform: scale(1.015) translateY(-2px);
+  box-shadow:
+    0 14px 32px -10px rgba(245, 158, 11, 0.25),
+    0 6px 14px -4px rgba(120, 53, 15, 0.10),
+    0 0 0 1px rgba(245, 158, 11, 0.18) !important;
+  z-index: 5;
+}
+/* 펼쳐진 카드는 약간만 확대 (레이아웃 깨짐 방지) */
+.menu-card[open]:hover {
+  transform: scale(1.005) translateY(-1px);
+}
+
+/* 카드 헤더 (summary) hover — 살구색 강조 */
+.menu-card summary {
+  transition: background 0.18s ease, padding 0.18s ease !important;
+  border-radius: 10px;
+}
+.menu-card summary:hover {
+  background: linear-gradient(135deg, rgba(254, 243, 199, 0.7), rgba(254, 215, 170, 0.4)) !important;
+  padding-left: 14px !important;
+}
+
+/* 사이드바 a (상위·하위 메뉴 모두) — 기존 translateX 강화 */
+.admin-sidebar a {
+  transform-origin: left center;
+}
+.admin-sidebar a:hover {
+  transform: translateX(6px) scale(1.04) !important;
+  z-index: 5;
+}
+
+/* 카드 내부 sub-item 들 — 클릭 가능한 모든 요소에 확대 적용 */
+.menu-card .menu-body button,
+.menu-card .menu-body a,
+.menu-card .menu-body label.sub-item,
+.menu-card .menu-body .sub-item,
+.menu-card .menu-body .clickable {
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 0.18s ease !important;
+  transform-origin: center;
+}
+.menu-card .menu-body button:hover,
+.menu-card .menu-body a:hover,
+.menu-card .menu-body label.sub-item:hover,
+.menu-card .menu-body .sub-item:hover,
+.menu-card .menu-body .clickable:hover {
+  transform: translateY(-1px) scale(1.04) !important;
+  filter: brightness(1.06);
+  box-shadow: 0 4px 12px -2px rgba(120, 53, 15, 0.18) !important;
+  z-index: 5;
+}
+
+/* 테이블 row hover — 살짝만 확대 (가독성 우선) */
+.menu-card .menu-body table tbody tr {
+  transition: background 0.15s ease, transform 0.15s ease !important;
+}
+.menu-card .menu-body table tbody tr:hover {
+  background: rgba(254, 243, 199, 0.5) !important;
+  transform: scale(1.002);
+}
+
+/* 빠른진입 칩 등 외부 요소도 동일 hover */
+.quick-entry-chip,
+.btn-chip,
+button.chip,
+.hp-chip {
+  transition: transform 0.18s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.quick-entry-chip:hover,
+.btn-chip:hover,
+button.chip:hover,
+.hp-chip:hover {
+  transform: translateY(-2px) scale(1.06) !important;
+  box-shadow: 0 6px 14px -4px rgba(245, 158, 11, 0.4) !important;
+}
+
+/* prefers-reduced-motion: 사용자가 모션 감소 설정한 경우 비활성 */
+@media (prefers-reduced-motion: reduce) {
+  .menu-card, .menu-card:hover,
+  .admin-sidebar a, .admin-sidebar a:hover,
+  .menu-card .menu-body button:hover,
+  .menu-card .menu-body a:hover {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+</style>
+
 </body>
 </html>
