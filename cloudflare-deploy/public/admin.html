@@ -12666,26 +12666,208 @@ button.chip:hover,
     const rows = filterRecords();
     if (!rows.length) { alert(isEn()?'No data':'데이터가 없습니다.'); return; }
     const en = isEn();
-    const aoa = [
-      [en?'Teacher':'강사', en?'Date':'날짜', en?'Scheduled':'규정출근', en?'Actual':'실제출근', en?'Late (min)':'지각(분)']
+
+    // 헤더: 사용자 캡처 기준 7컬럼 (한국어/영어 병기)
+    const headers = [
+      '날짜 (date)',
+      '강사명 (teacher)',
+      '규정출근시간 (start work time)',
+      '실제출근시간 (Actual attend time)',
+      '경과시간 (elapsed time)',
+      '경과시간 (elapsed time - second)',
+      '상태 (States)'
     ];
-    rows.forEach(r => aoa.push([r.teacher_name, r.date, r.scheduled, r.actual, r.late_min]));
-    const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{wch:18},{wch:14},{wch:14},{wch:14},{wch:12}];
-    // 헤더 스타일
-    ['A1','B1','C1','D1','E1'].forEach(a => {
-      if (!ws[a]) return;
-      ws[a].s = { font:{bold:true, color:{rgb:'FFFFFF'}}, fill:{patternType:'solid', fgColor:{rgb:'3B82F6'}}, alignment:{horizontal:'center'} };
+    const aoa = [headers];
+
+    // 데이터 — 같은 강사·날짜 정렬: 날짜 ASC, 규정출근 ASC, 강사명 ASC
+    const sorted = rows.slice().sort((a, b) => {
+      if (a.date !== b.date) return a.date.localeCompare(b.date);
+      if (a.scheduled !== b.scheduled) return (a.scheduled || '').localeCompare(b.scheduled || '');
+      return (a.teacher_name || '').localeCompare(b.teacher_name || '');
     });
-    // 본문 — late_min 색상 분기
-    for (let i = 2; i <= aoa.length; i++) {
-      const v = aoa[i-1][4]; const addr = 'E' + i;
-      const rgb = v <= 0 ? 'D1FAE5' : v <= 5 ? 'FEF3C7' : 'FEE2E2';
-      if (ws[addr]) ws[addr].s = { fill:{patternType:'solid', fgColor:{rgb}}, alignment:{horizontal:'center'} };
+
+    function fmtHMS(hhmm) {
+      // '09:00' → '09:00:00'
+      if (!hhmm) return '';
+      const parts = hhmm.split(':');
+      return (parts[0] || '00').padStart(2,'0') + ':' + (parts[1] || '00').padStart(2,'0') + ':00';
     }
-    ws['!sheetViews'] = [{ showGridLines: false }];
+    function fmtSigned(min) {
+      // late_min → '+18:32' or '-17:07' (mm:ss 단위)
+      if (min === null || min === undefined) return '';
+      const sec = Math.round(min * 60);
+      const sign = sec > 0 ? '' : (sec < 0 ? '-' : '');
+      const abs = Math.abs(sec);
+      const m = Math.floor(abs / 60), s = abs % 60;
+      return sign + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+    }
+
+    sorted.forEach(r => {
+      const sched = fmtHMS(r.scheduled);
+      const actual = r.actual ? fmtHMS(r.actual) : '';
+      const lateMin = r.late_min;
+      const elapsed = (lateMin === undefined || lateMin === null) ? '' : fmtSigned(lateMin);
+      const elapsedSec = (lateMin === undefined || lateMin === null) ? '' : Math.round(lateMin * 60);
+      let state = '';
+      if (!actual) state = '미출근(absent)';
+      else if (lateMin > 0) state = '지각(late)';
+      // 정시 또는 일찍 도착: 빈 칸 (캡처와 동일)
+      aoa.push([r.date, r.teacher_name, sched, actual, elapsed, elapsedSec, state]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [
+      { wch: 13 },  // 날짜
+      { wch: 22 },  // 강사명
+      { wch: 24 },  // 규정출근
+      { wch: 26 },  // 실제출근
+      { wch: 18 },  // 경과시간
+      { wch: 26 },  // 경과시간 (초)
+      { wch: 14 },  // 상태
+    ];
+    // 행 높이
+    ws['!rows'] = [{ hpt: 28 }];
+
+    // ─── 헤더 (1행) — 청람색 그라디언트 톤 ───
+    const headerColors = [
+      '0EA5E9', // 날짜  — sky
+      '3B82F6', // 강사명 — blue
+      '6366F1', // 규정 — indigo
+      '8B5CF6', // 실제 — violet
+      'EC4899', // 경과 — pink
+      'F43F5E', // 경과초 — rose
+      '64748B', // 상태 — slate
+    ];
+    headerColors.forEach((rgb, i) => {
+      const addr = String.fromCharCode(65 + i) + '1';
+      if (!ws[addr]) ws[addr] = { t:'s', v: headers[i] };
+      ws[addr].s = {
+        font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:11, name:'맑은 고딕' },
+        fill:{ patternType:'solid', fgColor:{ rgb } },
+        alignment:{ horizontal:'center', vertical:'center', wrapText:true },
+        border:{
+          top:{ style:'thin', color:{ rgb } },
+          bottom:{ style:'medium', color:{ rgb:'1E293B' } },
+          left:{ style:'thin', color:{ rgb } },
+          right:{ style:'thin', color:{ rgb } },
+        },
+      };
+    });
+
+    // ─── 본문 (행 색상: 상태별 배경 + 경과시간 셀 강조) ───
+    for (let i = 2; i <= aoa.length; i++) {
+      const r = aoa[i-1];
+      const lateMin = r[5];   // 경과시간(초)
+      const state = r[6];
+      const actual = r[3];
+      // 행 배경 컬러 (상태별)
+      let rowBg, badgeBg, badgeFont;
+      if (!actual || state === '미출근(absent)') { rowBg = 'F8FAFC'; badgeBg = 'FCA5A5'; badgeFont = '7F1D1D'; }      // 미출근: 옅은 회색 행 + 빨강 배지
+      else if (lateMin > 0) { rowBg = 'FFFBEB'; badgeBg = 'FBBF24'; badgeFont = '78350F'; }                              // 지각: 옅은 노랑 + 진노랑 배지
+      else if (lateMin < 0) { rowBg = 'F0FDF4'; badgeBg = 'BBF7D0'; badgeFont = '14532D'; }                              // 일찍: 연초록
+      else { rowBg = 'FFFFFF'; badgeBg = 'D1FAE5'; badgeFont = '065F46'; }                                                // 정시: 흰
+
+      const cellBase = (extra) => Object.assign({
+        font:{ sz:10, name:'맑은 고딕' },
+        fill:{ patternType:'solid', fgColor:{ rgb: rowBg } },
+        alignment:{ horizontal:'left', vertical:'center', indent:1 },
+        border:{
+          top:{ style:'thin', color:{ rgb:'F1F5F9' } },
+          bottom:{ style:'thin', color:{ rgb:'F1F5F9' } },
+          left:{ style:'thin', color:{ rgb:'F1F5F9' } },
+          right:{ style:'thin', color:{ rgb:'F1F5F9' } },
+        },
+      }, extra || {});
+
+      // A: 날짜 (좌측 액센트)
+      const aAddr = 'A' + i;
+      if (ws[aAddr]) ws[aAddr].s = cellBase({
+        font:{ sz:10, bold:true, color:{ rgb:'1E293B' } },
+        alignment:{ horizontal:'center', vertical:'center' },
+      });
+      // B: 강사명
+      const bAddr = 'B' + i;
+      if (ws[bAddr]) ws[bAddr].s = cellBase({
+        font:{ sz:11, bold:true, color:{ rgb:'1E40AF' } },
+      });
+      // C: 규정출근시간
+      const cAddr = 'C' + i;
+      if (ws[cAddr]) ws[cAddr].s = cellBase({
+        font:{ sz:10, color:{ rgb:'475569' } },
+        alignment:{ horizontal:'center', vertical:'center' },
+      });
+      // D: 실제출근시간 — 색상 강조
+      const dAddr = 'D' + i;
+      if (ws[dAddr]) {
+        const dColor = !actual ? '94A3B8' : (lateMin > 0 ? 'B45309' : (lateMin < 0 ? '15803D' : '047857'));
+        ws[dAddr].s = cellBase({
+          font:{ sz:11, bold:true, color:{ rgb: dColor } },
+          alignment:{ horizontal:'center', vertical:'center' },
+        });
+      }
+      // E: 경과시간 (mm:ss)
+      const eAddr = 'E' + i;
+      if (ws[eAddr]) {
+        const eColor = !actual ? '94A3B8' : (lateMin > 0 ? 'DC2626' : (lateMin < 0 ? '16A34A' : '059669'));
+        ws[eAddr].s = cellBase({
+          font:{ sz:10, bold:true, color:{ rgb: eColor } },
+          alignment:{ horizontal:'right', vertical:'center', indent:1 },
+        });
+      }
+      // F: 경과시간 (초)
+      const fAddr = 'F' + i;
+      if (ws[fAddr]) {
+        const fColor = !actual ? '94A3B8' : (lateMin > 0 ? 'EF4444' : (lateMin < 0 ? '22C55E' : '10B981'));
+        ws[fAddr].s = cellBase({
+          font:{ sz:9, color:{ rgb: fColor } },
+          alignment:{ horizontal:'right', vertical:'center', indent:1 },
+          numFmt: '#,##0;-#,##0',
+        });
+      }
+      // G: 상태 — 배지 스타일
+      const gAddr = 'G' + i;
+      if (ws[gAddr] && state) {
+        ws[gAddr].s = {
+          font:{ sz:10, bold:true, color:{ rgb: badgeFont }, name:'맑은 고딕' },
+          fill:{ patternType:'solid', fgColor:{ rgb: badgeBg } },
+          alignment:{ horizontal:'center', vertical:'center' },
+          border:{
+            top:{ style:'medium', color:{ rgb: badgeBg } },
+            bottom:{ style:'medium', color:{ rgb: badgeBg } },
+            left:{ style:'medium', color:{ rgb: badgeBg } },
+            right:{ style:'medium', color:{ rgb: badgeBg } },
+          },
+        };
+      } else if (ws[gAddr]) {
+        ws[gAddr].s = cellBase({});
+      } else {
+        // 빈 셀에도 행 배경 유지 (격자선 가림)
+        ws[gAddr] = { t:'s', v:'', s: cellBase({}) };
+      }
+    }
+
+    // ─── 격자선 제거 — 3중 안전장치 ───
+    // 1) 시트 뷰
+    ws['!sheetViews'] = [{ showGridLines: false, showRowColHeaders: true }];
+    // 2) 빈 셀 흰 fill 마스킹 (A1:Z + lastRow+10)
+    const lastRow = aoa.length + 10;
+    for (let r = 0; r < lastRow; r++) {
+      for (let c = 0; c < 15; c++) {
+        const addr = XLSX.utils.encode_cell({ r, c });
+        if (!ws[addr]) ws[addr] = { t:'s', v:'', s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } } };
+      }
+    }
+    ws['!ref'] = 'A1:O' + lastRow;
+    // 첫 행 freeze (헤더 고정)
+    ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, en?'Attendance':'출근현황');
+    // 3) 워크북 레벨
+    if (!wb.Workbook) wb.Workbook = {};
+    if (!wb.Workbook.Views) wb.Workbook.Views = [];
+    wb.Workbook.Views[0] = Object.assign({}, wb.Workbook.Views[0] || {}, { showGridLines: false });
+
     XLSX.writeFile(wb, 'attendance_' + dateStr(new Date()) + '.xlsx');
   };
 
