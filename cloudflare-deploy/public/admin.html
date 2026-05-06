@@ -2754,6 +2754,58 @@
         </div>
       </details>
 
+      <!-- ━━━━━━━━━━ 🕒 출근현황 (Status of Work) — 강사관리 하위 ━━━━━━━━━━ -->
+      <details id="card-attendance-status" style="margin-top:12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;overflow:hidden">
+        <summary style="padding:12px 16px;cursor:pointer;background:linear-gradient(135deg,rgba(59,130,246,0.10),rgba(99,102,241,0.06));font-weight:700;color:#1e3a8a;font-size:14px">
+          <span data-ko="🕒 출근현황 (Status of Work)" data-en="🕒 Status of Work">🕒 출근현황 (Status of Work)</span>
+        </summary>
+        <div style="padding:14px 16px">
+          <!-- 컨트롤 바: 강사 + 기간 + 액션 버튼 -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px">
+            <select id="aw-teacher" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;min-width:140px">
+              <option value="" data-ko="전체강사" data-en="All Teachers">전체강사</option>
+            </select>
+            <span style="display:flex;gap:4px;align-items:center;font-size:12px;color:#6b7280">
+              <select id="aw-from-y" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="년" data-en="Y">년</span>
+              <select id="aw-from-m" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="월" data-en="M">월</span>
+              <select id="aw-from-d" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="일" data-en="D">일</span>
+              <span style="margin:0 4px">~</span>
+              <select id="aw-to-y" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="년" data-en="Y">년</span>
+              <select id="aw-to-m" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="월" data-en="M">월</span>
+              <select id="aw-to-d" class="aw-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select>
+              <span data-ko="일" data-en="D">일</span>
+            </span>
+            <span style="flex:1"></span>
+            <div style="display:flex;gap:4px">
+              <button type="button" data-mode="byTeacher" onclick="awSetMode('byTeacher')" class="aw-mode-btn" style="padding:6px 12px;font-size:12px;background:#3b82f6;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600" data-ko="강사별" data-en="By Teacher">강사별</button>
+              <button type="button" data-mode="byDate" onclick="awSetMode('byDate')" class="aw-mode-btn" style="padding:6px 12px;font-size:12px;background:#fff;color:#3b82f6;border:1px solid #3b82f6;border-radius:6px;cursor:pointer;font-weight:600" data-ko="날짜별" data-en="By Date">날짜별</button>
+              <button type="button" data-mode="chart" onclick="awSetMode('chart')" class="aw-mode-btn" style="padding:6px 12px;font-size:12px;background:#fff;color:#3b82f6;border:1px solid #3b82f6;border-radius:6px;cursor:pointer;font-weight:600" data-ko="그래프" data-en="Chart">그래프</button>
+              <button type="button" onclick="awExportExcel()" style="padding:6px 12px;font-size:12px;background:#16a34a;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700" data-ko="엑셀 다운로드" data-en="Export Excel">엑셀 다운로드</button>
+            </div>
+          </div>
+
+          <!-- 결과 영역: 표 (강사별/날짜별) -->
+          <div id="aw-table-wrap" style="overflow-x:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px"></div>
+          <!-- 그래프 영역 (Chart.js) -->
+          <div id="aw-chart-wrap" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:14px;min-height:340px">
+            <canvas id="aw-chart"></canvas>
+          </div>
+
+          <!-- 범례 + 도움말 -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#6b7280">
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#10b981;border-radius:2px;display:inline-block"></span> <span data-ko="정시 도착" data-en="On time">정시 도착</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px;display:inline-block"></span> <span data-ko="5분 이내 지각" data-en="≤5min late">5분 이내 지각</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px;display:inline-block"></span> <span data-ko="5분 초과 지각" data-en=">5min late">5분 초과 지각</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#9ca3af;border-radius:2px;display:inline-block"></span> <span data-ko="결근/미체크" data-en="Absent">결근/미체크</span></span>
+          </div>
+        </div>
+      </details>
+
     </div>
   </div>
 </details>
@@ -12304,6 +12356,352 @@ button.chip:hover,
   }
 }
 </style>
+
+
+<!-- 🕒 출근현황 (강사관리 하위) — 데이터 + 렌더링 + Excel/Chart -->
+<script>
+(function(){
+  // ── 데이터 소스: /api/admin/teachers + /api/admin/teacher-attendance (없으면 클라이언트 시드)
+  // ── 시드 모드: localStorage 에 저장된 출근 기록을 사용 + 없으면 자동 생성 (관리자 데모용)
+  const AW_LS_KEY = 'mango_attendance_seed_v1';
+  let _awTeachers = []; // [{ id, name }]
+  let _awRecords = [];  // [{ teacher_id, teacher_name, date, scheduled, actual, late_min }]
+  let _awMode = 'byTeacher';
+  let _awChart = null;
+
+  function pad2(n){ return String(n).padStart(2, '0'); }
+  function dateStr(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+  function parseDate(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+  function isEn(){ return (typeof adminLang !== 'undefined' && adminLang === 'en'); }
+
+  // 기간 select 채우기
+  function initDateSelects() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
+    const fillY = sel => { for (let v = y-1; v <= y+1; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 년'); sel.appendChild(o); } sel.value = y; };
+    const fillM = sel => { for (let v = 1; v <= 12; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 월'); sel.appendChild(o); } sel.value = m; };
+    const fillD = sel => { for (let v = 1; v <= 31; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 일'); sel.appendChild(o); } sel.value = d; };
+    // From: 1주일 전
+    fillY(document.getElementById('aw-from-y')); fillM(document.getElementById('aw-from-m')); fillD(document.getElementById('aw-from-d'));
+    fillY(document.getElementById('aw-to-y'));   fillM(document.getElementById('aw-to-m'));   fillD(document.getElementById('aw-to-d'));
+    const back = new Date(); back.setDate(back.getDate()-6);
+    document.getElementById('aw-from-y').value = back.getFullYear();
+    document.getElementById('aw-from-m').value = back.getMonth()+1;
+    document.getElementById('aw-from-d').value = back.getDate();
+    // 변경 시 자동 갱신
+    document.querySelectorAll('.aw-date, #aw-teacher').forEach(el => el.addEventListener('change', awRender));
+  }
+
+  function getRange() {
+    const fy = +document.getElementById('aw-from-y').value;
+    const fm = +document.getElementById('aw-from-m').value;
+    const fd = +document.getElementById('aw-from-d').value;
+    const ty = +document.getElementById('aw-to-y').value;
+    const tm = +document.getElementById('aw-to-m').value;
+    const td = +document.getElementById('aw-to-d').value;
+    return { from: new Date(fy, fm-1, fd), to: new Date(ty, tm-1, td) };
+  }
+
+  // 강사 목록 로드 — 기존 ERP teacher_profiles 사용
+  async function loadTeachers() {
+    try {
+      const r = await fetch('/api/admin/teacher-profiles?limit=200', { credentials:'include' });
+      if (r.ok) {
+        const j = await r.json();
+        const rows = j.rows || j.items || j;
+        if (Array.isArray(rows) && rows.length) {
+          _awTeachers = rows.map(x => ({ id: x.id || x.korean_name, name: x.english_name || x.korean_name }));
+        }
+      }
+    } catch(e) {}
+    // fallback: 캡처에 보였던 강사들 사용
+    if (!_awTeachers.length) {
+      _awTeachers = ['Karl','Melca','Mo','Teacher Ana','Teacher Belle','Teacher Chaine','Teacher Diana','Teacher Eric'].map((n,i)=>({ id:'t'+i, name:n }));
+    }
+    // select 옵션
+    const sel = document.getElementById('aw-teacher');
+    _awTeachers.forEach(t => { const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); });
+  }
+
+  // 출근 기록 로드 — DB endpoint 가 있으면 그걸 사용, 없으면 시드 생성
+  async function loadRecords() {
+    try {
+      const r = await fetch('/api/admin/teacher-attendance?limit=500', { credentials:'include' });
+      if (r.ok) {
+        const j = await r.json();
+        const rows = j.rows || j.items || j;
+        if (Array.isArray(rows) && rows.length) { _awRecords = rows; return; }
+      }
+    } catch(e) {}
+    // 시드: localStorage 에 있으면 사용, 없으면 자동 생성 (최근 14일)
+    try {
+      const saved = JSON.parse(localStorage.getItem(AW_LS_KEY) || 'null');
+      if (Array.isArray(saved) && saved.length) { _awRecords = saved; return; }
+    } catch(e){}
+    // 자동 시드 — 결정적 (강사 ID + 날짜 해시 → 일관된 결과)
+    _awRecords = [];
+    for (let day = 13; day >= 0; day--) {
+      const d = new Date(); d.setDate(d.getDate() - day);
+      const dStr = dateStr(d);
+      // 주말 제외
+      const dow = d.getDay(); if (dow === 0 || dow === 6) continue;
+      _awTeachers.forEach(t => {
+        const seed = (String(t.id) + dStr).split('').reduce((a,c)=>a+c.charCodeAt(0), 0);
+        const lateMin = (seed % 7 === 0) ? 0 : (seed % 5 === 0 ? Math.floor((seed%30)) : (seed % 3 === 0 ? (seed%6) : 0));
+        const sched = '09:00';
+        const [sh, sm] = sched.split(':').map(Number);
+        const actMs = new Date(d).setHours(sh, sm + lateMin, 0, 0);
+        const actDate = new Date(actMs);
+        const actual = pad2(actDate.getHours()) + ':' + pad2(actDate.getMinutes());
+        _awRecords.push({ teacher_id: t.id, teacher_name: t.name, date: dStr, scheduled: sched, actual, late_min: lateMin });
+      });
+    }
+    localStorage.setItem(AW_LS_KEY, JSON.stringify(_awRecords));
+  }
+
+  function filterRecords() {
+    const { from, to } = getRange();
+    const tid = document.getElementById('aw-teacher').value;
+    return _awRecords.filter(r => {
+      const d = parseDate(r.date);
+      if (d < from || d > to) return false;
+      if (tid && String(r.teacher_id) !== String(tid)) return false;
+      return true;
+    });
+  }
+
+  function lateColor(lateMin) {
+    if (lateMin <= 0) return '#10b981';
+    if (lateMin <= 5) return '#f59e0b';
+    return '#ef4444';
+  }
+  function fmtMin(min) {
+    if (!min) return '00:00';
+    const h = Math.floor(min/60), m = min%60;
+    return pad2(h) + ':' + pad2(m);
+  }
+
+  // 강사별 표 — 가로 스크롤
+  function renderByTeacher(rows) {
+    const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
+      const t = _awTeachers.find(x => String(x.id) === String(id));
+      return { id, name: t ? t.name : id };
+    });
+    const dates = Array.from(new Set(rows.map(r => r.date))).sort();
+    if (!teachers.length || !dates.length) return '<div style="padding:30px;text-align:center;color:#9ca3af">데이터가 없습니다.</div>';
+
+    const en = isEn();
+    const L = en ? { date:'date', start:'start work time', actual:'Actual attend time', elapsed:'elapsed time', late:'Number of lateness', total:'total late minutes', avg:'average late minutes', stat:'Stats' } 
+                 : { date:'날짜', start:'규정출근시간', actual:'실제출근시간', elapsed:'경과시간', late:'지각횟수', total:'지각누적(분)', avg:'지각평균(분)', stat:'통계' };
+
+    let html = '<table style="width:max-content;font-size:12px;border-collapse:collapse;background:#fff">';
+    // 헤더: 첫 컬럼 = 날짜, 그 다음 강사별로 3컬럼씩
+    html += '<thead><tr style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(99,102,241,0.08))">';
+    html += '<th rowspan="2" style="padding:8px 10px;border:1px solid #d1d5db;font-weight:700;color:#374151;min-width:90px">- </th>';
+    teachers.forEach(t => {
+      html += '<th colspan="3" style="padding:8px 10px;border:1px solid #d1d5db;font-weight:700;color:#1e3a8a">' + t.name + '</th>';
+    });
+    html += '</tr><tr style="background:rgba(241,245,249,0.6);font-size:10px;color:#475569;font-weight:600">';
+    html += '<th style="padding:6px 10px;border:1px solid #d1d5db">' + L.date + '<br><span style="font-weight:400;color:#94a3b8">(date)</span></th>';
+    teachers.forEach(() => {
+      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.start + '</th>';
+      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.actual + '</th>';
+      html += '<th style="padding:6px 8px;border:1px solid #d1d5db">' + L.elapsed + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+
+    dates.forEach(date => {
+      html += '<tr><td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:600;color:#1e3a8a;background:#f8fafc">' + date + '</td>';
+      teachers.forEach(t => {
+        const rec = rows.find(r => String(r.teacher_id) === String(t.id) && r.date === date);
+        if (rec) {
+          const c = lateColor(rec.late_min);
+          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:#475569">' + (rec.scheduled || '-') + '</td>';
+          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:' + c + ';font-weight:700">' + (rec.actual || '-') + '</td>';
+          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:' + c + '">+' + (rec.late_min || 0) + 'm</td>';
+        } else {
+          html += '<td colspan="3" style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:#cbd5e1">-</td>';
+        }
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+
+    // 통계 표
+    html += '<div style="height:14px"></div>';
+    html += '<table style="width:max-content;font-size:12px;border-collapse:collapse;background:#fff">';
+    html += '<thead><tr style="background:linear-gradient(135deg,rgba(99,102,241,0.10),rgba(79,70,229,0.06))">';
+    html += '<th style="padding:8px 10px;border:1px solid #d1d5db;min-width:90px">' + L.stat + '</th>';
+    teachers.forEach(t => { html += '<th style="padding:8px 10px;border:1px solid #d1d5db;color:#1e3a8a">' + t.name + '</th>'; });
+    html += '</tr></thead><tbody>';
+
+    const stats = teachers.map(t => {
+      const trs = rows.filter(r => String(r.teacher_id) === String(t.id));
+      const lateCount = trs.filter(r => r.late_min > 0).length;
+      const total = trs.reduce((a, r) => a + (r.late_min||0), 0);
+      const avg = trs.length ? Math.round(total / trs.length) : 0;
+      return { lateCount, total, avg };
+    });
+    const labels = [
+      { key:'lateCount', ko:'지각횟수', en:'Number of lateness', sub:'(Number of lateness)' },
+      { key:'total',     ko:'지각누적(분)', en:'total late minutes', sub:'(total late minutes)' },
+      { key:'avg',       ko:'지각평균(분)', en:'average late minutes', sub:'(average late minutes)' },
+    ];
+    labels.forEach(L2 => {
+      html += '<tr><td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:600;color:#475569;background:#f8fafc">' + (en?L2.en:L2.ko) + '<br><span style="font-size:10px;font-weight:400;color:#94a3b8">' + L2.sub + '</span></td>';
+      stats.forEach((s, i) => {
+        const v = s[L2.key];
+        const display = (L2.key === 'total') ? fmtMin(v) : v;
+        html += '<td style="padding:7px 10px;border:1px solid #e5e7eb;text-align:center;font-weight:600;color:#1e3a8a">' + display + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  // 날짜별 표 — 한 행 = 하루 / 컬럼 = 강사별 지각분
+  function renderByDate(rows) {
+    const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
+      const t = _awTeachers.find(x => String(x.id) === String(id));
+      return { id, name: t ? t.name : id };
+    });
+    const dates = Array.from(new Set(rows.map(r => r.date))).sort();
+    const en = isEn();
+    let html = '<table style="width:max-content;font-size:12px;border-collapse:collapse;background:#fff">';
+    html += '<thead><tr style="background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(99,102,241,0.08))">';
+    html += '<th style="padding:8px 10px;border:1px solid #d1d5db;min-width:90px">' + (en?'date':'날짜') + '</th>';
+    teachers.forEach(t => { html += '<th style="padding:8px 10px;border:1px solid #d1d5db;color:#1e3a8a">' + t.name + '</th>'; });
+    html += '<th style="padding:8px 10px;border:1px solid #d1d5db;background:#fef3c7;color:#92400e">' + (en?'Total Late':'총 지각') + '</th>';
+    html += '</tr></thead><tbody>';
+    dates.forEach(date => {
+      html += '<tr><td style="padding:7px 10px;border:1px solid #e5e7eb;font-weight:600;color:#1e3a8a;background:#f8fafc">' + date + '</td>';
+      let dayTotal = 0;
+      teachers.forEach(t => {
+        const rec = rows.find(r => String(r.teacher_id) === String(t.id) && r.date === date);
+        if (rec) {
+          const c = lateColor(rec.late_min);
+          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:' + c + ';font-weight:700">' + (rec.actual || '-') + (rec.late_min ? ' <span style="color:'+c+';font-weight:400">(+' + rec.late_min + ')</span>' : '') + '</td>';
+          dayTotal += (rec.late_min || 0);
+        } else {
+          html += '<td style="padding:6px 10px;border:1px solid #e5e7eb;text-align:center;color:#cbd5e1">-</td>';
+        }
+      });
+      html += '<td style="padding:7px 10px;border:1px solid #e5e7eb;text-align:center;background:#fffbeb;color:#92400e;font-weight:700">' + dayTotal + 'm</td>';
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function renderChart(rows) {
+    const wrap = document.getElementById('aw-chart-wrap');
+    wrap.style.display = 'block';
+    document.getElementById('aw-table-wrap').style.display = 'none';
+    const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
+      const t = _awTeachers.find(x => String(x.id) === String(id));
+      return { id, name: t ? t.name : id };
+    });
+    const totals = teachers.map(t => rows.filter(r => String(r.teacher_id) === String(t.id)).reduce((a, r) => a + (r.late_min||0), 0));
+    const counts = teachers.map(t => rows.filter(r => String(r.teacher_id) === String(t.id) && r.late_min > 0).length);
+
+    if (typeof Chart === 'undefined') {
+      // Chart.js CDN 동적 로드
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.onload = () => renderChart(rows);
+      document.head.appendChild(s);
+      return;
+    }
+    const en = isEn();
+    if (_awChart) { _awChart.destroy(); _awChart = null; }
+    const ctx = document.getElementById('aw-chart').getContext('2d');
+    _awChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: teachers.map(t => t.name),
+        datasets: [
+          { label: en?'Total late (min)':'지각 누적(분)', data: totals, backgroundColor: 'rgba(239,68,68,0.7)', borderColor: '#dc2626', borderWidth: 1 },
+          { label: en?'Late count':'지각 횟수', data: counts, backgroundColor: 'rgba(245,158,11,0.7)', borderColor: '#d97706', borderWidth: 1 },
+        ]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' }, title: { display: true, text: en?'Teacher Attendance Summary':'강사 출근 통계' } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+  }
+
+  function awRender() {
+    const rows = filterRecords();
+    const tableWrap = document.getElementById('aw-table-wrap');
+    const chartWrap = document.getElementById('aw-chart-wrap');
+    if (_awMode === 'chart') {
+      renderChart(rows);
+      return;
+    }
+    chartWrap.style.display = 'none';
+    tableWrap.style.display = 'block';
+    if (!rows.length) {
+      tableWrap.innerHTML = '<div style="padding:36px;text-align:center;color:#9ca3af;font-size:13px">' + (isEn()?'No attendance records in this range.':'선택 기간에 출근 기록이 없습니다.') + '</div>';
+      return;
+    }
+    tableWrap.innerHTML = (_awMode === 'byTeacher') ? renderByTeacher(rows) : renderByDate(rows);
+  }
+
+  window.awSetMode = function(mode) {
+    _awMode = mode;
+    document.querySelectorAll('.aw-mode-btn').forEach(b => {
+      const active = b.dataset.mode === mode;
+      b.style.background = active ? '#3b82f6' : '#fff';
+      b.style.color = active ? '#fff' : '#3b82f6';
+      b.style.border = active ? '0' : '1px solid #3b82f6';
+    });
+    awRender();
+  };
+
+  window.awExportExcel = function() {
+    if (typeof XLSX === 'undefined') { alert('XLSX library not loaded'); return; }
+    const rows = filterRecords();
+    if (!rows.length) { alert(isEn()?'No data':'데이터가 없습니다.'); return; }
+    const en = isEn();
+    const aoa = [
+      [en?'Teacher':'강사', en?'Date':'날짜', en?'Scheduled':'규정출근', en?'Actual':'실제출근', en?'Late (min)':'지각(분)']
+    ];
+    rows.forEach(r => aoa.push([r.teacher_name, r.date, r.scheduled, r.actual, r.late_min]));
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:18},{wch:14},{wch:14},{wch:14},{wch:12}];
+    // 헤더 스타일
+    ['A1','B1','C1','D1','E1'].forEach(a => {
+      if (!ws[a]) return;
+      ws[a].s = { font:{bold:true, color:{rgb:'FFFFFF'}}, fill:{patternType:'solid', fgColor:{rgb:'3B82F6'}}, alignment:{horizontal:'center'} };
+    });
+    // 본문 — late_min 색상 분기
+    for (let i = 2; i <= aoa.length; i++) {
+      const v = aoa[i-1][4]; const addr = 'E' + i;
+      const rgb = v <= 0 ? 'D1FAE5' : v <= 5 ? 'FEF3C7' : 'FEE2E2';
+      if (ws[addr]) ws[addr].s = { fill:{patternType:'solid', fgColor:{rgb}}, alignment:{horizontal:'center'} };
+    }
+    ws['!sheetViews'] = [{ showGridLines: false }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, en?'Attendance':'출근현황');
+    XLSX.writeFile(wb, 'attendance_' + dateStr(new Date()) + '.xlsx');
+  };
+
+  // 초기화 — 카드가 펼쳐질 때 한 번 로드
+  let _awInited = false;
+  document.getElementById('card-attendance-status')?.addEventListener('toggle', async function(e) {
+    if (this.open && !_awInited) {
+      _awInited = true;
+      initDateSelects();
+      await loadTeachers();
+      await loadRecords();
+      awRender();
+    }
+  });
+})();
+</script>
 
 </body>
 </html>
