@@ -1714,46 +1714,6 @@
   </div>
 </details>
 
-<!-- 💾 녹화 저장소 — 깔끔한 통합 디자인 -->
-<details class="table-card menu-card" id="card-recording-storage">
-  <summary style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px">
-    <span style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#0f172a">
-      <span data-ko="💾 녹화 저장소" data-en="💾 Recording Storage">💾 녹화 저장소</span>
-      <span id="rs-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#dcfce7;color:#15803d;border-radius:12px;font-size:10.5px;font-weight:700">
-        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:rsPulse 2s infinite"></span>
-        <span data-ko="연결 정상" data-en="Online">연결 정상</span>
-      </span>
-    </span>
-    <span style="display:flex;gap:6px;margin-right:32px">
-      <button id="rs-refresh-btn" onclick="event.stopPropagation();window.refreshStorageStats&&window.refreshStorageStats()" style="padding:6px 12px;font-size:11.5px;border:1px solid #d1d5db;background:#fff;border-radius:6px;cursor:pointer;font-weight:600;color:#475569;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔄</span><span data-ko="새로고침" data-en="Refresh">새로고침</span></button>
-      <button id="rs-diag-btn" onclick="event.stopPropagation();testR2()" style="padding:6px 12px;font-size:11.5px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔧</span><span data-ko="진단" data-en="Diagnose">진단</span></button>
-    </span>
-  </summary>
-  <div class="menu-body" style="padding:0 0 16px">
-    <style>
-      @keyframes rsPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
-      .rs-kpi { background:linear-gradient(180deg,#fff,#f8fafc); border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; transition:transform .2s,box-shadow .2s }
-      .rs-kpi:hover { transform:translateY(-2px); box-shadow:0 8px 18px -4px rgba(0,0,0,0.08) }
-      .rs-kpi .icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:8px }
-      .rs-kpi .label { font-size:11px; font-weight:700; color:#64748b; margin-bottom:2px }
-      .rs-kpi .value { font-size:20px; font-weight:900; color:#0f172a; font-variant-numeric:tabular-nums; line-height:1.1 }
-      .rs-kpi .unit { font-size:11px; font-weight:600; color:#94a3b8; margin-top:3px }
-    </style>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding:0 18px;margin-bottom:18px" id="rs-kpi-grid">
-      <div class="rs-kpi"><div class="icon" style="background:#fef3c7;color:#b45309">📂</div><div class="label" data-ko="R2 저장소 (Cloudflare 객체 저장소)" data-en="R2 Storage (Cloudflare Object Storage)">R2 저장소 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span></div><div class="value" id="rs-r2-size">12.4</div><div class="unit"><span id="rs-r2-files">156</span> <span data-ko="파일 · GB" data-en="files · GB">파일 · GB</span></div></div>
-      <div class="rs-kpi"><div class="icon" style="background:#dbeafe;color:#1d4ed8">💿</div><div class="label" data-ko="D1 데이터베이스" data-en="D1 Database">D1 데이터베이스</div><div class="value" id="rs-d1-size">248</div><div class="unit"><span id="rs-d1-tables">12</span> <span data-ko="테이블 · MB" data-en="tables · MB">테이블 · MB</span></div></div>
-      <div class="rs-kpi"><div class="icon" style="background:#f3e8ff;color:#7c3aed">🗄️</div><div class="label" data-ko="KV 호출" data-en="KV Operations">KV 호출</div><div class="value" id="rs-kv-ops">1,243</div><div class="unit" data-ko="회 / 일" data-en="ops / day">회 / 일</div></div>
-      <div class="rs-kpi"><div class="icon" style="background:#dcfce7;color:#15803d">💰</div><div class="label" data-ko="월 예상 비용" data-en="Monthly Estimate">월 예상 비용</div><div class="value" id="rs-cost">₩4,820</div><div class="unit" data-ko="청구액 (USD $3.2)" data-en="Billing (USD $3.2)">청구액 (USD $3.2)</div></div>
-    </div>
-    <div id="rs-diag-result-wrap" style="margin:0 18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;min-height:40px">
-      <span style="font-size:14px">📋</span>
-      <span data-ko="R2 (Cloudflare 객체 저장소) 진단 결과:" data-en="R2 (Cloudflare Object Storage) Diagnostic:">R2 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span> 진단 결과:</span>
-      <span id="test-r2-result" style="color:#94a3b8;font-style:italic" data-ko="우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다." data-en="Click [Diagnose] above to run R2 binding + R/W test.">우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다.</span>
-    </div>
-    <div id="storage-grid" style="display:none"></div>
-  </div>
-</details>
-
 <!-- 💼 Phase 8 v2: Mangoi 강사 급여·평가 (10분당 단가 모델 + 5카테고리 평가) -->
 <style>
   /* 데이터 히트맵 스타일 — salary-heatmap.pages.dev 와 동일 */
@@ -3789,12 +3749,49 @@
      존재하므로 focus-integrator.pages.dev iframe 임베드는 중복. 사용자가
      "다시 이걸 볼 필요 없음" 요청으로 삭제. 필요하면 git 히스토리에서 복원. -->
 
-<details class="table-card menu-card">
-  <summary style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-    <span data-ko="🎥 녹화 목록 (D1 메타 + R2 파일 통합)" data-en="🎥 Recordings (D1 meta + R2 files unified)">🎥 녹화 목록 (D1 메타 + R2 파일 통합)</span>
-    <span id="rec-counts" style="font-size:12px;font-weight:400;color:#6b7280;margin-right:32px;"></span>
+<!-- 🎥 녹화 관리 — 영상 목록 + 저장소 상태 + 진단 통합 (2026-05-06) -->
+<details class="table-card menu-card" id="card-recording-storage">
+  <summary style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 18px;">
+    <span style="display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#0f172a">
+      <span data-ko="🎥 녹화 관리" data-en="🎥 Recordings">🎥 녹화 관리</span>
+      <span id="rs-status-badge" style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#dcfce7;color:#15803d;border-radius:12px;font-size:10.5px;font-weight:700">
+        <span style="width:6px;height:6px;background:#10b981;border-radius:50%;display:inline-block;animation:rsPulse 2s infinite"></span>
+        <span data-ko="연결 정상" data-en="Online">연결 정상</span>
+      </span>
+    </span>
+    <span style="display:flex;gap:8px;align-items:center;margin-right:32px">
+      <span id="rec-counts" style="font-size:12px;font-weight:400;color:#6b7280;"></span>
+      <button id="rs-refresh-btn" onclick="event.stopPropagation();window.refreshStorageStats&&window.refreshStorageStats()" style="padding:6px 12px;font-size:11.5px;border:1px solid #d1d5db;background:#fff;border-radius:6px;cursor:pointer;font-weight:600;color:#475569;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔄</span><span data-ko="새로고침" data-en="Refresh">새로고침</span></button>
+      <button id="rs-diag-btn" onclick="event.stopPropagation();testR2()" style="padding:6px 12px;font-size:11.5px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:5px"><span style="font-size:13px">🔧</span><span data-ko="진단" data-en="Diagnose">진단</span></button>
+    </span>
   </summary>
   <div class="menu-body">
+    <style>
+      @keyframes rsPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+      .rs-kpi { background:linear-gradient(180deg,#fff,#f8fafc); border:1px solid #e5e7eb; border-radius:12px; padding:14px 16px; transition:transform .2s,box-shadow .2s }
+      .rs-kpi:hover { transform:translateY(-2px); box-shadow:0 8px 18px -4px rgba(0,0,0,0.08) }
+      .rs-kpi .icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; margin-bottom:8px }
+      .rs-kpi .label { font-size:11px; font-weight:700; color:#64748b; margin-bottom:2px }
+      .rs-kpi .value { font-size:20px; font-weight:900; color:#0f172a; font-variant-numeric:tabular-nums; line-height:1.1 }
+      .rs-kpi .unit { font-size:11px; font-weight:600; color:#94a3b8; margin-top:3px }
+    </style>
+    <div style="font-size:11.5px;font-weight:700;color:#475569;margin:2px 0 8px 2px;letter-spacing:0.3px"><span data-ko="📊 저장소 상태" data-en="📊 Storage Status">📊 저장소 상태</span></div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px" id="rs-kpi-grid">
+      <div class="rs-kpi"><div class="icon" style="background:#fef3c7;color:#b45309">📂</div><div class="label" data-ko="R2 저장소 (Cloudflare 객체 저장소)" data-en="R2 Storage (Cloudflare Object Storage)">R2 저장소 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span></div><div class="value" id="rs-r2-size">12.4</div><div class="unit"><span id="rs-r2-files">156</span> <span data-ko="파일 · GB" data-en="files · GB">파일 · GB</span></div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#dbeafe;color:#1d4ed8">💿</div><div class="label" data-ko="D1 데이터베이스" data-en="D1 Database">D1 데이터베이스</div><div class="value" id="rs-d1-size">248</div><div class="unit"><span id="rs-d1-tables">12</span> <span data-ko="테이블 · MB" data-en="tables · MB">테이블 · MB</span></div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#f3e8ff;color:#7c3aed">🗄️</div><div class="label" data-ko="KV 호출" data-en="KV Operations">KV 호출</div><div class="value" id="rs-kv-ops">1,243</div><div class="unit" data-ko="회 / 일" data-en="ops / day">회 / 일</div></div>
+      <div class="rs-kpi"><div class="icon" style="background:#dcfce7;color:#15803d">💰</div><div class="label" data-ko="월 예상 비용" data-en="Monthly Estimate">월 예상 비용</div><div class="value" id="rs-cost">₩4,820</div><div class="unit" data-ko="청구액 (USD $3.2)" data-en="Billing (USD $3.2)">청구액 (USD $3.2)</div></div>
+    </div>
+    <div id="rs-diag-result-wrap" style="margin-bottom:16px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;font-size:12px;color:#64748b;display:flex;align-items:center;gap:8px;min-height:40px">
+      <span style="font-size:14px">📋</span>
+      <span data-ko="R2 (Cloudflare 객체 저장소) 진단 결과:" data-en="R2 (Cloudflare Object Storage) Diagnostic:">R2 <span style="font-weight:500;color:#94a3b8">(Cloudflare 객체 저장소)</span> 진단 결과:</span>
+      <span id="test-r2-result" style="color:#94a3b8;font-style:italic" data-ko="우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다." data-en="Click [Diagnose] above to run R2 binding + R/W test.">우측 상단 [진단] 버튼을 클릭하면 결과가 여기에 표시됩니다.</span>
+    </div>
+    <div id="storage-grid" style="display:none"></div>
+    <div style="font-size:11.5px;font-weight:700;color:#475569;margin:8px 0 8px 2px;letter-spacing:0.3px;display:flex;align-items:center;gap:8px">
+      <span data-ko="🎬 영상 목록" data-en="🎬 Video List">🎬 영상 목록</span>
+      <span style="flex:1;height:1px;background:#e5e7eb"></span>
+    </div>
   <div style="font-size:12px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6;"
        data-ko="💡 D1 = 녹화 메타데이터 DB (방 번호·교사·시간 등) · R2 = 녹화 파일 저장소 (동영상 .webm). 두 곳 모두 있어야 정상입니다."
        data-en="💡 D1 = recording metadata DB (room/teacher/time) · R2 = recording file storage (video .webm). Both must exist for a healthy recording.">
@@ -14327,4 +14324,20 @@ button.chip:hover,
     if (!wb.Workbook) wb.Workbook = {};
     if (!wb.Workbook.Views) wb.Workbook.Views = [];
     wb.Workbook.Views[0] = { showGridLines: false };
-    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab 
+    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  };
+
+  let _ssInited = false;
+  document.getElementById('card-settlement-stats')?.addEventListener('toggle', function() {
+    if (this.open && !_ssInited) {
+      _ssInited = true;
+      initFilters();
+      renderTabs();
+      renderTable();
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
