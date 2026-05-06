@@ -13663,110 +13663,433 @@ button.chip:hover,
 
 
 
-<!-- 📊 정산통계관리 — 데이터·렌더링·엑셀 -->
+<!-- 📊 정산통계관리 — 11탭 데이터·렌더링·엑셀 -->
 <script>
 (function(){
-  // 탭 정의 (11개)
+  // ━━━━━━━━━━ 탭 정의 (11개) ━━━━━━━━━━
   const SS_TABS = [
-    { id:'branch',    ko:'🏢 지사별 정산',    en:'🏢 By Branch',         active:true },
+    { id:'branch',    ko:'🏢 지사별 정산',    en:'🏢 By Branch' },
     { id:'agency',    ko:'🤝 대리점별 정산',  en:'🤝 By Agency' },
     { id:'slp_detail', ko:'📋 SLP 정산 (상세)',  en:'📋 SLP (Detail)' },
     { id:'slp_aid',    ko:'💵 SLP (지원금)',      en:'💵 SLP (Subsidy)' },
     { id:'slp_royalty', ko:'👑 SLP (본사 로열티)', en:'👑 SLP (HQ Royalty)' },
     { id:'slp_income', ko:'💰 SLP 수입현황',     en:'💰 SLP Income' },
     { id:'teacher',   ko:'👨‍🏫 강사별 정산',     en:'👨‍🏫 By Teacher' },
-    { id:'hq_revenue', ko:'🏢 본사 매출 통계',  en:'🏢 HQ Revenue Stats' },
+    { id:'hq_revenue', ko:'🏢 본사 매출 통계',  en:'🏢 HQ Revenue' },
     { id:'student_income', ko:'👨‍🎓 학생수입 통계', en:'👨‍🎓 Student Income' },
     { id:'branch_income', ko:'🏬 지사수입 통계', en:'🏬 Branch Income' },
     { id:'faculty_income', ko:'🎓 교사수입 통계', en:'🎓 Faculty Income' },
   ];
   let _ssActiveTab = 'branch';
-  let _ssData = null;
 
   function isEnSS(){ return (typeof adminLang !== 'undefined' && adminLang === 'en'); }
-  function fmtKRW(n) { return (Number(n)||0).toLocaleString('ko-KR'); }
-  function escSS(s) { return String(s||'').replace(/[<>&"']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&#39;'}[c])); }
+  function fmtKRW(n) { const v = Number(n)||0; return (v < 0 ? '-' : '') + Math.abs(v).toLocaleString('ko-KR'); }
+  function fmtPct(n) { return (Number(n)||0).toFixed(1) + '%'; }
+  function escSS(s) { return String(s||'').replace(/[<>&"\']/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;','\'':'&#39;'}[c])); }
+  function rankBadge(rank) {
+    if (rank === 1) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#fde047,#ca8a04);border-radius:50%;font-size:14px;box-shadow:0 2px 4px rgba(202,138,4,0.4)">🥇</span>';
+    if (rank === 2) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#e2e8f0,#94a3b8);border-radius:50%;font-size:14px;box-shadow:0 2px 4px rgba(148,163,184,0.4)">🥈</span>';
+    if (rank === 3) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#fdba74,#c2410c);border-radius:50%;font-size:14px;box-shadow:0 2px 4px rgba(194,65,12,0.4)">🥉</span>';
+    return '<span style="display:inline-block;color:#6b7280;font-weight:700;font-size:13px">' + rank + '</span>';
+  }
 
-  // 시드: 지사별 정산 — 캡처와 유사 (29건)
-  const SS_BRANCH_SEED = [
-    { rank: 1,  branch:'본사직영지사',   id:'mangoi_b',     manager:'지사',           rep:'망고아이',  total:310037236 },
-    { rank: 2,  branch:'slp',           id:'slp',          manager:'SLP',           rep:'slpmangoi', total: 97867955 },
-    { rank: 3,  branch:'망고아이 지사 (기본)', id:'mangoicom_b', manager:'망고아이 지사 (기본)', rep:'망고아이', total: 83145633 },
-    { rank: 4,  branch:'대구지사 이상호',  id:'chamath',      manager:'이상호',         rep:'망고아이', total: 33490725 },
-    { rank: 5,  branch:'어재섭본부장',     id:'eoh1024',      manager:'어재섭본부장',     rep:'망고아이', total: 30479530 },
-    { rank: 6,  branch:'koreaenglish',  id:'koreng',       manager:'koreaenglish',   rep:'망고아이', total: 26559604 },
-    { rank: 7,  branch:'미소에듀지사',    id:'misojisa',     manager:'미소에듀지사',     rep:'망고아이', total: 21936968 },
-    { rank: 8,  branch:'개인',          id:'personal',     manager:'개인',           rep:'망고아이', total: 19191260 },
-    { rank: 9,  branch:'이상호 대전',    id:'lshdj',        manager:'이상호 대전',     rep:'망고아이', total: 18757189 },
-    { rank: 10, branch:'mangopie',     id:'mangopie_b',   manager:'mangopie',      rep:'망고아이', total: 18601862 },
-    { rank: 11, branch:'강남 2지사',     id:'yhgu999',      manager:'구용회',         rep:'망고아이', total: 15975653 },
-    { rank: 12, branch:'캐피 제주',      id:'jejubranch',   manager:'안상우',         rep:'제퍼슨',   total: 15292265 },
-    { rank: 13, branch:'양산지사',       id:'ysglb2',       manager:'성정훈',         rep:'망고아이', total: 15286859 },
-    { rank: 14, branch:'성남 지성교육 김명진 NEW', id:'kimyj35', manager:'성남 지성교육 김명진 NEW', rep:'망고아이', total: 14268956 },
-    { rank: 15, branch:'캐피 송파',      id:'mmmt00',       manager:'윤은아',         rep:'제퍼슨',   total: 14075586 },
-    { rank: 16, branch:'제주 교육채널',   id:'submarin2r',   manager:'안상우',         rep:'망고아이', total: 13150328 },
-    { rank: 17, branch:'캐피 충북',      id:'lee9494',      manager:'이지명',         rep:'제퍼슨',   total:  9737314 },
-    { rank: 18, branch:'TS지사',         id:'taesang',      manager:'TS지사',         rep:'망고아이', total:  9694723 },
-    { rank: 19, branch:'진남광양',       id:'gy001',        manager:'류성준',         rep:'망고아이', total:  9281484 },
-    { rank: 20, branch:'캐피 전북',      id:'dmsfls0866',   manager:'박미옥',         rep:'제퍼슨',   total:  9063162 },
-    { rank: 21, branch:'캐피 강서',      id:'psjlmy',       manager:'박상흥',         rep:'제퍼슨',   total:  8662460 },
-    { rank: 22, branch:'ABS',          id:'jongseon',     manager:'박종선이사',      rep:'망고아이', total:  8489428 },
-    { rank: 23, branch:'화성지사',       id:'allfruit',     manager:'최영훈',         rep:'망고아이', total:  8317127 },
-    { rank: 24, branch:'구리 다산교육',   id:'joanri123',    manager:'박만선',         rep:'망고아이', total:  8276328 },
-    { rank: 25, branch:'원주제일교육',    id:'edujjh',       manager:'원주제일교육',    rep:'망고아이', total:  8224296 },
-    { rank: 26, branch:'대한민국영어나라', id:'koreaeng',     manager:'대한민국영어나라', rep:'망고아이', total:  8186761 },
-    { rank: 27, branch:'서울중앙지사',   id:'seoulmid',     manager:'김민준',         rep:'망고아이', total:  7821000 },
-    { rank: 28, branch:'부산 해운대',    id:'haeundae01',   manager:'정수아',         rep:'제퍼슨',   total:  7156400 },
-    { rank: 29, branch:'대전 유성',     id:'daejeon_yu',   manager:'고민호',         rep:'망고아이', total:  6892100 },
+  // ━━━━━━━━━━ 시드 데이터 ━━━━━━━━━━
+  // 1) 지사별 정산
+  const SEED_BRANCH = [
+    { rank:1, branch:'본사직영지사', id:'mangoi_b', manager:'지사', rep:'망고아이', total:310037236, com:13336926 },
+    { rank:2, branch:'slp', id:'slp', manager:'SLP', rep:'slpmangoi', total:97867955, com:17206966 },
+    { rank:3, branch:'망고아이 지사 (기본)', id:'mangoicom_b', manager:'망고아이', rep:'망고아이', total:83145633, com:24961417 },
+    { rank:4, branch:'대구지사 이상호', id:'chamath', manager:'이상호', rep:'망고아이', total:33490725, com:13401716 },
+    { rank:5, branch:'어재섭본부장', id:'eoh1024', manager:'어재섭본부장', rep:'망고아이', total:30479530, com:9030861 },
+    { rank:6, branch:'koreaenglish', id:'koreng', manager:'koreaenglish', rep:'망고아이', total:26559604, com:2546403 },
+    { rank:7, branch:'미소에듀지사', id:'misojisa', manager:'미소에듀지사', rep:'망고아이', total:21936968, com:8286658 },
+    { rank:8, branch:'개인', id:'personal', manager:'개인', rep:'망고아이', total:19191260, com:8849623 },
+    { rank:9, branch:'이상호 대전', id:'lshdj', manager:'이상호 대전', rep:'망고아이', total:18757189, com:5604308 },
+    { rank:10, branch:'mangopie', id:'mangopie_b', manager:'mangopie', rep:'망고아이', total:18601862, com:7054017 },
+    { rank:11, branch:'강남 2지사', id:'yhgu999', manager:'구용회', rep:'망고아이', total:15975653, com:4789154 },
+    { rank:12, branch:'캐피 제주', id:'jejubranch', manager:'안상우', rep:'제퍼슨', total:15292265, com:5802327 },
+    { rank:13, branch:'양산지사', id:'ysglb2', manager:'성정훈', rep:'망고아이', total:15286859, com:5912957 },
+    { rank:14, branch:'성남 지성교육 김명진 NEW', id:'kimyj35', manager:'성남 지성교육 김명진', rep:'망고아이', total:14268956, com:6697689 },
+    { rank:15, branch:'캐피 송파', id:'mmmt00', manager:'윤은아', rep:'제퍼슨', total:14075586, com:259259 },
+    { rank:16, branch:'제주 교육채널', id:'submarin2r', manager:'안상우', rep:'망고아이', total:13150328, com:4297498 },
+    { rank:17, branch:'캐피 충북', id:'lee9494', manager:'이지명', rep:'제퍼슨', total:9737314, com:1136230 },
+    { rank:18, branch:'TS지사', id:'taesang', manager:'TS지사', rep:'망고아이', total:9694723, com:937480 },
+    { rank:19, branch:'진남광양', id:'gy001', manager:'류성준', rep:'망고아이', total:9281484, com:-721279 },
+    { rank:20, branch:'캐피 전북', id:'dmsfls0866', manager:'박미옥', rep:'제퍼슨', total:9063162, com:4630026 },
+  ];
+  // 2) 대리점별 정산
+  const SEED_AGENCY = [
+    { rank:1, agency:'강남 1대리점', id:'gn001_a', manager:'김지윤', branch:'본사직영지사', total:42150000, com:5051200 },
+    { rank:2, agency:'서초 대리점', id:'sc002_a', manager:'박세준', branch:'본사직영지사', total:38720000, com:4646400 },
+    { rank:3, agency:'판교 IT 대리점', id:'pj003_a', manager:'이도현', branch:'본사직영지사', total:35480000, com:4257600 },
+    { rank:4, agency:'분당 대리점', id:'bd004_a', manager:'최지혜', branch:'성남 지성교육', total:31250000, com:3750000 },
+    { rank:5, agency:'대전 유성 대리점', id:'dj005_a', manager:'정민수', branch:'대구지사 이상호', total:28930000, com:3471600 },
+    { rank:6, agency:'부산 해운대 대리점', id:'bs006_a', manager:'한가람', branch:'양산지사', total:25410000, com:3049200 },
+    { rank:7, agency:'인천 송도 대리점', id:'ic007_a', manager:'송재훈', branch:'캐피 송파', total:22890000, com:2746800 },
+    { rank:8, agency:'광주 첨단 대리점', id:'gj008_a', manager:'유나영', branch:'koreaenglish', total:20150000, com:2418000 },
+    { rank:9, agency:'대구 수성 대리점', id:'dg009_a', manager:'노태원', branch:'대구지사 이상호', total:18650000, com:2238000 },
+    { rank:10, agency:'울산 남구 대리점', id:'us010_a', manager:'백상호', branch:'양산지사', total:15920000, com:1910400 },
+  ];
+  // 3) SLP 정산 (상세) — 거래 단위
+  const SEED_SLP_DETAIL = [
+    { date:'2026-05-01', sid:'mango_minsu', sname:'김민수', product:'1:1 12회권', amount:560000, slp_rev:84000, hq_royalty:33600, branch_set:50400 },
+    { date:'2026-05-01', sid:'mango_jiwon', sname:'박지원', product:'1:1 24회권', amount:980000, slp_rev:147000, hq_royalty:58800, branch_set:88200 },
+    { date:'2026-05-02', sid:'mango_yujin', sname:'최유진', product:'그룹 12회권', amount:280000, slp_rev:42000, hq_royalty:16800, branch_set:25200 },
+    { date:'2026-05-03', sid:'mango_hyun', sname:'이현우', product:'1:1 8회권', amount:400000, slp_rev:60000, hq_royalty:24000, branch_set:36000 },
+    { date:'2026-05-04', sid:'mango_seyeon', sname:'박서연', product:'1:1 12회권', amount:560000, slp_rev:84000, hq_royalty:33600, branch_set:50400 },
+    { date:'2026-05-04', sid:'mango_dohyun', sname:'정도현', product:'키즈 12회권', amount:320000, slp_rev:48000, hq_royalty:19200, branch_set:28800 },
+    { date:'2026-05-05', sid:'mango_jihoon', sname:'김지훈', product:'비즈니스', amount:580000, slp_rev:87000, hq_royalty:34800, branch_set:52200 },
+    { date:'2026-05-06', sid:'mango_arin', sname:'송아린', product:'시험영어 12회', amount:480000, slp_rev:72000, hq_royalty:28800, branch_set:43200 },
+    { date:'2026-05-06', sid:'mango_taeun', sname:'한태은', product:'1:1 4회권', amount:220000, slp_rev:33000, hq_royalty:13200, branch_set:19800 },
+  ];
+  // 4) SLP 지원금
+  const SEED_SLP_AID = [
+    { rank:1, branch:'본사직영지사', month:'2026-05', reason:'신규 강사 채용 지원', requested:5000000, approved:4500000, status:'승인' },
+    { rank:2, branch:'대구지사 이상호', month:'2026-05', reason:'마케팅 캠페인', requested:3000000, approved:2500000, status:'승인' },
+    { rank:3, branch:'양산지사', month:'2026-05', reason:'장비 업그레이드', requested:2500000, approved:2000000, status:'승인' },
+    { rank:4, branch:'캐피 제주', month:'2026-05', reason:'학생 모집 이벤트', requested:2000000, approved:0, status:'심사중' },
+    { rank:5, branch:'koreaenglish', month:'2026-04', reason:'레벨테스트 도구 구매', requested:1500000, approved:1500000, status:'승인' },
+    { rank:6, branch:'성남 지성교육', month:'2026-04', reason:'운영비 보조', requested:1200000, approved:0, status:'반려' },
+  ];
+  // 5) SLP 본사 로열티
+  const SEED_SLP_ROYALTY = [
+    { rank:1, branch:'본사직영지사', total:310037236, rate:4.3, royalty:13331601, accumulated:78250000 },
+    { rank:2, branch:'slp', total:97867955, rate:17.6, royalty:17224758, accumulated:95820000 },
+    { rank:3, branch:'망고아이 지사 (기본)', total:83145633, rate:30.0, royalty:24943690, accumulated:142150000 },
+    { rank:4, branch:'대구지사 이상호', total:33490725, rate:30.0, royalty:10047218, accumulated:54200000 },
+    { rank:5, branch:'어재섭본부장', total:30479530, rate:30.0, royalty:9143859, accumulated:48750000 },
+    { rank:6, branch:'koreaenglish', total:26559604, rate:30.0, royalty:7967881, accumulated:39450000 },
+    { rank:7, branch:'미소에듀지사', total:21936968, rate:30.0, royalty:6581090, accumulated:31200000 },
+    { rank:8, branch:'캐피 제주', total:15292265, rate:35.0, royalty:5352293, accumulated:24800000 },
+  ];
+  // 6) SLP 수입현황 — 월별
+  const SEED_SLP_INCOME = [
+    { month:'2026-01', new_inc:185000000, renew:142000000, total:327000000, refund:8500000, net:318500000 },
+    { month:'2026-02', new_inc:198000000, renew:156000000, total:354000000, refund:7200000, net:346800000 },
+    { month:'2026-03', new_inc:215000000, renew:168000000, total:383000000, refund:9100000, net:373900000 },
+    { month:'2026-04', new_inc:228000000, renew:175000000, total:403000000, refund:8800000, net:394200000 },
+    { month:'2026-05', new_inc:241000000, renew:189000000, total:430000000, refund:7500000, net:422500000 },
+  ];
+  // 7) 강사별 정산
+  const SEED_TEACHER = [
+    { rank:1, teacher:'Karl', branch:'본사직영', classes:480, fee:2400000, rate:55, salary:1320000, bonus:200000, deduct:0, final:1520000 },
+    { rank:2, teacher:'Melca', branch:'본사직영', classes:465, fee:2325000, rate:55, salary:1278750, bonus:180000, deduct:0, final:1458750 },
+    { rank:3, teacher:'Penny', branch:'본사직영', classes:420, fee:2100000, rate:50, salary:1050000, bonus:150000, deduct:0, final:1200000 },
+    { rank:4, teacher:'Mo', branch:'본사직영', classes:412, fee:2060000, rate:50, salary:1030000, bonus:120000, deduct:0, final:1150000 },
+    { rank:5, teacher:'Teacher Ana', branch:'양산지사', classes:398, fee:1990000, rate:48, salary:955200, bonus:100000, deduct:0, final:1055200 },
+    { rank:6, teacher:'Teacher Belle', branch:'양산지사', classes:385, fee:1925000, rate:48, salary:924000, bonus:80000, deduct:0, final:1004000 },
+    { rank:7, teacher:'Teacher Chaine', branch:'캐피 제주', classes:372, fee:1860000, rate:50, salary:930000, bonus:90000, deduct:20000, final:1000000 },
+    { rank:8, teacher:'Teacher Cindy', branch:'본사직영', classes:368, fee:1840000, rate:48, salary:883200, bonus:60000, deduct:0, final:943200 },
+    { rank:9, teacher:'Teacher Diana', branch:'성남 지성교육', classes:340, fee:1700000, rate:45, salary:765000, bonus:50000, deduct:30000, final:785000 },
+    { rank:10, teacher:'Teacher Eric', branch:'대구지사', classes:325, fee:1625000, rate:45, salary:731250, bonus:40000, deduct:0, final:771250 },
+  ];
+  // 8) 본사 매출 통계 — 월별
+  const SEED_HQ_REVENUE = [
+    { month:'2026-01', new_rev:285000000, renew_rev:210000000, b2c:382000000, b2b:113000000, total:495000000, mom_pct:5.2 },
+    { month:'2026-02', new_rev:298000000, renew_rev:225000000, b2c:401000000, b2b:122000000, total:523000000, mom_pct:5.7 },
+    { month:'2026-03', new_rev:325000000, renew_rev:248000000, b2c:438000000, b2b:135000000, total:573000000, mom_pct:9.6 },
+    { month:'2026-04', new_rev:342000000, renew_rev:262000000, b2c:465000000, b2b:139000000, total:604000000, mom_pct:5.4 },
+    { month:'2026-05', new_rev:368000000, renew_rev:285000000, b2c:498000000, b2b:155000000, total:653000000, mom_pct:8.1 },
+  ];
+  // 9) 학생수입 통계
+  const SEED_STUDENT_INCOME = [
+    { rank:1, student:'홍길동', branch:'본사직영', enrollments:8, total:4480000, avg:560000, refund:0, net:4480000, last:'2026-05-04' },
+    { rank:2, student:'김민수', branch:'본사직영', enrollments:6, total:3360000, avg:560000, refund:0, net:3360000, last:'2026-05-02' },
+    { rank:3, student:'박지원', branch:'대구지사', enrollments:5, total:2940000, avg:588000, refund:200000, net:2740000, last:'2026-05-01' },
+    { rank:4, student:'이지민', branch:'양산지사', enrollments:7, total:2820000, avg:402857, refund:0, net:2820000, last:'2026-04-28' },
+    { rank:5, student:'최유진', branch:'본사직영', enrollments:4, total:2240000, avg:560000, refund:0, net:2240000, last:'2026-04-25' },
+    { rank:6, student:'송아린', branch:'캐피 제주', enrollments:6, total:2160000, avg:360000, refund:100000, net:2060000, last:'2026-04-22' },
+    { rank:7, student:'정도현', branch:'성남 지성교육', enrollments:5, total:1920000, avg:384000, refund:0, net:1920000, last:'2026-04-20' },
+    { rank:8, student:'한태은', branch:'본사직영', enrollments:4, total:1760000, avg:440000, refund:0, net:1760000, last:'2026-04-18' },
+  ];
+  // 10) 지사수입 통계
+  const SEED_BRANCH_INCOME = [
+    { rank:1, branch:'본사직영지사', students:248, teachers:18, revenue:310037236, settled:296701310, net:13335926 },
+    { rank:2, branch:'slp', students:142, teachers:9, revenue:97867955, settled:80660989, net:17206966 },
+    { rank:3, branch:'망고아이 지사 (기본)', students:135, teachers:11, revenue:83145633, settled:58184216, net:24961417 },
+    { rank:4, branch:'대구지사 이상호', students:88, teachers:7, revenue:33490725, settled:20089009, net:13401716 },
+    { rank:5, branch:'어재섭본부장', students:75, teachers:6, revenue:30479530, settled:21448669, net:9030861 },
+    { rank:6, branch:'koreaenglish', students:68, teachers:5, revenue:26559604, settled:24013201, net:2546403 },
+    { rank:7, branch:'미소에듀지사', students:62, teachers:5, revenue:21936968, settled:13650310, net:8286658 },
+    { rank:8, branch:'캐피 제주', students:48, teachers:4, revenue:15292265, settled:9489938, net:5802327 },
+  ];
+  // 11) 교사수입 통계 (full-time staff)
+  const SEED_FACULTY = [
+    { rank:1, name:'정우영', dept:'본사 운영팀', students:0, classes:0, salary:5500000, bonus:1200000, tax:837000, net:5863000 },
+    { rank:2, name:'김재무', dept:'본사 회계팀', students:0, classes:0, salary:5200000, bonus:800000, tax:744000, net:5256000 },
+    { rank:3, name:'박운영', dept:'본사 운영팀', students:0, classes:0, salary:4800000, bonus:600000, tax:680000, net:4720000 },
+    { rank:4, name:'이지점', dept:'부산 지사', students:65, classes:280, salary:4500000, bonus:550000, tax:625000, net:4425000 },
+    { rank:5, name:'최지점', dept:'대구 지사', students:58, classes:248, salary:4300000, bonus:480000, tax:594000, net:4186000 },
+    { rank:6, name:'정지점', dept:'인천 지사', students:52, classes:225, salary:4100000, bonus:420000, tax:560000, net:3960000 },
+    { rank:7, name:'한매니저', dept:'마케팅팀', students:0, classes:0, salary:3800000, bonus:350000, tax:512000, net:3638000 },
+    { rank:8, name:'송컨설턴트', dept:'학습 컨설팅', students:35, classes:142, salary:3500000, bonus:300000, tax:472000, net:3328000 },
   ];
 
-  // 커미션 = 총매출 * 0.967 * commission_rate (예: 본사직영 4.3%, 일반 3%, 제퍼슨 3.5%, 슬롯 별도 16~17%)
-  // 캡처와 비슷하게 보이도록 패턴 매칭 — 각 row 에 비율 부여
-  function commissionFor(row) {
-    const rep = row.rep || '';
-    if (row.branch === '본사직영지사') return Math.round(row.total * 0.043);
-    if (row.branch === 'slp')          return Math.round(row.total * 0.176);
-    if (rep === '슬롯')                 return Math.round(row.total * 0.18);
-    if (rep === '제퍼슨')               return Math.round(row.total * 0.035 * 11);  // approximate
-    if (row.branch.includes('진남'))    return -721279;  // 캡처 기준 음수 케이스
-    return Math.round(row.total * 0.30); // 망고아이 기본
-  }
+  // ━━━━━━━━━━ 컬럼 정의 (각 탭) ━━━━━━━━━━
+  // {key, ko, en, type: 'rank'|'text'|'mono'|'currency'|'pct'|'badge', align?, color?}
+  const COLUMNS = {
+    branch: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'branch', ko:'지사명', en:'Branch Name', type:'text', bold:true },
+      { key:'id', ko:'아이디', en:'ID', type:'mono' },
+      { key:'manager', ko:'관리자', en:'Manager', type:'text' },
+      { key:'rep', ko:'대표지사명', en:'Rep. Branch', type:'text' },
+      { key:'total', ko:'총매출', en:'Total Revenue', type:'currency', color:'#dc2626' },
+      { key:'com', ko:'커미션 (3.3% 제외)', en:'Commission (excl. 3.3%)', type:'currency', color:'#3b82f6' },
+    ],
+    agency: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'agency', ko:'대리점명', en:'Agency Name', type:'text', bold:true },
+      { key:'id', ko:'아이디', en:'ID', type:'mono' },
+      { key:'manager', ko:'관리자', en:'Manager', type:'text' },
+      { key:'branch', ko:'소속지사', en:'Parent Branch', type:'text' },
+      { key:'total', ko:'총매출', en:'Total Revenue', type:'currency', color:'#dc2626' },
+      { key:'com', ko:'커미션 (3.3% 제외)', en:'Commission (excl. 3.3%)', type:'currency', color:'#3b82f6' },
+    ],
+    slp_detail: [
+      { key:'date', ko:'결제일', en:'Date', type:'text' },
+      { key:'sid', ko:'학생ID', en:'Student ID', type:'mono' },
+      { key:'sname', ko:'학생명', en:'Student', type:'text', bold:true },
+      { key:'product', ko:'상품', en:'Product', type:'badge' },
+      { key:'amount', ko:'결제액', en:'Amount', type:'currency', color:'#dc2626' },
+      { key:'slp_rev', ko:'SLP 수익', en:'SLP Revenue', type:'currency', color:'#16a34a' },
+      { key:'hq_royalty', ko:'본사 로열티', en:'HQ Royalty', type:'currency', color:'#a855f7' },
+      { key:'branch_set', ko:'지사 정산', en:'Branch Settle', type:'currency', color:'#3b82f6' },
+    ],
+    slp_aid: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'branch', ko:'지사명', en:'Branch', type:'text', bold:true },
+      { key:'month', ko:'신청월', en:'Month', type:'text' },
+      { key:'reason', ko:'지원 사유', en:'Reason', type:'text' },
+      { key:'requested', ko:'신청금액', en:'Requested', type:'currency', color:'#6b7280' },
+      { key:'approved', ko:'승인금액', en:'Approved', type:'currency', color:'#16a34a' },
+      { key:'status', ko:'상태', en:'Status', type:'status' },
+    ],
+    slp_royalty: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'branch', ko:'지사명', en:'Branch', type:'text', bold:true },
+      { key:'total', ko:'매출', en:'Revenue', type:'currency', color:'#dc2626' },
+      { key:'rate', ko:'로열티율', en:'Royalty Rate', type:'pct', color:'#a855f7' },
+      { key:'royalty', ko:'로열티 금액', en:'Royalty Amount', type:'currency', color:'#a855f7' },
+      { key:'accumulated', ko:'누적 지급', en:'Accumulated', type:'currency', color:'#3b82f6' },
+    ],
+    slp_income: [
+      { key:'month', ko:'월', en:'Month', type:'text', bold:true },
+      { key:'new_inc', ko:'신규 수입', en:'New Income', type:'currency', color:'#3b82f6' },
+      { key:'renew', ko:'갱신 수입', en:'Renewal', type:'currency', color:'#10b981' },
+      { key:'total', ko:'총 수입', en:'Total', type:'currency', color:'#dc2626' },
+      { key:'refund', ko:'환불', en:'Refund', type:'currency', color:'#ef4444' },
+      { key:'net', ko:'순 수입', en:'Net Income', type:'currency', color:'#16a34a' },
+    ],
+    teacher: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'teacher', ko:'강사명', en:'Teacher', type:'text', bold:true },
+      { key:'branch', ko:'소속', en:'Branch', type:'text' },
+      { key:'classes', ko:'수업수', en:'Classes', type:'number' },
+      { key:'fee', ko:'총수업료', en:'Total Fee', type:'currency', color:'#dc2626' },
+      { key:'rate', ko:'정산율', en:'Rate', type:'pct', color:'#a855f7' },
+      { key:'salary', ko:'정산액', en:'Salary', type:'currency', color:'#3b82f6' },
+      { key:'bonus', ko:'보너스', en:'Bonus', type:'currency', color:'#10b981' },
+      { key:'deduct', ko:'차감', en:'Deduction', type:'currency', color:'#ef4444' },
+      { key:'final', ko:'실수령', en:'Net Pay', type:'currency', color:'#16a34a', bold:true },
+    ],
+    hq_revenue: [
+      { key:'month', ko:'월', en:'Month', type:'text', bold:true },
+      { key:'new_rev', ko:'신규 매출', en:'New Revenue', type:'currency', color:'#3b82f6' },
+      { key:'renew_rev', ko:'갱신 매출', en:'Renewal Rev', type:'currency', color:'#10b981' },
+      { key:'b2c', ko:'B2C', en:'B2C', type:'currency', color:'#a855f7' },
+      { key:'b2b', ko:'B2B', en:'B2B', type:'currency', color:'#f59e0b' },
+      { key:'total', ko:'총매출', en:'Total Revenue', type:'currency', color:'#dc2626', bold:true },
+      { key:'mom_pct', ko:'전월대비', en:'MoM Δ', type:'momPct' },
+    ],
+    student_income: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'student', ko:'학생명', en:'Student', type:'text', bold:true },
+      { key:'branch', ko:'소속지사', en:'Branch', type:'text' },
+      { key:'enrollments', ko:'수강건수', en:'Enrollments', type:'number' },
+      { key:'total', ko:'총결제액', en:'Total Paid', type:'currency', color:'#dc2626' },
+      { key:'avg', ko:'평균결제', en:'Avg Payment', type:'currency', color:'#a855f7' },
+      { key:'refund', ko:'환불', en:'Refund', type:'currency', color:'#ef4444' },
+      { key:'net', ko:'순결제', en:'Net', type:'currency', color:'#16a34a', bold:true },
+      { key:'last', ko:'마지막 결제', en:'Last Paid', type:'text' },
+    ],
+    branch_income: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'branch', ko:'지사명', en:'Branch', type:'text', bold:true },
+      { key:'students', ko:'학생수', en:'Students', type:'number' },
+      { key:'teachers', ko:'강사수', en:'Teachers', type:'number' },
+      { key:'revenue', ko:'매출', en:'Revenue', type:'currency', color:'#dc2626' },
+      { key:'settled', ko:'정산받음', en:'Settled', type:'currency', color:'#3b82f6' },
+      { key:'net', ko:'순수익', en:'Net Profit', type:'currency', color:'#16a34a', bold:true },
+    ],
+    faculty_income: [
+      { key:'rank', ko:'순위', en:'Rank', type:'rank' },
+      { key:'name', ko:'성명', en:'Name', type:'text', bold:true },
+      { key:'dept', ko:'부서', en:'Department', type:'text' },
+      { key:'students', ko:'담당학생', en:'Students', type:'number' },
+      { key:'classes', ko:'수업수', en:'Classes', type:'number' },
+      { key:'salary', ko:'기본급', en:'Salary', type:'currency', color:'#3b82f6' },
+      { key:'bonus', ko:'보너스', en:'Bonus', type:'currency', color:'#10b981' },
+      { key:'tax', ko:'세금', en:'Tax', type:'currency', color:'#ef4444' },
+      { key:'net', ko:'실수령', en:'Net Pay', type:'currency', color:'#16a34a', bold:true },
+    ],
+  };
 
-  function getYears() {
-    const y = new Date().getFullYear();
-    return [y-1, y, y+1];
-  }
+  const SEEDS = {
+    branch: SEED_BRANCH, agency: SEED_AGENCY,
+    slp_detail: SEED_SLP_DETAIL, slp_aid: SEED_SLP_AID,
+    slp_royalty: SEED_SLP_ROYALTY, slp_income: SEED_SLP_INCOME,
+    teacher: SEED_TEACHER, hq_revenue: SEED_HQ_REVENUE,
+    student_income: SEED_STUDENT_INCOME, branch_income: SEED_BRANCH_INCOME,
+    faculty_income: SEED_FACULTY,
+  };
 
-  function initFilters() {
+  // KPI 정의 — 탭별 4 카드
+  const KPI_CONF = {
+    branch:        [['총 매출','Total Revenue','total','currency','💰','#3b82f6','#dbeafe'], ['총 커미션','Total Commission','com','currency','🎯','#16a34a','#dcfce7'], ['지사 수','Branches','_count','count','🏢','#a855f7','#f3e8ff'], ['평균 매출','Avg Revenue','total','avg','📊','#f59e0b','#fef3c7']],
+    agency:        [['총 매출','Total Revenue','total','currency','💰','#3b82f6','#dbeafe'], ['총 커미션','Total Commission','com','currency','🎯','#16a34a','#dcfce7'], ['대리점 수','Agencies','_count','count','🤝','#a855f7','#f3e8ff'], ['평균 매출','Avg Revenue','total','avg','📊','#f59e0b','#fef3c7']],
+    slp_detail:    [['총 결제액','Total Paid','amount','currency','💰','#dc2626','#fee2e2'], ['SLP 수익','SLP Revenue','slp_rev','currency','🎯','#16a34a','#dcfce7'], ['본사 로열티','HQ Royalty','hq_royalty','currency','👑','#a855f7','#f3e8ff'], ['거래수','Transactions','_count','count','📋','#3b82f6','#dbeafe']],
+    slp_aid:       [['총 신청','Total Requested','requested','currency','📋','#6b7280','#f3f4f6'], ['총 승인','Total Approved','approved','currency','✅','#16a34a','#dcfce7'], ['신청 건수','Applications','_count','count','📨','#3b82f6','#dbeafe'], ['승인율','Approval Rate','_appr','pct','✅','#a855f7','#f3e8ff']],
+    slp_royalty:   [['총 매출','Total Revenue','total','currency','💰','#dc2626','#fee2e2'], ['총 로열티','Total Royalty','royalty','currency','👑','#a855f7','#f3e8ff'], ['평균 율','Avg Rate','rate','avgPct','📊','#3b82f6','#dbeafe'], ['누적 지급','Accumulated','accumulated','currency','💼','#16a34a','#dcfce7']],
+    slp_income:    [['총 수입','Total Income','total','currency','💰','#dc2626','#fee2e2'], ['신규 수입','New Income','new_inc','currency','🆕','#3b82f6','#dbeafe'], ['갱신 수입','Renewal','renew','currency','🔄','#10b981','#dcfce7'], ['순 수입','Net','net','currency','✨','#16a34a','#dcfce7']],
+    teacher:       [['총 수업료','Total Fee','fee','currency','📚','#dc2626','#fee2e2'], ['총 정산액','Total Salary','salary','currency','💰','#3b82f6','#dbeafe'], ['총 실수령','Net Pay','final','currency','✨','#16a34a','#dcfce7'], ['강사 수','Teachers','_count','count','👨‍🏫','#a855f7','#f3e8ff']],
+    hq_revenue:    [['총매출','Total Revenue','total','currency','💰','#dc2626','#fee2e2'], ['B2C','B2C','b2c','currency','👥','#a855f7','#f3e8ff'], ['B2B','B2B','b2b','currency','🏢','#f59e0b','#fef3c7'], ['평균 MoM','Avg MoM','mom_pct','avgPct','📈','#16a34a','#dcfce7']],
+    student_income: [['총 결제','Total Paid','total','currency','💰','#dc2626','#fee2e2'], ['총 환불','Total Refund','refund','currency','↩️','#ef4444','#fee2e2'], ['순 결제','Net','net','currency','✨','#16a34a','#dcfce7'], ['학생 수','Students','_count','count','👨‍🎓','#a855f7','#f3e8ff']],
+    branch_income: [['총 매출','Total Revenue','revenue','currency','💰','#dc2626','#fee2e2'], ['총 정산','Total Settled','settled','currency','📤','#3b82f6','#dbeafe'], ['총 순수익','Net Profit','net','currency','✨','#16a34a','#dcfce7'], ['지사 수','Branches','_count','count','🏬','#a855f7','#f3e8ff']],
+    faculty_income: [['총 기본급','Total Salary','salary','currency','💰','#3b82f6','#dbeafe'], ['총 보너스','Total Bonus','bonus','currency','🎁','#10b981','#dcfce7'], ['총 세금','Total Tax','tax','currency','📋','#ef4444','#fee2e2'], ['총 실수령','Net Pay','net','currency','✨','#16a34a','#dcfce7']],
+  };
+
+  // 상태 배지 (지원금 상태)
+  function statusBadge(s) {
+    const map = {
+      '승인': { bg:'#dcfce7', fg:'#15803d', text:'✅ 승인' },
+      '심사중': { bg:'#fef3c7', fg:'#92400e', text:'⏳ 심사중' },
+      '반려': { bg:'#fee2e2', fg:'#b91c1c', text:'❌ 반려' },
+    };
     const en = isEnSS();
-    // 년도
-    const ys = document.getElementById('ss-year');
-    ys.innerHTML = '';
-    [...getYears()].forEach(y => {
-      const o = document.createElement('option');
-      o.value = y; o.textContent = y + (en?'':' 년');
-      ys.appendChild(o);
+    const enMap = { '승인':'✅ Approved', '심사중':'⏳ Pending', '반려':'❌ Rejected' };
+    const m = map[s] || { bg:'#f3f4f6', fg:'#6b7280', text: s };
+    const text = en ? (enMap[s] || s) : m.text;
+    return '<span style="display:inline-block;padding:3px 10px;background:' + m.bg + ';color:' + m.fg + ';border-radius:12px;font-size:11px;font-weight:700">' + text + '</span>';
+  }
+
+  // 상품 배지
+  function productBadge(p) {
+    const palette = { '1:1':'#3b82f6', '그룹':'#a855f7', '키즈':'#f97316', '비즈니스':'#0ea5e9', '시험':'#dc2626' };
+    let color = '#6b7280';
+    Object.keys(palette).forEach(k => { if (String(p).includes(k)) color = palette[k]; });
+    return '<span style="display:inline-block;padding:3px 10px;background:' + color + '15;color:' + color + ';border:1px solid ' + color + '40;border-radius:10px;font-size:11px;font-weight:600">' + escSS(p) + '</span>';
+  }
+
+  // MoM 화살표 + 색상
+  function momBadge(v) {
+    const n = Number(v) || 0;
+    const arrow = n > 0 ? '▲' : (n < 0 ? '▼' : '─');
+    const color = n > 0 ? '#16a34a' : (n < 0 ? '#dc2626' : '#6b7280');
+    return '<span style="color:' + color + ';font-weight:700">' + arrow + ' ' + Math.abs(n).toFixed(1) + '%</span>';
+  }
+
+  function getRows() {
+    const base = SEEDS[_ssActiveTab] || [];
+    const search = (document.getElementById('ss-search').value || '').trim().toLowerCase();
+    if (!search) return base.slice();
+    return base.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
+  }
+
+  function calcKPI(rows) {
+    const conf = KPI_CONF[_ssActiveTab] || [];
+    return conf.map(([ko, en, key, kind, icon, color, bg]) => {
+      let value;
+      if (key === '_count') value = rows.length;
+      else if (key === '_appr') {
+        const total = rows.reduce((a,r)=>a + (Number(r.requested)||0), 0);
+        const appr = rows.reduce((a,r)=>a + (Number(r.approved)||0), 0);
+        value = total ? (appr/total*100).toFixed(1) + '%' : '0%';
+      }
+      else if (kind === 'avg') {
+        const sum = rows.reduce((a,r)=>a + (Number(r[key])||0), 0);
+        value = rows.length ? fmtKRW(Math.round(sum / rows.length)) : '0';
+      }
+      else if (kind === 'avgPct') {
+        const sum = rows.reduce((a,r)=>a + (Number(r[key])||0), 0);
+        value = rows.length ? (sum / rows.length).toFixed(1) + '%' : '0%';
+      }
+      else if (kind === 'count') value = rows.length + (isEnSS() ? '' : '개');
+      else if (kind === 'pct')   value = (Number(rows[0]?.[key])||0).toFixed(1) + '%';
+      else { // currency
+        const sum = rows.reduce((a,r)=>a + (Number(r[key])||0), 0);
+        value = fmtKRW(sum);
+      }
+      return { ko, en, value, icon, color, bg };
     });
-    ys.value = new Date().getFullYear();
-    // 월
-    const ms = document.getElementById('ss-month');
-    ms.innerHTML = '';
-    const o0 = document.createElement('option'); o0.value = ''; o0.textContent = en ? 'All months' : '월선택'; ms.appendChild(o0);
-    for (let m = 1; m <= 12; m++) {
-      const o = document.createElement('option');
-      o.value = m; o.textContent = m + (en?'':' 월');
-      ms.appendChild(o);
+  }
+
+  function renderKPI(rows) {
+    const en = isEnSS();
+    const cards = calcKPI(rows);
+    const wrap = document.getElementById('ss-kpi-row');
+    wrap.innerHTML = cards.map(c =>
+      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 6px 16px -4px rgba(0,0,0,0.10)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.04)\'">' +
+        '<div style="width:42px;height:42px;border-radius:50%;background:' + c.bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + c.icon + '</div>' +
+        '<div style="flex:1;min-width:0">' +
+          '<div style="font-size:11px;color:#6b7280;font-weight:600;margin-bottom:2px">' + (en ? c.en : c.ko) + '</div>' +
+          '<div style="font-size:18px;font-weight:800;color:' + c.color + ';font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + c.value + '</div>' +
+        '</div>' +
+      '</div>'
+    ).join('');
+  }
+
+  function cellHTML(col, row) {
+    const v = row[col.key];
+    switch (col.type) {
+      case 'rank':     return rankBadge(v);
+      case 'mono':     return '<span style="font-family:Menlo,monospace;font-size:11px;color:#475569">' + escSS(v) + '</span>';
+      case 'currency': {
+        const n = Number(v) || 0;
+        const neg = n < 0;
+        return '<span style="color:' + (neg ? '#dc2626' : (col.color || '#1f2937')) + ';font-weight:' + (col.bold ? '800' : '700') + ';font-variant-numeric:tabular-nums">' + (neg ? '-' : '') + fmtKRW(Math.abs(n)) + '</span>';
+      }
+      case 'pct':      return '<span style="color:' + (col.color || '#1f2937') + ';font-weight:700;font-variant-numeric:tabular-nums">' + fmtPct(v) + '</span>';
+      case 'momPct':   return momBadge(v);
+      case 'number':   return '<span style="color:#1f2937;font-weight:600;font-variant-numeric:tabular-nums">' + ((Number(v)||0).toLocaleString('ko-KR')) + '</span>';
+      case 'badge':    return productBadge(v);
+      case 'status':   return statusBadge(v);
+      case 'text':
+      default:         return '<span style="color:#1e293b' + (col.bold ? ';font-weight:700' : '') + '">' + escSS(v) + '</span>';
     }
-    // 본사 + 대표지사 옵션 추가
-    const hq = document.getElementById('ss-hq');
-    ['망고아이','제퍼슨','슬롯','SLP','코리아잉글리시'].forEach(v => {
-      const o = document.createElement('option'); o.value = v; o.textContent = v; hq.appendChild(o);
+  }
+
+  function renderTable() {
+    const rows = getRows();
+    renderKPI(rows);
+    const en = isEnSS();
+    const cols = COLUMNS[_ssActiveTab] || [];
+    const wrap = document.getElementById('ss-table-wrap');
+    if (!rows.length) {
+      wrap.innerHTML = '<div style="padding:60px;text-align:center;color:#9ca3af">' + (en?'No data':'데이터가 없습니다.') + '</div>';
+      return;
+    }
+
+    let html = '<div style="overflow-x:auto"><table style="width:100%;font-size:12.5px;border-collapse:separate;border-spacing:0">';
+    html += '<thead><tr>';
+    cols.forEach((col, i) => {
+      const align = col.type === 'currency' || col.type === 'number' || col.type === 'pct' || col.type === 'momPct' ? 'right' : (col.type === 'rank' || col.type === 'mono' || col.type === 'badge' || col.type === 'status' ? 'center' : 'center');
+      const headColor = col.color || '#1e293b';
+      html += '<th style="padding:11px 12px;background:linear-gradient(180deg,#f8fafc,#f1f5f9);color:' + headColor + ';font-weight:800;font-size:11.5px;text-align:' + align + ';border-bottom:2px solid #e2e8f0;letter-spacing:0.2px;white-space:nowrap">' + (en ? col.en : col.ko) + '</th>';
     });
-    const reps = Array.from(new Set(SS_BRANCH_SEED.map(r => r.rep)));
-    const rep = document.getElementById('ss-rep');
-    reps.forEach(v => {
-      const o = document.createElement('option'); o.value = v; o.textContent = v; rep.appendChild(o);
+    html += '</tr></thead><tbody>';
+
+    rows.forEach((r, i) => {
+      const stripe = i % 2 === 0 ? '#ffffff' : '#fafbfc';
+      html += '<tr style="background:' + stripe + ';transition:background .15s" onmouseover="this.style.background=\'#fffbeb\'" onmouseout="this.style.background=\'' + stripe + '\'">';
+      cols.forEach(col => {
+        const align = col.type === 'currency' || col.type === 'number' || col.type === 'pct' || col.type === 'momPct' ? 'right' : (col.type === 'rank' || col.type === 'mono' || col.type === 'badge' || col.type === 'status' ? 'center' : (col.bold ? 'left' : 'center'));
+        html += '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;text-align:' + align + '">' + cellHTML(col, r) + '</td>';
+      });
+      html += '</tr>';
     });
+    html += '</tbody></table></div>';
+    wrap.innerHTML = html;
   }
 
   function renderTabs() {
@@ -13778,158 +14101,80 @@ button.chip:hover,
     }).join('');
   }
 
-  function getRows() {
-    // 현재는 branch 만 실제 데이터, 나머지 탭은 시드 데이터 가공
-    const search = (document.getElementById('ss-search').value || '').trim().toLowerCase();
-    const status = document.getElementById('ss-status').value;
-    const hq = document.getElementById('ss-hq').value;
-    const rep = document.getElementById('ss-rep').value;
-    let rows = SS_BRANCH_SEED.slice();
-    if (rep) rows = rows.filter(r => r.rep === rep);
-    if (search) rows = rows.filter(r => (r.branch + ' ' + r.manager + ' ' + r.id).toLowerCase().includes(search));
-    return rows;
-  }
-
-  function renderKPI(rows) {
+  function initFilters() {
     const en = isEnSS();
-    const wrap = document.getElementById('ss-kpi-row');
-    const totalRev = rows.reduce((a, r) => a + r.total, 0);
-    const totalCom = rows.reduce((a, r) => a + commissionFor(r), 0);
-    const branchCnt = rows.length;
-    const avgRev = branchCnt ? Math.round(totalRev / branchCnt) : 0;
-    const cards = [
-      { label: en?'Total Revenue':'총 매출',     value: fmtKRW(totalRev),  icon:'💰', color:'#3b82f6', bg:'#dbeafe' },
-      { label: en?'Total Commission':'총 커미션', value: fmtKRW(totalCom),  icon:'🎯', color:'#16a34a', bg:'#dcfce7' },
-      { label: en?'Branch Count':'지사 수',      value: branchCnt + (en?'':'개'), icon:'🏢', color:'#a855f7', bg:'#f3e8ff' },
-      { label: en?'Avg Revenue':'평균 매출',     value: fmtKRW(avgRev),    icon:'📊', color:'#f59e0b', bg:'#fef3c7' },
-    ];
-    wrap.innerHTML = cards.map(c =>
-      '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,0.04);transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 6px 16px -4px rgba(0,0,0,0.10)\'" onmouseout="this.style.transform=\'\';this.style.boxShadow=\'0 1px 3px rgba(0,0,0,0.04)\'">' +
-        '<div style="width:42px;height:42px;border-radius:50%;background:' + c.bg + ';display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">' + c.icon + '</div>' +
-        '<div style="flex:1;min-width:0">' +
-          '<div style="font-size:11px;color:#6b7280;font-weight:600;margin-bottom:2px">' + c.label + '</div>' +
-          '<div style="font-size:18px;font-weight:800;color:' + c.color + ';font-variant-numeric:tabular-nums;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">' + c.value + '</div>' +
-        '</div>' +
-      '</div>'
-    ).join('');
+    const ys = document.getElementById('ss-year');
+    ys.innerHTML = '';
+    const y0 = new Date().getFullYear();
+    [y0-1, y0, y0+1].forEach(y => { const o=document.createElement('option'); o.value=y; o.textContent=y + (en?'':' 년'); ys.appendChild(o); });
+    ys.value = y0;
+    const ms = document.getElementById('ss-month');
+    ms.innerHTML = '';
+    const o0 = document.createElement('option'); o0.value=''; o0.textContent = en?'All months':'월선택'; ms.appendChild(o0);
+    for (let m=1;m<=12;m++) { const o=document.createElement('option'); o.value=m; o.textContent=m+(en?'':' 월'); ms.appendChild(o); }
+    const hq = document.getElementById('ss-hq');
+    if (hq.options.length === 1) ['망고아이','제퍼슨','슬롯','SLP','코리아잉글리시'].forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; hq.appendChild(o); });
+    const rep = document.getElementById('ss-rep');
+    if (rep.options.length === 1) ['망고아이','slpmangoi','제퍼슨','코리아'].forEach(v => { const o=document.createElement('option'); o.value=v; o.textContent=v; rep.appendChild(o); });
   }
 
-  function rankBadge(rank) {
-    if (rank === 1) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#fde047,#ca8a04);color:#713f12;border-radius:50%;font-weight:800;font-size:12px;box-shadow:0 2px 4px rgba(202,138,4,0.4)">🥇</span>';
-    if (rank === 2) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#e2e8f0,#94a3b8);color:#1e293b;border-radius:50%;font-weight:800;font-size:12px;box-shadow:0 2px 4px rgba(148,163,184,0.4)">🥈</span>';
-    if (rank === 3) return '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:linear-gradient(135deg,#fdba74,#c2410c);color:#7c2d12;border-radius:50%;font-weight:800;font-size:12px;box-shadow:0 2px 4px rgba(194,65,12,0.4)">🥉</span>';
-    return '<span style="display:inline-block;color:#6b7280;font-weight:700;font-size:13px">' + rank + '</span>';
-  }
-
-  function renderTable() {
-    const rows = getRows();
-    renderKPI(rows);
-    const en = isEnSS();
-    const tab = SS_TABS.find(t => t.id === _ssActiveTab);
-    const wrap = document.getElementById('ss-table-wrap');
-
-    // branch 외 다른 탭은 placeholder
-    if (_ssActiveTab !== 'branch') {
-      wrap.innerHTML = '<div style="padding:60px 24px;text-align:center;background:linear-gradient(135deg,#f0f9ff,#dbeafe);color:#1e40af">' +
-        '<div style="font-size:48px;margin-bottom:14px">' + (tab.ko.split(' ')[0] || '🚧') + '</div>' +
-        '<div style="font-size:18px;font-weight:800;margin-bottom:6px">' + (en?tab.en:tab.ko) + '</div>' +
-        '<div style="font-size:12px;color:#6b7280">' + (en?'Coming soon — same UX as Branch settlement':'준비 중 — 지사별 정산과 동일한 UX 로 곧 추가됩니다') + '</div>' +
-      '</div>';
-      return;
-    }
-
-    if (!rows.length) {
-      wrap.innerHTML = '<div style="padding:48px;text-align:center;color:#9ca3af;font-size:13px">' + (en?'No data':'데이터가 없습니다.') + '</div>';
-      return;
-    }
-
-    // 헤더 + 본문
-    let html = '<div style="overflow-x:auto"><table style="width:100%;font-size:12.5px;border-collapse:separate;border-spacing:0">';
-    html += '<thead><tr>';
-    const headers = en
-      ? ['Rank','Branch Name','ID','Manager','Rep. Branch','Total Revenue ▼','Commission (excl. 3.3%)']
-      : ['순위','지사명','아이디','관리자','대표지사명','총매출 ▼','커미션(3.3% 제외)'];
-    const colors = ['#1e293b','#1e293b','#1e293b','#1e293b','#1e293b','#dc2626','#3b82f6'];
-    headers.forEach((h, i) => {
-      const align = (i === 0 || i === 5 || i === 6) ? 'center' : (i >= 5 ? 'right' : 'center');
-      html += '<th style="padding:11px 14px;background:linear-gradient(180deg,#f8fafc,#f1f5f9);color:' + colors[i] + ';font-weight:800;font-size:11.5px;text-align:' + align + ';border-bottom:2px solid #e2e8f0;letter-spacing:0.2px;white-space:nowrap">' + h + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-
-    rows.forEach((r, i) => {
-      const stripe = i % 2 === 0 ? '#ffffff' : '#fafbfc';
-      const com = commissionFor(r);
-      const comNeg = com < 0;
-      html += '<tr style="background:' + stripe + ';transition:background .15s" onmouseover="this.style.background=\'#fffbeb\'" onmouseout="this.style.background=\'' + stripe + '\'">';
-      html += '<td style="padding:10px;text-align:center;border-bottom:1px solid #f1f5f9">' + rankBadge(r.rank) + '</td>';
-      html += '<td style="padding:10px 14px;color:#1e293b;font-weight:700;border-bottom:1px solid #f1f5f9">' + escSS(r.branch) + '</td>';
-      html += '<td style="padding:10px 14px;color:#475569;border-bottom:1px solid #f1f5f9;text-align:center;font-family:Menlo,monospace;font-size:11px">' + escSS(r.id) + '</td>';
-      html += '<td style="padding:10px 14px;color:#475569;border-bottom:1px solid #f1f5f9;text-align:center">' + escSS(r.manager) + '</td>';
-      html += '<td style="padding:10px 14px;color:#475569;border-bottom:1px solid #f1f5f9;text-align:center">' + escSS(r.rep) + '</td>';
-      html += '<td style="padding:10px 14px;color:#dc2626;font-weight:700;border-bottom:1px solid #f1f5f9;text-align:right;font-variant-numeric:tabular-nums">' + fmtKRW(r.total) + '</td>';
-      html += '<td style="padding:10px 14px;color:' + (comNeg ? '#dc2626' : '#3b82f6') + ';font-weight:700;border-bottom:1px solid #f1f5f9;text-align:right;font-variant-numeric:tabular-nums">' + (comNeg ? '-' : '') + fmtKRW(Math.abs(com)) + '</td>';
-      html += '</tr>';
-    });
-    html += '</tbody></table></div>';
-    wrap.innerHTML = html;
-  }
-
-  window.ssSetTab = function(id) {
-    _ssActiveTab = id;
-    renderTabs();
-    renderTable();
-  };
-
-  window.ssRender = function() {
-    renderTabs();
-    renderTable();
-  };
+  window.ssSetTab = function(id) { _ssActiveTab = id; renderTabs(); renderTable(); };
+  window.ssRender = function() { renderTabs(); renderTable(); };
 
   window.ssExportExcel = function() {
     if (typeof XLSX === 'undefined') { alert('XLSX library not loaded'); return; }
     const rows = getRows();
     if (!rows.length) { alert(isEnSS()?'No data':'데이터가 없습니다.'); return; }
     const en = isEnSS();
-    const headers = en
-      ? ['Rank','Branch Name','ID','Manager','Rep. Branch','Total Revenue','Commission (excl. 3.3%)']
-      : ['순위','지사명','아이디','관리자','대표지사명','총매출','커미션(3.3% 제외)'];
+    const cols = COLUMNS[_ssActiveTab] || [];
+    const tab = SS_TABS.find(t => t.id === _ssActiveTab);
+    const headers = cols.map(c => en ? c.en : c.ko);
     const aoa = [headers];
-    rows.forEach(r => aoa.push([r.rank, r.branch, r.id, r.manager, r.rep, r.total, commissionFor(r)]));
+    rows.forEach(r => aoa.push(cols.map(c => {
+      const v = r[c.key];
+      if (c.type === 'currency') return Number(v) || 0;
+      if (c.type === 'number')   return Number(v) || 0;
+      if (c.type === 'pct')      return Number(v) || 0;
+      return v == null ? '' : v;
+    })));
     const ws = XLSX.utils.aoa_to_sheet(aoa);
-    ws['!cols'] = [{wch:8},{wch:30},{wch:18},{wch:22},{wch:18},{wch:18},{wch:20}];
+    ws['!cols'] = cols.map(c => ({ wch: c.type === 'currency' ? 16 : (c.type === 'mono' ? 18 : 14) }));
     ws['!rows'] = [{ hpt: 30 }];
-    const headerColors = ['1E293B','3B82F6','6366F1','8B5CF6','A855F7','DC2626','2563EB'];
-    headerColors.forEach((rgb, i) => {
-      const addr = String.fromCharCode(65+i) + '1';
+    // Header coloring (rotate palette)
+    const palette = ['1E40AF','3B82F6','6366F1','8B5CF6','A855F7','EC4899','DC2626','F59E0B','10B981','06B6D4','64748B'];
+    cols.forEach((c, i) => {
+      const addr = (i < 26 ? String.fromCharCode(65+i) : 'A'+String.fromCharCode(65+i-26)) + '1';
       if (!ws[addr]) ws[addr] = { t:'s', v: headers[i] };
-      ws[addr].s = { font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:11 }, fill:{ patternType:'solid', fgColor:{ rgb } }, alignment:{ horizontal:'center', vertical:'center' } };
+      ws[addr].s = { font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:11 }, fill:{ patternType:'solid', fgColor:{ rgb: palette[i % palette.length] } }, alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
     });
+    // Body styling
     for (let i = 2; i <= aoa.length; i++) {
-      const isOdd = i % 2 === 0;
-      ['A','B','C','D','E','F','G'].forEach((col, ci) => {
-        const addr = col + i;
+      cols.forEach((c, ci) => {
+        const addr = (ci < 26 ? String.fromCharCode(65+ci) : 'A'+String.fromCharCode(65+ci-26)) + i;
         if (!ws[addr]) ws[addr] = { t:'s', v:'' };
-        const align = (ci === 0) ? 'center' : (ci >= 5 ? 'right' : (ci === 1 ? 'left' : 'center'));
-        ws[addr].s = { font:{ sz:10, color:{ rgb: ci === 5 ? 'DC2626' : (ci === 6 ? '2563EB' : '1F2937') }, bold: ci === 1 || ci === 5 || ci === 6 }, fill:{ patternType:'solid', fgColor:{ rgb: isOdd ? 'F8FAFC' : 'FFFFFF' } }, alignment:{ horizontal: align, vertical:'center', indent: align === 'left' ? 1 : 0 } };
+        const align = (c.type === 'currency' || c.type === 'number' || c.type === 'pct' || c.type === 'momPct') ? 'right' : 'center';
+        const bg = (i % 2 === 0) ? 'F8FAFC' : 'FFFFFF';
+        const fontColor = c.type === 'currency' && Number(rows[i-2][c.key]) < 0 ? 'DC2626' : '1F2937';
+        ws[addr].s = { font:{ sz:10, color:{ rgb: fontColor }, bold: c.bold }, fill:{ patternType:'solid', fgColor:{ rgb: bg } }, alignment:{ horizontal: align, vertical:'center', indent: align === 'left' ? 1 : 0 } };
       });
     }
     ws['!sheetViews'] = [{ showGridLines: false }];
     const lastRow = aoa.length + 5;
-    for (let r = 0; r < lastRow; r++) for (let c = 0; c < 12; c++) {
+    for (let r = 0; r < lastRow; r++) for (let c = 0; c < 15; c++) {
       const addr = XLSX.utils.encode_cell({ r, c });
       if (!ws[addr]) ws[addr] = { t:'s', v:'', s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } } };
     }
-    ws['!ref'] = 'A1:L' + lastRow;
+    ws['!ref'] = 'A1:O' + lastRow;
     ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, en?'Settlement':'정산통계');
+    const sheetName = (en ? (tab?.en || 'Settlement') : (tab?.ko || '정산')).replace(/[^\w가-힣]+/g, '_').slice(0,30);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
     if (!wb.Workbook) wb.Workbook = {};
     if (!wb.Workbook.Views) wb.Workbook.Views = [];
     wb.Workbook.Views[0] = { showGridLines: false };
-    XLSX.writeFile(wb, 'settlement_' + new Date().toISOString().slice(0,10) + '.xlsx');
+    XLSX.writeFile(wb, 'settlement_' + _ssActiveTab + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
   };
 
-  // 초기화
   let _ssInited = false;
   document.getElementById('card-settlement-stats')?.addEventListener('toggle', function() {
     if (this.open && !_ssInited) {
