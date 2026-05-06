@@ -148,50 +148,73 @@ export default {
       if (res) return res;
     }
 
-    // 📋 학생 홈페이지 — 최근 녹화 목록 (날짜순 desc, 공개)
-    //   응답: { ok, rows: [{ id, room_id, teacher, date, duration, size, url, status }] }
+    // 📋 학생 홈페이지 — 최근 녹화 목록 (R2 source of truth, 날짜순 desc, 공개)
+    //   응답: { ok, rows: [{ id, room_id, teacher, date, duration, size, url, status, playable }] }
+    //   R2 의 rec/ prefix 파일을 1차 데이터로 사용하고, D1 의 recordings row 로 metadata 보강
     if (path === '/api/recordings/list-recent' && request.method === 'GET') {
       try {
-        await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
-        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '20', 10)));
-        const rs = await env.DB.prepare(
-          `SELECT id, room_id, teacher_name, teacher_id, filename, file_url, size_bytes, duration_ms,
-                  started_at, ended_at, status, storage
-             FROM recordings
-            WHERE COALESCE(status, '') != 'deleted'
-            ORDER BY COALESCE(started_at, id) DESC
-            LIMIT ?`
-        ).bind(limit).all();
-        const raw = (rs.results || []) as any[];
-        const rows = raw.map((r: any) => {
-          const startMs = r.started_at || 0;
+        if (!env.RECORDINGS) return new Response(JSON.stringify({ ok:false, error:'R2 not configured', rows:[] }), { headers:{'Content-Type':'application/json'} });
+        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get('limit') || '30', 10)));
+
+        // 1) R2 list — rec/ + recordings/ 두 prefix 모두 (legacy 호환)
+        const [recList, recordingsList] = await Promise.all([
+          env.RECORDINGS.list({ prefix: 'rec/', limit: 200 }),
+          env.RECORDINGS.list({ prefix: 'recordings/', limit: 50 }),
+        ]);
+        let allFiles = [
+          ...recList.objects,
+          ...recordingsList.objects,
+        ];
+        // uploaded date desc
+        allFiles.sort((a: any, b: any) => {
+          const ta = a.uploaded ? new Date(a.uploaded).getTime() : 0;
+          const tb = b.uploaded ? new Date(b.uploaded).getTime() : 0;
+          return tb - ta;
+        });
+        allFiles = allFiles.slice(0, limit);
+
+        // 2) D1 metadata 매핑 (file_url 또는 filename 기준)
+        const dbMap = new Map<string, any>();
+        try {
+          await env.DB.exec(`CREATE TABLE IF NOT EXISTS recordings (id INTEGER PRIMARY KEY AUTOINCREMENT, room_id TEXT, teacher_id TEXT, teacher_name TEXT, filename TEXT, file_url TEXT, size_bytes INTEGER, duration_ms INTEGER, participant_ids TEXT, participant_names TEXT, consented_user_ids TEXT, started_at INTEGER, ended_at INTEGER, status TEXT, storage TEXT, expires_at INTEGER);`);
+          const rs = await env.DB.prepare(
+            `SELECT id, room_id, teacher_name, teacher_id, filename, file_url, size_bytes, duration_ms, started_at, ended_at, status FROM recordings WHERE COALESCE(status, '') != 'deleted'`
+          ).all();
+          const rows = (rs.results || []) as any[];
+          rows.forEach((r: any) => {
+            if (r.file_url) dbMap.set(String(r.file_url), r);
+            if (r.filename) dbMap.set(String(r.filename), r);
+          });
+        } catch (e) { /* DB 없어도 R2 만으로 응답 */ }
+
+        // 3) 응답 빌드
+        const rows = allFiles.map((o: any, i: number) => {
+          const db = dbMap.get(o.key) || dbMap.get(String(o.key).split('/').pop() || '') || {};
+          // 날짜: DB started_at 우선, 없으면 R2 uploaded
+          const startMs = db.started_at || (o.uploaded ? new Date(o.uploaded).getTime() : 0);
           const date = startMs ? new Date(startMs).toISOString().slice(0,10) : '-';
-          const durSec = r.duration_ms ? Math.round(r.duration_ms / 1000) : 0;
-          const durStr = durSec >= 60 ? Math.floor(durSec / 60) + '분 ' + (durSec % 60) + '초' : (durSec + '초');
-          const sizeStr = r.size_bytes
-            ? (r.size_bytes >= 1048576 ? (Math.round(r.size_bytes / 104857.6) / 10) + ' MB' : Math.round(r.size_bytes / 1024) + ' KB')
-            : '-';
-          let playUrl = '';
-          if (r.file_url) {
-            playUrl = /^https?:\/\//.test(String(r.file_url))
-              ? String(r.file_url)
-              : '/api/recordings/blob/' + encodeURIComponent(String(r.file_url));
-          } else if (r.filename) {
-            const k = String(r.filename).startsWith('rec/') || String(r.filename).startsWith('recordings/')
-              ? r.filename : ('recordings/' + r.filename);
-            playUrl = '/api/recordings/blob/' + encodeURIComponent(k);
-          }
+          // 시간: DB duration_ms 우선
+          const durMs = db.duration_ms || 0;
+          const durSec = durMs ? Math.round(durMs / 1000) : 0;
+          const durStr = durSec >= 60 ? (Math.floor(durSec/60) + '분 ' + (durSec%60) + '초') : (durSec ? (durSec + '초') : '-');
+          // 크기: R2 object size 우선 (DB 보다 정확)
+          const sz = o.size || db.size_bytes || 0;
+          const sizeStr = sz ? (sz >= 1048576 ? (Math.round(sz/104857.6)/10) + ' MB' : Math.round(sz/1024) + ' KB') : '-';
+          // room_id 추출: rec/{roomId}/{...}.webm
+          const m = /^rec\/([^\/]+)\//.exec(String(o.key));
+          const roomId = (db.room_id) || (m ? m[1] : '-');
           return {
-            id: r.id,
+            id: db.id || ('r2_' + i),
             date,
-            room_id: r.room_id || '-',
-            teacher: r.teacher_name || r.teacher_id || '-',
-            topic: '방 ' + (r.room_id || '-') + ' — 1:1 영어 회화',
+            room_id: roomId,
+            teacher: db.teacher_name || db.teacher_id || '정우영',
+            topic: '방 ' + roomId + ' — 1:1 영어 회화',
             duration: durStr,
             size: sizeStr,
-            url: playUrl,
-            status: r.status || 'unknown',
-            playable: !!playUrl && (r.status === 'completed' || !!r.file_url),
+            url: '/api/recordings/blob/' + encodeURIComponent(String(o.key)),
+            status: db.status || 'completed',
+            playable: true,
+            key: o.key,
           };
         });
         return new Response(JSON.stringify({ ok: true, count: rows.length, rows }, null, 2), { headers:{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'} });
