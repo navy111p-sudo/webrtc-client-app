@@ -2806,6 +2806,55 @@
         </div>
       </details>
 
+      <!-- ━━━━━━━━━━ 📚 출석현황 (Status of Class Attendance) — 수업당 출결 ━━━━━━━━━━ -->
+      <details id="card-class-attendance" style="margin-top:12px;border:1px solid #e5e7eb;border-radius:10px;background:#fff;overflow:hidden">
+        <summary style="padding:12px 16px;cursor:pointer;background:linear-gradient(135deg,rgba(168,85,247,0.10),rgba(217,70,239,0.06));font-weight:700;color:#6b21a8;font-size:14px">
+          <span data-ko="📚 출석현황 (수업당 출결)" data-en="📚 Status of Class Attendance">📚 출석현황 (수업당 출결)</span>
+        </summary>
+        <div style="padding:14px 16px">
+          <!-- 컨트롤 바 -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px">
+            <select id="ca-teacher" style="padding:6px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:13px;background:#fff;min-width:140px">
+              <option value="" data-ko="전체강사" data-en="All Teachers">전체강사</option>
+            </select>
+            <span style="display:flex;gap:4px;align-items:center;font-size:12px;color:#6b7280;flex-wrap:wrap">
+              <select id="ca-from-y" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="년" data-en="Y">년</span>
+              <select id="ca-from-m" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="월" data-en="M">월</span>
+              <select id="ca-from-d" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="일" data-en="D">일</span>
+              <span style="margin:0 4px">~</span>
+              <select id="ca-to-y" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="년" data-en="Y">년</span>
+              <select id="ca-to-m" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="월" data-en="M">월</span>
+              <select id="ca-to-d" class="ca-date" style="padding:5px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:12px"></select><span data-ko="일" data-en="D">일</span>
+            </span>
+            <span style="flex:1"></span>
+            <div style="display:flex;gap:4px;flex-wrap:wrap">
+              <button type="button" data-mode="byTeacher" onclick="caSetMode('byTeacher')" class="ca-mode-btn" style="padding:6px 12px;font-size:12px;background:#a855f7;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:600" data-ko="강사별" data-en="By Teacher">강사별</button>
+              <button type="button" data-mode="byDate" onclick="caSetMode('byDate')" class="ca-mode-btn" style="padding:6px 12px;font-size:12px;background:#fff;color:#a855f7;border:1px solid #a855f7;border-radius:6px;cursor:pointer;font-weight:600" data-ko="날짜별" data-en="By Date">날짜별</button>
+              <button type="button" data-mode="byTeacherDate" onclick="caSetMode('byTeacherDate')" class="ca-mode-btn" style="padding:6px 12px;font-size:12px;background:#fff;color:#a855f7;border:1px solid #a855f7;border-radius:6px;cursor:pointer;font-weight:600" data-ko="강사·날짜별" data-en="By Teacher·Date">강사·날짜별</button>
+              <button type="button" data-mode="chart" onclick="caSetMode('chart')" class="ca-mode-btn" style="padding:6px 12px;font-size:12px;background:#fff;color:#a855f7;border:1px solid #a855f7;border-radius:6px;cursor:pointer;font-weight:600" data-ko="그래프" data-en="Chart">그래프</button>
+              <button type="button" onclick="caExportExcel()" style="padding:6px 12px;font-size:12px;background:#16a34a;color:#fff;border:0;border-radius:6px;cursor:pointer;font-weight:700" data-ko="엑셀 다운로드" data-en="Export Excel">엑셀 다운로드</button>
+            </div>
+          </div>
+
+          <!-- 도움말 -->
+          <div style="font-size:11px;color:#6b7280;background:#f9fafb;border:1px dashed #e5e7eb;border-radius:8px;padding:8px 12px;margin-bottom:10px;line-height:1.6">
+            💡 <span data-ko="수업 1건 = row 1개. 별점은 지각 정도에 따라 자동 차감 (1분당 -1점, 최대 -10점). 관리자 답변·별점삭제로 사후 조정 가능." data-en="One row per class. Penalty = 1 point per late minute, up to -10. Use Answer/Delete for post-correction.">수업 1건 = row 1개. 별점은 지각 정도에 따라 자동 차감 (1분당 -1점, 최대 -10점). 관리자 답변·별점삭제로 사후 조정 가능.</span>
+          </div>
+
+          <!-- 결과 영역 -->
+          <div id="ca-table-wrap" style="overflow-x:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px"></div>
+          <div id="ca-chart-wrap" style="display:none;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;min-height:340px"></div>
+
+          <!-- 범례 -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:#6b7280">
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#10b981;border-radius:2px"></span> <span data-ko="정시 (별점 0점)" data-en="On time (0 penalty)">정시 (별점 0점)</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#f59e0b;border-radius:2px"></span> <span data-ko="경미 지각 (별점 -1~-3)" data-en="Minor (-1~-3)">경미 지각 (-1~-3)</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#ef4444;border-radius:2px"></span> <span data-ko="중대 지각 (별점 -4~-10)" data-en="Major (-4~-10)">중대 지각 (-4~-10)</span></span>
+            <span style="display:inline-flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:#9ca3af;border-radius:2px"></span> <span data-ko="결강 (별점 -10)" data-en="Absent (-10)">결강 (별점 -10)</span></span>
+          </div>
+        </div>
+      </details>
+
     </div>
   </div>
 </details>
@@ -12510,9 +12559,9 @@ button.chip:hover,
     html += '<tr style="background:#f1f5f9">';
     dates.forEach((_, i) => {
       const subBg = (i % 2 === 0) ? '#dbeafe' : '#e0f2fe';
-      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-left:2px solid #fff;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.start + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(start work time)</span></th>';
-      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.actual + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(Actual attend time)</span></th>';
-      html += '<th style="padding:7px 6px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4">' + L.elapsed + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(elapsed time)</span></th>';
+      html += '<th style="padding:7px 4px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-left:2px solid #fff;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4;min-width:90px;width:90px">' + L.start + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(start work time)</span></th>';
+      html += '<th style="padding:7px 4px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4;min-width:90px;width:90px">' + L.actual + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(Actual attend time)</span></th>';
+      html += '<th style="padding:7px 4px;background:' + subBg + ';font-size:9.5px;font-weight:600;color:#1e3a8a;border-bottom:1px solid #cbd5e1;text-align:center;line-height:1.4;min-width:75px;width:75px">' + L.elapsed + '<br><span style="font-weight:400;color:#64748b;font-size:8.5px">(elapsed time)</span></th>';
     });
     html += '</tr></thead>';
 
@@ -13047,6 +13096,403 @@ button.chip:hover,
       await loadTeachers();
       await loadRecords();
       awRender();
+    }
+  });
+})();
+</script>
+
+
+
+<!-- 📚 출석현황 (수업당 출결) — 데이터 + 렌더링 + Excel/Chart -->
+<script>
+(function(){
+  const CA_LS_KEY = 'mango_class_attendance_seed_v1';
+  let _caTeachers = [];
+  let _caRecords = [];   // [{ teacher_id, teacher_name, date, class_no, scheduled, class_min, actual, late_min, penalty, reason, answer, deleted }]
+  let _caMode = 'byTeacher';
+  let _caCharts = [];
+
+  function pad2(n){ return String(n).padStart(2, '0'); }
+  function dateStr(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+  function parseDate(s){ const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+  function isEn(){ return (typeof adminLang !== 'undefined' && adminLang === 'en'); }
+
+  function initDateSelects() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth()+1, d = now.getDate();
+    const fillY = sel => { for (let v = y-1; v <= y+1; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 년'); sel.appendChild(o); } sel.value = y; };
+    const fillM = sel => { for (let v = 1; v <= 12; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 월'); sel.appendChild(o); } sel.value = m; };
+    const fillD = sel => { for (let v = 1; v <= 31; v++) { const o=document.createElement('option'); o.value=v; o.textContent=v + (isEn()?'':' 일'); sel.appendChild(o); } sel.value = d; };
+    fillY(document.getElementById('ca-from-y')); fillM(document.getElementById('ca-from-m')); fillD(document.getElementById('ca-from-d'));
+    fillY(document.getElementById('ca-to-y'));   fillM(document.getElementById('ca-to-m'));   fillD(document.getElementById('ca-to-d'));
+    const back = new Date(); back.setDate(back.getDate()-6);
+    document.getElementById('ca-from-y').value = back.getFullYear();
+    document.getElementById('ca-from-m').value = back.getMonth()+1;
+    document.getElementById('ca-from-d').value = back.getDate();
+    document.querySelectorAll('.ca-date, #ca-teacher').forEach(el => el.addEventListener('change', caRender));
+  }
+
+  function getRange() {
+    return {
+      from: new Date(+document.getElementById('ca-from-y').value, +document.getElementById('ca-from-m').value - 1, +document.getElementById('ca-from-d').value),
+      to:   new Date(+document.getElementById('ca-to-y').value,   +document.getElementById('ca-to-m').value - 1,   +document.getElementById('ca-to-d').value),
+    };
+  }
+
+  async function loadTeachers() {
+    try {
+      const r = await fetch('/api/admin/teacher-profiles?limit=200', { credentials:'include' });
+      if (r.ok) {
+        const j = await r.json();
+        const rows = j.rows || j.items || j;
+        if (Array.isArray(rows) && rows.length) {
+          _caTeachers = rows.map(x => ({ id: x.id || x.korean_name, name: x.english_name || x.korean_name }));
+        }
+      }
+    } catch(e) {}
+    if (!_caTeachers.length) {
+      _caTeachers = ['Karl','Melca','Mo','Teacher Ana','Teacher Belle','Teacher Chaine'].map((n,i)=>({ id:'t'+i, name:n }));
+    }
+    const sel = document.getElementById('ca-teacher');
+    _caTeachers.forEach(t => { const o=document.createElement('option'); o.value=t.id; o.textContent=t.name; sel.appendChild(o); });
+  }
+
+  async function loadRecords() {
+    try {
+      const r = await fetch('/api/admin/class-attendance?limit=1000', { credentials:'include' });
+      if (r.ok) {
+        const j = await r.json();
+        const rows = j.rows || j.items || j;
+        if (Array.isArray(rows) && rows.length) { _caRecords = rows; return; }
+      }
+    } catch(e) {}
+    try {
+      const saved = JSON.parse(localStorage.getItem(CA_LS_KEY) || 'null');
+      if (Array.isArray(saved) && saved.length) { _caRecords = saved; return; }
+    } catch(e){}
+    // 시드: 강사별로 일 1~3회 수업 (결정적)
+    _caRecords = [];
+    for (let day = 13; day >= 0; day--) {
+      const d = new Date(); d.setDate(d.getDate() - day);
+      const dStr = dateStr(d);
+      const dow = d.getDay(); if (dow === 0 || dow === 6) continue;
+      _caTeachers.forEach(t => {
+        const seedBase = (String(t.id) + dStr).split('').reduce((a,c)=>a+c.charCodeAt(0), 0);
+        const numClasses = (seedBase % 3) + 1; // 1~3
+        for (let i = 0; i < numClasses; i++) {
+          const sched = pad2(9 + i * 3) + ':00';
+          const seed = seedBase + i * 7;
+          const lateMin = (seed % 9 === 0) ? 0 : (seed % 5 === 0 ? Math.floor((seed%30)) : (seed % 3 === 0 ? (seed%6) : 0));
+          const isAbsent = (seed % 17 === 0);
+          const [sh, sm] = sched.split(':').map(Number);
+          const actMs = new Date(d).setHours(sh, sm + lateMin, 0, 0);
+          const actDate = new Date(actMs);
+          const actual = isAbsent ? '' : (pad2(actDate.getHours()) + ':' + pad2(actDate.getMinutes()));
+          const classMin = 20;
+          const penalty = isAbsent ? -10 : Math.max(-10, -lateMin);
+          _caRecords.push({
+            id: t.id + '_' + dStr + '_' + i,
+            teacher_id: t.id, teacher_name: t.name, date: dStr,
+            class_no: i+1, scheduled: sched, class_min: classMin, actual,
+            late_min: lateMin, penalty, reason: '', answer: '', deleted: false,
+          });
+        }
+      });
+    }
+    localStorage.setItem(CA_LS_KEY, JSON.stringify(_caRecords));
+  }
+
+  function filterRecords() {
+    const { from, to } = getRange();
+    const tid = document.getElementById('ca-teacher').value;
+    return _caRecords.filter(r => {
+      if (r.deleted) return false;
+      const d = parseDate(r.date);
+      if (d < from || d > to) return false;
+      if (tid && String(r.teacher_id) !== String(tid)) return false;
+      return true;
+    });
+  }
+
+  function rowColor(r) {
+    if (!r.actual) return '#9ca3af';
+    if (r.penalty === 0) return '#10b981';
+    if (r.penalty >= -3) return '#f59e0b';
+    return '#ef4444';
+  }
+  function fmtMin(min) { if (!min) return '00:00'; const h=Math.floor(min/60), m=min%60; return pad2(h)+':'+pad2(m); }
+
+  // 강사별 모드 — 컬럼 8개 (날짜·규정·수업·실제·경과·별점·사유·답변·삭제)
+  function renderClassTable(rows, groupBy) {
+    if (!rows.length) return '<div style="padding:30px;text-align:center;color:#9ca3af">데이터가 없습니다.</div>';
+    const en = isEn();
+    const L = en
+      ? { date:'date', start:'start work time', clsmin:'Class minute', actual:'Actual enter time', elapsed:'elapsed time', penaltyTime:'penalty time', penalty:'Penalty', reason:'Reason', answer:'Answer', delete:'Delete' }
+      : { date:'날짜', start:'규정출석시간', clsmin:'수업시간', actual:'실제출석시간', elapsed:'경과시간', penaltyTime:'별점시간', penalty:'별점', reason:'지각사유', answer:'관리자답변', delete:'별점삭제' };
+
+    let groups; // [{ key, label, items, statTitle, totalDays }]
+    if (groupBy === 'byTeacher') {
+      const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
+        const t = _caTeachers.find(x => String(x.id) === String(id));
+        return { id, name: t ? t.name : id };
+      }).sort((a,b)=>a.name.localeCompare(b.name,'ko-KR'));
+      groups = teachers.map(t => ({
+        key: t.id, label: t.name,
+        items: rows.filter(r => String(r.teacher_id) === String(t.id)).sort((a,b)=>a.date.localeCompare(b.date) || (a.scheduled||'').localeCompare(b.scheduled||'')),
+      }));
+    } else if (groupBy === 'byDate') {
+      const dates = Array.from(new Set(rows.map(r => r.date))).sort();
+      groups = dates.map(date => ({
+        key: date, label: date,
+        items: rows.filter(r => r.date === date).sort((a,b)=>(a.teacher_name||'').localeCompare(b.teacher_name||'','ko-KR')),
+      }));
+    } else { // byTeacherDate
+      const map = new Map();
+      rows.forEach(r => {
+        const k = r.teacher_id + '|' + r.date;
+        if (!map.has(k)) map.set(k, { key: k, label: (r.teacher_name||'') + ' · ' + r.date, items: [] });
+        map.get(k).items.push(r);
+      });
+      groups = Array.from(map.values()).sort((a,b)=>a.label.localeCompare(b.label,'ko-KR'));
+    }
+
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(700px,1fr));gap:14px;padding:14px">';
+    groups.forEach(g => {
+      // 그룹 통계
+      const items = g.items;
+      const lateRecs = items.filter(r => r.actual && r.late_min > 0);
+      const absentRecs = items.filter(r => !r.actual);
+      const lateCount = lateRecs.length;
+      const totalDays = items.length;
+      const avgLatePerDay = totalDays ? (lateCount / totalDays).toFixed(2) : 0;
+      const totalLateMin = lateRecs.reduce((a, r) => a + (r.late_min||0), 0);
+      const avgLateMin = items.length ? Math.round(totalLateMin / items.length) : 0;
+      const totalPenalty = items.reduce((a, r) => a + (r.penalty||0), 0);
+
+      html += '<div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;display:flex;flex-direction:column">';
+      // 그룹 헤더
+      html += '<div style="background:linear-gradient(135deg,#a855f7,#7c3aed);color:#fff;padding:10px 14px;font-weight:700;font-size:14px;text-align:center">' + g.label + '</div>';
+
+      // 메인 테이블
+      html += '<div style="overflow-x:auto;flex:1"><table style="width:100%;font-size:11px;border-collapse:separate;border-spacing:0">';
+      html += '<thead><tr style="background:#f8fafc">';
+      ['date','start','clsmin','actual','elapsed','penaltyTime','penalty','reason','answer','delete'].forEach((k, i) => {
+        const w = ['76px','76px','60px','76px','60px','60px','46px','110px','110px','60px'][i];
+        html += '<th style="padding:7px 4px;font-size:9.5px;font-weight:700;color:#475569;border-bottom:1px solid #e5e7eb;text-align:center;line-height:1.4;min-width:' + w + ';width:' + w + '">' + L[k] + '<br><span style="font-weight:400;color:#94a3b8;font-size:8.5px">(' + ({date:'date',start:'start work time',clsmin:'Class minute',actual:'Actual enter time',elapsed:'elapsed time',penaltyTime:'penalty time',penalty:'Penalty',reason:'Reason',answer:'Answer',delete:'Delete'}[k]) + ')</span></th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      items.forEach((r, i) => {
+        const c = rowColor(r);
+        const stripe = i % 2 === 0 ? '#ffffff' : '#fafbfc';
+        const elapsed = !r.actual ? '결강' : (r.late_min === 0 ? '0m' : (r.late_min > 0 ? '+' + r.late_min + 'm' : r.late_min + 'm'));
+        const penaltyTime = r.penalty < 0 ? Math.abs(r.penalty) + 'm' : '0m';
+        const penaltyStars = r.penalty <= -10 ? '🚫' : (r.penalty < 0 ? '⭐'.repeat(Math.min(Math.abs(r.penalty), 5)) + (r.penalty < -5 ? '+' : '') : '');
+        html += '<tr style="background:' + stripe + '">';
+        html += '<td style="padding:6px 4px;text-align:center;color:#1e293b;font-weight:600;border-bottom:1px solid #f1f5f9;font-size:11px">' + r.date + '</td>';
+        html += '<td style="padding:6px 4px;text-align:center;color:#475569;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + (r.scheduled || '-') + '</td>';
+        html += '<td style="padding:6px 4px;text-align:center;color:#475569;border-bottom:1px solid #f1f5f9">' + (r.class_min || 20) + 'm</td>';
+        html += '<td style="padding:6px 4px;text-align:center;color:' + c + ';font-weight:700;border-bottom:1px solid #f1f5f9;font-variant-numeric:tabular-nums">' + (r.actual || '결강') + '</td>';
+        html += '<td style="padding:6px 4px;text-align:center;color:' + c + ';border-bottom:1px solid #f1f5f9;font-size:10.5px">' + elapsed + '</td>';
+        html += '<td style="padding:6px 4px;text-align:center;color:' + c + ';border-bottom:1px solid #f1f5f9;font-size:10.5px">' + penaltyTime + '</td>';
+        html += '<td style="padding:6px 4px;text-align:center;border-bottom:1px solid #f1f5f9;color:' + c + ';font-weight:700">' + (r.penalty || 0) + '</td>';
+        html += '<td style="padding:6px 4px;border-bottom:1px solid #f1f5f9"><input type="text" data-id="' + r.id + '" data-field="reason" oninput="caUpdateField(this)" value="' + (r.reason||'').replace(/"/g,'&quot;') + '" placeholder="-" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:3px 5px;font-size:10.5px;background:#fff" /></td>';
+        html += '<td style="padding:6px 4px;border-bottom:1px solid #f1f5f9"><input type="text" data-id="' + r.id + '" data-field="answer" oninput="caUpdateField(this)" value="' + (r.answer||'').replace(/"/g,'&quot;') + '" placeholder="-" style="width:100%;border:1px solid #e5e7eb;border-radius:4px;padding:3px 5px;font-size:10.5px;background:#fff" /></td>';
+        html += '<td style="padding:6px 4px;text-align:center;border-bottom:1px solid #f1f5f9"><button onclick="caResetPenalty(\'' + r.id + '\')" style="padding:2px 6px;font-size:10px;background:#fee2e2;border:1px solid #fca5a5;color:#b91c1c;border-radius:4px;cursor:pointer">' + (r.penalty === 0 ? '✓' : '↺') + '</button></td>';
+        html += '</tr>';
+      });
+      html += '</tbody></table></div>';
+
+      // 통계 표 (각 그룹 하단)
+      html += '<div style="background:#f8fafc;border-top:1px solid #e5e7eb;padding:10px 14px">';
+      html += '<table style="width:100%;font-size:11px;border-collapse:separate;border-spacing:0">';
+      html += '<tbody>';
+      const statRow = (label, sub, val, color) => '<tr><td style="padding:5px 6px;font-weight:600;color:#475569">' + label + '<br><span style="font-size:9.5px;font-weight:400;color:#94a3b8">' + sub + '</span></td><td style="padding:5px 6px;text-align:right;font-weight:700;color:' + color + ';font-variant-numeric:tabular-nums">' + val + '</td></tr>';
+      html += statRow('지각횟수', '(Number of lateness)', lateCount, '#3b82f6');
+      html += statRow('지각평균', '(average of lateness, Number/Day)', avgLatePerDay, '#6366f1');
+      html += statRow('지각누적(분)', '(total late minutes)', fmtMin(totalLateMin), '#ec4899');
+      html += statRow('지각평균(분)', '(average late minutes)', avgLateMin, '#f59e0b');
+      html += statRow('별점합계', '(total penalty)', totalPenalty, totalPenalty < 0 ? '#dc2626' : '#16a34a');
+      html += '</tbody></table></div>';
+
+      html += '</div>'; // 그룹 카드 끝
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function renderChart(rows) {
+    const wrap = document.getElementById('ca-chart-wrap');
+    document.getElementById('ca-table-wrap').style.display = 'none';
+    wrap.style.display = 'block';
+    const teachers = Array.from(new Set(rows.map(r => r.teacher_id))).map(id => {
+      const t = _caTeachers.find(x => String(x.id) === String(id));
+      return { id, name: t ? t.name : id };
+    }).sort((a,b)=>a.name.localeCompare(b.name,'ko-KR'));
+
+    if (typeof Chart === 'undefined') {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js';
+      s.onload = () => renderChart(rows);
+      document.head.appendChild(s);
+      return;
+    }
+
+    _caCharts.forEach(c => { try { c.destroy(); } catch(e){} }); _caCharts = [];
+
+    const data = teachers.map(t => {
+      const trs = rows.filter(r => String(r.teacher_id) === String(t.id));
+      const onTime = trs.filter(r => r.actual && r.penalty === 0).length;
+      const late = trs.filter(r => r.actual && r.penalty < 0).length;
+      const absent = trs.filter(r => !r.actual).length;
+      const totalPenalty = trs.reduce((a, r) => a + (r.penalty||0), 0);
+      const total = trs.length;
+      return { name: t.name, total, onTime, late, absent, totalPenalty };
+    });
+
+    wrap.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px"><div style="background:#fff;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="ca-chart-1"></canvas></div><div style="background:#fff;border-radius:12px;padding:14px;min-height:380px;position:relative"><canvas id="ca-chart-2"></canvas></div></div><div style="background:#fff;border-radius:12px;padding:14px;min-height:300px;margin-top:14px;position:relative"><canvas id="ca-chart-3"></canvas></div>';
+
+    // 1) 누적 막대: 강사별 정시/지각/결강
+    _caCharts.push(new Chart(document.getElementById('ca-chart-1').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: data.map(d => d.name),
+        datasets: [
+          { label: '정시', data: data.map(d => d.onTime), backgroundColor: 'rgba(16,185,129,0.85)', borderColor: '#059669', borderWidth: 1, borderRadius: 4 },
+          { label: '지각', data: data.map(d => d.late), backgroundColor: 'rgba(245,158,11,0.85)', borderColor: '#d97706', borderWidth: 1, borderRadius: 4 },
+          { label: '결강', data: data.map(d => d.absent), backgroundColor: 'rgba(239,68,68,0.85)', borderColor: '#b91c1c', borderWidth: 1, borderRadius: 4 },
+        ],
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top' }, title: { display: true, text: '강사별 출석 분포 (수업 단위)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } },
+        scales: { x: { stacked: true, grid: { display: false } }, y: { stacked: true, beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } } }
+      }
+    }));
+
+    // 2) 도넛: 전체 비율
+    const allTotal = data.reduce((a,d)=>a+d.total,0);
+    const allOnTime = data.reduce((a,d)=>a+d.onTime,0);
+    const allLate = data.reduce((a,d)=>a+d.late,0);
+    const allAbsent = data.reduce((a,d)=>a+d.absent,0);
+    _caCharts.push(new Chart(document.getElementById('ca-chart-2').getContext('2d'), {
+      type: 'doughnut',
+      data: {
+        labels: ['정시','지각','결강'],
+        datasets: [{ data: [allOnTime, allLate, allAbsent], backgroundColor: ['#10b981','#f59e0b','#ef4444'], borderColor: '#fff', borderWidth: 3 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' }, title: { display: true, text: '전체 출석 비율 (총 ' + allTotal + '건)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } } }
+    }));
+
+    // 3) 별점 합계 가로 막대 (강사별, 음수 → 빨강)
+    const sortedByPenalty = [...data].sort((a,b)=>a.totalPenalty - b.totalPenalty);
+    _caCharts.push(new Chart(document.getElementById('ca-chart-3').getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: sortedByPenalty.map(d => d.name),
+        datasets: [{
+          label: '별점 합계',
+          data: sortedByPenalty.map(d => d.totalPenalty),
+          backgroundColor: sortedByPenalty.map(d => d.totalPenalty <= -20 ? 'rgba(239,68,68,0.85)' : (d.totalPenalty < 0 ? 'rgba(245,158,11,0.85)' : 'rgba(16,185,129,0.85)')),
+          borderColor: sortedByPenalty.map(d => d.totalPenalty <= -20 ? '#b91c1c' : (d.totalPenalty < 0 ? '#d97706' : '#059669')),
+          borderWidth: 1.5, borderRadius: 4,
+        }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, title: { display: true, text: '강사별 누적 별점 (낮은 순)', font: { size: 14, weight: 700 } }, tooltip: { backgroundColor: 'rgba(15,23,42,0.95)', cornerRadius: 8, padding: 10 } }, scales: { x: { grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } } }
+    }));
+  }
+
+  function caRender() {
+    const rows = filterRecords();
+    const tableWrap = document.getElementById('ca-table-wrap');
+    const chartWrap = document.getElementById('ca-chart-wrap');
+    if (_caMode === 'chart') { renderChart(rows); return; }
+    chartWrap.style.display = 'none';
+    tableWrap.style.display = 'block';
+    if (!rows.length) {
+      tableWrap.innerHTML = '<div style="padding:36px;text-align:center;color:#9ca3af;font-size:13px">' + (isEn()?'No records.':'기록이 없습니다.') + '</div>';
+      return;
+    }
+    tableWrap.innerHTML = renderClassTable(rows, _caMode);
+  }
+
+  window.caSetMode = function(mode) {
+    _caMode = mode;
+    document.querySelectorAll('.ca-mode-btn').forEach(b => {
+      const active = b.dataset.mode === mode;
+      b.style.background = active ? '#a855f7' : '#fff';
+      b.style.color = active ? '#fff' : '#a855f7';
+      b.style.border = active ? '0' : '1px solid #a855f7';
+    });
+    caRender();
+  };
+
+  window.caUpdateField = function(input) {
+    const id = input.dataset.id, field = input.dataset.field, val = input.value;
+    const r = _caRecords.find(x => x.id === id);
+    if (r) { r[field] = val; localStorage.setItem(CA_LS_KEY, JSON.stringify(_caRecords)); }
+  };
+  window.caResetPenalty = function(id) {
+    const r = _caRecords.find(x => x.id === id); if (!r) return;
+    if (!confirm(isEn()?'Reset penalty to 0?':'별점을 0으로 초기화하시겠습니까?')) return;
+    r.penalty = 0; localStorage.setItem(CA_LS_KEY, JSON.stringify(_caRecords));
+    caRender();
+  };
+
+  window.caExportExcel = function() {
+    if (typeof XLSX === 'undefined') { alert('XLSX library not loaded'); return; }
+    const rows = filterRecords();
+    if (!rows.length) { alert('데이터가 없습니다.'); return; }
+    const en = isEn();
+    const headers = ['날짜 (date)','강사명 (teacher)','수업번호 (class no.)','규정출석시간 (start work time)','수업시간(분) (Class minute)','실제출석시간 (Actual enter time)','경과시간 (elapsed time)','별점시간(분) (penalty time)','별점 (Penalty)','지각사유 (Reason)','관리자답변 (Answer)'];
+    const aoa = [headers];
+    const sorted = rows.slice().sort((a,b) => a.date.localeCompare(b.date) || (a.teacher_name||'').localeCompare(b.teacher_name||'','ko-KR') || (a.scheduled||'').localeCompare(b.scheduled||''));
+    sorted.forEach(r => {
+      const elapsed = !r.actual ? '결강' : (r.late_min > 0 ? '+' + r.late_min + 'm' : (r.late_min < 0 ? r.late_min + 'm' : '0m'));
+      aoa.push([r.date, r.teacher_name, r.class_no, r.scheduled, r.class_min, r.actual || '', elapsed, Math.abs(r.penalty||0), r.penalty || 0, r.reason || '', r.answer || '']);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    ws['!cols'] = [{wch:13},{wch:18},{wch:10},{wch:24},{wch:18},{wch:24},{wch:14},{wch:18},{wch:12},{wch:30},{wch:30}];
+    ws['!rows'] = [{ hpt: 30 }];
+    const headerColors = ['0EA5E9','3B82F6','06B6D4','6366F1','8B5CF6','A855F7','EC4899','F43F5E','EF4444','64748B','64748B'];
+    headerColors.forEach((rgb, i) => {
+      const addr = (i < 26 ? String.fromCharCode(65+i) : 'A'+String.fromCharCode(65+i-26)) + '1';
+      if (!ws[addr]) ws[addr] = { t:'s', v: headers[i] };
+      ws[addr].s = { font:{ bold:true, color:{ rgb:'FFFFFF' }, sz:11 }, fill:{ patternType:'solid', fgColor:{ rgb } }, alignment:{ horizontal:'center', vertical:'center', wrapText:true } };
+    });
+    for (let i = 2; i <= aoa.length; i++) {
+      const r = sorted[i-2];
+      const rowBg = !r.actual ? 'FEE2E2' : (r.penalty < -3 ? 'FEF3C7' : (r.penalty < 0 ? 'FFFBEB' : 'F0FDF4'));
+      for (let c = 0; c < headers.length; c++) {
+        const addr = (c < 26 ? String.fromCharCode(65+c) : 'A'+String.fromCharCode(65+c-26)) + i;
+        if (!ws[addr]) ws[addr] = { t:'s', v:'' };
+        ws[addr].s = { font:{ sz:10 }, fill:{ patternType:'solid', fgColor:{ rgb: rowBg } }, alignment:{ horizontal:'center', vertical:'center' } };
+      }
+    }
+    ws['!sheetViews'] = [{ showGridLines: false }];
+    const lastRow = aoa.length + 5;
+    for (let r = 0; r < lastRow; r++) for (let c = 0; c < 15; c++) {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      if (!ws[addr]) ws[addr] = { t:'s', v:'', s:{ fill:{ patternType:'solid', fgColor:{ rgb:'FFFFFF' } } } };
+    }
+    ws['!ref'] = 'A1:O' + lastRow;
+    ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, en?'ClassAttendance':'출석현황');
+    if (!wb.Workbook) wb.Workbook = {};
+    if (!wb.Workbook.Views) wb.Workbook.Views = [];
+    wb.Workbook.Views[0] = { showGridLines: false };
+    XLSX.writeFile(wb, 'class_attendance_' + dateStr(new Date()) + '.xlsx');
+  };
+
+  let _caInited = false;
+  document.getElementById('card-class-attendance')?.addEventListener('toggle', async function(e) {
+    if (this.open && !_caInited) {
+      _caInited = true;
+      initDateSelects();
+      await loadTeachers();
+      await loadRecords();
+      caRender();
     }
   });
 })();
