@@ -9826,47 +9826,32 @@ document.getElementById('admin-sidebar-list')?.addEventListener('click', (ev) =>
     }
   };
 
-  // 자막은 즉시 표시
-  const triggerOnce = () => {
-    if (sessionStorage.getItem('ai_greeting_shown') === '1') {
-      // 같은 세션에서 한 번만 — 재방문/탭 새로고침 시 다시
-      // 자막만 짧게, TTS 는 생략 (사용자 방해 X)
-      return;
-    }
-    showGreeting();
-    sessionStorage.setItem('ai_greeting_shown', '1');
-  };
-
-  // voices 가 로드될 때까지 잠깐 대기 (Chrome 의 비동기 로드)
-  if ('speechSynthesis' in window) {
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.addEventListener('voiceschanged', () => {}, { once: true });
-    }
+  // 🎤 인사: 페이지 로드시 자동재생 ❌ → 사용자가 처음 클릭/키 입력했을 때만 재생
+  //   이유: (1) 브라우저 autoplay 정책상 user gesture 전엔 mp3 재생 차단
+  //          (2) 사용자 요청 — 처음 클릭할 때 '안녕하세요, 망고아이입니다' 들리도록
+  if ('speechSynthesis' in window && window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.addEventListener('voiceschanged', () => {}, { once: true });
   }
 
-  // 페이지 로드 후 0.8초 뒤 인사 (여유 — 다른 UI 가 자리 잡은 후)
-  // TTS 는 user gesture 가 없으면 일부 브라우저(Chrome) 가 차단할 수 있음 → 조용히 실패
-  setTimeout(triggerOnce, 800);
-
-  // 첫 사용자 클릭 시 다시 시도 (TTS 제스처 요구 우회)
-  let unlocked = false;
-  const unlock = () => {
-    if (unlocked) return;
-    unlocked = true;
-    // 자막은 이미 보여졌고, 음성만 재시도
-    if ('speechSynthesis' in window && window.speechSynthesis.speaking === false) {
-      const lang = (typeof adminLang !== 'undefined' && adminLang === 'en') ? 'en' : 'ko';
-      const text = lang === 'en' ? 'How can I help you?' : '무엇을 도와 드릴까요?';
-      // 첫 페이지 진입 후 user 가 어떤 클릭이든 하면 음성 한 번 재생 (이미 sessionStorage 에 한 번 표시됐어도)
-      // — sessionStorage 검사 없이 한 번 더 시도 (이전 시도가 차단됐을 수도 있으므로)
-      try { speakGreeting(text, lang); } catch {}
+  let _greeted = false;
+  const triggerGreeting = () => {
+    if (_greeted) return;
+    if (sessionStorage.getItem('ai_greeting_shown') === '1') {
+      _greeted = true;
+      document.removeEventListener('click', triggerGreeting);
+      document.removeEventListener('keydown', triggerGreeting);
+      return;
     }
-    document.removeEventListener('click', unlock);
-    document.removeEventListener('keydown', unlock);
+    _greeted = true;
+    sessionStorage.setItem('ai_greeting_shown', '1');
+    // 자막 + mp3/TTS 동시 시작 (이미 user gesture 안에 있어 autoplay 통과)
+    showGreeting();
+    document.removeEventListener('click', triggerGreeting);
+    document.removeEventListener('keydown', triggerGreeting);
   };
-  // 첫 사용자 인터랙션 시 unlock (단, 자막이 이미 보였다면 음성만 시도)
-  document.addEventListener('click', unlock, { once: false });
-  document.addEventListener('keydown', unlock, { once: false });
+  // 어디든 첫 클릭/타이핑이 일어나면 발동 (capture: true → 다른 핸들러보다 먼저)
+  document.addEventListener('click', triggerGreeting, { capture: true });
+  document.addEventListener('keydown', triggerGreeting, { capture: true });
 })();
 
 // 페이지 로드 시 메뉴 인덱스 빌드 + 통합 색인 비동기로 빌드
@@ -13505,4 +13490,4 @@ button.chip:hover,
 </script>
 
 </body>
-</html>
+</html>                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           
