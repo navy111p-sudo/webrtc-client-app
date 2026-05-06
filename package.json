@@ -8,20 +8,31 @@
     "dev": "nodemon server.js",
     "setup": "npm install && mkdir -p uploads && echo '설치 완료!'",
     "turn:dev": "cd modules/turn-relay && npx wrangler dev",
-    "turn:deploy": "cd modules/turn-relay && npx wrangler deploy"
+    "turn:deploy": "cd modules/turn-relay && npx wrangler deploy",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
-    "express": "^5.2.1",
-    "socket.io": "^4.8.3",
-    "multer": "^1.4.5-lts.1",
-    "uuid": "^9.0.0",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7"
+    "dotenv": "^16.4.7",
+    "express": "^5.2.1",
+    "multer": "^1.4.5-lts.1",
+    "socket.io": "^4.8.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "wrangler": "^4.88.0"
   },
-  "keywords": ["webrtc", "video-call", "signaling", "turn-relay", "whiteboard", "chat", "pdf-sharing"],
+  "keywords": [
+    "webrtc",
+    "video-call",
+    "signaling",
+    "turn-relay",
+    "whiteboard",
+    "chat",
+    "pdf-sharing"
+  ],
   "author": "navy111p-sudo",
   "license": "MIT"
 }
