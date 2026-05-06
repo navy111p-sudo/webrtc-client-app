@@ -2447,15 +2447,20 @@
         <div class="sub-body">
           <p style="margin:0 0 12px;font-size:12.5px;color:#374151">5개 역할별로 각 메뉴/기능의 접근 권한을 설정합니다. 체크박스를 누르면 즉시 저장됩니다.</p>
           <div style="overflow-x:auto;background:#fff;border:1px solid #e5e7eb;border-radius:10px">
-            <table id="role-perm-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:780px">
+            <table id="role-perm-table" style="width:100%;border-collapse:collapse;font-size:12px;min-width:920px">
               <thead style="background:linear-gradient(135deg,#fef3c7,#fde68a)">
                 <tr>
-                  <th style="padding:10px 12px;text-align:left;border-bottom:2px solid #f59e0b;width:230px;color:#78350f">기능 / 메뉴</th>
-                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🏢 본사<br/><span style="font-size:10px;font-weight:400">HQ</span></th>
-                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🏬 지사<br/><span style="font-size:10px;font-weight:400">Branch</span></th>
-                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🤝 대리점<br/><span style="font-size:10px;font-weight:400">Agency</span></th>
-                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">👨‍👩 학부모<br/><span style="font-size:10px;font-weight:400">Parent</span></th>
-                  <th style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f">🎓 학생<br/><span style="font-size:10px;font-weight:400">Student</span></th>
+                  <th rowspan="2" style="padding:10px 12px;text-align:left;border-bottom:2px solid #f59e0b;width:230px;color:#78350f;vertical-align:bottom">기능 / 메뉴</th>
+                  <th colspan="3" style="padding:8px 8px;text-align:center;border-bottom:1px solid #f59e0b;color:#78350f;background:rgba(239,68,68,0.10)">🏢 본사 <span style="font-size:10px;font-weight:400">(HQ — 직급별)</span></th>
+                  <th rowspan="2" style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f;vertical-align:bottom">🏬 지사<br/><span style="font-size:10px;font-weight:400">Branch</span></th>
+                  <th rowspan="2" style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f;vertical-align:bottom">🤝 대리점<br/><span style="font-size:10px;font-weight:400">Agency</span></th>
+                  <th rowspan="2" style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f;vertical-align:bottom">👨‍👩 학부모<br/><span style="font-size:10px;font-weight:400">Parent</span></th>
+                  <th rowspan="2" style="padding:10px 8px;text-align:center;border-bottom:2px solid #f59e0b;color:#78350f;vertical-align:bottom">🎓 학생<br/><span style="font-size:10px;font-weight:400">Student</span></th>
+                </tr>
+                <tr>
+                  <th style="padding:6px 6px;text-align:center;border-bottom:2px solid #f59e0b;color:#7f1d1d;background:rgba(239,68,68,0.06);font-size:11px">👑 경영진<br/><span style="font-size:9.5px;font-weight:400">Executive</span></th>
+                  <th style="padding:6px 6px;text-align:center;border-bottom:2px solid #f59e0b;color:#7f1d1d;background:rgba(239,68,68,0.06);font-size:11px">🛠️ 관리자<br/><span style="font-size:9.5px;font-weight:400">Manager</span></th>
+                  <th style="padding:6px 6px;text-align:center;border-bottom:2px solid #f59e0b;color:#7f1d1d;background:rgba(239,68,68,0.06);font-size:11px">👨‍🏫 교사<br/><span style="font-size:9.5px;font-weight:400">Teacher</span></th>
                 </tr>
               </thead>
               <tbody id="role-perm-rows"></tbody>
@@ -2477,7 +2482,9 @@
         <summary data-ko="👤 역할별 사용자 관리" data-en="👤 Users by Role">👤 역할별 사용자 관리</summary>
         <div class="sub-body">
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px;margin-bottom:12px" id="role-counts">
-            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🏢 본사</div><div style="font-size:18px;font-weight:800;color:#b91c1c" id="cnt-hq">3명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #dc2626;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">👑 본사·경영진</div><div style="font-size:18px;font-weight:800;color:#7f1d1d" id="cnt-hq_exec">2명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #ef4444;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🛠️ 본사·관리자</div><div style="font-size:18px;font-weight:800;color:#b91c1c" id="cnt-hq_mgr">1명</div></div>
+            <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f87171;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">👨‍🏫 본사·교사</div><div style="font-size:18px;font-weight:800;color:#dc2626" id="cnt-hq_teacher">2명</div></div>
             <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #f59e0b;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🏬 지사</div><div style="font-size:18px;font-weight:800;color:#b45309" id="cnt-branch">8명</div></div>
             <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #10b981;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">🤝 대리점</div><div style="font-size:18px;font-weight:800;color:#047857" id="cnt-agency">15명</div></div>
             <div style="background:#fff;border:1px solid #e5e7eb;border-left:4px solid #3b82f6;padding:10px 12px;border-radius:8px"><div style="font-size:11px;color:#6b7280">👨‍👩 학부모</div><div style="font-size:18px;font-weight:800;color:#1d4ed8" id="cnt-parent">427명</div></div>
@@ -2486,7 +2493,9 @@
           <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
             <select id="role-filter" onchange="renderUsersByRole()" style="padding:5px 10px;font-size:12px;border-radius:6px;border:1px solid #d1d5db">
               <option value="">전체 역할</option>
-              <option value="hq">🏢 본사</option>
+              <option value="hq_exec">👑 본사 · 경영진</option>
+              <option value="hq_mgr">🛠️ 본사 · 관리자</option>
+              <option value="hq_teacher">👨‍🏫 본사 · 교사</option>
               <option value="branch">🏬 지사</option>
               <option value="agency">🤝 대리점</option>
               <option value="parent">👨‍👩 학부모</option>
@@ -11046,43 +11055,43 @@ window.rebuildGlobalSearchIndex = function() {
   };
 
   // ━━━━━━━━━━ 🔐 권한 설정 (역할별 매트릭스) ━━━━━━━━━━
-  const ROLE_KEYS = ['hq','branch','agency','parent','student'];
+  const ROLE_KEYS = ['hq_exec','hq_mgr','hq_teacher','branch','agency','parent','student'];
   // 기능 그룹 → 각 행
   const PERM_FEATURES = [
     { group_ko: '🏠 대시보드', group_en: '🏠 Dashboard', items: [
-      { id: 'dashboard',     name_ko: '메인 대시보드',     name_en: 'Main Dashboard',          def: { hq:'✅', branch:'✅', agency:'✅', parent:'✅', student:'✅' } },
-      { id: 'realtime_class', name_ko: '실시간 수업 현황',  name_en: 'Live Class Status',       def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'dashboard',     name_ko: '메인 대시보드',     name_en: 'Main Dashboard',          def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'✅', parent:'✅', student:'✅' } },
+      { id: 'realtime_class', name_ko: '실시간 수업 현황',  name_en: 'Live Class Status',       def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
     ]},
     { group_ko: '👨‍🎓 학생 관리', group_en: '👨‍🎓 Student Management', items: [
-      { id: 'students_list',   name_ko: '학생 목록·드릴다운', name_en: 'Student List · Drilldown',  def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
-      { id: 'students_self',   name_ko: '내 학습 정보 조회',  name_en: 'My Learning Info',          def: { hq:'✅', branch:'✅', agency:'❌', parent:'✅', student:'✅' } },
-      { id: 'students_eval',   name_ko: '평가서 작성·수정',   name_en: 'Evaluation Create · Edit',  def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'enrollment',      name_ko: '수강신청 관리',      name_en: 'Enrollment Management',     def: { hq:'✅', branch:'✅', agency:'✅', parent:'👁️', student:'👁️' } },
+      { id: 'students_list',   name_ko: '학생 목록·드릴다운', name_en: 'Student List · Drilldown',  def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'students_self',   name_ko: '내 학습 정보 조회',  name_en: 'My Learning Info',          def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'❌', parent:'✅', student:'✅' } },
+      { id: 'students_eval',   name_ko: '평가서 작성·수정',   name_en: 'Evaluation Create · Edit',  def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'enrollment',      name_ko: '수강신청 관리',      name_en: 'Enrollment Management',     def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'👁️', branch:'✅', agency:'✅', parent:'👁️', student:'👁️' } },
     ]},
     { group_ko: '🧑‍🏫 강사 관리', group_en: '🧑‍🏫 Teacher Management', items: [
-      { id: 'teachers_list',   name_ko: '강사 목록·평가',     name_en: 'Teacher List · Evaluation', def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'teacher_payroll', name_ko: '강사 급여·정산',     name_en: 'Teacher Payroll · Settle',  def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'teachers_list',   name_ko: '강사 목록·평가',     name_en: 'Teacher List · Evaluation', def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'👁️', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'teacher_payroll', name_ko: '강사 급여·정산',     name_en: 'Teacher Payroll · Settle',  def: { hq_exec:'✅', hq_mgr:'👁️', hq_teacher:'❌', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
     ]},
     { group_ko: '💰 회계 관리', group_en: '💰 Accounting', items: [
-      { id: 'student_payments', name_ko: '학생 결제 내역',     name_en: 'Student Payment History',   def: { hq:'✅', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
-      { id: 'corpcard',         name_ko: '법인카드 사용내역', name_en: 'Corporate Card Usage',      def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'financials',       name_ko: '손익·재무제표',     name_en: 'P&L · Financial Stmt',      def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'refunds',          name_ko: '환불·취소 처리',    name_en: 'Refund · Cancel',           def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'accounting_reports', name_ko: '회계 리포트 다운로드', name_en: 'Accounting Report Download', def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'student_payments', name_ko: '학생 결제 내역',     name_en: 'Student Payment History',   def: { hq_exec:'✅', hq_mgr:'👁️', hq_teacher:'❌', branch:'✅', agency:'👁️', parent:'❌', student:'❌' } },
+      { id: 'corpcard',         name_ko: '법인카드 사용내역', name_en: 'Corporate Card Usage',      def: { hq_exec:'✅', hq_mgr:'❌', hq_teacher:'❌', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'financials',       name_ko: '손익·재무제표',     name_en: 'P&L · Financial Stmt',      def: { hq_exec:'✅', hq_mgr:'❌', hq_teacher:'❌', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'refunds',          name_ko: '환불·취소 처리',    name_en: 'Refund · Cancel',           def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'❌', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'accounting_reports', name_ko: '회계 리포트 다운로드', name_en: 'Accounting Report Download', def: { hq_exec:'✅', hq_mgr:'👁️', hq_teacher:'❌', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
     ]},
     { group_ko: '🎬 콘텐츠·녹화', group_en: '🎬 Content · Recording', items: [
-      { id: 'recordings_view', name_ko: '수업 녹화본 조회',   name_en: 'Class Recordings View',     def: { hq:'✅', branch:'✅', agency:'👁️', parent:'✅', student:'✅' } },
-      { id: 'textbooks',       name_ko: '교재 콘텐츠 관리',   name_en: 'Textbook Content Mgmt',     def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+      { id: 'recordings_view', name_ko: '수업 녹화본 조회',   name_en: 'Class Recordings View',     def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'👁️', parent:'✅', student:'✅' } },
+      { id: 'textbooks',       name_ko: '교재 콘텐츠 관리',   name_en: 'Textbook Content Mgmt',     def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
     ]},
     { group_ko: '📢 운영', group_en: '📢 Operations', items: [
-      { id: 'community',       name_ko: '커뮤니티(공지) 작성', name_en: 'Community / Notice',        def: { hq:'✅', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
-      { id: 'inquiries',       name_ko: '신규상담 처리',       name_en: 'New Inquiries',             def: { hq:'✅', branch:'✅', agency:'✅', parent:'❌', student:'❌' } },
-      { id: 'kakao_blast',     name_ko: '카톡 공지 발송',      name_en: 'KakaoTalk Broadcast',       def: { hq:'✅', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'community',       name_ko: '커뮤니티(공지) 작성', name_en: 'Community / Notice',        def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'👁️', branch:'✅', agency:'❌', parent:'👁️', student:'👁️' } },
+      { id: 'inquiries',       name_ko: '신규상담 처리',       name_en: 'New Inquiries',             def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'👁️', branch:'✅', agency:'✅', parent:'❌', student:'❌' } },
+      { id: 'kakao_blast',     name_ko: '카톡 공지 발송',      name_en: 'KakaoTalk Broadcast',       def: { hq_exec:'✅', hq_mgr:'✅', hq_teacher:'❌', branch:'✅', agency:'❌', parent:'❌', student:'❌' } },
     ]},
     { group_ko: '🔐 시스템', group_en: '🔐 System', items: [
-      { id: 'permissions',     name_ko: '권한 설정',           name_en: 'Permission Settings',       def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'audit_log',       name_ko: '감사 로그 조회',      name_en: 'Audit Log View',            def: { hq:'✅', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
-      { id: 'franchise_mgmt',  name_ko: '가맹점·지사 관리',    name_en: 'Franchise · Branch Mgmt',   def: { hq:'✅', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'permissions',     name_ko: '권한 설정',           name_en: 'Permission Settings',       def: { hq_exec:'✅', hq_mgr:'❌', hq_teacher:'❌', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'audit_log',       name_ko: '감사 로그 조회',      name_en: 'Audit Log View',            def: { hq_exec:'✅', hq_mgr:'👁️', hq_teacher:'❌', branch:'👁️', agency:'❌', parent:'❌', student:'❌' } },
+      { id: 'franchise_mgmt',  name_ko: '가맹점·지사 관리',    name_en: 'Franchise · Branch Mgmt',   def: { hq_exec:'✅', hq_mgr:'❌', hq_teacher:'❌', branch:'❌', agency:'❌', parent:'❌', student:'❌' } },
     ]},
   ];
 
@@ -11117,7 +11126,7 @@ window.rebuildGlobalSearchIndex = function() {
     let html = '';
     PERM_FEATURES.forEach(g => {
       const groupLabel = en ? (g.group_en || g.group_ko || g.group || '') : (g.group_ko || g.group_en || g.group || '');
-      html += `<tr><td colspan="6" style="background:#f9fafb;padding:8px 12px;font-weight:800;font-size:11.5px;color:#374151;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;letter-spacing:0.3px">${groupLabel}</td></tr>`;
+      html += `<tr><td colspan="8" style="background:#f9fafb;padding:8px 12px;font-weight:800;font-size:11.5px;color:#374151;border-top:2px solid #e5e7eb;border-bottom:1px solid #e5e7eb;letter-spacing:0.3px">${groupLabel}</td></tr>`;
       g.items.forEach(it => {
         const itemName = en ? (it.name_en || it.name_ko || it.name || '') : (it.name_ko || it.name_en || it.name || '');
         const state = _permMatrix[it.id] || it.def;
@@ -11170,9 +11179,11 @@ window.rebuildGlobalSearchIndex = function() {
 
   // 사용자 목록 (데모)
   const SAMPLE_USERS = [
-    { uid:'admin',          name:'정우영',  role:'hq',     branch:'본사 (강남)',     status:'active' },
-    { uid:'cfo01',           name:'김재무',  role:'hq',     branch:'본사 (강남)',     status:'active' },
-    { uid:'ops_lead',        name:'박운영',  role:'hq',     branch:'본사 (강남)',     status:'active' },
+    { uid:'admin',          name:'정우영',  role:'hq_exec',    branch:'본사 · 대표이사',  status:'active' },
+    { uid:'cfo01',           name:'김재무',  role:'hq_exec',    branch:'본사 · CFO',       status:'active' },
+    { uid:'ops_lead',        name:'박운영',  role:'hq_mgr',     branch:'본사 · 운영 매니저', status:'active' },
+    { uid:'hq_t_001',        name:'강선생',  role:'hq_teacher', branch:'본사 · 마스터 강사', status:'active' },
+    { uid:'hq_t_002',        name:'문선생',  role:'hq_teacher', branch:'본사 · 콘텐츠 강사', status:'active' },
     { uid:'branch_busan',    name:'이지점',  role:'branch', branch:'부산 지사',       status:'active' },
     { uid:'branch_daegu',    name:'최지점',  role:'branch', branch:'대구 지사',       status:'active' },
     { uid:'branch_incheon',  name:'정지점',  role:'branch', branch:'인천 지사',       status:'active' },
@@ -11189,11 +11200,14 @@ window.rebuildGlobalSearchIndex = function() {
   ];
 
   const ROLE_LABEL = {
-    hq:      { icon:'🏢', name:'본사',     color:'#ef4444' },
-    branch:  { icon:'🏬', name:'지사',     color:'#f59e0b' },
-    agency:  { icon:'🤝', name:'대리점',   color:'#10b981' },
-    parent:  { icon:'👨‍👩', name:'학부모',   color:'#3b82f6' },
-    student: { icon:'🎓', name:'학생',     color:'#a855f7' },
+    hq_exec:    { icon:'👑', name:'본사·경영진', name_en:'HQ · Executive', color:'#dc2626' },
+    hq_mgr:     { icon:'🛠️', name:'본사·관리자', name_en:'HQ · Manager',   color:'#ef4444' },
+    hq_teacher: { icon:'👨‍🏫', name:'본사·교사',   name_en:'HQ · Teacher',   color:'#f87171' },
+    hq:         { icon:'🏢', name:'본사',         name_en:'HQ',             color:'#ef4444' }, // 레거시 호환
+    branch:     { icon:'🏬', name:'지사',         name_en:'Branch',         color:'#f59e0b' },
+    agency:     { icon:'🤝', name:'대리점',       name_en:'Agency',         color:'#10b981' },
+    parent:     { icon:'👨‍👩', name:'학부모',       name_en:'Parent',         color:'#3b82f6' },
+    student:    { icon:'🎓', name:'학생',         name_en:'Student',        color:'#a855f7' },
   };
 
   window.renderUsersByRole = function() {
