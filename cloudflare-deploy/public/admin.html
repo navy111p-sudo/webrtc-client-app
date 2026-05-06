@@ -14049,14 +14049,16 @@ button.chip:hover,
     });
   }
 
-  // 5번째 카드 — 글로벌 총이익 (탭 무관, 회사 전체 관점)
-  //   총이익 = 전체 지사 매출 - (강사 급여 + 교직원 급여)
+  // 5번째 카드 — 글로벌 총이익 (사용자 정의 공식)
+  //   총이익 = 본사 총 매출(최근 월) - (강사 급여 + 관리자 수입)
+  //   동일 월간 기준으로 단위 일관성 확보
   function calcGlobalProfit() {
-    const totalRev = SEED_BRANCH.reduce((a,r)=>a + (Number(r.total)||0), 0);     // 전체 매출 (지사 합)
-    const teacherPay = SEED_TEACHER.reduce((a,r)=>a + (Number(r.final)||0), 0);  // 강사 실수령 합
-    const facultyCost = SEED_FACULTY.reduce((a,r)=>a + (Number(r.cost)||0), 0);  // 관리자 인건비 합
-    const profit = totalRev - teacherPay - facultyCost;
-    return { totalRev, teacherPay, facultyCost, profit };
+    const latest = SEED_HQ_REVENUE[SEED_HQ_REVENUE.length - 1] || { total: 0, month: '-' };
+    const totalRev      = Number(latest.total) || 0;                                  // 본사 총 매출 (최근 월)
+    const teacherPay    = SEED_TEACHER.reduce((a,r) => a + (Number(r.final)||0), 0);  // 강사 급여 합 (월)
+    const facultyIncome = SEED_FACULTY.reduce((a,r) => a + (Number(r.net)||0),   0);  // 관리자 수입 합 (월 실수령)
+    const profit        = totalRev - teacherPay - facultyIncome;
+    return { totalRev, teacherPay, facultyIncome, profit, month: latest.month };
   }
 
   function renderKPI(rows) {
@@ -14067,13 +14069,13 @@ button.chip:hover,
     const profitColor = gp.profit >= 0 ? '#16a34a' : '#dc2626';
     const profitBg = gp.profit >= 0 ? '#dcfce7' : '#fee2e2';
     cards.push({
-      ko: '💎 총이익 (수업료-급여)',
-      en: '💎 Total Profit',
+      ko: '💎 총이익 (본사매출-인건비)',
+      en: '💎 Total Profit (HQ Rev - Pay)',
       value: (gp.profit < 0 ? '-' : '') + (Math.abs(gp.profit)).toLocaleString('ko-KR'),
       icon: '💎',
       color: profitColor,
       bg: profitBg,
-      tooltip: (en ? 'Revenue: ' : '매출: ') + gp.totalRev.toLocaleString('ko-KR') + ' / ' + (en ? 'Instructor pay: ' : '강사 급여: ') + gp.teacherPay.toLocaleString('ko-KR') + ' / ' + (en ? 'Admin cost: ' : '관리자 급여: ') + gp.facultyCost.toLocaleString('ko-KR'),
+      tooltip: (en ? ('HQ Revenue (' + gp.month + '): ') : ('본사 매출 (' + gp.month + '): ')) + gp.totalRev.toLocaleString('ko-KR') + '\n' + (en ? '- Instructor salary: ' : '- 강사 급여: ') + gp.teacherPay.toLocaleString('ko-KR') + '\n' + (en ? '- Admin income: ' : '- 관리자 수입: ') + gp.facultyIncome.toLocaleString('ko-KR') + '\n' + (en ? '= Total Profit: ' : '= 총이익: ') + gp.profit.toLocaleString('ko-KR'),
       isGlobal: true,
     });
 
